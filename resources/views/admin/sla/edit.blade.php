@@ -44,13 +44,19 @@
                   @enderror
                 </div>
               </div>
-              
+
               <div class="col-md-6">
                 <div class="mb-3">
-                  <label for="max_response_time" class="form-label text-white">Max Response Time (Hours) <span class="text-danger">*</span></label>
-                  <input type="number" class="form-control @error('max_response_time') is-invalid @enderror" 
-                         id="max_response_time" name="max_response_time" value="{{ old('max_response_time', $sla->max_response_time) }}" required>
-                  @error('max_response_time')
+                  <label for="priority" class="form-label text-white">Priority <span class="text-danger">*</span></label>
+                  <select class="form-select @error('priority') is-invalid @enderror" 
+                          id="priority" name="priority" required>
+                    <option value="">Select Priority</option>
+                    <option value="low" {{ old('priority', $sla->priority ?? 'medium') == 'low' ? 'selected' : '' }}>Low - Can wait</option>
+                    <option value="medium" {{ old('priority', $sla->priority ?? 'medium') == 'medium' ? 'selected' : '' }}>Medium - Normal</option>
+                    <option value="high" {{ old('priority', $sla->priority ?? 'medium') == 'high' ? 'selected' : '' }}>High - Important</option>
+                    <option value="urgent" {{ old('priority', $sla->priority ?? 'medium') == 'urgent' ? 'selected' : '' }}>Urgent - Critical</option>
+                  </select>
+                  @error('priority')
                     <div class="invalid-feedback">{{ $message }}</div>
                   @enderror
                 </div>
@@ -64,43 +70,6 @@
                   <input type="number" class="form-control @error('max_resolution_time') is-invalid @enderror" 
                          id="max_resolution_time" name="max_resolution_time" value="{{ old('max_resolution_time', $sla->max_resolution_time) }}" required>
                   @error('max_resolution_time')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                  @enderror
-                </div>
-              </div>
-              
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label for="notify_to" class="form-label text-white">Notify To</label>
-                  <select class="form-select @error('notify_to') is-invalid @enderror" 
-                          id="notify_to" name="notify_to">
-                    <option value="">Select User</option>
-                    @foreach($users as $user)
-                    <option value="{{ $user->id }}" {{ old('notify_to', $sla->notify_to) == $user->id ? 'selected' : '' }}>
-                      {{ $user->username }} ({{ $user->role->role_name ?? 'No Role' }})
-                    </option>
-                    @endforeach
-                  </select>
-                  @error('notify_to')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                  @enderror
-                </div>
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label for="priority" class="form-label text-white">Priority <span class="text-danger">*</span></label>
-                  <select class="form-select @error('priority') is-invalid @enderror" 
-                          id="priority" name="priority" required>
-                    <option value="">Select Priority</option>
-                    <option value="low" {{ old('priority', $sla->priority ?? 'medium') == 'low' ? 'selected' : '' }}>Low - Can wait</option>
-                    <option value="medium" {{ old('priority', $sla->priority ?? 'medium') == 'medium' ? 'selected' : '' }}>Medium - Normal</option>
-                    <option value="high" {{ old('priority', $sla->priority ?? 'medium') == 'high' ? 'selected' : '' }}>High - Important</option>
-                    <option value="urgent" {{ old('priority', $sla->priority ?? 'medium') == 'urgent' ? 'selected' : '' }}>Urgent - Critical</option>
-                  </select>
-                  @error('priority')
                     <div class="invalid-feedback">{{ $message }}</div>
                   @enderror
                 </div>

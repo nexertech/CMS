@@ -271,12 +271,23 @@ class Complaint extends Model
         return $this->created_at->diffInHours(now());
     }
 
-    /**
-     * Check if complaint is overdue
-     */
-    public function isOverdue(int $days = 7): bool
+    public function isOverdue(): bool
     {
-        return $this->created_at->addDays($days)->isPast() && !$this->isCompleted();
+        if ($this->isCompleted()) {
+            return false;
+        }
+
+        // Find matching SLA rule
+        $slaRule = \App\Models\SlaRule::where('complaint_type', $this->category)
+            ->where('status', 'active')
+            ->first();
+
+        if ($slaRule) {
+            return $this->created_at->addHours($slaRule->max_resolution_time)->isPast();
+        }
+
+        // If no SLA rule, it's not overdue
+        return false;
     }
 
     /**
@@ -560,26 +571,16 @@ class Complaint extends Model
     /**
      * Scope for overdue complaints
      */
-    public function scopeOverdue($query, $days = 7)
+    public function scopeOverdue($query)
     {
         return $query->whereIn('complaints.status', ['new', 'assigned', 'in_progress'])
-            ->leftJoin('sla_rules', function ($join) {
+            ->join('sla_rules', function ($join) {
+                // Changing leftJoin to join enforces that an SLA rule MUST exist
                 $join->on('complaints.category', '=', 'sla_rules.complaint_type')
                     ->where('sla_rules.status', '=', 'active')
                     ->whereNull('sla_rules.deleted_at');
             })
-            ->where(function ($q) use ($days) {
-                // If SLA rule exists, check max_resolution_time (in hours)
-                $q->where(function ($subQ) {
-                    $subQ->whereNotNull('sla_rules.id')
-                        ->whereRaw('complaints.created_at < DATE_SUB(NOW(), INTERVAL sla_rules.max_resolution_time HOUR)');
-                })
-                    // If no SLA rule exists, fallback to default days
-                    ->orWhere(function ($subQ) use ($days) {
-                    $subQ->whereNull('sla_rules.id')
-                        ->where('complaints.created_at', '<', now()->subDays($days));
-                });
-            })
+            ->whereRaw('complaints.created_at < DATE_SUB(NOW(), INTERVAL sla_rules.max_resolution_time HOUR)')
             ->select('complaints.*');
     }
 }

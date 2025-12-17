@@ -176,6 +176,17 @@
             margin-left: 5%;
             margin-right: 5%;
         }
+
+        /* Hide stock rows beyond 10 on screen, but show all in print */
+        .no-print-row {
+            display: none;
+        }
+
+        @media print {
+            .no-print-row {
+                display: table-row !important;
+            }
+        }
     </style>
 @endpush
 
@@ -287,7 +298,8 @@
     <div class="mx-auto mb-8" style="max-width:90%; margin-top: -8rem; position: relative; z-index: 10;">
         <div class="flex gap-6">
             <!-- Left Graphs Section -->
-            <div class="flex-1 space-y-6" style="background: white; padding: 1rem 1.5rem; border-radius: 12px;">
+            <div id="graphsSection" class="flex-1 space-y-6"
+                style="background: white; padding: 1rem 1.5rem; border-radius: 12px;">
                 <!-- Monthly Complaints and TVRR Complaints Row -->
                 <div class="grid grid-cols-2 gap-4">
                     <!-- Monthly Complaints -->
@@ -315,68 +327,125 @@
                     </div>
                 </div>
             </div>
+            <!-- Complaints Table Panel (hidden until a stat card is clicked) -->
+            <div id="complaintsTableSection"
+                class="flex-1 hidden flex-col space-y-4 bg-white rounded-xl shadow p-4"
+                style="min-height: 400px;">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <h2 id="complaintsTableTitle" class="text-xl font-semibold mb-1">Complaints</h2>
+                        <p id="complaintsTableSubtitle" class="text-sm text-gray-500">Showing recent complaints</p>
+                    </div>
+                    <button id="closeComplaintsTable"
+                        class="px-3 py-1.5 text-sm font-semibold text-gray-700 border border-gray-200 rounded hover:bg-gray-100">
+                        Close & Show Graphs
+                    </button>
+                </div>
+                <div class="overflow-x-auto border border-gray-100 rounded-lg">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-3 py-2 text-left font-semibold text-gray-700">CMP-ID</th>
+                                <th class="px-3 py-2 text-left font-semibold text-gray-700">Registration</th>
+                                <th class="px-3 py-2 text-left font-semibold text-gray-700">Addressed</th>
+                                <th class="px-3 py-2 text-left font-semibold text-gray-700">Complainant</th>
+                                <th class="px-3 py-2 text-left font-semibold text-gray-700">Address</th>
+                                <th class="px-3 py-2 text-left font-semibold text-gray-700">Type</th>
+                                <th class="px-3 py-2 text-left font-semibold text-gray-700">Phone</th>
+                                <th class="px-3 py-2 text-left font-semibold text-gray-700 text-center">Status</th>
+                                <th class="px-3 py-2 text-left font-semibold text-gray-700 text-center">View</th>
+                            </tr>
+                        </thead>
+                        <tbody id="complaintsTableBody" class="divide-y divide-gray-100 bg-white">
+                            <tr>
+                                <td colspan="9" class="px-3 py-6 text-center text-gray-500">Select a status card to
+                                    load complaints.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="flex items-center justify-between text-sm text-gray-600">
+                    <div id="complaintsPaginationInfo" class="py-2">Showing 0–0 of 0</div>
+                    <div id="complaintsPagination" class="flex items-center gap-1">
+                        <button data-page="prev"
+                            class="px-3 py-1 border rounded text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">Prev</button>
+                        <span id="complaintsPageDots" class="px-2">1</span>
+                        <button data-page="next"
+                            class="px-3 py-1 border rounded text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">Next</button>
+                    </div>
+                </div>
+            </div>
             <!-- Right Stats Boxes Section -->
             <div class="w-96 grid grid-cols-2 gap-3"
                 style="background: white; padding: 2rem 3rem; border-radius: 12px; align-self: start;">
                 <!-- Total Complaints (First) -->
-                <div class="text-white rounded-xl text-center font-bold flex flex-col items-center justify-start"
+                <div class="stat-card text-white rounded-xl text-center font-bold flex flex-col items-center justify-start cursor-pointer"
+                    data-status-key="all" data-title="Total Complaints" role="button"
                     style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); min-height: 120px; padding: 1rem 0.75rem;">
                     <span id="stat-total-complaints" class="text-3xl mb-1 font-bold"
                         style="line-height: 1.2; font-weight: 700;">{{ $stats['total_complaints'] ?? 0 }}</span>
                     <span class="text-sm font-bold" style="line-height: 1.2; font-weight: 700;">Total Complaints</span>
                 </div>
                 <!-- In Progress -->
-                <div class="text-white rounded-xl text-center font-bold flex flex-col items-center justify-start"
+                <div class="stat-card text-white rounded-xl text-center font-bold flex flex-col items-center justify-start cursor-pointer"
+                    data-status-key="in_progress" data-title="In Progress Complaints" role="button"
                     style="background: linear-gradient(135deg, #ec5454 0%, #b13030 100%); min-height: 120px; padding: 1rem 0.75rem;">
                     <span id="stat-in-progress" class="text-3xl mb-1 font-bold"
                         style="line-height: 1.2; font-weight: 700;">{{ $stats['in_progress'] ?? 0 }}</span>
                     <span class="text-sm font-bold" style="line-height: 1.2; font-weight: 700;">In Progress</span>
                 </div>
                 <!-- Addressed -->
-                <div class="text-white rounded-xl text-center font-bold flex flex-col items-center justify-start"
+                <div class="stat-card text-white rounded-xl text-center font-bold flex flex-col items-center justify-start cursor-pointer"
+                    data-status-key="resolved" data-title="Addressed Complaints" role="button"
                     style="background: linear-gradient(135deg, #475569 0%, #334155 100%); min-height: 120px; padding: 1rem 0.75rem;">
                     <span id="stat-addressed" class="text-3xl mb-1 font-bold"
                         style="line-height: 1.2; font-weight: 700;">{{ $stats['addressed'] ?? 0 }}</span>
                     <span class="text-sm font-bold" style="line-height: 1.2; font-weight: 700;">Addressed</span>
                 </div>
                 <!-- Assigned Complaints -->
-                <div class="text-white rounded-xl text-center font-bold flex flex-col items-center justify-start"
+                <div class="stat-card text-white rounded-xl text-center font-bold flex flex-col items-center justify-start cursor-pointer"
+                    data-status-key="assigned" data-title="Assigned Complaints" role="button"
                     style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); min-height: 120px; padding: 1rem 0.75rem;">
                     <span id="stat-assigned" class="text-3xl mb-1 font-bold"
                         style="line-height: 1.2; font-weight: 700;">{{ $stats['assigned'] ?? 0 }}</span>
                     <span class="text-sm font-bold" style="line-height: 1.2; font-weight: 700;">Assigned</span>
                 </div>
                 <!-- Work Performa -->
-                <div class="text-white rounded-xl text-center font-bold flex flex-col items-center justify-start"
+                <div class="stat-card text-white rounded-xl text-center font-bold flex flex-col items-center justify-start cursor-pointer"
+                    data-status-key="work_performa" data-title="Work Performa" role="button"
                     style="background: linear-gradient(135deg,rgb(69, 20, 247) 0%, #7c3aed 100%); min-height: 120px; padding: 1rem 0.75rem;">
                     <span id="stat-work-performa" class="text-3xl mb-1 font-bold"
                         style="line-height: 1.2; font-weight: 700;">{{ $stats['work_performa'] ?? 0 }}</span>
                     <span class="text-sm font-bold" style="line-height: 1.2; font-weight: 700;">Work Performa</span>
                 </div>
                 <!-- Maintenance Performa -->
-                <div class="text-white rounded-xl text-center font-bold flex flex-col items-center justify-start"
+                <div class="stat-card text-white rounded-xl text-center font-bold flex flex-col items-center justify-start cursor-pointer"
+                    data-status-key="maint_performa" data-title="Maintenance Performa" role="button"
                     style="background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%); min-height: 120px; padding: 1rem 0.75rem;">
                     <span id="stat-maint-performa" class="text-3xl mb-1 font-bold"
                         style="line-height: 1.2; font-weight: 700;">{{ $stats['maint_performa'] ?? 0 }}</span>
                     <span class="text-sm font-bold" style="line-height: 1.2; font-weight: 700;">Maintenance Performa</span>
                 </div>
                 <!-- Un Authorized -->
-                <div class="text-white rounded-xl text-center font-bold flex flex-col items-center justify-start"
+                <div class="stat-card text-white rounded-xl text-center font-bold flex flex-col items-center justify-start cursor-pointer"
+                    data-status-key="un_authorized" data-title="Un Authorized" role="button"
                     style="background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); min-height: 120px; padding: 1rem 0.75rem;">
                     <span id="stat-un-authorized" class="text-3xl mb-1 font-bold"
                         style="line-height: 1.2; font-weight: 700;">{{ $stats['un_authorized'] ?? 0 }}</span>
                     <span class="text-sm font-bold" style="line-height: 1.2; font-weight: 700;">Un Authorized</span>
                 </div>
                 <!-- Product N/A -->
-                <div class="text-white rounded-xl text-center font-bold flex flex-col items-center justify-start"
-                    style="background: linear-gradient(135deg, #0deb7cff 0%, #22995dff 100%); min-height: 120px; padding: 1rem 0.75rem;">
+                <div class="stat-card text-white rounded-xl text-center font-bold flex flex-col items-center justify-start cursor-pointer"
+                    data-status-key="product_na" data-title="Product N/A" role="button"
+                    style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); min-height: 120px; padding: 1rem 0.75rem;">
                     <span id="stat-product" class="text-3xl mb-1 font-bold"
                         style="line-height: 1.2; font-weight: 700;">{{ $stats['product'] ?? 0 }}</span>
                     <span class="text-sm font-bold" style="line-height: 1.2; font-weight: 700;">Product N/A</span>
                 </div>
 
                 <!-- Pertains to GE/Const/Isld -->
-                <div class="text-white rounded-xl text-center font-bold flex flex-col items-center justify-start"
+                <div class="stat-card text-white rounded-xl text-center font-bold flex flex-col items-center justify-start cursor-pointer"
+                    data-status-key="pertains_to_ge_const_isld" data-title="Pertains to GE/Const/Isld" role="button"
                     style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); min-height: 120px; padding: 1rem 0.75rem;">
                     <span id="stat-pertains-ge" class="text-3xl mb-1 font-bold"
                         style="line-height: 1.2; font-weight: 700;">{{ $stats['pertains_to_ge_const_isld'] ?? 0 }}</span>
@@ -385,15 +454,17 @@
                 </div>
 
                 <!-- Barak Damages -->
-                <div class="text-white rounded-xl text-center font-bold flex flex-col items-center justify-start"
+                <div class="stat-card text-white rounded-xl text-center font-bold flex flex-col items-center justify-start cursor-pointer"
+                    data-status-key="barak_damages" data-title="Barak Damages" role="button"
                     style="background: linear-gradient(135deg, #808000 0%, #808000 100%); min-height: 120px; padding: 1rem 0.75rem;">
                     <span id="stat-barak-damages" class="text-3xl mb-1 font-bold"
                         style="line-height: 1.2; font-weight: 700;">{{ $stats['barak_damages'] ?? 0 }}</span>
-                    <span class="text-sm font-bold" style="line-height: 1.2; font-weight: 700;">Barrak Damages</span>
+                    <span class="text-sm font-bold" style="line-height: 1.2; font-weight: 700;">Un Authorized Barrak Damages</span>
                 </div>
 
                 <!-- Overdue Complaints -->
-                <div class="text-white rounded-xl text-center font-bold flex flex-col items-center justify-start"
+                <div class="stat-card text-white rounded-xl text-center font-bold flex flex-col items-center justify-start cursor-pointer"
+                    data-status-key="overdue" data-title="Overdue Complaints" role="button"
                     style="background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); min-height: 120px; padding: 1rem 0.75rem;">
                     <span id="stat-overdue-complaints" class="text-3xl mb-1 font-bold"
                         style="line-height: 1.2; font-weight: 700;">{{ $stats['overdue_complaints'] ?? 0 }}</span>
@@ -413,8 +484,9 @@
 
         <!-- CME Complaints Graph Row -->
         <!-- Graphs Row -->
-        <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- CME/GE Graph -->
+        <!-- CME/GE Graph and Products Graph - Side by Side -->
+        <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <!-- CMES Graph (Left) -->
             <div class="bg-white rounded-xl shadow monthly-complaints-chart" style="position: relative; padding: 1rem;">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-semibold">
@@ -440,22 +512,10 @@
                 </div>
             </div>
 
-            <!-- Employee Performance Graph -->
-            <div class="bg-white rounded-xl shadow" style="position: relative; padding: 1rem;">
+            <!-- Top Products Graph (Right) -->
+            <div class="bg-white rounded-xl shadow monthly-complaints-chart" style="position: relative; padding: 1rem;">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-semibold">Employee Performance</h2>
-                </div>
-                <div class="h-80 w-full">
-                    <canvas id="employeePerformanceChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-
-        <!-- Top Categories by Usage Chart -->
-        <div class="mt-6 bg-white rounded-xl shadow monthly-complaints-chart" style="position: relative; padding: 1rem;">
-            <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-semibold">Stock Consumption by Category</h2>
+                    <h2 class="text-xl font-semibold">Top 10 Most Issued Products</h2>
                     <select id="categoryGraphFilter"
                         class="p-1.5 border rounded text-sm font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">All Time</option>
@@ -469,130 +529,162 @@
                     <canvas id="categoryUsageChart"></canvas>
                 </div>
             </div>
+        </div>
 
-            <!-- Monthly Performance Table -->
-            <div id="monthlyPerformanceReport" class="mt-8 bg-white rounded-xl shadow overflow-hidden">
-                <!-- Print-only heading -->
-                <div class="print-only" style="display: none;">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-4">
-                        @if($isCmeUser)
-                            Monthly Performance Report of GE
-                        @elseif($isGeUser)
-                            Monthly Performance Report of Node
-                        @elseif($isNodeUser)
-                            Monthly Performance Report of Node
-                        @else
-                            Monthly Performance Report of CMES
-                        @endif
-                    </h2>
-                </div>
-                <div class="p-6 border-b border-gray-200 flex justify-between items-center no-print">
-                    <h2 class="text-xl font-semibold text-gray-800">
-                        @if($isCmeUser)
-                            Monthly Performance Report of GE
-                        @elseif($isGeUser)
-                            Monthly Performance Report of Nodes
-                        @elseif($isNodeUser)
-                            Monthly Performance Report of Nodes
-                        @else
-                            Monthly Performance Report of CMES
-                        @endif
-                    </h2>
-                    <div class="flex space-x-2">
-                        <button onclick="printSection('monthlyPerformanceReport')"
-                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
-                            <svg class="fill-current w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                <path d="M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z" />
-                            </svg>
-                            Print PDF
-                        </button>
-                        <button onclick="exportTableToExcel('monthlyPerformanceTable', 'monthly_performance_report')"
-                            class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
-                            <svg class="fill-current w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                <path d="M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z" />
-                            </svg>
-                            Excel
-                        </button>
+        <!-- Monthly Performance Table -->
+        <div id="monthlyPerformanceReport" class="mt-8 bg-white rounded-xl shadow overflow-hidden">
+            <!-- Print-only heading -->
+            <div class="print-only" style="display: none;">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                    @if($isCmeUser)
+                        Monthly Performance Report of GE
+                    @elseif($isGeUser)
+                        Monthly Performance Report of Node
+                    @elseif($isNodeUser)
+                        Monthly Performance Report of Node
+                    @else
+                        Monthly Performance Report of CMES
+                    @endif
+                </h2>
+            </div>
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center no-print">
+                <h2 class="text-xl font-semibold text-gray-800">
+                    @if($isCmeUser)
+                        Monthly Performance Report of GE
+                    @elseif($isGeUser)
+                        Monthly Performance Report of Nodes
+                    @elseif($isNodeUser)
+                        Monthly Performance Report of Nodes
+                    @else
+                        Monthly Performance Report of CMES
+                    @endif
+                </h2>
+                <div class="flex space-x-2 relative inline-block text-left">
+                    <button onclick="toggleDropdown('monthlyReportDropdown')" type="button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
+                        Download Report
+                        <svg class="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    <div id="monthlyReportDropdown" class="origin-top-right absolute right-0 mt-10 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden" style="z-index: 50;">
+                        <div class="py-1">
+                            <button onclick="printSection('monthlyPerformanceReport'); toggleDropdown('monthlyReportDropdown')" class="text-gray-700 group flex items-center px-4 py-2 text-sm hover:bg-gray-100 w-full text-left">
+                                <svg class="mr-3 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z" />
+                                </svg>
+                                PDF
+                            </button>
+                            <button onclick="exportTableToExcel('monthlyPerformanceTable', 'monthly_performance_report'); toggleDropdown('monthlyReportDropdown')" class="text-gray-700 group flex items-center px-4 py-2 text-sm hover:bg-gray-100 w-full text-left">
+                                <svg class="mr-3 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z" />
+                                </svg>
+                                Excel
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <div class="overflow-x-auto">
-                    <table id="monthlyPerformanceTable" class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th rowspan="2"
-                                    class="px-4 py-1 text-left text-xs font-extrabold text-gray-900 uppercase tracking-wider border-r border-gray-200 sticky left-0 bg-gray-50 z-10">
-                                    Month</th>
-                                @foreach($tableEntities as $entity)
-                                    <th colspan="2"
-                                        class="px-2 py-1 text-center text-xs font-extrabold text-gray-900 uppercase tracking-wider border-r border-gray-200">
-                                        {{ $entity->name }}
-                                    </th>
-                                @endforeach
-                            </tr>
-                            <tr>
-                                @foreach($tableEntities as $entity)
-                                    <th
-                                        class="px-2 py-1 text-center text-xs font-bold text-gray-900 uppercase tracking-wider border-r border-gray-200">
-                                        Total</th>
-                                    <th
-                                        class="px-2 py-1 text-center text-xs font-bold text-gray-900 uppercase tracking-wider border-r border-gray-200">
-                                        Addressed</th>
-                                @endforeach
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @php
-                                $columnTotals = [];
-                                foreach ($tableEntities as $entity) {
-                                    $columnTotals[$entity->name]['total'] = 0;
-                                    $columnTotals[$entity->name]['resolved'] = 0;
-                                }
-                            @endphp
-                            @foreach($monthlyTableData as $month => $data)
-                                <tr class="hover:bg-gray-50">
-                                    <td
-                                        class="px-4 py-1 whitespace-nowrap text-sm font-medium text-gray-900 border-r border-gray-200 sticky left-0 bg-white z-10">
-                                        {{ $month }}
-                                    </td>
-                                    @foreach($tableEntities as $entity)
-                                        @php
-                                            $t = $data[$entity->name]['total'] ?? 0;
-                                            $r = $data[$entity->name]['resolved'] ?? 0;
-                                            $columnTotals[$entity->name]['total'] += $t;
-                                            $columnTotals[$entity->name]['resolved'] += $r;
-                                        @endphp
-                                        <td
-                                            class="px-2 py-1 whitespace-nowrap text-sm text-center text-gray-900 border-r border-gray-200">
-                                            {{ $t }}
-                                        </td>
-                                        <td
-                                            class="px-2 py-1 whitespace-nowrap text-sm text-center text-green-600 font-medium border-r border-gray-200">
-                                            {{ $r }}
-                                        </td>
-                                    @endforeach
-                                </tr>
+            </div>
+            <div class="overflow-x-auto">
+                <table id="monthlyPerformanceTable" class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th rowspan="2"
+                                class="px-4 py-1 text-left text-xs font-extrabold text-gray-900 uppercase tracking-wider border-r border-gray-200 sticky left-0 bg-gray-50 z-10">
+                                Month</th>
+                            @foreach($tableEntities as $entity)
+                                <th colspan="2"
+                                    class="px-2 py-1 text-center text-xs font-extrabold text-gray-900 uppercase tracking-wider border-r border-gray-200">
+                                    {{ $entity->name }}
+                                </th>
                             @endforeach
-                        </tbody>
-                        <tfoot class="bg-gray-100 font-bold">
-                            <tr>
+                        </tr>
+                        <tr>
+                            @foreach($tableEntities as $entity)
+                                <th
+                                    class="px-2 py-1 text-center text-xs font-bold text-gray-900 uppercase tracking-wider border-r border-gray-200">
+                                    Total</th>
+                                <th
+                                    class="px-2 py-1 text-center text-xs font-bold text-gray-900 uppercase tracking-wider border-r border-gray-200">
+                                    Addressed</th>
+                            @endforeach
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @php
+                            $columnTotals = [];
+                            foreach ($tableEntities as $entity) {
+                                $columnTotals[$entity->name]['total'] = 0;
+                                $columnTotals[$entity->name]['resolved'] = 0;
+                            }
+                        @endphp
+                        @foreach($monthlyTableData as $month => $data)
+                            <tr class="hover:bg-gray-50">
                                 <td
-                                    class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 sticky left-0 bg-gray-100 z-10">
-                                    Total</td>
+                                    class="px-4 py-1 whitespace-nowrap text-sm font-medium text-gray-900 border-r border-gray-200 sticky left-0 bg-white z-10">
+                                    {{ $month }}
+                                </td>
                                 @foreach($tableEntities as $entity)
+                                    @php
+                                        $t = $data[$entity->name]['total'] ?? 0;
+                                        $r = $data[$entity->name]['resolved'] ?? 0;
+                                        $columnTotals[$entity->name]['total'] += $t;
+                                        $columnTotals[$entity->name]['resolved'] += $r;
+                                    @endphp
                                     <td
-                                        class="px-2 py-3 whitespace-nowrap text-sm text-center text-gray-900 border-r border-gray-200">
-                                        {{ $columnTotals[$entity->name]['total'] }}
+                                        class="px-2 py-1 whitespace-nowrap text-sm text-center text-gray-900 border-r border-gray-200">
+                                        {{ $t }}
                                     </td>
                                     <td
-                                        class="px-2 py-3 whitespace-nowrap text-sm text-center text-green-600 border-r border-gray-200">
-                                        {{ $columnTotals[$entity->name]['resolved'] }}
+                                        class="px-2 py-1 whitespace-nowrap text-sm text-center text-green-600 font-medium border-r border-gray-200">
+                                        {{ $r }}
                                     </td>
                                 @endforeach
                             </tr>
-                        </tfoot>
-                    </table>
+                        @endforeach
+                    </tbody>
+                    <tfoot class="bg-gray-100 font-bold">
+                        <tr>
+                            <td
+                                class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 sticky left-0 bg-gray-100 z-10">
+                                Total</td>
+                            @foreach($tableEntities as $entity)
+                                <td
+                                    class="px-2 py-3 whitespace-nowrap text-sm text-center text-gray-900 border-r border-gray-200">
+                                    {{ $columnTotals[$entity->name]['total'] }}
+                                </td>
+                                <td
+                                    class="px-2 py-3 whitespace-nowrap text-sm text-center text-green-600 border-r border-gray-200">
+                                    {{ $columnTotals[$entity->name]['resolved'] }}
+                                </td>
+                            @endforeach
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- Graphs Row -->
+        <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Employee Performance Graph (Top 10 Most Assigned) -->
+            <div class="bg-white rounded-xl shadow" style="position: relative; padding: 1rem;">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">Employee Performance (Top 10)</h2>
+                </div>
+                <div class="h-80 w-full">
+                    <canvas id="employeePerformanceChart"></canvas>
                 </div>
             </div>
+
+            <!-- Least Assigned Employees Graph -->
+            <div class="bg-white rounded-xl shadow" style="position: relative; padding: 1rem;">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">Least Assigned Employees (Bottom 10)</h2>
+                </div>
+                <div class="h-80 w-full">
+                    <canvas id="employeeLeastAssignedChart"></canvas>
+                </div>
+            </div>
+        </div>
 
         <!-- Stock Consumption Table -->
                 <div id="stockConsumptionReport" class="mt-8 bg-white rounded-xl shadow overflow-hidden">
@@ -602,15 +694,29 @@
                     </div>
                     <div class="p-6 border-b border-gray-200 flex justify-between items-center no-print">
                         <h2 class="text-xl font-semibold text-gray-800">Stock Consumption Report</h2>
-                        <div class="flex space-x-2">
-                            <button onclick="printSection('stockConsumptionReport')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
-                                <svg class="fill-current w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z"/></svg>
-                                Print PDF
+                        <div class="flex space-x-2 relative inline-block text-left">
+                            <button onclick="toggleDropdown('stockReportDropdown')" type="button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
+                                Download Report
+                                <svg class="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
                             </button>
-                            <button onclick="exportTableToExcel('stockConsumptionTable', 'stock_consumption_report')" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
-                                <svg class="fill-current w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z"/></svg>
-                                Excel
-                            </button>
+                            <div id="stockReportDropdown" class="origin-top-right absolute right-0 mt-10 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden" style="z-index: 50;">
+                                <div class="py-1">
+                                    <button onclick="printSection('stockConsumptionReport'); toggleDropdown('stockReportDropdown')" class="text-gray-700 group flex items-center px-4 py-2 text-sm hover:bg-gray-100 w-full text-left">
+                                        <svg class="mr-3 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                            <path d="M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z" />
+                                        </svg>
+                                        PDF
+                                    </button>
+                                    <button onclick="exportTableToExcel('stockConsumptionTable', 'stock_consumption_report'); toggleDropdown('stockReportDropdown')" class="text-gray-700 group flex items-center px-4 py-2 text-sm hover:bg-gray-100 w-full text-left">
+                                        <svg class="mr-3 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                            <path d="M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z" />
+                                        </svg>
+                                        Excel
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -635,15 +741,19 @@
                                     $grandTotalReceived = 0;
                                     $grandTotalUsed = 0;
                                     $grandBalance = 0;
+                                    $rowIndex = 0; // Counter for limiting screen display
                                 @endphp
                                 @foreach($stockConsumptionData as $itemName => $data)
                                     @php
+                                        $rowIndex++;
                                         $grandTotalReceived += $data['total_received'];
                                         $grandTotalUsed += $data['total_used'];
                                         $grandBalance += $data['current_stock'];
+                                        // Add class to hide rows beyond 10 on screen (but show in print)
+                                        $rowClass = $rowIndex > 10 ? 'no-print-row' : '';
                                     @endphp
                                     <!-- Stock Received Row -->
-                                    <tr class="hover:bg-blue-50">
+                                    <tr class="hover:bg-blue-50 {{ $rowClass }}">
                                         <td class="px-6 py-1 whitespace-nowrap text-sm font-medium text-gray-900 border-r border-gray-200 sticky left-0 bg-white z-10">
                                             {{ $itemName }}
                                         </td>
@@ -696,12 +806,48 @@
 
             <!-- Footer -->
 
+            <!-- Complaint quick view modal -->
+            <div id="complaintModal"
+                class="fixed inset-0 z-50 hidden items-center justify-center bg-blue-900 bg-opacity-95 px-4 py-8" style="backdrop-filter: blur(50px); -webkit-backdrop-filter: blur(50px);">
+                <div class="w-full max-w-6xl bg-transparent shadow-none p-0" style="max-height: 95vh; overflow-y: auto;">
+                    <!-- Header removed, relying on partial's header -->
+                    <div id="modalBody" class="w-full p-0 block text-sm text-gray-700">
+                        <!-- populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ... footer ... -->
+
+
 @endsection
 
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script>
+    function toggleDropdown(id) {
+        var dropdown = document.getElementById(id);
+        if (dropdown.classList.contains('hidden')) {
+            // Close all
+            document.querySelectorAll('[id$="ReportDropdown"]').forEach(function(el) {
+                el.classList.add('hidden');
+            });
+            dropdown.classList.remove('hidden');
+        } else {
+            dropdown.classList.add('hidden');
+        }
+    }
+
+    // Close dropdowns on outside click
+    window.addEventListener('click', function(e) {
+        if (!e.target.closest('button[onclick^="toggleDropdown"]')) {
+            document.querySelectorAll('[id$="ReportDropdown"]').forEach(function(el) {
+                el.classList.add('hidden');
+            });
+        }
+    });
+
     // Register the datalabels plugin
     Chart.register(ChartDataLabels);
 
@@ -740,6 +886,270 @@
         const yearTdData = @json($yearTdData ?? []);
         const unauthorizedData = @json($unauthorizedData ?? []);
         const performaData = @json($performaData ?? []);
+        let dashboardComplaints = @json($dashboardComplaints ?? []);
+        // Server-side summary stats (used to show accurate totals even when complaints dataset is a sample)
+        let serverStats = @json($stats ?? []);
+
+        // DOM refs for interactive complaints table
+        const graphsSection = document.getElementById('graphsSection');
+        const complaintsTableSection = document.getElementById('complaintsTableSection');
+        const complaintsTableBody = document.getElementById('complaintsTableBody');
+        const complaintsTableTitle = document.getElementById('complaintsTableTitle');
+        const complaintsTableSubtitle = document.getElementById('complaintsTableSubtitle');
+        const closeComplaintsTableBtn = document.getElementById('closeComplaintsTable');
+        const complaintsPagination = document.getElementById('complaintsPagination');
+        const complaintsPaginationInfo = document.getElementById('complaintsPaginationInfo');
+        const complaintsPageDots = document.getElementById('complaintsPageDots');
+        const statCards = document.querySelectorAll('.stat-card');
+        const complaintModal = document.getElementById('complaintModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalClose = document.getElementById('closeComplaintModal');
+        let activeStatusKey = null;
+        let currentPage = 1;
+        const pageSize = 16;
+
+        const statusBadgeColors = {
+            assigned: '#16a34a',
+            in_progress: '#ec5454',
+            resolved: '#64748b',
+            work_performa: '#7c3aed',          // match Work Performa card (purple)
+            maint_performa: '#eab308',         // match Maintenance Performa card (yellow)
+            work_priced_performa: '#7c3aed',   // keep with work-performa family
+            maint_priced_performa: '#ea580c',  // orange for priced maint
+            product_na: '#f97316',
+            un_authorized: '#ec4899',
+            pertains_to_ge_const_isld: '#06b6d4',
+            barak_damages: '#808000',
+        };
+
+        // Short labels to match admin badges
+        const statusLabelOverrides = {
+            pertains_to_ge_const_isld: 'Pertains to GE',
+            work_performa: 'Work Performa',
+            maint_performa: 'Maint Performa',
+            work_priced_performa: 'Work Performa',
+            maint_priced_performa: 'Maint Performa',
+            product_na: 'Product NA',
+            in_progress: 'In Progress',
+        };
+
+        function badgeTemplate(label, color) {
+            return `<span class="inline-flex items-center justify-center text-xs font-semibold whitespace-nowrap"
+                style="color:#fff; background:${color}; width: 120px; padding: 0.35rem 0.5rem; border-radius:5px; text-align:center;">${label}</span>`;
+        }
+
+        function filterComplaintsByStatus(statusKey) {
+            if (!statusKey || statusKey === 'all') {
+                return dashboardComplaints;
+            }
+            if (statusKey === 'resolved') {
+                return dashboardComplaints.filter(c => c.status === 'resolved');
+            }
+            if (statusKey === 'overdue') {
+                return dashboardComplaints.filter(c => c.overdue);
+            }
+            return dashboardComplaints.filter(c => c.status === statusKey);
+        }
+
+        function renderComplaintsTable(statusKey = 'all', titleText = 'Complaints', toggleView = true, requestedPage = null) {
+            if (!complaintsTableSection || !complaintsTableBody) return;
+
+            activeStatusKey = statusKey || 'all';
+            complaintsTableSection.dataset.activeStatus = activeStatusKey;
+            complaintsTableSection.dataset.activeTitle = titleText;
+
+            if (requestedPage) {
+                currentPage = requestedPage;
+            }
+
+            const records = filterComplaintsByStatus(activeStatusKey);
+            complaintsTableTitle.textContent = titleText;
+            // Show that table contains a lightweight/sample dataset while totals come from server-side stats
+            const totalForStatus = (function() {
+                if (!activeStatusKey || activeStatusKey === 'all') return serverStats.total_complaints ?? records.length;
+                if (activeStatusKey === 'overdue') return serverStats.overdue_complaints ?? records.filter(r => r.overdue).length;
+                // Fall back to complaintsByStatus map (from server) or client-side sample count
+                return (complaintsByStatus && complaintsByStatus[activeStatusKey] !== undefined) ? complaintsByStatus[activeStatusKey] : records.length;
+            })();
+
+            complaintsTableSubtitle.textContent = `${records.length} sample record${records.length === 1 ? '' : 's'} of ${totalForStatus} total`;
+
+            if (toggleView) {
+                complaintsTableSection.classList.remove('hidden');
+                graphsSection?.classList.add('hidden');
+            }
+
+            if (!records.length) {
+                complaintsTableBody.innerHTML = `<tr><td colspan="9" class="px-3 py-6 text-center text-gray-500">No complaints found for this status.</td></tr>`;
+                updatePagination(0, 0, 0);
+                return;
+            }
+
+            const total = records.length;
+            const totalPages = Math.max(1, Math.ceil(total / pageSize));
+            currentPage = Math.min(Math.max(1, currentPage), totalPages);
+            const startIdx = (currentPage - 1) * pageSize;
+            const endIdx = Math.min(startIdx + pageSize, total);
+            const pageRecords = records.slice(startIdx, endIdx);
+            const viewIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>`;
+
+            complaintsTableBody.innerHTML = pageRecords.map(row => {
+                const statusColor = statusBadgeColors[row.status] || '#4b5563';
+                const statusLabel = statusLabelOverrides[row.status] || row.status_label || row.status;
+                const statusBadge = badgeTemplate(statusLabel, statusColor);
+                const cmpValue = row.cmp ?? row.id;
+                // Use a placeholder for the ID and replace it in JS to avoid Blade error for missing required parameter
+                const viewUrl = "{{ route('frontend.complaint.show', ':id') }}".replace(':id', row.id);
+
+                const typeLabel = row.designation && row.designation !== 'N/A'
+                    ? `${row.category} · ${row.designation}`
+                    : row.category;
+
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-3 py-2 font-semibold text-blue-600">CMP-${String(cmpValue ?? '').padStart(4, '0')}</td>
+                        <td class="px-3 py-2 text-gray-700">${row.created_at ?? '-'}</td>
+                        <td class="px-3 py-2 text-gray-700">${row.closed_at ?? '-'}</td>
+                        <td class="px-3 py-2 text-gray-700">${row.client_name ?? 'N/A'}</td>
+                        <td class="px-3 py-2 text-gray-700">${row.address ?? 'N/A'}</td>
+                        <td class="px-3 py-2 text-gray-700">${typeLabel ?? 'N/A'}</td>
+                        <td class="px-3 py-2 text-gray-700">${row.phone ?? '-'}</td>
+                        <td class="px-3 py-2 text-center">${statusBadge}</td>
+                        <td class="px-3 py-2 text-center">
+                            <button class="view-complaint-btn inline-flex items-center justify-center px-3 py-1 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded decoration-0"
+                                data-complaint-id="${row.id}">
+                                ${viewIcon}
+                                <span class="sr-only">View</span>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            updatePagination(startIdx + 1, endIdx, total, totalPages);
+            bindViewButtons();
+        }
+
+        function updatePagination(start, end, total, totalPages = null) {
+            if (!complaintsPagination || !complaintsPaginationInfo) return;
+
+            const prevBtn = complaintsPagination.querySelector('button[data-page="prev"]');
+            const nextBtn = complaintsPagination.querySelector('button[data-page="next"]');
+
+            const safeStart = total === 0 ? 0 : start;
+            const safeEnd = total === 0 ? 0 : end;
+            complaintsPaginationInfo.textContent = `Showing ${safeStart}–${safeEnd} of ${total}`;
+
+            if (prevBtn) {
+                prevBtn.disabled = currentPage <= 1;
+            }
+            if (nextBtn) {
+                nextBtn.disabled = totalPages ? currentPage >= totalPages : true;
+            }
+
+            if (complaintsPageDots && totalPages) {
+                complaintsPageDots.textContent = `Page ${currentPage} of ${totalPages}`;
+            }
+        }
+
+        function resetComplaintsPanel() {
+            complaintsTableSection?.classList.add('hidden');
+            graphsSection?.classList.remove('hidden');
+            activeStatusKey = null;
+        }
+
+        function bindViewButtons() {
+            const viewButtons = complaintsTableBody?.querySelectorAll('.view-complaint-btn') || [];
+            viewButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                   const id = btn.dataset.complaintId;
+                   openComplaintModal(id);
+                });
+            });
+        }
+
+        function openComplaintModal(id) {
+            if (!complaintModal || !modalBody) return;
+
+            // 1. Show modal IMMEDIATELY with loading state
+            // Use a slight skeleton-like loader or just a spinner for perceived speed
+            modalBody.innerHTML = `
+                <div class="p-12 text-center">
+                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white mb-4"></div>
+                    <p class="text-white text-lg font-medium">Loading details...</p>
+                </div>
+            `;
+            
+            // Hide default modal header container since the partial includes its own header
+            const header = document.getElementById('modalTitleHeader');
+            if(header) header.style.display = 'none';
+
+            // Show the modal container instantly
+            complaintModal.classList.remove('hidden');
+            complaintModal.classList.add('flex');
+            
+            // 2. Fetch content asynchronously
+            const url = "{{ route('frontend.complaint.show', ':id') }}".replace(':id', id);
+            
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                modalBody.innerHTML = html;
+                if(typeof feather !== 'undefined') {
+                    feather.replace(); // Re-initialize icons
+                }
+            })
+            .catch(error => {
+                modalBody.innerHTML = '<div class="p-8 text-center text-red-400 font-bold">Failed to load details. Please try again.</div>';
+                console.error('Error fetching complaint details:', error);
+            });
+        }
+
+        modalClose?.addEventListener('click', () => {
+            complaintModal?.classList.add('hidden');
+            complaintModal?.classList.remove('flex');
+        });
+
+        complaintModal?.addEventListener('click', (e) => {
+            if (e.target === complaintModal) {
+                complaintModal.classList.add('hidden');
+                complaintModal.classList.remove('flex');
+            }
+        });
+
+        closeComplaintsTableBtn?.addEventListener('click', resetComplaintsPanel);
+
+        statCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const statusKey = card.dataset.statusKey || 'all';
+                const titleText = card.dataset.title || 'Complaints';
+                currentPage = 1;
+                renderComplaintsTable(statusKey, titleText, true);
+            });
+        });
+
+        complaintsPagination?.addEventListener('click', (e) => {
+            const target = e.target;
+            if (!(target instanceof HTMLElement)) return;
+            const action = target.dataset.page;
+            if (!action) return;
+
+            const records = filterComplaintsByStatus(activeStatusKey || 'all');
+            const totalPages = Math.max(1, Math.ceil((records.length || 0) / pageSize));
+
+            if (action === 'prev' && currentPage > 1) {
+                currentPage -= 1;
+            } else if (action === 'next' && currentPage < totalPages) {
+                currentPage += 1;
+            }
+
+            renderComplaintsTable(activeStatusKey || 'all', complaintsTableSection?.dataset.activeTitle || 'Complaints', false, currentPage);
+        });
 
         // Monthly Complaints Chart (Grouped Bar Chart)
         const ctx = document.getElementById('monthlyComplaintsChart').getContext('2d');
@@ -991,65 +1401,50 @@
             }
         });
 
-        // CME Complaints Chart (Line Chart)
+        // CME Complaints Chart (Bar Chart)
         const cmeLabels = @json($cmeGraphLabels ?? []);
         const cmeData = @json($cmeGraphData ?? []);
         const cmeResolvedData = @json($cmeResolvedData ?? []);
 
         const ctxCme = document.getElementById('cmeComplaintsChart').getContext('2d');
         const cmeComplaintsChart = new Chart(ctxCme, {
-            type: 'line',
+            type: 'bar',
             data: {
                 labels: cmeLabels,
                 datasets: [
                     {
                         label: 'Total Complaints',
                         data: cmeData,
-                        borderColor: '#8b5cf6', // Violet
-                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 5,
-                        pointBackgroundColor: '#8b5cf6',
-                        pointBorderColor: '#ffffff',
-                        pointBorderWidth: 2,
-                        pointHoverRadius: 7
+                        backgroundColor: '#8b5cf6', // Violet
+                        borderRadius: 4,
+                        borderSkipped: false
                     },
                     {
                         label: 'Addressed Complaints',
                         data: cmeResolvedData,
-                        borderColor: '#22c55e', // Green
-                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 5,
-                        pointBackgroundColor: '#22c55e',
-                        pointBorderColor: '#ffffff',
-                        pointBorderWidth: 2,
-                        pointHoverRadius: 7
+                        backgroundColor: '#22c55e', // Green
+                        borderRadius: 4,
+                        borderSkipped: false
                     }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                layout: {
-                    padding: {
-                        top: 25
-                    }
-                },
                 plugins: {
                     legend: {
                         display: true,
                         position: 'top',
+                        align: 'end',
                         labels: {
+                            usePointStyle: true,
+                            boxWidth: 8,
                             font: {
-                                size: 13,
+                                size: 11,
                                 weight: 'bold',
                                 family: 'Arial, sans-serif'
                             },
-                            padding: 20,
-                            usePointStyle: true
+                            padding: 15
                         }
                     },
                     tooltip: {
@@ -1065,24 +1460,10 @@
                         intersect: false
                     },
                     datalabels: {
-                        display: 'auto', // Automatically hide overlapping labels
-                        clamp: true, // Keep labels within chart area
-                        anchor: function(context) {
-                            // Alternate anchor based on dataset index to reduce collision
-                            return context.datasetIndex % 2 === 0 ? 'end' : 'start';
-                        },
-                        align: function(context) {
-                            // Alternate alignment based on dataset index
-                            return context.datasetIndex % 2 === 0 ? 'top' : 'bottom';
-                        },
-                        offset: 8,
+                        color: '#fff',
                         font: {
-                            size: 10,
                             weight: 'bold',
-                            family: 'Arial, sans-serif'
-                        },
-                        color: function(context) {
-                            return context.dataset.borderColor;
+                            size: 10
                         },
                         formatter: function(value) {
                             return value > 0 ? value : '';
@@ -1096,7 +1477,7 @@
                         },
                         ticks: {
                             font: {
-                                size: 12,
+                                size: 11,
                                 weight: 'bold',
                                 family: 'Arial, sans-serif'
                             },
@@ -1105,7 +1486,6 @@
                     },
                     y: {
                         beginAtZero: true,
-                        grace: '10%', // Add 10% extra space at the top
                         grid: {
                             color: 'rgba(0, 0, 0, 0.05)'
                         },
@@ -1116,11 +1496,6 @@
                             precision: 0
                         }
                     }
-                },
-                interaction: {
-                    mode: 'nearest',
-                    axis: 'x',
-                    intersect: false
                 }
             }
         });
@@ -1211,6 +1586,116 @@
             }
         });
 
+        // Least Assigned Employees Chart (Bottom 10)
+        const empLeastLabels = @json($empLeastGraphLabels ?? []);
+        const empLeastTotalData = @json($empLeastGraphTotal ?? []);
+        const empLeastResolvedData = @json($empLeastGraphResolved ?? []);
+
+        const ctxEmpLeast = document.getElementById('employeeLeastAssignedChart').getContext('2d');
+        const employeeLeastAssignedChart = new Chart(ctxEmpLeast, {
+            type: 'bar',
+            data: {
+                labels: empLeastLabels,
+                datasets: [
+                    {
+                        label: 'Total Complaints',
+                        data: empLeastTotalData,
+                        backgroundColor: '#f97316', // Orange (different from main employee chart)
+                        borderRadius: 4,
+                        barPercentage: 0.6,
+                        categoryPercentage: 0.8,
+                        order: 2 // Draw first (behind)
+                    },
+                    {
+                        label: 'Addressed Complaints',
+                        data: empLeastResolvedData,
+                        backgroundColor: '#8b5cf6', // Purple (different from main employee chart)
+                        borderRadius: 4,
+                        barPercentage: 0.6,
+                        categoryPercentage: 0.8,
+                        order: 1 // Draw second (on top)
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        align: 'end',
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 8,
+                            font: {
+                                size: 11
+                            }
+                        }
+                    },
+                    datalabels: {
+                        color: '#fff',
+                        font: {
+                            weight: 'bold',
+                            size: 10
+                        },
+                        formatter: function(value) {
+                            return value > 0 ? value : '';
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            font: {
+                                size: 11
+                            }
+                        }
+                    },
+                    y: {
+                        stacked: false,
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            precision: 0,
+                            font: {
+                                size: 11
+                            }
+                        }
+                    }
+                }
+            },
+            plugins: [{
+                id: 'redFlagPlugin',
+                afterDatasetsDraw: function(chart) {
+                    const ctx = chart.ctx;
+                    const xAxis = chart.scales.x;
+                    const yAxis = chart.scales.y;
+                    
+                    // Draw red flag for employees with zero assignments
+                    empLeastTotalData.forEach((value, index) => {
+                        if (value === 0) {
+                            const x = xAxis.getPixelForValue(index);
+                            const y = yAxis.getPixelForValue(0) - 40; // Position above the x-axis
+                            
+                            ctx.save();
+                            ctx.font = '30px Arial'; // Large size
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText('🚩', x, y);
+                            ctx.restore();
+                        }
+                    });
+                }
+            }]
+        });
+
+
         // Complaints by Status Chart (Donut Chart) - Using same colors as admin side
         const statusMap = {
             'assigned': { label: 'Assigned', color: '#16a34a' }, // Green
@@ -1220,7 +1705,7 @@
             'maint_performa': { label: 'Maint Performa', color: '#eab308' }, // Yellow
             'work_priced_performa': { label: 'Work Priced', color: '#9333ea' }, // Purple
             'maint_priced_performa': { label: 'Maint Priced', color: '#ea580c' }, // Dark Orange
-            'product_na': { label: 'Product N/A', color: '#0deb7c' }, // Green
+            'product_na': { label: 'Product N/A', color: '#f97316' }, // Orange
             'un_authorized': { label: 'Un-Authorized', color: '#ec4899' }, // Pink
             'pertains_to_ge': { label: 'Pertains to GE', color: '#8b5cf6' }, // Violet
             'pertains_to_ge_const_isld': { label: 'Pertains to GE(N)', color: '#06b6d4' }, // Aqua/Cyan
@@ -1571,12 +2056,21 @@
                 }
             })
             .then(data => {
-                if (data && data.stats) {
-                    // Update stats boxes
-                    updateStats(data.stats);
+                    if (data && data.stats) {
+                        // Update stats boxes and local serverStats copy
+                        serverStats = data.stats;
+                        updateStats(data.stats);
 
                     // Update charts
                     updateCharts(data);
+
+                    // Update complaints dataset for table
+                    if (data.dashboardComplaints) {
+                        dashboardComplaints = data.dashboardComplaints;
+                        if (complaintsTableSection && !complaintsTableSection.classList.contains('hidden')) {
+                            renderComplaintsTable(activeStatusKey || 'all', complaintsTableSection.dataset.activeTitle || 'Complaints', false, currentPage);
+                        }
+                    }
 
                     // Update URL without reload
                     window.history.pushState({}, '', '{{ route("frontend.dashboard") }}?' + params.toString());
@@ -1945,8 +2439,8 @@
     <style>
     @media print {
         @page {
-            size: landscape;
-            margin: 5mm;
+            size: auto;
+            margin: 10mm;
         }
         body * {
             visibility: hidden;
@@ -1962,17 +2456,32 @@
             margin: 0;
             padding: 0;
             background: white;
+            page-break-after: avoid;
+            max-height: 100%;
+            overflow: hidden;
         }
         /* Optimize table for print */
         table {
             width: 100%;
             font-size: 10px; /* Smaller font */
             border-collapse: collapse;
+            page-break-inside: avoid;
         }
         th, td {
             padding: 4px 2px !important; /* Reduce padding */
             border: 1px solid #ddd !important; /* Ensure borders are visible */
             white-space: nowrap; /* Prevent wrapping if possible */
+        }
+        /* Prevent page breaks in table rows */
+        tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
+        }
+        thead {
+            display: table-header-group;
+        }
+        tfoot {
+            display: table-footer-group;
         }
         /* Hide scrollbars */
         .overflow-x-auto {

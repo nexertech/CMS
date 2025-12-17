@@ -122,9 +122,7 @@ class SlaController extends Controller
         $validator = Validator::make($request->all(), [
             'complaint_type' => $categoryRule,
             'priority' => 'required|in:low,medium,high,urgent',
-            'max_response_time' => 'required|integer|min:1',
             'max_resolution_time' => 'required|integer|min:1',
-            'notify_to' => 'required|exists:users,id',
             'description' => 'nullable|string|max:255',
             'status' => 'required|in:active,inactive',
         ]);
@@ -135,7 +133,12 @@ class SlaController extends Controller
                 ->withInput();
         }
 
-        $slaRule = SlaRule::create($request->all());
+        // Set defaults for removed fields
+        $data = $request->all();
+        $data['max_response_time'] = 0;
+        $data['notify_to'] = null;
+
+        $slaRule = SlaRule::create($data);
 
         return redirect()->route('admin.sla.index')
             ->with('success', 'SLA rule created successfully.');
@@ -222,9 +225,7 @@ class SlaController extends Controller
         $validator = Validator::make($request->all(), [
             'complaint_type' => $categoryRule,
             'priority' => 'required|in:low,medium,high,urgent',
-            'max_response_time' => 'required|integer|min:1',
             'max_resolution_time' => 'required|integer|min:1',
-            'notify_to' => 'required|exists:users,id',
             'description' => 'nullable|string|max:255',
             'status' => 'required|in:active,inactive',
         ]);
@@ -235,7 +236,12 @@ class SlaController extends Controller
                 ->withInput();
         }
 
-        $sla->update($request->all());
+        // Set defaults for removed fields
+        $data = $request->all();
+        $data['max_response_time'] = 0;
+        $data['notify_to'] = null;
+
+        $sla->update($data);
 
         return redirect()->route('admin.sla.index')
             ->with('success', 'SLA rule updated successfully.');

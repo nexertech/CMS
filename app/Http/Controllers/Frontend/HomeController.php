@@ -529,6 +529,63 @@ class HomeController extends Controller
             ->limit(10)
             ->get();
 
+        // Dataset for dashboard complaint table
+        $performaStatuses = [
+            'work_performa',
+            'maint_performa',
+            'work_priced_performa',
+            'maint_priced_performa',
+            'product_na',
+        ];
+
+        $dashboardComplaints = (clone $complaintsQuery)
+            ->with(['client', 'assignedEmployee'])
+            ->orderBy('id', 'desc')
+            ->get()
+            ->map(function ($complaint) use ($performaStatuses) {
+                $statusKey = $complaint->status === 'new' ? 'assigned' : $complaint->status;
+                $statusKey = $statusKey === 'closed' ? 'resolved' : $statusKey;
+
+                $statusLabel = $statusKey === 'resolved'
+                    ? 'Addressed'
+                    : ucfirst(str_replace('_', ' ', $statusKey));
+
+                $performaType = in_array($complaint->status, $performaStatuses, true)
+                    ? $complaint->status
+                    : null;
+
+                $client = $complaint->client;
+
+                $createdAt = $complaint->created_at
+                    ? $complaint->created_at->timezone('Asia/Karachi')->format('M d, Y H:i')
+                    : null;
+                $closedAt = $complaint->closed_at
+                    ? $complaint->closed_at->timezone('Asia/Karachi')->format('M d, Y H:i')
+                    : null;
+
+                return [
+                    'id' => $complaint->id,
+                    'cmp' => (int) ($complaint->complaint_id ?? $complaint->id),
+                    'status' => $statusKey,
+                    'status_label' => $statusLabel,
+                    'performa_type' => $performaType,
+                    'performa_label' => $performaType ? ucfirst(str_replace('_', ' ', $performaType)) : '-',
+                    'category' => $complaint->category_display ?? ucfirst($complaint->category ?? 'N/A'),
+                    'designation' => $complaint->assignedEmployee->designation ?? 'N/A',
+                    'client_name' => $client->client_name ?? 'N/A',
+                    'address' => $client->address
+                        ?? $client->home_address
+                        ?? $client->house_no
+                        ?? 'N/A',
+                    'phone' => $client->phone ?? $client->mobile ?? '-',
+                    'created_at' => $createdAt,
+                    'closed_at' => $closedAt,
+                    'overdue' => $complaint->isOverdue(),
+                    'view_url' => route('admin.complaints.show', $complaint->id),
+                ];
+            })
+            ->values();
+
         // Get monthly complaints data (current year)
         $monthlyComplaints = [];
         $monthLabels = [];
@@ -606,12 +663,43 @@ class HomeController extends Controller
                 }
             ])
             ->orderBy('assigned_complaints_count', 'desc')
+            ->limit(10)
             ->get();
 
-        // Prepare Employee Graph Data
+        // Prepare Employee Graph Data (Top 10 Most Assigned)
         $empGraphLabels = $employeePerformance->pluck('name')->toArray();
         $empGraphTotal = $employeePerformance->pluck('assigned_complaints_count')->toArray();
         $empGraphResolved = $employeePerformance->pluck('resolved_complaints_count')->toArray();
+
+        // Get Employees with Least Assigned Complaints (Bottom 10)
+        $employeeLeastAssignedQuery = Employee::query();
+        $this->filterEmployeesByLocation($employeeLeastAssignedQuery, $user);
+        $this->applyFrontendLocationScope($employeeLeastAssignedQuery, $locationScope);
+        $employeeLeastAssigned = $employeeLeastAssignedQuery
+            ->withCount([
+                'assignedComplaints' => function ($query) use ($user, $self, $locationScope) {
+                    $query->where('created_at', '>=', now()->subDays(30));
+                    $self->filterComplaintsByLocationForFrontend($query, $user, $locationScope);
+                },
+                'assignedComplaints as pending_complaints_count' => function ($query) use ($user, $self, $locationScope) {
+                    $query->where('created_at', '>=', now()->subDays(30))
+                        ->whereIn('status', ['new', 'assigned', 'in_progress']);
+                    $self->filterComplaintsByLocationForFrontend($query, $user, $locationScope);
+                },
+                'assignedComplaints as resolved_complaints_count' => function ($query) use ($user, $self, $locationScope) {
+                    $query->where('created_at', '>=', now()->subDays(30))
+                        ->whereIn('status', ['resolved', 'closed']);
+                    $self->filterComplaintsByLocationForFrontend($query, $user, $locationScope);
+                }
+            ])
+            ->orderBy('assigned_complaints_count', 'asc') // Ascending to get least assigned
+            ->limit(10)
+            ->get();
+
+        // Prepare Least Assigned Employee Graph Data
+        $empLeastGraphLabels = $employeeLeastAssigned->pluck('name')->toArray();
+        $empLeastGraphTotal = $employeeLeastAssigned->pluck('assigned_complaints_count')->toArray();
+        $empLeastGraphResolved = $employeeLeastAssigned->pluck('resolved_complaints_count')->toArray();
 
         $slaPerformance = [
             'total' => 0,
@@ -910,17 +998,18 @@ class HomeController extends Controller
             }
         }
 
-        // Get Top 5 Categories by Used Quantity
+        // Get Top 15 Products by Issued Quantity
         $categoryDateRange = $request->get('category_date_range');
 
         $categoryUsageQuery = \App\Models\Spare::selectRaw('
-                category,
+                item_name,
                 SUM(issued_quantity) as total_used,
                 SUM(total_received_quantity) as total_received
             ')
-            ->whereNotNull('category')
-            ->groupBy('category')
-            ->orderByDesc('total_used');
+            ->whereNotNull('item_name')
+            ->groupBy('item_name')
+            ->orderByDesc('total_used')
+            ->limit(15);
 
         // Apply date range filter if provided
         if ($categoryDateRange) {
@@ -942,15 +1031,12 @@ class HomeController extends Controller
             }
         }
 
-        // Apply location filtering to category usage data based on user privileges
+        // Apply location filtering to product usage data based on user privileges
         $this->applyFrontendLocationScope($categoryUsageQuery, $locationScope, 'city_id', 'sector_id');
 
         $categoryUsageData = $categoryUsageQuery->get();
 
-        $categoryLabels = $categoryUsageData->pluck('category')->map(function ($cat) {
-            // Capitalize category names for display
-            return ucfirst($cat);
-        })->toArray();
+        $categoryLabels = $categoryUsageData->pluck('item_name')->toArray();
 
         $categoryUsageValues = $categoryUsageData->pluck('total_used')->toArray();
         $categoryTotalReceivedValues = $categoryUsageData->pluck('total_received')->toArray();
@@ -968,6 +1054,7 @@ class HomeController extends Controller
                 'performaData' => $performaData,
                 'cmeGraphLabels' => $cmeGraphLabels,
                 'cmeGraphData' => $cmeGraphData,
+                'dashboardComplaints' => $dashboardComplaints,
                 'categoryLabels' => $categoryLabels,
                 'categoryUsageValues' => $categoryUsageValues,
                 'categoryTotalReceivedValues' => $categoryTotalReceivedValues,
@@ -1046,7 +1133,7 @@ class HomeController extends Controller
 
         // Prepare Stock Consumption Data - Monthly with Inventory Details
         $stockConsumptionData = [];
-        $sparesListQuery = \App\Models\Spare::orderBy('issued_quantity', 'desc')->limit(20);
+        $sparesListQuery = \App\Models\Spare::orderBy('issued_quantity', 'desc'); // No limit - fetch all for print/Excel
 
         // Apply location filtering to spares list based on user privileges
         $this->applyFrontendLocationScope($sparesListQuery, $locationScope, 'city_id', 'sector_id');
@@ -1179,9 +1266,13 @@ class HomeController extends Controller
             'isCmeUser',
             'isGeUser',
             'isNodeUser',
+            'dashboardComplaints',
             'empGraphLabels',
             'empGraphTotal',
             'empGraphResolved',
+            'empLeastGraphLabels',
+            'empLeastGraphTotal',
+            'empLeastGraphResolved',
             'monthlyTableData',
             'tableEntities',
             'stockConsumptionData',
@@ -1310,16 +1401,39 @@ class HomeController extends Controller
     }
 
     /**
+     * Show the complaint details.
+     */
+    public function show(Request $request, $id)
+    {
+        $complaint = Complaint::with([
+            'client',
+            'city',
+            'sector',
+            'assignedEmployee',
+            'attachments',
+            'spareApprovals',
+            'feedback.enteredBy'
+        ])->findOrFail($id);
+
+        if ($request->ajax()) {
+            return view('frontend.complaints.partials.detail_card', compact('complaint'))->render();
+        }
+
+        return view('frontend.complaints.show', compact('complaint'));
+    }
+
+    /**
      * Get rating score from rating text
      */
-    private function getRatingScore($rating): int
+    public function getRatingScore($rating)
     {
-        return match ($rating) {
-            'excellent' => 5,
-            'good' => 4,
-            'average' => 3,
-            'poor' => 2,
-            default => 3
-        };
+        switch ($rating) {
+            case 'Excellent': return 5;
+            case 'Good': return 4;
+            case 'Average': return 3;
+            case 'Below Average': return 2;
+            case 'Poor': return 1;
+            default: return 0;
+        }
     }
 }

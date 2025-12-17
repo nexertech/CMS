@@ -19,6 +19,7 @@ Route::middleware('auth:frontend')->group(function () {
     Route::post('/user-profile', [FrontendHomeController::class, 'updateProfile'])->name('frontend.profile.update');
     Route::get('/change-password', [FrontendHomeController::class, 'changePassword'])->name('frontend.password');
     Route::post('/change-password', [FrontendHomeController::class, 'updatePassword'])->name('frontend.password.update');
+    Route::get('/complaint/{id}', [FrontendHomeController::class, 'show'])->name('frontend.complaint.show');
 });
 
 

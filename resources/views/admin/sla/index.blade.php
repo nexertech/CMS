@@ -53,9 +53,7 @@
           <th >ID</th>
           <th >Rule Name</th>
           <th >Priority</th>
-          <th >Response Time</th>
           <th >Resolution Time</th>
-          <th >Notify To</th>
           <th >Status</th>
           <th >Created</th>
           <th >Actions</th>
@@ -80,9 +78,7 @@
               </span>
             @endif
               </td>
-          <td >{{ $rule->max_response_time }} hours</td>
           <td >{{ $rule->max_resolution_time ?? 'N/A' }} hours</td>
-          <td >{{ $rule->notifyTo->name ?? 'N/A' }}</td>
           <td>
             <span class="status-badge status-{{ $rule->status ?? 'active' }}" style="color: #ffffff !important;">
               {{ ucfirst($rule->status ?? 'active') }}

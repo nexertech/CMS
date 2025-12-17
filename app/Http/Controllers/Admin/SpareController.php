@@ -18,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class SpareController extends Controller
 {
@@ -770,6 +771,10 @@ class SpareController extends Controller
             // Reload spare to get updated stock quantity
             $spare->refresh();
 
+            // IMPORTANT: Stock has been issued successfully at this point
+            // The following operations are optional post-processing
+            // They should not cause the entire request to fail
+
             // Create stock approval data record if approval_id is provided (from approval modal)
             // Convert approval_id to integer if it's a string
             $finalApprovalId = null;
@@ -813,6 +818,7 @@ class SpareController extends Controller
                         'approval_id' => $finalApprovalId,
                         'error' => $e->getMessage()
                     ]);
+                    // Don't fail the entire request - stock was already issued successfully
                 }
             }
 
@@ -830,12 +836,14 @@ class SpareController extends Controller
                         'complaint_id' => $complaint->id,
                         'error' => $e->getMessage()
                     ]);
+                    // Don't fail the entire request - stock was already issued successfully
                 }
             }
             
             // waiting_for_authority removed - stock is issued directly when authority code is added
             // No need to check or update waiting_for_authority flag
 
+            // Return success response - stock has been issued successfully
             return response()->json([
                 'success' => true,
                 'message' => 'Stock issued successfully',

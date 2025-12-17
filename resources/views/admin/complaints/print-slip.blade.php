@@ -33,8 +33,8 @@
             padding: 0;
             color: var(--primary-color);
             background: white;
-            line-height: 1.5;
-            font-size: 14px;
+            line-height: 1.4;
+            font-size: 11px;
         }
 
         .container {
@@ -42,7 +42,7 @@
             /* A4 width approx */
             margin: 0 auto;
             background: white;
-            padding: 40px;
+            padding: 25px;
         }
 
         /* Header */
@@ -50,23 +50,23 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            padding-bottom: 20px;
+            padding-bottom: 12px;
             border-bottom: 2px solid var(--primary-color);
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         .brand-section h1 {
             margin: 0;
-            font-size: 24px;
+            font-size: 18px;
             font-weight: 700;
             letter-spacing: -0.5px;
             text-transform: uppercase;
         }
 
         .brand-section p {
-            margin: 5px 0 0;
+            margin: 3px 0 0;
             color: var(--secondary-color);
-            font-size: 13px;
+            font-size: 11px;
         }
 
         .meta-section {
@@ -74,16 +74,16 @@
         }
 
         .meta-section .slip-title {
-            font-size: 16px;
+            font-size: 13px;
             font-weight: 600;
             color: var(--secondary-color);
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         }
 
         .meta-section .date {
-            font-size: 13px;
+            font-size: 11px;
             color: var(--secondary-color);
         }
 
@@ -91,18 +91,18 @@
         .grid-2 {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 40px;
-            margin-bottom: 30px;
+            gap: 25px;
+            margin-bottom: 20px;
         }
 
         .section-title {
-            font-size: 12px;
+            font-size: 10px;
             font-weight: 700;
             text-transform: uppercase;
             color: var(--secondary-color);
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             border-bottom: 1px solid var(--border-color);
-            padding-bottom: 8px;
+            padding-bottom: 5px;
             letter-spacing: 0.5px;
         }
 
@@ -113,28 +113,29 @@
         }
 
         .data-table td {
-            padding: 6px 0;
+            padding: 4px 0;
             vertical-align: top;
         }
 
         .label {
-            width: 100px;
+            width: 90px;
             font-weight: 500;
             color: var(--secondary-color);
-            font-size: 13px;
+            font-size: 11px;
         }
 
         .value {
             font-weight: 600;
             color: var(--primary-color);
+            font-size: 11px;
         }
 
         /* Badges */
         .badge {
             display: inline-block;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 9px;
             font-weight: 600;
             text-transform: uppercase;
         }
@@ -188,39 +189,66 @@
         .description-box {
             background: var(--bg-light);
             border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 20px;
-            margin-bottom: 30px;
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 18px;
         }
 
         .description-box p {
             margin: 0;
             white-space: pre-line;
+            font-size: 11px;
         }
 
-        /* Feedback Section - Professional Scan Look */
+        /* Comments Section - Inside Feedback */
+        .comments-section {
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .comments-header {
+            font-size: 9px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--secondary-color);
+            margin-bottom: 5px;
+            letter-spacing: 0.3px;
+        }
+
+        .comments-box {
+            min-height: 40px;
+            border: 1px dashed var(--border-color);
+            border-radius: 3px;
+            padding: 6px;
+            background: var(--bg-light);
+            font-size: 10px;
+            color: var(--secondary-color);
+        }
+
+        /* Feedback Section - Professional Scan Look - Compact */
         .feedback-container {
             border: 2px dashed var(--border-color);
-            border-radius: 8px;
-            padding: 25px;
-            margin-top: 40px;
+            border-radius: 5px;
+            padding: 12px;
+            margin-top: 15px;
             page-break-inside: avoid;
         }
 
         .feedback-header {
             text-align: center;
-            margin-bottom: 25px;
+            margin-bottom: 10px;
         }
 
         .feedback-header h3 {
-            margin: 0 0 5px;
-            font-size: 16px;
+            margin: 0 0 2px;
+            font-size: 12px;
             font-weight: 700;
         }
 
         .feedback-header p {
             margin: 0;
-            font-size: 12px;
+            font-size: 9px;
             color: var(--secondary-color);
         }
 
@@ -228,7 +256,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 30px;
+            gap: 20px;
         }
 
         /* Manual Feedback Side */
@@ -239,35 +267,35 @@
         .rating-options {
             display: flex;
             justify-content: space-around;
-            margin-bottom: 25px;
+            margin-bottom: 15px;
         }
 
         .rating-box {
             text-align: center;
-            padding: 10px;
+            padding: 5px;
             border: 1px solid transparent;
         }
 
         .circle-checkbox {
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             border: 2px solid var(--primary-color);
             border-radius: 50%;
-            margin: 0 auto 8px;
+            margin: 0 auto 5px;
             transition: all 0.2s;
         }
 
         .rating-label {
             display: block;
-            font-size: 12px;
+            font-size: 10px;
             font-weight: 600;
             text-transform: uppercase;
         }
 
         .emoji-icon {
-            width: 32px;
-            height: 32px;
-            margin-bottom: 5px;
+            width: 24px;
+            height: 24px;
+            margin-bottom: 3px;
             fill: none;
             stroke: var(--primary-color);
             stroke-width: 2;
@@ -277,8 +305,8 @@
 
         /* Signature Line */
         .signature-area {
-            margin-top: 20px;
-            padding-top: 20px;
+            margin-top: 12px;
+            padding-top: 12px;
             border-top: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
@@ -286,11 +314,11 @@
         }
 
         .sign-line {
-            width: 200px;
+            width: 180px;
             border-bottom: 1px dashed #333;
             text-align: center;
-            font-size: 11px;
-            padding-bottom: 5px;
+            font-size: 10px;
+            padding-bottom: 3px;
             color: var(--secondary-color);
         }
 
@@ -299,12 +327,12 @@
             flex: 1;
             text-align: center;
             border-left: 1px solid var(--border-color);
-            padding-left: 30px;
+            padding-left: 20px;
         }
 
         .qr-box {
             background: white;
-            padding: 10px;
+            padding: 8px;
             display: inline-block;
             border: 1px solid var(--border-color);
             border-radius: 4px;
@@ -312,15 +340,15 @@
 
         .qr-box img {
             display: block;
-            width: 80px;
-            height: 80px;
+            width: 70px;
+            height: 70px;
         }
 
         .qr-label {
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 500;
             color: var(--secondary-color);
-            margin-top: 5px;
+            margin-top: 4px;
             display: block;
         }
 
@@ -386,7 +414,7 @@
             </div>
             <div class="meta-section">
                 <div class="slip-title">Service Request Slip</div>
-                <div class="date">Printed: {{ now()->format('M d, Y h:i A') }}</div>
+                <div class="date">Printed: {{ now()->timezone('Asia/Karachi')->format('M d, Y H:i') }}</div>
             </div>
         </div>
 
@@ -461,8 +489,8 @@
                     </tr>
                     <tr>
                         <td class="label">Date:</td>
-                        <td class="value">{{ $complaint->created_at->format('M d, Y') }}<br><span
-                                style="font-size: 11px; font-weight: normal; color: #666;">{{ $complaint->created_at->format('h:i A') }}</span>
+                        <td class="value">{{ $complaint->created_at->timezone('Asia/Karachi')->format('M d, Y') }}<br><span
+                                style="font-size: 11px; font-weight: normal; color: #666;">{{ $complaint->created_at->timezone('Asia/Karachi')->format('H:i') }}</span>
                         </td>
                     </tr>
                 </table>
@@ -553,6 +581,14 @@
                             </svg>
                             <label class="rating-label" style="color: #b91c1c;">Poor</label>
                             <div class="circle-checkbox" style="margin-top: 5px;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Comments Section -->
+                    <div class="comments-section">
+                        <div class="comments-header">Comments / Manual Notes</div>
+                        <div class="comments-box">
+                            <!-- Empty space for manual comments -->
                         </div>
                     </div>
 

@@ -197,18 +197,18 @@
                   'maint_performa' => ['bg' => '#eab308', 'text' => '#ffffff', 'border' => '#ca8a04'], // Dark Yellow
                   'work_priced_performa' => ['bg' => '#9333ea', 'text' => '#ffffff', 'border' => '#7e22ce'], // Purple
                   'maint_priced_performa' => ['bg' => '#ea580c', 'text' => '#ffffff', 'border' => '#c2410c'], // Dark Orange
-                  'product_na' => ['bg' => '#0deb7c', 'text' => '#ffffff', 'border' => '#06b366'], // Green (from stat card)
+                  'product_na' => ['bg' => '#f97316', 'text' => '#ffffff', 'border' => '#c2410c'], // Orange
                 ];
 
                 // Status column colors (updated to match dashboard stat cards)
                 $statusColors = [
-                  'in_progress' => ['bg' => '#3c2d9c', 'text' => '#ffffff', 'border' => '#2a1f6f'], // Purple (from stat card)
+                  'in_progress' => ['bg' => '#dc2626', 'text' => '#ffffff', 'border' => '#b91c1c'], // Red
                   'resolved' => ['bg' => '#64748b', 'text' => '#ffffff', 'border' => '#475569'], // Grey (swapped from green)
-                  'work_performa' => ['bg' => '#3c2d9c', 'text' => '#ffffff', 'border' => '#2a1f6f'], // Purple (for status column)
-                  'maint_performa' => ['bg' => '#3c2d9c', 'text' => '#ffffff', 'border' => '#2a1f6f'], // Purple (for status column)
-                  'work_priced_performa' => ['bg' => '#3c2d9c', 'text' => '#ffffff', 'border' => '#2a1f6f'], // Purple (for status column)
-                  'maint_priced_performa' => ['bg' => '#3c2d9c', 'text' => '#ffffff', 'border' => '#2a1f6f'], // Purple (for status column)
-                  'product_na' => ['bg' => '#0deb7c', 'text' => '#ffffff', 'border' => '#06b366'], // Green (for status column)
+                  'work_performa' => ['bg' => '#60a5fa', 'text' => '#ffffff', 'border' => '#3b82f6'], // Light Blue (matching badge)
+                  'maint_performa' => ['bg' => '#eab308', 'text' => '#ffffff', 'border' => '#ca8a04'], // Dark Yellow (matching badge)
+                  'work_priced_performa' => ['bg' => '#9333ea', 'text' => '#ffffff', 'border' => '#7e22ce'], // Purple (matching badge)
+                  'maint_priced_performa' => ['bg' => '#ea580c', 'text' => '#ffffff', 'border' => '#c2410c'], // Dark Orange (matching badge)
+                  'product_na' => ['bg' => '#f97316', 'text' => '#ffffff', 'border' => '#c2410c'], // Orange (for status column)
                   'un_authorized' => ['bg' => '#ec4899', 'text' => '#ffffff', 'border' => '#db2777'], // Pink
                   'pertains_to_ge_const_isld' => ['bg' => '#06b6d4', 'text' => '#ffffff', 'border' => '#0891b2'], // Aqua/Cyan
                   'barak_damages' => ['bg' => '#808000', 'text' => '#ffffff', 'border' => '#666600'], // Olive (matching Users card)
@@ -3564,10 +3564,30 @@
 
       // Process all requests
       Promise.all(promises)
-        .then(responses => Promise.all(responses.map(r => r.json())))
+        .then(responses => {
+          // Parse all responses, handling both success and error cases
+          return Promise.all(responses.map(async (response) => {
+            try {
+              const data = await response.json();
+              console.log('Stock issue response:', { status: response.status, ok: response.ok, data });
+              // Check both HTTP status and JSON success field
+              if (response.ok && data.success) {
+                return { success: true, data };
+              } else {
+                console.error('Stock issue failed:', { status: response.status, data });
+                return { success: false, data };
+              }
+            } catch (error) {
+              console.error('Error parsing response:', error);
+              return { success: false, error: error.message };
+            }
+          }));
+        })
         .then(results => {
+          console.log('All results:', results);
           const successCount = results.filter(r => r.success).length;
           const failedCount = results.length - successCount;
+          console.log(`Success: ${successCount}, Failed: ${failedCount}`);
 
           if (failedCount === 0) {
             // If authority is required (Yes selected) and authority number is provided, save it

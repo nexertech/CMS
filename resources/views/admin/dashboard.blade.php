@@ -501,7 +501,7 @@
   </div>
 
   <div class="col-md-2 col-lg-2">
-    <div class="stat-card" style="background: linear-gradient(135deg, #0deb7cff 0%, #22995dff 100%) !important;">
+    <div class="stat-card" style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;">
       <div class="d-flex align-items-center justify-content-between">
         <div class="flex-grow-1">
           <div class="stat-number">{{ $stats['product_na'] ?? 0 }}</div>
@@ -533,7 +533,7 @@
       <div class="d-flex align-items-center justify-content-between">
         <div class="flex-grow-1">
           <div class="stat-number">{{ $stats['barak_damages'] ?? 0 }}</div>
-          <div class="stat-label">Barrak Damages</div>
+          <div class="stat-label">Un Authorized Barrak Damages</div>
         </div>
         <div class="stat-icon">
           <i data-feather="alert-triangle" class="feather-lg"></i>
@@ -866,7 +866,7 @@
                 @elseif($displayStatus === 'pertains_to_ge_const_isld')
                   <span class="status-badge status-{{ $displayStatus }}" style="background-color: #06b6d4 !important; color: #ffffff !important; border-color: #0891b2 !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; width: 120px !important; text-align: center !important;" title="{{ $hoverText }}">{{ $shortStatusText }}</span>
                 @elseif($displayStatus === 'product_na')
-                  <span class="status-badge status-{{ $displayStatus }}" style="background-color: #0deb7c !important; color: #ffffff !important; border-color: #06b366 !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; width: 120px !important; text-align: center !important;" title="{{ $fullStatusText }}">{{ $fullStatusText }}</span>
+                  <span class="status-badge status-{{ $displayStatus }}" style="background-color: #f97316 !important; color: #ffffff !important; border-color: #c2410c !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; width: 120px !important; text-align: center !important;" title="{{ $fullStatusText }}">{{ $fullStatusText }}</span>
                 @elseif($displayStatus === 'closed')
                   <span class="status-badge status-{{ $displayStatus }}" style="background-color: #6b7280 !important; color: #ffffff !important; border-color: #4b5563 !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; width: 120px !important; text-align: center !important;" title="{{ $fullStatusText }}">{{ $fullStatusText }}</span>
                 @else
@@ -1082,7 +1082,7 @@
       'maint_performa' => '#eab308', // Yellow
       'work_priced_performa' => '#9333ea', // Purple
       'maint_priced_performa' => '#ea580c', // Orange Red
-      'product_na' => '#0deb7c', // Green (from Product N/A stat card)
+      'product_na' => '#f97316', // Orange (from Product N/A stat card)
       'un_authorized' => '#ec4899', // Pink (same as approvals view)
       'pertains_to_ge_const_isld' => '#06b6d4', // Aqua/Cyan (same as approvals view)
     ];
