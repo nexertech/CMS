@@ -297,27 +297,35 @@ class HomeController extends Controller
             $now = now();
             switch ($dateRange) {
                 case 'yesterday':
-                    $complaintsQuery->whereDate('created_at', $now->copy()->subDay()->toDateString());
+                    $complaintsQuery->whereDate('complaints.created_at', $now->copy()->subDay()->toDateString());
                     break;
                 case 'today':
-                    $complaintsQuery->whereDate('created_at', $now->toDateString());
+                    $complaintsQuery->whereDate('complaints.created_at', $now->toDateString());
                     break;
                 case 'this_week':
-                    $complaintsQuery->whereBetween('created_at', [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()]);
+                    $complaintsQuery->whereBetween('complaints.created_at', [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()]);
                     break;
                 case 'last_week':
-                    $complaintsQuery->whereBetween('created_at', [$now->copy()->subWeek()->startOfWeek(), $now->copy()->subWeek()->endOfWeek()]);
+                    $complaintsQuery->whereBetween('complaints.created_at', [$now->copy()->subWeek()->startOfWeek(), $now->copy()->subWeek()->endOfWeek()]);
                     break;
                 case 'this_month':
-                    $complaintsQuery->whereMonth('created_at', $now->month)
-                        ->whereYear('created_at', $now->year);
+                    $complaintsQuery->whereMonth('complaints.created_at', $now->month)
+                        ->whereYear('complaints.created_at', $now->year);
                     break;
                 case 'last_month':
-                    $complaintsQuery->whereMonth('created_at', $now->copy()->subMonth()->month)
-                        ->whereYear('created_at', $now->copy()->subMonth()->year);
+                    $complaintsQuery->whereMonth('complaints.created_at', $now->copy()->subMonth()->month)
+                        ->whereYear('complaints.created_at', $now->copy()->subMonth()->year);
                     break;
                 case 'last_6_months':
-                    $complaintsQuery->where('created_at', '>=', $now->copy()->subMonths(6)->startOfDay());
+                    $complaintsQuery->where('complaints.created_at', '>=', $now->copy()->subMonths(6)->startOfDay());
+                    break;
+                case 'custom':
+                    if ($request->has('start_date') && $request->has('end_date')) {
+                        $complaintsQuery->whereBetween('complaints.created_at', [
+                            \Carbon\Carbon::parse($request->start_date)->startOfDay(),
+                            \Carbon\Carbon::parse($request->end_date)->endOfDay()
+                        ]);
+                    }
                     break;
             }
         }
@@ -1238,6 +1246,17 @@ class HomeController extends Controller
         }
 
 
+
+        if ($request->ajax()) {
+            return response()->json([
+                'stats' => $stats,
+                'complaintsByStatus' => $complaintsByStatus,
+                'monthlyComplaints' => $monthlyComplaints,
+                'monthLabels' => $monthLabels,
+                'dashboardComplaints' => $dashboardComplaints,
+                'serverStats' => $stats
+            ]);
+        }
 
         return view('frontend.dashboard', compact(
             'stats',

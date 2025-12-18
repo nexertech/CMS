@@ -166,10 +166,9 @@
               <div class="col-md-4">
                 <div class="mb-3">
                   <label for="availability_time" class="form-label text-white">Availability Time</label>
-                  <input type="text" class="form-control @error('availability_time') is-invalid @enderror" 
+                  <input type="datetime-local" class="form-control @error('availability_time') is-invalid @enderror" 
                          id="availability_time" name="availability_time" 
-                         value="{{ old('availability_time', $complaint->availability_time) }}"
-                         placeholder="e.g., After 5 PM, Weekend Only">
+                         value="{{ old('availability_time', $complaint->availability_time) }}">
                   @error('availability_time')
                     <div class="invalid-feedback">{{ $message }}</div>
                   @enderror
