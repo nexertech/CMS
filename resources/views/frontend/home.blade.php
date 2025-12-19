@@ -15,19 +15,6 @@
     flex-direction: column;
   }
   
-  /* Overlay for people saluting flag */
-  body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: url('{{ asset('assests/Slider3.jpg') }}') no-repeat center left/cover;
-    opacity: 0.15;
-    z-index: 0;
-    pointer-events: none;
-  }
   
   /* Dark overlay for better readability */
   body::after {
@@ -158,39 +145,6 @@
     z-index: 1;
   }
 
-  .image-slider {
-    position: absolute;
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 15px;
-    background: rgba(255, 255, 255, 0.5);
-    padding: 15px;
-    border-radius: 15px;
-    backdrop-filter: blur(5px);
-    z-index: 2;
-  }
-
-  .image-slider img {
-    width: 90px;
-    height: 60px;
-    border-radius: 10px;
-    object-fit: cover;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    cursor: pointer;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-
-  .image-slider img:hover {
-    transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  }
-
-  .image-slider img.active {
-    border: 3px solid #2563eb;
-    transform: scale(1.05);
-  }
 
   .right-section {
     flex: 0.7;
@@ -420,11 +374,6 @@
 
   <div class="container">                                                                                                            
     <div class="left-section" id="leftSection" @auth('frontend') style="border-radius: 20px; min-height: 650px;" @endauth>
-        <div class="image-slider" id="imageSlider">
-            <img src="{{ asset('assests/slider1.jpg') }}" alt="Navy Image 1" data-bg="{{ asset('assests/slider1.jpg') }}" class="slider-img" />
-            <img src="{{ asset('assests/Slider2.jpg') }}" alt="Navy Image 2" data-bg="{{ asset('assests/Slider2.jpg') }}" class="slider-img" />
-            <img src="{{ asset('assests/slider3.jpg') }}" alt="Navy Image 3" data-bg="{{ asset('assests/slider3.jpg') }}" class="slider-img" />
-        </div>
     </div>
 
     @guest('frontend')
@@ -495,66 +444,6 @@
       feather.replace();
     }
 
-    // Image slider functionality
-    const sliderImages = document.querySelectorAll('.slider-img');
-    const leftSection = document.getElementById('leftSection');
-    let currentIndex = 0;
-    let intervalId;
-
-    // Function to update slider
-    function updateSlider(index) {
-        // Remove active class from all
-        sliderImages.forEach(img => img.classList.remove('active'));
-        
-        // Add active to current
-        const img = sliderImages[index];
-        if(img) {
-            img.classList.add('active');
-            const bgImage = img.getAttribute('data-bg');
-            leftSection.style.backgroundImage = `url('${bgImage}')`;
-        }
-    }
-
-    // Function to move to next slide
-    function nextSlide() {
-        currentIndex = (currentIndex + 1) % sliderImages.length;
-        updateSlider(currentIndex);
-    }
-
-    // Start auto rotation
-    function startAutoRotation() {
-        stopAutoRotation(); // clear existing to be safe
-        intervalId = setInterval(nextSlide, 3000);
-    }
-
-    // Stop auto rotation
-    function stopAutoRotation() {
-        if (intervalId) clearInterval(intervalId);
-    }
-
-    const imageSlider = document.getElementById('imageSlider');
-
-    // Hover functionality for images
-    sliderImages.forEach((img, index) => {
-        img.addEventListener('mouseenter', function() {
-            stopAutoRotation();
-            currentIndex = index; // Update current index to the hovered one
-            updateSlider(currentIndex);
-        });
-        
-        img.addEventListener('click', function() {
-            stopAutoRotation();
-            currentIndex = index;
-            updateSlider(currentIndex);
-        });
-    });
-
-    // Pause on hover over container, resume on leave
-    imageSlider.addEventListener('mouseenter', stopAutoRotation);
-    imageSlider.addEventListener('mouseleave', startAutoRotation);
-
-    // Start initially
-    startAutoRotation();
   });
 
 </script>
