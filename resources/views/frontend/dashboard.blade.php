@@ -1831,7 +1831,7 @@
             'maint_performa': { label: 'Maint Performa', color: '#eab308' }, // Yellow
             'work_priced_performa': { label: 'Work Priced', color: '#9333ea' }, // Purple
             'maint_priced_performa': { label: 'Maint Priced', color: '#ea580c' }, // Dark Orange
-            'product_na': { label: 'Product N/A', color: '#f97316' }, // Orange
+            'product_na': { label: 'Product N/A', color: '#0deb7c' }, // Green
             'un_authorized': { label: 'Un-Authorized', color: '#ec4899' }, // Pink
             'pertains_to_ge': { label: 'Pertains to GE', color: '#8b5cf6' }, // Violet
             'pertains_to_ge_const_isld': { label: 'Pertains to GE(N)', color: '#06b6d4' }, // Aqua/Cyan
@@ -1840,140 +1840,244 @@
             'new': { label: 'New', color: '#3b82f6' } // Blue
         };
 
-        // Create entries for sorting
-        let statusEntries = Object.entries(complaintsByStatus).map(([key, value]) => {
-            let label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            let color = '#64748b';
-            
-            if (statusMap[key]) {
-                if (statusMap[key].label) label = statusMap[key].label;
-                if (statusMap[key].color) color = statusMap[key].color;
+        const statusKeys = Object.keys(complaintsByStatus);
+        const statusLabels = statusKeys.map(key => {
+            if (statusMap[key] && statusMap[key].label) {
+                return statusMap[key].label;
             }
-
-            return { key, value, label, color };
+            // Fallback: format the key nicely
+            return key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
         });
-
-        // Calculate Total
-        // Use server-provided total if available, otherwise sum the parts
-        let totalComplaintsVal = 0;
-        if (serverStats && serverStats.total_complaints !== undefined) {
-             totalComplaintsVal = serverStats.total_complaints;
-        } else {
-             totalComplaintsVal = statusEntries.reduce((sum, e) => sum + e.value, 0);
-        }
-
-        // Add Total Entry
-        statusEntries.push({
-            key: 'total',
-            value: totalComplaintsVal,
-            label: 'Total Complaints',
-            color: '#0ea5e9' // Light Blue for Total
+        const statusData = Object.values(complaintsByStatus);
+        const statusColors = statusKeys.map(key => {
+            if (statusMap[key] && statusMap[key].color) {
+                return statusMap[key].color;
+            }
+            // Default color from admin side if status not found
+            return '#64748b';
         });
-
-        // Sort by Value Ascending (Smallest at top, Largest at bottom)
-        statusEntries.sort((a, b) => a.value - b.value);
-
-        const statusLabels = statusEntries.map(e => e.label);
-        const statusData = statusEntries.map(e => e.value);
-        const statusColors = statusEntries.map(e => e.color);
 
         const ctx3 = document.getElementById('complaintsByStatusChart').getContext('2d');
 
-        // Helper to convert hex to rgba
-        function hexToRgba(hex, alpha) {
-            const r = parseInt(hex.slice(1, 3), 16);
-            const g = parseInt(hex.slice(3, 5), 16);
-            const b = parseInt(hex.slice(5, 7), 16);
-            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-        }
+        // Calculate total from original data (including closed) for accurate total count
+        const totalComplaints = Object.values(complaintsByStatus).reduce((a, b) => a + b, 0);
+
+        // Center text plugin for Chart.js
+        const centerTextPlugin = {
+            id: 'centerText',
+            beforeDraw: function(chart) {
+                const ctx = chart.ctx;
+                const centerX = chart.chartArea.left + (chart.chartArea.right - chart.chartArea.left) / 2;
+                const centerY = chart.chartArea.top + (chart.chartArea.bottom - chart.chartArea.top) / 2;
+
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                // Helper function for formatting numbers (1k, 1.5k, etc.)
+                const formatNumber = (num) => {
+                    if (num >= 1000) {
+                        return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+                    }
+                    return num;
+                };
+
+                // Get current chart data
+                const currentLabels = chart.data.labels || [];
+                const currentData = chart.data.datasets[0]?.data || [];
+                const currentColors = chart.data.datasets[0]?.backgroundColor || [];
+                const currentTotal = currentData.reduce((a, b) => a + b, 0);
+
+                // Check if status filter is active
+                const statusFilter = document.getElementById('filterStatus')?.value;
+                const isStatusFiltered = statusFilter && statusFilter !== 'all';
+
+                // Get hovered segment
+                const activeElements = chart.getActiveElements();
+                if (activeElements.length > 0) {
+                    const activeIndex = activeElements[0].index;
+                    const value = currentData[activeIndex];
+                    const label = currentLabels[activeIndex];
+
+                    // Show status name
+                    ctx.font = 'bold 14px Arial';
+                    ctx.fillStyle = '#1f2937';
+                    ctx.fillText(label, centerX, centerY - 10);
+
+                    // Show total complaints count only (no percentage)
+                    ctx.font = 'bold 20px Arial';
+                    ctx.fillStyle = currentColors[activeIndex] || '#3b82f6';
+                    ctx.fillText(formatNumber(value), centerX, centerY + 15);
+
+                    // Show label
+                    ctx.font = '12px Arial';
+                    ctx.fillStyle = '#6b7280';
+                    ctx.fillText('Complaints', centerX, centerY + 35);
+                } else if (isStatusFiltered) {
+                    // Show filtered status when status filter is active
+                    // Find the status in the chart data
+                    let filteredIndex = -1;
+                    let filteredValue = 0;
+                    let filteredLabel = '';
+                    let filteredColor = '#3b82f6';
+
+                    // Get the expected label for the filtered status
+                    const expectedLabel = statusMap[statusFilter]?.label;
+
+                    // Find matching status in chart data
+                    for (let i = 0; i < currentLabels.length; i++) {
+                        const label = currentLabels[i];
+                        // Match by label (case insensitive)
+                        if (expectedLabel && label.toLowerCase() === expectedLabel.toLowerCase()) {
+                            filteredIndex = i;
+                            filteredValue = currentData[i];
+                            filteredLabel = label;
+                            filteredColor = currentColors[i] || statusMap[statusFilter]?.color || '#3b82f6';
+                            break;
+                        }
+                    }
+
+                    // If not found by label, try to find by status key in the original data
+                    if (filteredIndex === -1 && complaintsByStatus && complaintsByStatus[statusFilter] !== undefined) {
+                        // Find the index in the current chart data that corresponds to this status
+                        const statusKeys = Object.keys(complaintsByStatus);
+                        const statusIndex = statusKeys.indexOf(statusFilter);
+                        if (statusIndex !== -1 && statusIndex < currentData.length) {
+                            filteredIndex = statusIndex;
+                            filteredValue = currentData[statusIndex];
+                            filteredLabel = currentLabels[statusIndex] || expectedLabel || statusFilter;
+                            filteredColor = currentColors[statusIndex] || statusMap[statusFilter]?.color || '#3b82f6';
+                        }
+                    }
+
+                    if (filteredIndex !== -1 && filteredValue !== undefined) {
+                        // Show filtered status name
+                        ctx.font = 'bold 14px Arial';
+                        ctx.fillStyle = '#1f2937';
+                        ctx.fillText(filteredLabel, centerX, centerY - 10);
+
+                        // Show filtered status count
+                        ctx.font = 'bold 20px Arial';
+                        ctx.fillStyle = filteredColor;
+                        ctx.fillText(formatNumber(filteredValue), centerX, centerY + 15);
+
+                        // Show label
+                        ctx.font = '12px Arial';
+                        ctx.fillStyle = '#6b7280';
+                        ctx.fillText('Complaints', centerX, centerY + 35);
+                    } else {
+                        // Fallback to total if filtered status not found
+                        ctx.font = 'bold 14px Arial';
+                        ctx.fillStyle = '#1f2937';
+                        ctx.fillText('Total', centerX, centerY - 10);
+
+                        ctx.font = 'bold 20px Arial';
+                        ctx.fillStyle = '#3b82f6';
+                        ctx.fillText(formatNumber(currentTotal), centerX, centerY + 15);
+
+                        ctx.font = '12px Arial';
+                        ctx.fillStyle = '#6b7280';
+                        ctx.fillText('Complaints', centerX, centerY + 35);
+                    }
+                } else {
+                    // Show total when not hovering - smaller but bold and clear
+                    ctx.font = 'bold 13px Arial';
+                    ctx.fillStyle = '#1f2937';
+                    ctx.fillText('Total', centerX, centerY - 12);
+
+                    ctx.font = 'bold 18px Arial';
+                    ctx.fillStyle = '#2563eb';
+                    ctx.fillText(formatNumber(currentTotal), centerX, centerY + 8);
+
+                    ctx.font = 'bold 11px Arial';
+                    ctx.fillStyle = '#475569';
+                    // ctx.fillText('Complaints', centerX, centerY + 28);
+                }
+                ctx.restore();
+            }
+        };
 
         const complaintsByStatusChart = new Chart(ctx3, {
-            type: 'bar',
+            type: 'doughnut',
             data: {
                 labels: statusLabels,
                 datasets: [{
                     label: 'Complaints',
                     data: statusData,
                     backgroundColor: statusColors,
-                    borderColor: statusColors,
-                    borderWidth: 1,
-                    borderRadius: 4,
-                    barPercentage: 0.7,
-                    categoryPercentage: 0.8
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
                 }]
             },
             options: {
-                indexAxis: 'y', // Horizontal Bar Chart
                 responsive: true,
                 maintainAspectRatio: false,
-                layout: {
-                    padding: {
-                        right: 60, // Add space for labels
-                        left: 10
-                    }
-                },
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                        grid: {
-                            display: false // Cleaner look
-                        },
-                        ticks: {
-                            display: true // Hide x-axis numbers if datalabels are enough? Keep for scale context
-                        }
-                    },
-                    y: {
-                        grid: {
-                            display: false
-                        },
-                        ticks: {
-                            font: {
-                                size: 11,
-                                weight: 'bold'
-                            },
-                             mirror: false // Labels outside
-                        }
-                    }
-                },
+                cutout: '60%',
                 interaction: {
                     intersect: false,
-                    mode: 'y' // Interaction based on Y-axis
+                    mode: 'index'
+                },
+                animation: {
+                    animateRotate: true,
+                    animateScale: false
                 },
                 plugins: {
                     legend: {
-                        display: false // Hide legend as labels are clearly on Y-axis
+                        display: true,
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                size: 12,
+                                weight: 'bold',
+                                family: 'Arial, sans-serif'
+                            },
+                            padding: 10,
+                            usePointStyle: true,
+                            color: '#1f2937'
+                        }
                     },
                     tooltip: {
+                        enabled: true,
                         backgroundColor: 'rgba(0, 0, 0, 0.8)',
                         padding: 10,
                         titleFont: {
-                            size: 13
+                            size: 12
                         },
                         bodyFont: {
-                            size: 12
+                            size: 11
+                        },
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                const value = context.parsed;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                if (label) {
+                                    label += ': ';
+                                }
+                                label += value + ' (' + percentage + '%)';
+                                return label;
+                            }
                         }
                     },
                     datalabels: {
-                        display: true, // Show numbers on bars
-                        color: function(context) {
-                            // Dark text if bar is light, Light if bar is dark?
-                            // Simpler: Just put it at the end of the bar in dark color or standard black
-                            return '#000000';
-                        },
-                        anchor: 'end',
-                        align: 'end',
-                        offset: 4,
-                        font: {
-                            weight: 'bold',
-                            size: 11
-                        },
-                        formatter: function(value) {
-                            return value > 0 ? value : '';
-                        }
+                        display: false
                     }
                 }
-            }
+            },
+            plugins: [centerTextPlugin]
         });
+
+        // Add event listener for hover to update chart center text
+        const chartCanvas = document.getElementById('complaintsByStatusChart');
+        if (chartCanvas) {
+            chartCanvas.addEventListener('mousemove', function() {
+                complaintsByStatusChart.update('none');
+            });
+            chartCanvas.addEventListener('mouseleave', function() {
+                complaintsByStatusChart.update('none');
+            });
+        }
 
 
 
@@ -2204,49 +2308,21 @@
                 // Update global complaintsByStatus with all data
                 complaintsByStatus = data.complaintsByStatus;
 
-                // Create entries for sorting
-                let entries = Object.entries(data.complaintsByStatus).map(([key, value]) => {
-                    let label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                    let color = '#64748b';
-                    
-                    if (statusMap[key]) {
-                        if (statusMap[key].label) label = statusMap[key].label;
-                        if (statusMap[key].color) color = statusMap[key].color;
+                const statusKeys = Object.keys(data.complaintsByStatus);
+                const statusLabels = statusKeys.map(key => {
+                    if (statusMap[key] && statusMap[key].label) {
+                        return statusMap[key].label;
                     }
-
-                    return { key, value, label, color };
+                    return key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                 });
-
-                // Calculate Total
-                // Use server-provided total if available, otherwise sum the parts
-                let totalVal = 0;
-                if (data.stats && data.stats.total_complaints !== undefined) {
-                    totalVal = data.stats.total_complaints;
-                } else if (serverStats && serverStats.total_complaints !== undefined) {
-                    totalVal = serverStats.total_complaints;
-                } else {
-                    totalVal = entries.reduce((sum, e) => sum + e.value, 0);
-                }
-                
-                // Add Total Entry
-                entries.push({
-                    key: 'total',
-                    value: totalVal,
-                    label: 'Total Complaints',
-                    color: '#0ea5e9' // Light Blue for Total
+                const statusData = Object.values(data.complaintsByStatus);
+                const statusColors = statusKeys.map(key => {
+                    return (statusMap[key] && statusMap[key].color) ? statusMap[key].color : '#64748b';
                 });
-
-                // Sort by Value Ascending (Smallest at top, Largest at bottom)
-                entries.sort((a, b) => a.value - b.value);
-
-                const statusLabels = entries.map(e => e.label);
-                const statusData = entries.map(e => e.value);
-                const statusColors = entries.map(e => e.color);
                 
                 complaintsByStatusChart.data.labels = statusLabels;
                 complaintsByStatusChart.data.datasets[0].data = statusData;
                 complaintsByStatusChart.data.datasets[0].backgroundColor = statusColors;
-                complaintsByStatusChart.data.datasets[0].borderColor = statusColors;
                 complaintsByStatusChart.update();
             }
 
