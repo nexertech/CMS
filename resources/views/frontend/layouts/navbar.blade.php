@@ -67,7 +67,7 @@
                   Profile
                 </a>
             </li>
-            <li>
+            <!-- <li>
               <a class="dropdown-item py-2" href="{{ route('frontend.password') }}">
                 <svg width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16">
                   <path
@@ -75,7 +75,7 @@
                 </svg>
                 Change Password
               </a>
-            <li>
+            <li> -->
               <form method="POST" action="{{ route('frontend.logout') }}" class="m-0">
                 @csrf
                 <button class="dropdown-item py-2 w-100 text-start border-0 bg-transparent" type="submit"

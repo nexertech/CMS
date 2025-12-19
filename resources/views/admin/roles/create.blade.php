@@ -52,6 +52,7 @@
                   'dashboard' => ['label' => 'Dashboard', 'icon' => 'home', 'sublinks' => []],
                   'users' => ['label' => 'Users', 'icon' => 'users', 'sublinks' => []],
                   'frontend-users' => ['label' => 'Frontend Users', 'icon' => 'user-check', 'sublinks' => []],
+                  'cmes' => ['label' => 'CMES', 'icon' => 'layers', 'sublinks' => []],
                   'city' => ['label' => 'GE Groups', 'icon' => 'map', 'sublinks' => []],
                   'sector' => ['label' => 'GE Nodes', 'icon' => 'map-pin', 'sublinks' => []],
                   'roles' => ['label' => 'Roles', 'icon' => 'shield', 'sublinks' => []],

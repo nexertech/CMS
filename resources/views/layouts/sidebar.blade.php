@@ -90,47 +90,47 @@
     @endphp
     
     <div class="section-title">Main Menu</div>
-    @if($user && ($user->hasPermission('dashboard') || $userRole === 'director' || $userRole === 'admin'))
+    @if($user && ($user->hasPermission('dashboard')))
     <a href="{{ route('admin.dashboard') }}" class="nav-link d-block py-2 px-3 mb-1 {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
       <i data-feather="home" class="me-2"></i> Dashboard
     </a>
     @endif
     
     <div class="section-title">Management</div>
-    @if($user && ($user->hasPermission('users') || $userRole === 'director' || $userRole === 'admin'))
+    @if($user && ($user->hasPermission('users')))
     <a href="{{ route('admin.users.index') }}" class="nav-link d-block py-2 px-3 mb-1 {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
       <i data-feather="users" class="me-2"></i> Users
     </a>
     @endif
-    @if($user && ($user->hasPermission('frontend-users') || $userRole === 'director' || $userRole === 'admin'))
+    @if($user && ($user->hasPermission('frontend-users')))
     <a href="{{ route('admin.frontend-users.index') }}" class="nav-link d-block py-2 px-3 mb-1 {{ request()->routeIs('admin.frontend-users.*') ? 'active' : '' }}">
       <i data-feather="user-check" class="me-2"></i> Frontend Users
     </a>
     @endif
-    @if($user && ($user->hasPermission('city') || $userRole === 'director' || $userRole === 'admin'))
+    @if($user && ($user->hasPermission('cmes')))
     <a href="{{ route('admin.cmes.index') }}" class="nav-link d-block py-2 px-3 mb-1 {{ request()->routeIs('admin.cmes.*') ? 'active' : '' }}">
       <i data-feather="layers" class="me-2"></i> CMES
     </a>
     @endif
-    @if($user && ($user->hasPermission('city') || $userRole === 'director' || $userRole === 'admin'))
+    @if($user && ($user->hasPermission('city')))
     <a href="{{ route('admin.city.index') }}" class="nav-link d-block py-2 px-3 mb-1 {{ request()->routeIs('admin.city.*') ? 'active' : '' }}">
       <i data-feather="map" class="me-2"></i> GE Groups
     </a>
     @endif
-    @if($user && ($user->hasPermission('sector') || $userRole === 'director' || $userRole === 'admin'))
+    @if($user && ($user->hasPermission('sector')))
     <a href="{{ route('admin.sector.index') }}" class="nav-link d-block py-2 px-3 mb-1 {{ request()->routeIs('admin.sector.*') ? 'active' : '' }}">
       <i data-feather="map-pin" class="me-2"></i> GE Nodes
     </a>
     @endif
-    @if($user && ($user->hasPermission('roles') || $userRole === 'director' || $userRole === 'admin'))
+    @if($user && ($user->hasPermission('roles')))
     <a href="{{ route('admin.roles.index') }}" class="nav-link d-block py-2 px-3 mb-1 {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
       <i data-feather="shield" class="me-2"></i> Roles
     </a>
     @endif
-    @if($user && (($user->hasPermission('employees') || $user->hasPermission('designation') || $user->hasPermission('city') || $user->hasPermission('sector')) || $userRole === 'director' || $userRole === 'admin' || $userRole === 'department_staff'))
+    @if($user && ($user->hasPermission('employees') || $user->hasPermission('designation')))
     <div class="nav-item-parent mb-1">
       <div class="nav-link d-flex align-items-center justify-content-between py-2 px-3 {{ request()->routeIs('admin.employees.*') || request()->routeIs('admin.designation.*') ? 'active' : '' }}">
-        @if($user && ($user->hasPermission('employees') || $userRole === 'director' || $userRole === 'admin' || $userRole === 'department_staff'))
+        @if($user && ($user->hasPermission('employees')))
         <a href="{{ route('admin.employees.index') }}" class="text-decoration-none text-inherit d-flex align-items-center flex-grow-1">
           <i data-feather="user-check" class="me-2"></i> Employees
         </a>
@@ -139,14 +139,14 @@
           <i data-feather="user-check" class="me-2"></i> Employees
         </span>
         @endif
-        @if($user && (($user->hasPermission('designation') || $user->hasPermission('city') || $user->hasPermission('sector')) || $userRole === 'director' || $userRole === 'admin'))
+        @if($user && ($user->hasPermission('designation')))
         <button type="button" class="btn btn-link text-inherit p-0 border-0 nav-arrow-btn" data-bs-toggle="collapse" data-bs-target="#employeesSubmenu" aria-expanded="{{ request()->routeIs('admin.designation.*') ? 'true' : 'false' }}" style="background: none !important; color: inherit; cursor: pointer; border: none !important; box-shadow: none !important; outline: none !important; padding: 0 !important; margin: 0 !important;">
           <i data-feather="chevron-down" class="nav-arrow ms-2" style="font-size: 14px; transition: transform 0.3s;"></i>
         </button>
         @endif
       </div>
       <div class="collapse {{ request()->routeIs('admin.designation.*') ? 'show' : '' }}" id="employeesSubmenu">
-        @if($user && ($user->hasPermission('designation') || $userRole === 'director' || $userRole === 'admin'))
+        @if($user && ($user->hasPermission('designation')))
         <a href="{{ route('admin.designation.index') }}" class="nav-link d-block py-2 px-3 mb-2 mt-2 {{ request()->routeIs('admin.designation.*') ? 'active' : '' }}" style="background: rgba(59, 130, 246, 0.08); margin-left: 20px; margin-right: 8px; border-left: 3px solid rgba(59, 130, 246, 0.4); border-radius: 6px;">
           <i data-feather="award" class="me-2"></i> Designations
         </a>
@@ -154,7 +154,7 @@
       </div>
     </div>
     @endif
-    @if($user && (($user->hasPermission('category') || $user->hasPermission('complaint-titles') || $user->hasPermission('complaints') || $user->hasPermission('approvals')) || $userRole === 'director' || $userRole === 'admin' || $userRole === 'garrison_engineer' || $userRole === 'complaint_center' || $userRole === 'department_staff'))
+    @if($user && (($user->hasPermission('category') || $user->hasPermission('complaint-titles') || $user->hasPermission('complaints') || $user->hasPermission('approvals'))))
     <div class="nav-item-parent mb-1">
       <div class="nav-link d-flex align-items-center justify-content-between py-2 px-3 {{ request()->routeIs('admin.complaints.*') || request()->routeIs('admin.category.*') || request()->routeIs('admin.complaint-titles.*') || (request()->routeIs('admin.approvals.*') && !request()->routeIs('admin.stock-approval.*')) ? 'active' : '' }}" style="overflow: visible !important; text-overflow: clip !important; cursor: pointer;" id="complaintsManagementToggle" data-bs-toggle="collapse" data-bs-target="#complaintsManagementSubmenu" aria-expanded="{{ request()->routeIs('admin.complaints.*') || request()->routeIs('admin.category.*') || request()->routeIs('admin.complaint-titles.*') || (request()->routeIs('admin.approvals.*') && !request()->routeIs('admin.stock-approval.*')) ? 'true' : 'false' }}">
         <div class="d-flex align-items-center flex-grow-1">
@@ -164,22 +164,22 @@
           <i data-feather="chevron-down" class="nav-arrow ms-2" style="font-size: 14px; transition: transform 0.3s;"></i>
       </div>
       <div class="collapse {{ request()->routeIs('admin.complaints.*') || request()->routeIs('admin.category.*') || request()->routeIs('admin.complaint-titles.*') || (request()->routeIs('admin.approvals.*') && !request()->routeIs('admin.stock-approval.*')) ? 'show' : '' }}" id="complaintsManagementSubmenu">
-        @if($user && ($user->hasPermission('category') || $userRole === 'director' || $userRole === 'admin'))
+        @if($user && ($user->hasPermission('category')))
         <a href="{{ route('admin.category.index') }}" class="nav-link d-block py-2 px-3 mb-2 mt-2 {{ request()->routeIs('admin.category.*') ? 'active' : '' }}" style="background: rgba(59, 130, 246, 0.08); margin-left: 20px; margin-right: 8px; border-left: 3px solid rgba(59, 130, 246, 0.4); border-radius: 6px;">
           <i data-feather="tag" class="me-2" style="width: 18px; height: 18px;"></i> Complaint Cat
         </a>
         @endif
-        @if($user && ($user->hasPermission('complaint-titles') || $userRole === 'director' || $userRole === 'admin'))
+        @if($user && ($user->hasPermission('complaint-titles')))
         <a href="{{ route('admin.complaint-titles.index') }}" class="nav-link d-block py-2 px-3 mb-2 {{ request()->routeIs('admin.complaint-titles.*') ? 'active' : '' }}" style="background: rgba(59, 130, 246, 0.08); margin-left: 20px; margin-right: 8px; border-left: 3px solid rgba(59, 130, 246, 0.4); border-radius: 6px;">
           <i data-feather="file-text" class="me-2" style="width: 18px; height: 18px;"></i> Complaint Types
         </a>
         @endif
-        @if($user && ($user->hasPermission('complaints') || $userRole === 'director' || $userRole === 'admin' || $userRole === 'garrison_engineer' || $userRole === 'complaint_center' || $userRole === 'department_staff'))
+        @if($user && ($user->hasPermission('complaints')))
         <a href="{{ route('admin.complaints.index') }}" class="nav-link d-block py-2 px-3 mb-2 {{ request()->routeIs('admin.complaints.*') ? 'active' : '' }}" style="background: rgba(59, 130, 246, 0.08); margin-left: 20px; margin-right: 8px; border-left: 3px solid rgba(59, 130, 246, 0.4); border-radius: 6px;">
           <i data-feather="list" class="me-2" style="width: 18px; height: 18px;"></i> Complaints Regn
         </a>
         @endif
-        @if($user && ($user->hasPermission('approvals') || $userRole === 'director' || $userRole === 'admin' || $userRole === 'garrison_engineer'))
+        @if($user && ($user->hasPermission('approvals')))
         <a href="{{ route('admin.approvals.index') }}" class="nav-link d-block py-2 px-3 mb-2 {{ request()->routeIs('admin.approvals.*') && !request()->routeIs('admin.stock-approval.*') ? 'active' : '' }}" style="background: rgba(59, 130, 246, 0.08); margin-left: 20px; margin-right: 8px; border-left: 3px solid rgba(59, 130, 246, 0.4); border-radius: 6px;">
           <i data-feather="eye" class="me-2" style="width: 18px; height: 18px;"></i> Total Complaints
         </a>
@@ -187,17 +187,17 @@
       </div>
     </div>
     @endif
-    @if($user && ($user->hasPermission('spares') || $userRole === 'director' || $userRole === 'admin'))
+    @if($user && ($user->hasPermission('spares')))
     <a href="{{ route('admin.spares.index') }}" class="nav-link d-block py-2 px-3 mb-1 {{ request()->routeIs('admin.spares.*') ? 'active' : '' }}">
       <i data-feather="package" class="me-2"></i> Stock Products
     </a>
     @endif
-    @if($user && ($user->hasPermission('reports') || $userRole === 'director' || $userRole === 'admin' || $userRole === 'garrison_engineer'))
+    @if($user && ($user->hasPermission('reports')))
     <a href="{{ route('admin.reports.index') }}" class="nav-link d-block py-2 px-3 mb-1 {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
       <i data-feather="bar-chart-2" class="me-2"></i> Reports
     </a>
     @endif
-    @if($user && ($user->hasPermission('sla') || $userRole === 'director' || $userRole === 'admin'))
+    @if($user && ($user->hasPermission('sla')))
     <a href="{{ route('admin.sla.index') }}" class="nav-link d-block py-2 px-3 mb-1 {{ request()->routeIs('admin.sla.*') ? 'active' : '' }}">
       <i data-feather="clock" class="me-2"></i> SLA Rules
     </a>

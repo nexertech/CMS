@@ -506,182 +506,331 @@
         <!-- Graphs Row -->
         <!-- CME/GE Graph and Products Graph - Side by Side -->
         <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-12">
-            <!-- CMES Graph (Left) -->
-            <div class="bg-white rounded-xl shadow monthly-complaints-chart" style="position: relative; padding: 1rem;">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-semibold">
-                        @if($isCmeUser)
-                            Total Complaints by GE
-                        @elseif($isGeUser)
-                            Total Complaints by GE Node
-                        @else
-                            Total Complaints by CMES
-                        @endif
-                    </h2>
-                    <select id="cmeGraphFilter"
-                        class="p-1.5 border rounded text-sm font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="">Select</option>
-                        <option value="this_month">This Month</option>
-                        <option value="last_6_months">Last 6 Months</option>
-                        <option value="this_year">This Year</option>
-                        <option value="last_year">Last Year</option>
-                    </select>
-                </div>
-                <div class="h-80 w-full">
-                    <canvas id="cmeComplaintsChart"></canvas>
-                </div>
-            </div>
+            <!-- CMES Graph Wrapper -->
+            <div id="cmeCardWrapper" class="transition-all duration-300">
+                <!-- CMES Graph (Left) -->
+                <div class="bg-white rounded-xl shadow monthly-complaints-chart" style="position: relative; padding: 1rem;">
+                    <div class="flex justify-between items-center mb-4 flex-wrap gap-2 relative" style="z-index: 50;">
+                        <div class="flex items-center gap-4">
+                             <h2 class="text-xl font-semibold">
+                                @if($isCmeUser)
+                                    Report of GE
+                                @elseif($isGeUser)
+                                    Report of Node
+                                @else
+                                    Report of CMES
+                                @endif
+                            </h2>
+                            <div class="flex bg-gray-100 p-1 rounded-lg">
+                                <button onclick="toggleView('cme', 'graph')" id="cmeGraphBtn" class="px-3 py-1 text-sm font-bold rounded-md bg-white shadow text-blue-600 transition-all">Graph</button>
+                                <button onclick="toggleView('cme', 'table')" id="cmeTableBtn" class="px-3 py-1 text-sm font-bold rounded-md text-gray-500 hover:text-gray-700 transition-all">Table</button>
+                            </div>
+                        </div>
 
-            <!-- Top Products Graph (Right) -->
-            <div class="bg-white rounded-xl shadow monthly-complaints-chart" style="position: relative; padding: 1rem;">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-semibold">Top 10 Most Issued Products</h2>
-                    <select id="categoryGraphFilter"
-                        class="p-1.5 border rounded text-sm font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="">All Time</option>
-                        <option value="this_month">This Month</option>
-                        <option value="last_6_months">Last 6 Months</option>
-                        <option value="this_year">This Year</option>
-                        <option value="last_year">Last Year</option>
-                    </select>
-                </div>
-                <div class="h-80 w-full">
-                    <canvas id="categoryUsageChart"></canvas>
-                </div>
-            </div>
-        </div>
+                        <div class="flex items-center gap-2">
+                            <div id="cmeGraphFilterContainer">
+                                <select id="cmeGraphFilter"
+                                    class="p-1.5 border rounded text-sm font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Select</option>
+                                    <option value="this_month">This Month</option>
+                                    <option value="last_6_months">Last 6 Months</option>
+                                    <option value="this_year">This Year</option>
+                                    <option value="last_year">Last Year</option>
+                                </select>
+                            </div>
 
-        <!-- Monthly Performance Table -->
-        <div id="monthlyPerformanceReport" class="mt-8 bg-white rounded-xl shadow overflow-hidden">
-            <!-- Print-only heading -->
-            <div class="print-only" style="display: none;">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">
-                    @if($isCmeUser)
-                        Monthly Performance Report of GE
-                    @elseif($isGeUser)
-                        Monthly Performance Report of Node
-                    @elseif($isNodeUser)
-                        Monthly Performance Report of Node
-                    @else
-                        Monthly Performance Report of CMES
-                    @endif
-                </h2>
-            </div>
-            <div class="p-6 border-b border-gray-200 flex justify-between items-center no-print">
-                <h2 class="text-xl font-semibold text-gray-800">
-                    @if($isCmeUser)
-                        Monthly Performance Report of GE
-                    @elseif($isGeUser)
-                        Monthly Performance Report of Nodes
-                    @elseif($isNodeUser)
-                        Monthly Performance Report of Nodes
-                    @else
-                        Monthly Performance Report of CMES
-                    @endif
-                </h2>
-                <div class="flex space-x-2 relative inline-block text-left">
-                    <button onclick="toggleDropdown('monthlyReportDropdown')" type="button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
-                        Download Report
-                        <svg class="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                        </svg>
-                    </button>
-                    <div id="monthlyReportDropdown" class="origin-top-right absolute right-0 mt-10 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden" style="z-index: 50;">
-                        <div class="py-1">
-                            <button onclick="printSection('monthlyPerformanceReport'); toggleDropdown('monthlyReportDropdown')" class="text-gray-700 group flex items-center px-4 py-2 text-sm hover:bg-gray-100 w-full text-left">
-                                <svg class="mr-3 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                    <path d="M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z" />
-                                </svg>
-                                PDF
-                            </button>
-                            <button onclick="exportTableToExcel('monthlyPerformanceTable', 'monthly_performance_report'); toggleDropdown('monthlyReportDropdown')" class="text-gray-700 group flex items-center px-4 py-2 text-sm hover:bg-gray-100 w-full text-left">
-                                <svg class="mr-3 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                    <path d="M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z" />
-                                </svg>
-                                Excel
-                            </button>
+                            <!-- Download Button (Header) -->
+                            <div id="cmeDownloadContainer" class="hidden no-print relative" style="z-index: 9999;">
+                                <div class="relative inline-block text-left">
+                                    <button onclick="toggleDropdown('monthlyReportDropdown')" type="button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 rounded inline-flex items-center text-xs">
+                                        Download
+                                        <svg class="-mr-1 ml-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
+                                     <div id="monthlyReportDropdown" class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-2xl bg-gray-200 ring-1 ring-black ring-opacity-20 focus:outline-none hidden" style="z-index: 9999;">
+                                        <div class="py-1">
+                                            <button onclick="printSection('cmeTableContainer'); toggleDropdown('monthlyReportDropdown')" class="text-gray-700 group flex items-center px-4 py-2 text-sm hover:bg-gray-300 w-full text-left">
+                                                <svg class="mr-3 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path d="M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z" />
+                                                </svg>
+                                                PDF
+                                            </button>
+                                            <button onclick="exportTableToExcel('monthlyPerformanceTable', 'monthly_performance_report'); toggleDropdown('monthlyReportDropdown')" class="text-gray-700 group flex items-center px-4 py-2 text-sm hover:bg-gray-300 w-full text-left">
+                                                <svg class="mr-3 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path d="M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z" />
+                                                </svg>
+                                                Excel
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
-            <div class="overflow-x-auto">
-                <table id="monthlyPerformanceTable" class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th rowspan="2"
-                                class="px-4 py-1 text-left text-xs font-extrabold text-gray-900 uppercase tracking-wider border-r border-gray-200 sticky left-0 bg-gray-50 z-10">
-                                Month</th>
-                            @foreach($tableEntities as $entity)
-                                <th colspan="2"
-                                    class="px-2 py-1 text-center text-xs font-extrabold text-gray-900 uppercase tracking-wider border-r border-gray-200">
-                                    {{ $entity->name }}
-                                </th>
-                            @endforeach
-                        </tr>
-                        <tr>
-                            @foreach($tableEntities as $entity)
-                                <th
-                                    class="px-2 py-1 text-center text-xs font-bold text-gray-900 uppercase tracking-wider border-r border-gray-200">
-                                    Total</th>
-                                <th
-                                    class="px-2 py-1 text-center text-xs font-bold text-gray-900 uppercase tracking-wider border-r border-gray-200">
-                                    Addressed</th>
-                            @endforeach
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        @php
-                            $columnTotals = [];
-                            foreach ($tableEntities as $entity) {
-                                $columnTotals[$entity->name]['total'] = 0;
-                                $columnTotals[$entity->name]['resolved'] = 0;
-                            }
-                        @endphp
-                        @foreach($monthlyTableData as $month => $data)
-                            <tr class="hover:bg-gray-50">
-                                <td
-                                    class="px-4 py-1 whitespace-nowrap text-sm font-medium text-gray-900 border-r border-gray-200 sticky left-0 bg-white z-10">
-                                    {{ $month }}
-                                </td>
+
+                    <div id="cmeGraphContainer" class="h-80 w-full transition-all">
+                        <canvas id="cmeComplaintsChart"></canvas>
+                    </div>
+                    
+                    <div id="cmeTableContainer" class="hidden transition-all overflow-x-visible min-h-80 pt-6">
+                        <table id="monthlyPerformanceTable" class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th rowspan="2"
+                                    class="px-4 py-1 text-left text-xs font-extrabold text-gray-900 uppercase tracking-wider border-r border-gray-200 sticky left-0 bg-gray-50 z-10">
+                                    Month</th>
                                 @foreach($tableEntities as $entity)
-                                    @php
-                                        $t = $data[$entity->name]['total'] ?? 0;
-                                        $r = $data[$entity->name]['resolved'] ?? 0;
-                                        $columnTotals[$entity->name]['total'] += $t;
-                                        $columnTotals[$entity->name]['resolved'] += $r;
-                                    @endphp
+                                    <th colspan="2"
+                                        class="px-2 py-1 text-center text-xs font-extrabold text-gray-900 uppercase tracking-wider border-r border-gray-200">
+                                        {{ $entity->name }}
+                                    </th>
+                                @endforeach
+                            </tr>
+                            <tr>
+                                @foreach($tableEntities as $entity)
+                                    <th
+                                        class="px-2 py-1 text-center text-xs font-bold text-gray-900 uppercase tracking-wider border-r border-gray-200">
+                                        Total</th>
+                                    <th
+                                        class="px-2 py-1 text-center text-xs font-bold text-gray-900 uppercase tracking-wider border-r border-gray-200">
+                                        Addressed</th>
+                                @endforeach
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @php
+                                $columnTotals = [];
+                                foreach ($tableEntities as $entity) {
+                                    $columnTotals[$entity->name]['total'] = 0;
+                                    $columnTotals[$entity->name]['resolved'] = 0;
+                                }
+                            @endphp
+                            @foreach($monthlyTableData as $month => $data)
+                                <tr class="hover:bg-gray-50">
                                     <td
-                                        class="px-2 py-1 whitespace-nowrap text-sm text-center text-gray-900 border-r border-gray-200">
-                                        {{ $t }}
+                                        class="px-4 py-1 whitespace-nowrap text-sm font-medium text-gray-900 border-r border-gray-200 sticky left-0 bg-white z-10">
+                                        {{ $month }}
+                                    </td>
+                                    @foreach($tableEntities as $entity)
+                                        @php
+                                            $t = $data[$entity->name]['total'] ?? 0;
+                                            $r = $data[$entity->name]['resolved'] ?? 0;
+                                            $columnTotals[$entity->name]['total'] += $t;
+                                            $columnTotals[$entity->name]['resolved'] += $r;
+                                        @endphp
+                                        <td
+                                            class="px-2 py-1 whitespace-nowrap text-sm text-center text-gray-900 border-r border-gray-200">
+                                            {{ $t }}
+                                        </td>
+                                        <td
+                                            class="px-2 py-1 whitespace-nowrap text-sm text-center text-green-600 font-medium border-r border-gray-200">
+                                            {{ $r }}
+                                        </td>
+                                    @endforeach
+                                </tr>
+                            @endforeach
+                        </tbody>
+                        <tfoot class="bg-gray-100 font-bold">
+                            <tr>
+                                <td
+                                    class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 sticky left-0 bg-gray-100 z-10">
+                                    Total</td>
+                                @foreach($tableEntities as $entity)
+                                    <td
+                                        class="px-2 py-3 whitespace-nowrap text-sm text-center text-gray-900 border-r border-gray-200">
+                                        {{ $columnTotals[$entity->name]['total'] }}
                                     </td>
                                     <td
-                                        class="px-2 py-1 whitespace-nowrap text-sm text-center text-green-600 font-medium border-r border-gray-200">
-                                        {{ $r }}
+                                        class="px-2 py-3 whitespace-nowrap text-sm text-center text-green-600 border-r border-gray-200">
+                                        {{ $columnTotals[$entity->name]['resolved'] }}
                                     </td>
                                 @endforeach
                             </tr>
-                        @endforeach
-                    </tbody>
-                    <tfoot class="bg-gray-100 font-bold">
-                        <tr>
-                            <td
-                                class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 sticky left-0 bg-gray-100 z-10">
-                                Total</td>
-                            @foreach($tableEntities as $entity)
-                                <td
-                                    class="px-2 py-3 whitespace-nowrap text-sm text-center text-gray-900 border-r border-gray-200">
-                                    {{ $columnTotals[$entity->name]['total'] }}
-                                </td>
-                                <td
-                                    class="px-2 py-3 whitespace-nowrap text-sm text-center text-green-600 border-r border-gray-200">
-                                    {{ $columnTotals[$entity->name]['resolved'] }}
-                                </td>
-                            @endforeach
-                        </tr>
-                    </tfoot>
-                </table>
+                        </tfoot>
+                    </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Products Graph Wrapper -->
+            <div id="stockCardWrapper" class="transition-all duration-300">
+                <!-- Top Products Graph (Right) -->
+                <div class="bg-white rounded-xl shadow monthly-complaints-chart" style="position: relative; padding: 1rem;">
+                    <div class="flex justify-between items-center mb-4 flex-wrap gap-2 relative" style="z-index: 50;">
+                        <div class="flex items-center gap-4">
+                            <h2 class="text-xl font-semibold">Top 10 Most Issued Products</h2>
+                             <div class="flex bg-gray-100 p-1 rounded-lg">
+                                <button onclick="toggleView('stock', 'graph')" id="stockGraphBtn" class="px-3 py-1 text-sm font-bold rounded-md bg-white shadow text-blue-600 transition-all">Graph</button>
+                                <button onclick="toggleView('stock', 'table')" id="stockTableBtn" class="px-3 py-1 text-sm font-bold rounded-md text-gray-500 hover:text-gray-700 transition-all">Table</button>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div id="stockGraphFilterContainer">
+                                <select id="categoryGraphFilter"
+                                    class="p-1.5 border rounded text-sm font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">All Time</option>
+                                    <option value="this_month">This Month</option>
+                                    <option value="last_6_months">Last 6 Months</option>
+                                    <option value="this_year">This Year</option>
+                                    <option value="last_year">Last Year</option>
+                                </select>
+                            </div>
+
+                            <!-- Download Button (Header) -->
+                            <div id="stockDownloadContainer" class="hidden no-print relative" style="z-index: 9999;">
+                                <div class="relative inline-block text-left">
+                                    <button onclick="toggleDropdown('stockReportDropdown')" type="button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 rounded inline-flex items-center text-xs">
+                                        Download
+                                        <svg class="-mr-1 ml-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
+                                     <div id="stockReportDropdown" class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-2xl bg-gray-200 ring-1 ring-black ring-opacity-20 focus:outline-none hidden" style="z-index: 9999;">
+                                        <div class="py-1">
+                                            <button onclick="printSection('stockTableContainer'); toggleDropdown('stockReportDropdown')" class="text-gray-700 group flex items-center px-4 py-2 text-sm hover:bg-gray-300 w-full text-left">
+                                                <svg class="mr-3 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path d="M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z" />
+                                                </svg>
+                                                PDF
+                                            </button>
+                                            <button onclick="exportTableToExcel('stockConsumptionTable', 'stock_consumption_report'); toggleDropdown('stockReportDropdown')" class="text-gray-700 group flex items-center px-4 py-2 text-sm hover:bg-gray-300 w-full text-left">
+                                                <svg class="mr-3 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path d="M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z" />
+                                                </svg>
+                                                Excel
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="stockGraphContainer" class="h-80 w-full transition-all">
+                        <canvas id="categoryUsageChart"></canvas>
+                    </div>
+
+                    <div id="stockTableContainer" class="hidden transition-all overflow-x-visible min-h-80 pt-6">
+                         <table id="stockConsumptionTable" class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-1 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-r border-gray-200 sticky left-0 bg-gray-50 z-10">Item Name</th>
+                                        @foreach($monthLabels as $month)
+                                            <th class="px-4 py-1 text-center text-xs font-bold text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                                                {{ substr($month, 0, 3) }} <!-- Show Jan, Feb etc -->
+                                            </th>
+                                        @endforeach
+                                        <th class="px-4 py-1 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">Total Received</th>
+                                        <th class="px-4 py-1 text-center text-xs font-bold text-red-600 uppercase tracking-wider border-r border-gray-200">Total Used</th>
+                                        <th class="px-4 py-1 text-center text-xs font-bold text-green-600 uppercase tracking-wider">Balance</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    @php
+                                        $stockMonthTotalsReceived = array_fill_keys($monthLabels, 0);
+                                        $stockMonthTotalsReceivedTop10 = array_fill_keys($monthLabels, 0);
+                                        $grandTotalReceived = 0;
+                                        $top10TotalReceived = 0;
+                                        $grandTotalUsed = 0;
+                                        $top10TotalUsed = 0;
+                                        $grandBalance = 0;
+                                        $top10Balance = 0;
+                                        $rowIndex = 0; // Counter for limiting screen display
+                                    @endphp
+                                    @foreach($stockConsumptionData as $itemName => $data)
+                                        @php
+                                            $rowIndex++;
+                                            $grandTotalReceived += $data['total_received'];
+                                            $grandTotalUsed += $data['total_used'];
+                                            $grandBalance += $data['current_stock'];
+                                            
+                                            if ($rowIndex <= 10) {
+                                                $top10TotalReceived += $data['total_received'];
+                                                $top10TotalUsed += $data['total_used'];
+                                                $top10Balance += $data['current_stock'];
+                                            }
+
+                                            // Add class to hide rows beyond 10 on screen (but show in print)
+                                            $rowClass = $rowIndex > 10 ? 'no-print-row' : '';
+                                        @endphp
+                                        <!-- Stock Received Row -->
+                                        <tr class="hover:bg-blue-50 {{ $rowClass }}">
+                                            <td class="px-6 py-1 whitespace-nowrap text-sm font-medium text-gray-900 border-r border-gray-200 sticky left-0 bg-white z-10">
+                                                {{ $itemName }}
+                                            </td>
+                                            @foreach($monthLabels as $month)
+                                                @php
+                                                    $receivedQty = $data['monthly_received_data'][$month] ?? 0;
+                                                    $stockMonthTotalsReceived[$month] += $receivedQty;
+                                                    if ($rowIndex <= 10) {
+                                                        $stockMonthTotalsReceivedTop10[$month] += $receivedQty;
+                                                    }
+                                                @endphp
+                                                <td class="px-4 py-1 whitespace-nowrap text-sm text-center text-blue-600 font-semibold border-r border-gray-200" style="background-color: #eff6ff;">
+                                                    {{ $receivedQty > 0 ? $receivedQty : '-' }}
+                                                </td>
+                                            @endforeach
+                                            <td class="px-4 py-1 whitespace-nowrap text-sm text-center font-bold text-gray-700 border-r border-gray-200">
+                                                {{ $data['total_received'] }}
+                                            </td>
+                                            <td class="px-4 py-1 whitespace-nowrap text-sm text-center font-bold text-red-600 border-r border-gray-200">
+                                                {{ $data['total_used'] }}
+                                            </td>
+                                            <td class="px-4 py-1 whitespace-nowrap text-sm text-center font-bold text-green-600">
+                                                {{ $data['current_stock'] }}
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot class="bg-gray-100 font-bold">
+                                    <!-- Top 10 Total Row (Visible only on Screen) -->
+                                    <tr class="border-t-2 border-gray-400 no-print">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 sticky left-0 bg-gray-100 z-10">
+                                            Total (Top 10)
+                                        </td>
+                                        @foreach($monthLabels as $month)
+                                            <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-blue-600 border-r border-gray-200">
+                                                {{ $stockMonthTotalsReceivedTop10[$month] }}
+                                            </td>
+                                        @endforeach
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-gray-900 border-r border-gray-200">
+                                            {{ $top10TotalReceived }}
+                                        </td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-red-600 border-r border-gray-200">
+                                            {{ $top10TotalUsed }}
+                                        </td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-green-600">
+                                            {{ $top10Balance }}
+                                        </td>
+                                    </tr>
+                                    <!-- Grand Total Row (Visible in Print/Excel) -->
+                                    <tr class="border-t-2 border-gray-400 no-print-row">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 sticky left-0 bg-gray-100 z-10">
+                                            Grand Total
+                                        </td>
+                                        @foreach($monthLabels as $month)
+                                            <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-blue-600 border-r border-gray-200">
+                                                {{ $stockMonthTotalsReceived[$month] }}
+                                            </td>
+                                        @endforeach
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-gray-900 border-r border-gray-200">
+                                                {{ $grandTotalReceived }}
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-red-600 border-r border-gray-200">
+                                                {{ $grandTotalUsed }}
+                                            </td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-green-600">
+                                            {{ $grandBalance }}
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                    </div>
+                </div>
             </div>
         </div>
+
 
         <!-- Graphs Row -->
         <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -707,121 +856,6 @@
         </div>
 
         <!-- Stock Consumption Table -->
-                <div id="stockConsumptionReport" class="mt-8 bg-white rounded-xl shadow overflow-hidden">
-                    <!-- Print-only heading -->
-                    <div class="print-only" style="display: none;">
-                        <h2 class="text-xl font-semibold text-gray-800 mb-4">Stock Consumption Report</h2>
-                    </div>
-                    <div class="p-6 border-b border-gray-200 flex justify-between items-center no-print">
-                        <h2 class="text-xl font-semibold text-gray-800">Stock Consumption Report</h2>
-                        <div class="flex space-x-2 relative inline-block text-left">
-                            <button onclick="toggleDropdown('stockReportDropdown')" type="button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
-                                Download Report
-                                <svg class="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                            </button>
-                            <div id="stockReportDropdown" class="origin-top-right absolute right-0 mt-10 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden" style="z-index: 50;">
-                                <div class="py-1">
-                                    <button onclick="printSection('stockConsumptionReport'); toggleDropdown('stockReportDropdown')" class="text-gray-700 group flex items-center px-4 py-2 text-sm hover:bg-gray-100 w-full text-left">
-                                        <svg class="mr-3 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                            <path d="M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z" />
-                                        </svg>
-                                        PDF
-                                    </button>
-                                    <button onclick="exportTableToExcel('stockConsumptionTable', 'stock_consumption_report'); toggleDropdown('stockReportDropdown')" class="text-gray-700 group flex items-center px-4 py-2 text-sm hover:bg-gray-100 w-full text-left">
-                                        <svg class="mr-3 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                            <path d="M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z" />
-                                        </svg>
-                                        Excel
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="overflow-x-auto">
-                        <table id="stockConsumptionTable" class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-1 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-r border-gray-200 sticky left-0 bg-gray-50 z-10">Item Name</th>
-                                    @foreach($monthLabels as $month)
-                                        <th class="px-4 py-1 text-center text-xs font-bold text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                                            {{ substr($month, 0, 3) }} <!-- Show Jan, Feb etc -->
-                                        </th>
-                                    @endforeach
-                                    <th class="px-4 py-1 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">Total Received</th>
-                                    <th class="px-4 py-1 text-center text-xs font-bold text-red-600 uppercase tracking-wider border-r border-gray-200">Total Used</th>
-                                    <th class="px-4 py-1 text-center text-xs font-bold text-green-600 uppercase tracking-wider">Balance</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @php
-                                    $stockMonthTotalsReceived = array_fill_keys($monthLabels, 0);
-                                    $grandTotalReceived = 0;
-                                    $grandTotalUsed = 0;
-                                    $grandBalance = 0;
-                                    $rowIndex = 0; // Counter for limiting screen display
-                                @endphp
-                                @foreach($stockConsumptionData as $itemName => $data)
-                                    @php
-                                        $rowIndex++;
-                                        $grandTotalReceived += $data['total_received'];
-                                        $grandTotalUsed += $data['total_used'];
-                                        $grandBalance += $data['current_stock'];
-                                        // Add class to hide rows beyond 10 on screen (but show in print)
-                                        $rowClass = $rowIndex > 10 ? 'no-print-row' : '';
-                                    @endphp
-                                    <!-- Stock Received Row -->
-                                    <tr class="hover:bg-blue-50 {{ $rowClass }}">
-                                        <td class="px-6 py-1 whitespace-nowrap text-sm font-medium text-gray-900 border-r border-gray-200 sticky left-0 bg-white z-10">
-                                            {{ $itemName }}
-                                        </td>
-                                        @foreach($monthLabels as $month)
-                                            @php
-                                                $receivedQty = $data['monthly_received_data'][$month] ?? 0;
-                                                $stockMonthTotalsReceived[$month] += $receivedQty;
-                                            @endphp
-                                            <td class="px-4 py-1 whitespace-nowrap text-sm text-center text-blue-600 font-semibold border-r border-gray-200" style="background-color: #eff6ff;">
-                                                {{ $receivedQty > 0 ? $receivedQty : '-' }}
-                                            </td>
-                                        @endforeach
-                                        <td class="px-4 py-1 whitespace-nowrap text-sm text-center font-bold text-gray-700 border-r border-gray-200">
-                                            {{ $data['total_received'] }}
-                                        </td>
-                                        <td class="px-4 py-1 whitespace-nowrap text-sm text-center font-bold text-red-600 border-r border-gray-200">
-                                            {{ $data['total_used'] }}
-                                        </td>
-                                        <td class="px-4 py-1 whitespace-nowrap text-sm text-center font-bold text-green-600">
-                                            {{ $data['current_stock'] }}
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                            <tfoot class="bg-gray-100 font-bold">
-                                <tr class="border-t-2 border-gray-400">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 sticky left-0 bg-gray-100 z-10">
-                                        Total
-                                    </td>
-                                    @foreach($monthLabels as $month)
-                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-blue-600 border-r border-gray-200">
-                                            {{ $stockMonthTotalsReceived[$month] }}
-                                        </td>
-                                    @endforeach
-                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-gray-900 border-r border-gray-200">
-                                            {{ $grandTotalReceived }}
-                                        </td>
-                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-red-600 border-r border-gray-200">
-                                            {{ $grandTotalUsed }}
-                                        </td>
-                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-green-600">
-                                        {{ $grandBalance }}
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
             </div>
 
             <!-- Footer -->
@@ -856,6 +890,55 @@
             dropdown.classList.remove('hidden');
         } else {
             dropdown.classList.add('hidden');
+        }
+    }
+
+    function toggleView(section, viewType) {
+        // section: 'cme' or 'stock'
+        // viewType: 'graph' or 'table'
+        
+        const graphContainer = document.getElementById(section + 'GraphContainer');
+        const tableContainer = document.getElementById(section + 'TableContainer');
+        const graphBtn = document.getElementById(section + 'GraphBtn');
+        const tableBtn = document.getElementById(section + 'TableBtn');
+        const graphFilter = document.getElementById(section + 'GraphFilterContainer');
+        const downloadContainer = document.getElementById(section + 'DownloadContainer');
+        
+        const activeWrapper = document.getElementById(section + 'CardWrapper');
+        const siblingWrapper = section === 'cme' 
+            ? document.getElementById('stockCardWrapper') 
+            : document.getElementById('cmeCardWrapper');
+        
+        if (viewType === 'graph') {
+            graphContainer.classList.remove('hidden');
+            tableContainer.classList.add('hidden');
+            if(graphFilter) graphFilter.classList.remove('hidden');
+            if(downloadContainer) downloadContainer.classList.add('hidden');
+            
+            // Restore original layout (side by side)
+            activeWrapper.classList.remove('lg:col-span-2');
+            siblingWrapper.classList.remove('hidden');
+            
+            // Update buttons
+            graphBtn.classList.remove('text-gray-500');
+            graphBtn.classList.add('bg-white', 'shadow', 'text-blue-600');
+            tableBtn.classList.remove('bg-white', 'shadow', 'text-blue-600');
+            tableBtn.classList.add('text-gray-500');
+        } else {
+            graphContainer.classList.add('hidden');
+            tableContainer.classList.remove('hidden');
+            if(graphFilter) graphFilter.classList.add('hidden');
+            if(downloadContainer) downloadContainer.classList.remove('hidden');
+            
+            // Expand to full width and hide sibling
+            activeWrapper.classList.add('lg:col-span-2');
+            siblingWrapper.classList.add('hidden');
+            
+             // Update buttons
+            tableBtn.classList.remove('text-gray-500');
+            tableBtn.classList.add('bg-white', 'shadow', 'text-blue-600');
+            graphBtn.classList.remove('bg-white', 'shadow', 'text-blue-600');
+            graphBtn.classList.add('text-gray-500');
         }
     }
 
@@ -2456,33 +2539,58 @@
     <style>
     @media print {
         @page {
-            size: auto;
+            size: landscape; /* Hint for landscape if needed, but auto is safer */
             margin: 10mm;
         }
+        body { 
+            margin: 0 !important; 
+            padding: 0 !important; 
+            background: white !important;
+        }
+        /* Define what to hide completely to free up space */
+        .no-print, .header-bg, #graphsSection, #complaintsTableSection, .w-96, nav, footer, 
+        #resetFilters, #applyCustomDate, .filter-select, label, .stat-card {
+            display: none !important;
+        }
+
+        /* Essential reset */
         body * {
-            visibility: hidden;
+            visibility: hidden !important;
         }
+
         .printable-area, .printable-area * {
-            visibility: visible;
+            visibility: visible !important;
         }
+
+        /* Ensure parent containers don't add space or center */
+        .mx-auto, .grid, .flex, #cmeCardWrapper, #stockCardWrapper {
+            display: block !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            max-width: none !important;
+            width: 100% !important;
+            transform: none !important;
+            position: static !important;
+            box-shadow: none !important;
+        }
+
         .printable-area {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            margin: 0;
-            padding: 0;
-            background: white;
-            page-break-after: avoid;
-            max-height: 100%;
-            overflow: hidden;
+            display: block !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+            z-index: 9999 !important;
         }
         /* Optimize table for print */
         table {
-            width: 100%;
-            font-size: 10px; /* Smaller font */
-            border-collapse: collapse;
-            page-break-inside: avoid;
+            width: 100% !important;
+            border-collapse: collapse !important;
+            page-break-inside: avoid !important;
+            margin-top: 20px;
         }
         th, td {
             padding: 4px 2px !important; /* Reduce padding */
