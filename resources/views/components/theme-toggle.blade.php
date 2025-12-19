@@ -101,10 +101,10 @@
 <script>
 // Simple theme switching - no flickering
 document.addEventListener('DOMContentLoaded', function() {
-  let currentTheme = 'dark'; // Default to dark
+  let currentTheme = 'light'; // Default to light
   
   // Get saved theme
-  const savedTheme = localStorage.getItem('theme') || 'dark';
+  const savedTheme = localStorage.getItem('theme') || 'light';
   applyTheme(savedTheme);
   
   // Apply theme

@@ -213,7 +213,7 @@
   <script>
     // Apply theme immediately to prevent flickering
     (function() {
-      const savedTheme = localStorage.getItem('theme') || 'dark';
+      const savedTheme = localStorage.getItem('theme') || 'light';
       document.documentElement.classList.add(`theme-${savedTheme}`);
     })();
     
