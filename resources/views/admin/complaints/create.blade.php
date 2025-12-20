@@ -376,23 +376,36 @@
                 const cityId = document.getElementById('city_id') ? document.getElementById('city_id').value : '';
                 const sectorId = document.getElementById('sector_id') ? document.getElementById('sector_id').value :
                     '';
-                let firstVisible = null;
+                
+                // Store current selection to check if it gets hidden
+                const currentSelectedId = employeeSelect.value;
+                let currentlySelectedIsHidden = false;
+
                 Array.from(employeeSelect.options).forEach(opt => {
                     if (!opt.value) return; // placeholder
                     const optCategory = opt.getAttribute('data-category') || '';
                     const optCity = opt.getAttribute('data-city') || '';
                     const optSector = opt.getAttribute('data-sector') || '';
+                    
                     const matchCategory = !category || optCategory === category;
                     const matchCity = !cityId || String(optCity) === String(cityId);
                     const matchSector = !sectorId || String(optSector) === String(sectorId);
+                    
                     const show = matchCategory && matchCity && matchSector;
+                    
+                    // Use both hidden and style.display for best compatibility
                     opt.hidden = !show;
-                    if (show && !firstVisible) firstVisible = opt;
+                    opt.style.display = show ? '' : 'none';
+                    opt.disabled = !show; // Also disable to prevent keyboard selection
+
+                    if (!show && opt.value === currentSelectedId) {
+                        currentlySelectedIsHidden = true;
+                    }
                 });
-                // If selected option is hidden, clear selection
-                if (employeeSelect.selectedOptions.length) {
-                    const sel = employeeSelect.selectedOptions[0];
-                    if (sel && sel.hidden) employeeSelect.value = '';
+
+                // If selected option is hidden or disabled, clear selection
+                if (currentlySelectedIsHidden) {
+                    employeeSelect.value = '';
                 }
             }
             if (employeeSelect) {

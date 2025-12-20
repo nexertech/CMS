@@ -311,23 +311,37 @@ document.addEventListener('DOMContentLoaded', function() {
     const category = categorySelect ? categorySelect.value : '';
     const cityId = document.getElementById('city_id') ? document.getElementById('city_id').value : '';
     const sectorId = document.getElementById('sector_id') ? document.getElementById('sector_id').value : '';
-    let firstVisible = null;
+    
+    // Store current selection to check if it gets hidden
+    const currentSelectedId = employeeSelect.value;
+    let currentlySelectedIsHidden = false;
+
     Array.from(employeeSelect.options).forEach(opt => {
       if (!opt.value) return; // placeholder
-      const optCategory = opt.getAttribute('data-category') || '';
+      const optCategory = (opt.getAttribute('data-category') || '').trim();
       const optCity = opt.getAttribute('data-city') || '';
       const optSector = opt.getAttribute('data-sector') || '';
-      const matchCategory = !category || optCategory === category;
+      
+      // Robust comparison using trim() and handling empty values
+      const matchCategory = !category || optCategory === category.trim();
       const matchCity = !cityId || String(optCity) === String(cityId);
       const matchSector = !sectorId || String(optSector) === String(sectorId);
+      
       const show = matchCategory && matchCity && matchSector;
+      
+      // Use both hidden and style.display for best compatibility
       opt.hidden = !show;
-      if (show && !firstVisible) firstVisible = opt;
+      opt.style.display = show ? '' : 'none';
+      opt.disabled = !show; // Also disable to prevent keyboard selection
+
+      if (!show && opt.value === currentSelectedId) {
+        currentlySelectedIsHidden = true;
+      }
     });
-    // If selected option is hidden, clear selection
-    if (employeeSelect.selectedOptions.length) {
-      const sel = employeeSelect.selectedOptions[0];
-      if (sel && sel.hidden) employeeSelect.value = '';
+
+    // If selected option is hidden or disabled, clear selection
+    if (currentlySelectedIsHidden) {
+      employeeSelect.value = '';
     }
   }
   if (employeeSelect) {
@@ -604,7 +618,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Form submit handler: sync title_other to title when "Other" is selected
-  const complaintForm = document.querySelector('form[action*="complaints.update"]');
+  // Reuse the complaintForm reference declared above
   if (complaintForm && titleSelect && titleOtherInput) {
     complaintForm.addEventListener('submit', function(e) {
       if (titleSelect.value === 'other' || titleOtherInput.style.display !== 'none') {
