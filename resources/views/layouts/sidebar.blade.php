@@ -122,6 +122,12 @@
       <i data-feather="map-pin" class="me-2"></i> GE Nodes
     </a>
     @endif
+    @if($user && ($user->hasPermission('employees')))
+    <a href="{{ route('admin.houses.index') }}" class="nav-link d-block py-2 px-3 mb-1 {{ request()->routeIs('admin.houses.*') ? 'active' : '' }}">
+      <i data-feather="home" class="me-2"></i> Houses
+    </a>
+    @endif
+
     @if($user && ($user->hasPermission('roles')))
     <a href="{{ route('admin.roles.index') }}" class="nav-link d-block py-2 px-3 mb-1 {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
       <i data-feather="shield" class="me-2"></i> Roles

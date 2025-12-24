@@ -18,12 +18,16 @@ trait LocationFilterTrait
             return $query;
         }
 
+        if ($user->city_id === null && $user->sector_id === null) {
+            return $query;
+        }
+
         $roleName = strtolower($user->role->role_name ?? '');
 
         switch ($roleName) {
             case 'director':
             case 'admin':
-                // Director and Admin can see all complaints - no filter
+                // Legacy check - already handled by null check above but kept for safety
                 break;
 
             case 'garrison_engineer':
@@ -75,11 +79,14 @@ trait LocationFilterTrait
             return $query;
         }
 
+        if ($user->city_id === null && $user->sector_id === null) {
+            return $query;
+        }
+
         $roleName = strtolower($user->role->role_name ?? '');
 
         switch ($roleName) {
             case 'director':
-                // Director can see all clients - no filter
                 break;
 
             case 'garrison_engineer':
@@ -114,12 +121,15 @@ trait LocationFilterTrait
             return $query;
         }
 
+        if ($user->city_id === null && $user->sector_id === null) {
+            return $query;
+        }
+
         $roleName = strtolower($user->role->role_name ?? '');
 
         switch ($roleName) {
             case 'director':
             case 'admin':
-                // Director and Admin can see all employees - no filter
                 break;
 
             case 'garrison_engineer':
@@ -161,12 +171,11 @@ trait LocationFilterTrait
      */
     public function canViewAllData($user): bool
     {
-        if (!$user || !$user->role) {
+        if (!$user) {
             return false;
         }
 
-        $roleName = strtolower($user->role->role_name ?? '');
-        return $roleName === 'director' || $roleName === 'admin';
+        return $user->city_id === null && $user->sector_id === null;
     }
 
     /**
@@ -178,11 +187,11 @@ trait LocationFilterTrait
             return null;
         }
 
-        $roleName = strtolower($user->role->role_name ?? '');
-
-        if ($roleName === 'director') {
+        if ($user->city_id === null && $user->sector_id === null) {
             return null; // All cities
         }
+
+        $roleName = strtolower($user->role->role_name ?? '');
 
         if ($roleName === 'garrison_engineer' && $user->city_id) {
             return [$user->city_id]; // Only their city
@@ -204,11 +213,11 @@ trait LocationFilterTrait
             return null;
         }
 
-        $roleName = strtolower($user->role->role_name ?? '');
-
-        if ($roleName === 'director') {
+        if ($user->city_id === null && $user->sector_id === null) {
             return null; // All sectors
         }
+
+        $roleName = strtolower($user->role->role_name ?? '');
 
         if ($roleName === 'garrison_engineer' && $user->city_id) {
             // GE can see all sectors in their city
@@ -235,12 +244,15 @@ trait LocationFilterTrait
             return $query;
         }
 
+        if ($user->city_id === null && $user->sector_id === null) {
+            return $query;
+        }
+
         $roleName = strtolower($user->role->role_name ?? '');
 
         switch ($roleName) {
             case 'director':
             case 'admin':
-                // Director and Admin can see all spares - no filter
                 break;
 
             case 'garrison_engineer':
@@ -274,6 +286,58 @@ trait LocationFilterTrait
                     $query->where('city_id', $user->city_id);
                 } else {
                     // If no location assigned, show nothing
+                    $query->whereRaw('1 = 0');
+                }
+        }
+        return $query;
+    }
+
+    /**
+     * Apply location-based filtering to houses query
+     */
+    public function filterHousesByLocation(Builder $query, $user): Builder
+    {
+        if (!$user || !$user->role) {
+            return $query;
+        }
+
+        if ($user->city_id === null && $user->sector_id === null) {
+            return $query;
+        }
+
+        $roleName = strtolower($user->role->role_name ?? '');
+
+        switch ($roleName) {
+            case 'director':
+            case 'admin':
+                break;
+
+            case 'garrison_engineer':
+                // GE can see only their city's houses
+                if ($user->city_id) {
+                    $query->where('city_id', $user->city_id);
+                } else {
+                    // If no city assigned, show nothing
+                    $query->whereRaw('1 = 0');
+                }
+                break;
+
+            case 'complaint_center':
+            case 'department_staff':
+                // Can see only their sector's houses
+                if ($user->sector_id) {
+                    $query->where('sector_id', $user->sector_id);
+                } else {
+                    // If no sector assigned, show nothing
+                    $query->whereRaw('1 = 0');
+                }
+                break;
+            
+            default:
+                // For any other role, if they have city_id, filter by city
+                if ($user->city_id) {
+                    $query->where('city_id', $user->city_id);
+                } else {
                     $query->whereRaw('1 = 0');
                 }
                 break;

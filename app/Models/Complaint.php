@@ -15,6 +15,7 @@ class Complaint extends Model
     protected $fillable = [
         'title',
         'client_id',
+        'house_id',
         'city_id',
         'sector_id',
         'category',
@@ -36,6 +37,14 @@ class Complaint extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class, 'client_id', 'id')->withTrashed();
+    }
+
+    /**
+     * Get the house associated with the complaint.
+     */
+    public function house(): BelongsTo
+    {
+        return $this->belongsTo(House::class, 'house_id', 'id')->withTrashed();
     }
 
     /**

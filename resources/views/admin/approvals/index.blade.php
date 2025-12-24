@@ -120,15 +120,15 @@
 
   <!-- APPROVALS TABLE -->
 
-  <div class="card-glass p-2">
+  <div class="card-glass p-1">
     <div class="table-responsive">
       <table class="table table-dark table-sm mb-0" style="font-size: 0.75rem;">
         <thead>
           <tr style="font-size: 0.7rem; text-transform: uppercase;">
             <th style="text-align: left; white-space: nowrap; padding: 2px 4px; width: 1%;">CMP-ID</th>
             <th style="white-space: nowrap; padding: 2px 4px; width: 1%;">Reg Date</th>
+            <th style="white-space: nowrap; padding: 2px 4px; width: 1%;">House No.</th>
             <th style="text-align: left; white-space: nowrap; padding: 2px 4px; width: 1%;">Addressed Date</th>
-            <th style="white-space: nowrap; padding: 2px 4px; width: 1%;">Name</th>
             <th style="white-space: nowrap; padding: 2px 4px; width: 1%;">Address</th>
             <th style="padding: 2px 4px; width: auto;">Nature & Type</th>
             <th style="white-space: nowrap; padding: 2px 4px; width: 1%;">Phone</th>
@@ -230,6 +230,9 @@
                 <td class="px-1" style="font-size: 0.8rem;">
                   {{ $complaint->created_at ? $complaint->created_at->timezone('Asia/Karachi')->format('M d, y H:i') : 'N/A' }}
                 </td>
+                <td class="px-1" style="font-size: 0.8rem; color: #fbbf24; font-weight: 500;">
+                  {{ $complaint->house->username ?? 'N/A' }}
+                </td>
                 <td class="px-1" style="text-align: left; font-size: 0.75rem;">
                   @if($complaint->closed_at)
                     @php
@@ -243,7 +246,6 @@
                     <span style="display: block; text-align: center;">-</span>
                   @endif
                 </td>
-                <td class="px-1" style="font-size: 0.75rem; white-space: nowrap; width: 1%;">{{ $complaint->client->client_name ?? 'N/A' }}</td>
                 <td class="px-1" style="font-size: 0.73rem; white-space: nowrap; width: 1%; max-width: 150px; overflow: hidden; text-overflow: ellipsis;" title="{{ $complaint->client->address ?? 'N/A' }}">{{ $complaint->client->address ?? 'N/A' }}</td>
                 <td class="px-1" style="width: auto;">
                   <div class="text-white" style="font-size: 0.75rem; line-height: 1.1; white-space: normal; min-width: 180px;">{{ $displayText }}</div>
@@ -808,7 +810,7 @@
 
     .table.table-dark.table-sm th {
       font-size: 0.65rem !important;
-      padding: 0.4rem 0.4rem !important;
+      padding: 0.2rem 0.2rem !important;
       white-space: nowrap !important;
       line-height: 1.1 !important;
       display: table-cell !important;
@@ -821,14 +823,15 @@
 
     /* Specific header text size reduction for date columns */
     .table.table-dark.table-sm th:nth-child(2),
-    .table.table-dark.table-sm th:nth-child(3) {
-      font-size: 0.6rem !important;
-      padding: 0.35rem 0.3rem !important;
+    .table.table-dark.table-sm th:nth-child(3),
+    .table.table-dark.table-sm th:nth-child(4) {
+      font-size: 0.65rem !important;
+      padding: 0.2rem 0.2rem !important;
     }
 
     .table.table-dark.table-sm td {
       font-size: 0.7rem !important;
-      padding: 0.4rem 0.5rem !important;
+      padding: 0.2rem 0.2rem !important;
       white-space: nowrap !important;
       line-height: 1.2 !important;
     }
@@ -836,8 +839,10 @@
     /* Specific styling for date columns to ensure they fit */
     .table.table-dark.table-sm th:nth-child(2),
     .table.table-dark.table-sm th:nth-child(3),
+    .table.table-dark.table-sm th:nth-child(4),
     .table.table-dark.table-sm td:nth-child(2),
-    .table.table-dark.table-sm td:nth-child(3) {
+    .table.table-dark.table-sm td:nth-child(3),
+    .table.table-dark.table-sm td:nth-child(4) {
       font-size: 0.65rem !important;
     }
 

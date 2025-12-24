@@ -118,11 +118,11 @@
                         <th style="width: 100px;">CMP-ID</th>
                         <th style="width: 130px;">Registration Date/Time</th>
                         <th style="width: 130px; text-align: left;">Completion Time</th>
+                        <th style="width: 100px;">House No.</th>
                         <th style="width: 120px;">Complainant Name</th>
                         <th style="width: 150px;">Address</th>
                         <th style="width: 250px;">Complaint Nature & Type</th>
                         <th style="width: 100px;">Priority</th>
-                        <th style="width: 100px;">Phone No.</th>
                         <th style="width: 80px;">Actions</th>
                     </tr>
                 </thead>
@@ -136,6 +136,7 @@
                             </td>
                             <td style="white-space: nowrap;">{{ $complaint->created_at ? $complaint->created_at->timezone('Asia/Karachi')->format('M d, Y H:i:s') : '' }}</td>
                             <td style="white-space: nowrap; text-align: {{ $complaint->closed_at ? 'left' : 'center' }};">{{ $complaint->closed_at ? $complaint->closed_at->timezone('Asia/Karachi')->format('M d, Y H:i:s') : '-' }}</td>
+                            <td style="white-space: nowrap;">{{ $complaint->house->username ?? 'N/A' }}</td>
                             <td style="white-space: nowrap;">{{ $complaint->client->client_name ?? 'N/A' }}</td>
                             <td>{{ $complaint->client->address ?? 'N/A' }}</td>
                             <td>
@@ -175,7 +176,6 @@
                                     {{ $priorityDisplay }}
                                 </span>
                             </td>
-                            <td>{{ $complaint->client->phone ?? 'N/A' }}</td>
                             <td>
                                 <div class="btn-group" role="group">
                                     <button onclick="viewComplaint({{ $complaint->id }})" class="btn btn-outline-success btn-sm" title="View Details" style="padding: 3px 8px;">
@@ -232,7 +232,7 @@
         }
 
         /* Ensure the priority column centers its content */
-        table th:nth-child(7), table td:nth-child(7) {
+        table th:nth-child(8), table td:nth-child(8) {
             text-align: center;
             vertical-align: middle;
         }
@@ -365,11 +365,12 @@
                     feather.replace();
                 }
                 
-                // Update total records footer with filtered count
                 if (newFooter && footerContainer) {
                     footerContainer.innerHTML = newFooter.innerHTML;
                 }
 
+                const searchParams = new URLSearchParams(params.toString());
+                searchParams.set('format', 'html'); // Keep format=html for future popstate if needed
                 const newUrl = `{{ route('admin.complaints.index') }}?${params.toString()}`;
                 window.history.pushState({path: newUrl}, '', newUrl);
             })

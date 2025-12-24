@@ -4,10 +4,10 @@
 
 @section('content')
 <!-- PAGE HEADER -->
-<div class="mb-4">
+<div class="mb-2">
   <div class="d-flex justify-content-between align-items-center">
     <div>
-      <h2 class="text-white mb-2">Complaint Details</h2>
+      <h2 class="text-white mb-1" style="font-size: 1.5rem;">Complaint Details</h2>
     </div>
   </div>
 </div>
@@ -144,29 +144,39 @@
 <!-- COMPLAINT DETAILS -->
 <div class="row">
   <!-- Personal Information -->
-  <div class="col-md-6 mb-4">
-    <div class="card-glass h-100">
-      <div class="d-flex align-items-center mb-4" style="border-bottom: 2px solid rgba(59, 130, 246, 0.2); padding-bottom: 12px;">
-        <i data-feather="user" class="me-2 text-primary" style="width: 20px; height: 20px;"></i>
-        <h5 class="text-white mb-0" style="font-size: 1.1rem; font-weight: 600;">Complainant Information</h5>
+  <div class="col-md-6 mb-3">
+    <div class="card-glass h-100 p-2">
+      <div class="d-flex align-items-center mb-2" style="border-bottom: 2px solid rgba(59, 130, 246, 0.2); padding-bottom: 8px;">
+        <i data-feather="user" class="me-2 text-primary" style="width: 18px; height: 18px;"></i>
+        <h5 class="text-white mb-0" style="font-size: 1rem; font-weight: 600;">Complainant Information</h5>
       </div>
       
-      <div class="info-item mb-3">
+      <div class="info-item mb-1">
         <div class="d-flex align-items-start">
-          <i data-feather="user" class="me-3 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
+          <i data-feather="user" class="me-2 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
           <div class="flex-grow-1">
-            <div class="text-muted small mb-1" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Name</div>
+            <div class="text-muted small mb-0" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Name</div>
             <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->client->client_name ?? 'N/A' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-item mb-1">
+        <div class="d-flex align-items-start">
+          <i data-feather="home" class="me-2 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
+          <div class="flex-grow-1">
+            <div class="text-muted small mb-0" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">House No.</div>
+            <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->house->username ?? 'N/A' }}</div>
           </div>
         </div>
       </div>
       
       @if($complaint->client->phone)
-      <div class="info-item mb-3">
+      <div class="info-item mb-1">
         <div class="d-flex align-items-start">
-          <i data-feather="phone" class="me-3 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
+          <i data-feather="phone" class="me-2 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
           <div class="flex-grow-1">
-            <div class="text-muted small mb-1" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Phone</div>
+            <div class="text-muted small mb-0" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Phone</div>
             <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->client->phone }}</div>
           </div>
         </div>
@@ -174,11 +184,11 @@
       @endif
       
       @if($complaint->client->address)
-      <div class="info-item mb-3">
+      <div class="info-item mb-1">
         <div class="d-flex align-items-start">
-          <i data-feather="map-pin" class="me-3 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
+          <i data-feather="map-pin" class="me-2 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
           <div class="flex-grow-1">
-            <div class="text-muted small mb-1" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Address</div>
+            <div class="text-muted small mb-0" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Address</div>
             <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->client->address }}</div>
           </div>
         </div>
@@ -186,11 +196,11 @@
       @endif
       
       @if($complaint->city_id && $complaint->city)
-      <div class="info-item mb-3">
+      <div class="info-item mb-1">
         <div class="d-flex align-items-start">
-          <i data-feather="map" class="me-3 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
+          <i data-feather="map" class="me-2 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
           <div class="flex-grow-1">
-            <div class="text-muted small mb-1" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">GE Groups</div>
+            <div class="text-muted small mb-0" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">GE Groups</div>
             <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->city->name }}</div>
           </div>
         </div>
@@ -198,11 +208,11 @@
       @endif
       
       @if($complaint->sector_id && $complaint->sector)
-      <div class="info-item mb-3">
+      <div class="info-item mb-1">
         <div class="d-flex align-items-start">
-          <i data-feather="layers" class="me-3 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
+          <i data-feather="layers" class="me-2 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
           <div class="flex-grow-1">
-            <div class="text-muted small mb-1" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">GE Nodes</div>
+            <div class="text-muted small mb-0" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">GE Nodes</div>
             <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->sector->name }}</div>
           </div>
         </div>
@@ -210,11 +220,11 @@
       @endif
       
       @if($complaint->description)
-      <div class="info-item mb-3">
+      <div class="info-item mb-1">
         <div class="d-flex align-items-start">
-          <i data-feather="file-text" class="me-3 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
+          <i data-feather="file-text" class="me-2 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
           <div class="flex-grow-1">
-            <div class="text-muted small mb-1" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Description</div>
+            <div class="text-muted small mb-0" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Description</div>
             <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->description }}</div>
           </div>
         </div>
@@ -224,18 +234,18 @@
   </div>
   
   <!-- Complaint Information -->
-  <div class="col-md-6 mb-4">
-    <div class="card-glass h-100">
-      <div class="d-flex align-items-center mb-4" style="border-bottom: 2px solid rgba(59, 130, 246, 0.2); padding-bottom: 12px;">
-        <i data-feather="alert-triangle" class="me-2 text-primary" style="width: 20px; height: 20px;"></i>
-        <h5 class="text-white mb-0" style="font-size: 1.1rem; font-weight: 600;">Complaint Information</h5>
+  <div class="col-md-6 mb-3">
+    <div class="card-glass h-100 p-2">
+      <div class="d-flex align-items-center mb-2" style="border-bottom: 2px solid rgba(59, 130, 246, 0.2); padding-bottom: 8px;">
+        <i data-feather="alert-triangle" class="me-2 text-primary" style="width: 18px; height: 18px;"></i>
+        <h5 class="text-white mb-0" style="font-size: 1rem; font-weight: 600;">Complaint Information</h5>
       </div>
       
-      <div class="info-item mb-3">
+      <div class="info-item mb-1">
         <div class="d-flex align-items-start">
-          <i data-feather="hash" class="me-3 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
+          <i data-feather="hash" class="me-2 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
           <div class="flex-grow-1">
-            <div class="text-muted small mb-1" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Complaint ID</div>
+            <div class="text-muted small mb-0" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Complaint ID</div>
             <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">
               <a href="{{ route('admin.complaints.show', $complaint->id) }}" class="text-decoration-none" style="color: #3b82f6;">
                 {{ str_pad($complaint->complaint_id ?? $complaint->id, 4, '0', STR_PAD_LEFT) }}
@@ -246,32 +256,32 @@
       </div>
       
       @if($complaint->title)
-      <div class="info-item mb-3">
+      <div class="info-item mb-1">
         <div class="d-flex align-items-start">
-          <i data-feather="file-text" class="me-3 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
+          <i data-feather="file-text" class="me-2 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
           <div class="flex-grow-1">
-            <div class="text-muted small mb-1" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Complaint Type</div>
+            <div class="text-muted small mb-0" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Complaint Type</div>
             <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->title }}</div>
           </div>
         </div>
       </div>
       @endif
       
-      <div class="info-item mb-3">
+      <div class="info-item mb-1">
         <div class="d-flex align-items-start">
-          <i data-feather="tag" class="me-3 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
+          <i data-feather="tag" class="me-2 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
           <div class="flex-grow-1">
-            <div class="text-muted small mb-1" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Nature & Type</div>
+            <div class="text-muted small mb-0" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Nature & Type</div>
             <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $displayText }}</div>
           </div>
         </div>
       </div>
       
-      <div class="info-item mb-3">
+      <div class="info-item mb-1">
         <div class="d-flex align-items-start">
-          <i data-feather="activity" class="me-3 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
+          <i data-feather="activity" class="me-2 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
           <div class="flex-grow-1">
-            <div class="text-muted small mb-1" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Status</div>
+            <div class="text-muted small mb-0" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Status</div>
             <div>
               <span class="badge" style="background-color: {{ $currentStatusColor['bg'] }}; color: #ffffff !important; padding: 6px 12px; font-size: 0.85rem; font-weight: 600; border-radius: 6px; border: 1px solid {{ $currentStatusColor['border'] }};">
                 {{ $statusDisplay }}
@@ -282,11 +292,11 @@
       </div>
       
       @if($complaint->assignedEmployee)
-      <div class="info-item mb-3">
+      <div class="info-item mb-1">
         <div class="d-flex align-items-start">
-          <i data-feather="user-check" class="me-3 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
+          <i data-feather="user-check" class="me-2 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
           <div class="flex-grow-1">
-            <div class="text-muted small mb-1" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Assigned Employee</div>
+            <div class="text-muted small mb-0" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Assigned Employee</div>
             <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">
               {{ $complaint->assignedEmployee->name ?? 'N/A' }}
               @if($complaint->assignedEmployee && $complaint->assignedEmployee->phone)
@@ -301,22 +311,22 @@
       </div>
       @endif
       
-      <div class="info-item mb-3">
+      <div class="info-item mb-1">
         <div class="d-flex align-items-start">
-          <i data-feather="calendar" class="me-3 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
+          <i data-feather="calendar" class="me-2 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
           <div class="flex-grow-1">
-            <div class="text-muted small mb-1" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Registration Date/Time</div>
+            <div class="text-muted small mb-0" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Registration Date/Time</div>
             <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->created_at ? $complaint->created_at->timezone('Asia/Karachi')->format('M d, Y H:i:s') : 'N/A' }}</div>
           </div>
         </div>
       </div>
       
       @if($complaint->closed_at)
-      <div class="info-item mb-3">
+      <div class="info-item mb-1">
         <div class="d-flex align-items-start">
-          <i data-feather="check-circle" class="me-3 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
+          <i data-feather="check-circle" class="me-2 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
           <div class="flex-grow-1">
-            <div class="text-muted small mb-1" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Addressed Date/Time</div>
+            <div class="text-muted small mb-0" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Addressed Date/Time</div>
             <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->closed_at->timezone('Asia/Karachi')->format('M d, Y H:i:s') }}</div>
           </div>
         </div>
@@ -324,11 +334,11 @@
       @endif
       
       @if($performaTypeLabel)
-      <div class="info-item mb-3">
+      <div class="info-item mb-1">
         <div class="d-flex align-items-start">
-          <i data-feather="file" class="me-3 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
+          <i data-feather="file" class="me-2 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
           <div class="flex-grow-1">
-            <div class="text-muted small mb-1" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Performa Type</div>
+            <div class="text-muted small mb-0" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Performa Type</div>
             <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $performaTypeLabel }}</div>
           </div>
         </div>
@@ -336,11 +346,11 @@
       @endif
       
       @if($authorityNumber)
-      <div class="info-item mb-3">
+      <div class="info-item mb-1">
         <div class="d-flex align-items-start">
-          <i data-feather="hash" class="me-3 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
+          <i data-feather="hash" class="me-2 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
           <div class="flex-grow-1">
-            <div class="text-muted small mb-1" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Authority No.</div>
+            <div class="text-muted small mb-0" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Authority No.</div>
             <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $authorityNumber }}</div>
           </div>
         </div>
@@ -420,15 +430,15 @@
 
 @if($hasStockIssued)
 <!-- REQUESTED ITEMS -->
-<div class="row mb-4">
+<div class="row mb-3">
   <div class="col-12">
-    <div class="card-glass">
-      <div class="card-header">
-        <h5 class="card-title mb-0 text-white">
-          <i data-feather="package" class="me-2"></i>Requested Items ({{ $requestedItems->count() }})
+    <div class="card-glass p-1">
+      <div class="card-header py-2">
+        <h5 class="card-title mb-0 text-white" style="font-size: 1rem;">
+          <i data-feather="package" class="me-2" style="width: 18px; height: 18px;"></i>Requested Items ({{ $requestedItems->count() }})
         </h5>
       </div>
-      <div class="card-body">
+      <div class="card-body p-1">
         <style>
           /* Force table column borders */
           .card-body .table th:not(:last-child),
@@ -444,17 +454,17 @@
           <table class="table table-dark" style="margin-bottom: 0;">
             <thead>
               <tr style="background-color: rgba(59, 130, 246, 0.2); border-bottom: 2px solid rgba(59, 130, 246, 0.5);">
-                <th style="color: #ffffff; font-weight: 600; padding: 12px; border-right: 1px solid rgba(201, 160, 160, 0.3) !important;">#</th>
-                <th style="color: #ffffff; font-weight: 600; padding: 12px; border-right: 1px solid rgba(201, 160, 160, 0.3) !important;">Item Name</th>
-                <th style="color: #ffffff; font-weight: 600; padding: 12px; border-right: 1px solid rgba(201, 160, 160, 0.3) !important; text-align: center;">Quantity Requested</th>
-                <th style="color: #ffffff; font-weight: 600; padding: 12px; border-right: 1px solid rgba(201, 160, 160, 0.3) !important; text-align: center;">
+                <th style="color: #ffffff; font-weight: 600; padding: 6px 12px; border-right: 1px solid rgba(201, 160, 160, 0.3) !important;">#</th>
+                <th style="color: #ffffff; font-weight: 600; padding: 6px 12px; border-right: 1px solid rgba(201, 160, 160, 0.3) !important;">Item Name</th>
+                <th style="color: #ffffff; font-weight: 600; padding: 6px 12px; border-right: 1px solid rgba(201, 160, 160, 0.3) !important; text-align: center;">Quantity Requested</th>
+                <th style="color: #ffffff; font-weight: 600; padding: 6px 12px; border-right: 1px solid rgba(201, 160, 160, 0.3) !important; text-align: center;">
                   @if($approval->status === 'pending' && ($approval->items && $approval->items->count() > 0))
                     Quantity Approved (Editable)
                   @else
                     Quantity Approved
                   @endif
                 </th>
-                <th style="color: #ffffff; font-weight: 600; padding: 12px; text-align: center; border-right: none !important;">Available Stock</th>
+                <th style="color: #ffffff; font-weight: 600; padding: 6px 12px; text-align: center; border-right: none !important;">Available Stock</th>
               </tr>
             </thead>
             <tbody>
@@ -469,14 +479,14 @@
                 $approvedQty = $item->quantity_approved ?? $item->approved_quantity ?? null;
               @endphp
               <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.25);">
-                <td style="color: #e2e8f0; padding: 12px; border-right: 1px solid rgba(201, 160, 160, 0.3) !important; font-weight: 500;">{{ $index + 1 }}</td>
-                <td style="color: #ffffff; padding: 12px; border-right: 1px solid rgba(201, 160, 160, 0.3) !important; font-weight: 500;">{{ $itemName }}</td>
-                <td style="color: #e2e8f0; padding: 12px; border-right: 1px solid rgba(201, 160, 160, 0.3) !important; text-align: center;">
+                <td style="color: #e2e8f0; padding: 6px 12px; border-right: 1px solid rgba(201, 160, 160, 0.3) !important; font-weight: 500;">{{ $index + 1 }}</td>
+                <td style="color: #ffffff; padding: 6px 12px; border-right: 1px solid rgba(201, 160, 160, 0.3) !important; font-weight: 500;">{{ $itemName }}</td>
+                <td style="color: #e2e8f0; padding: 6px 12px; border-right: 1px solid rgba(201, 160, 160, 0.3) !important; text-align: center;">
                   <span class="badge" style="background-color: rgba(245, 158, 11, 0.2); color: #fbbf24; padding: 6px 12px; font-weight: 600;">
                     {{ number_format((int)$requestedQty, 0) }}
                   </span>
                 </td>
-                <td style="color: #e2e8f0; padding: 12px; border-right: 1px solid rgba(201, 160, 160, 0.3) !important; text-align: center;">
+                <td style="color: #e2e8f0; padding: 6px 12px; border-right: 1px solid rgba(201, 160, 160, 0.3) !important; text-align: center;">
                   @if($approval->status === 'pending' && ($approval->items && $approval->items->count() > 0))
                     @php
                       $maxQty = min((int)$requestedQty, (int)$availableQty);
@@ -498,7 +508,7 @@
                     </span>
                   @endif
                 </td>
-                <td style="color: #ffffff; padding: 12px; text-align: center; border-right: none !important;">
+                <td style="color: #ffffff; padding: 6px 12px; text-align: center; border-right: none !important;">
                   <span class="badge bg-{{ ((int)$availableQty <= 0) ? 'danger' : 'success' }}" style="padding: 6px 12px; font-weight: 600; color: #ffffff !important;">
                     {{ number_format((int)$availableQty, 0) }}
                   </span>
@@ -520,13 +530,13 @@
 
 <!-- FEEDBACK SECTION -->
 @if($complaint && ($complaint->status == 'resolved' || $complaint->status == 'closed' || $complaint->feedback))
-<div class="row mt-4">
+<div class="row mt-2">
   <div class="col-12 d-flex justify-content-center">
     <div style="max-width: 900px; width: 100%;">
-      <div class="card-glass">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title mb-0 text-white">
-          <i data-feather="message-circle" class="me-2"></i>Complainant Feedback
+      <div class="card-glass p-1">
+      <div class="card-header py-2 d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0 text-white" style="font-size: 1rem;">
+          <i data-feather="message-circle" class="me-2" style="width: 18px; height: 18px;"></i>Complainant Feedback
         </h5>
         @php
           // Check if current user is GE (Garrison Engineer)
@@ -550,7 +560,7 @@
           @endif
         @endif
       </div>
-      <div class="card-body">
+      <div class="card-body p-2">
         @if($complaint->feedback)
           <div class="row">
             <div class="col-md-6">
@@ -668,7 +678,7 @@
 @push('styles')
 <style>
   .info-item {
-    padding: 12px 0;
+    padding: 2px 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   }
   

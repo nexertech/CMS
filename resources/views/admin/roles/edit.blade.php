@@ -57,6 +57,7 @@
                   'sector' => ['label' => 'GE Nodes', 'icon' => 'map-pin', 'sublinks' => []],
                   'roles' => ['label' => 'Roles', 'icon' => 'shield', 'sublinks' => []],
                   'employees' => ['label' => 'Employees', 'icon' => 'user-check', 'sublinks' => ['designation' => 'Designations']],
+                  'houses' => ['label' => 'Houses', 'icon' => 'home', 'sublinks' => []],
                   'complaints' => ['label' => 'Complaints Mgmt', 'icon' => 'file-text', 'sublinks' => [
                     'category' => 'Complaint Cat',
                     'complaint-titles' => 'Complaint Types',

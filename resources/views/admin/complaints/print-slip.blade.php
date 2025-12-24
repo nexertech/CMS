@@ -428,6 +428,10 @@
                         <td class="label">Name:</td>
                         <td class="value">{{ $complaint->client->client_name ?? 'N/A' }}</td>
                     </tr>
+                    <tr>
+                        <td class="label">House No:</td>
+                        <td class="value">{{ $complaint->house->username ?? 'N/A' }}</td>
+                    </tr>
                     @if($complaint->client && $complaint->client->phone)
                         <tr>
                             <td class="label">Phone:</td>

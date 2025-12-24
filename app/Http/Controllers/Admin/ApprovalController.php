@@ -162,6 +162,7 @@ class ApprovalController extends Controller
             // Reload relationships after join (join may have affected eager loading)
             $approvals->load([
                 'complaint.client',
+                'complaint.house',
                 'complaint.assignedEmployee',
                 'complaint.spareParts.spare',
                 'requestedBy',
@@ -354,6 +355,7 @@ class ApprovalController extends Controller
             // For AJAX: Load only what's needed, skip heavy sync operations
             $approval->load([
                 'complaint.client',
+                'complaint.house',
                 'complaint.feedback.enteredBy', // Load feedback relationship
                 'requestedBy',
                 'approvedBy',
@@ -363,6 +365,7 @@ class ApprovalController extends Controller
             // For HTML: Load all relationships
             $approval->load([
                 'complaint.client',
+                'complaint.house',
                 'complaint.spareParts.spare',
                 'complaint.stockLogs.spare',
                 'complaint.logs', // Load logs to trace historical status

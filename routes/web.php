@@ -145,6 +145,18 @@ Route::middleware(['auth', 'verified', 'admin.access'])
     });
 
     // ===============================
+    // 🏠 House Management
+    // ===============================
+    Route::middleware(['permission:employees.view'])->group(function () {
+        // Extra AJAX/helper routes (must come BEFORE resource routes to avoid conflicts)
+        Route::get('houses/sectors', [App\Http\Controllers\Admin\HouseController::class, 'getSectorsByCity'])->name('houses.sectors');
+        
+        // Resource routes
+        Route::resource('houses', App\Http\Controllers\Admin\HouseController::class);
+    });
+
+
+    // ===============================
     // 🛠 Complaints
     // ===============================
     Route::middleware(['permission:complaints.view'])->group(function () {

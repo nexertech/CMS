@@ -64,18 +64,6 @@
                         </div>
                         <div class="col-md-3">
                             <div class="mb-3">
-                                <label for="client_name" class="form-label text-white">Complainant Name <span
-                                        class="text-danger">*</span></label>
-                                <input type="text" class="form-control @error('client_name') is-invalid @enderror"
-                                    id="client_name" name="client_name" value="{{ old('client_name') }}"
-                                    placeholder="Enter complainant name" required>
-                                @error('client_name')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="mb-3">
                                 <label for="city_id" class="form-label text-white">GE Groups</label>
                                 <select class="form-select @error('city_id') is-invalid @enderror" id="city_id"
                                     name="city_id">
@@ -104,6 +92,37 @@
                                     </option>
                                 </select>
                                 @error('sector_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="house_id" class="form-label text-white">House Number <span class="text-danger">*</span></label>
+                                <select class="form-select @error('house_id') is-invalid @enderror" id="house_id" name="house_id" required>
+                                    <option value="">Select House Number</option>
+                                    @foreach($houses as $house)
+                                        <option value="{{ $house->id }}" 
+                                            data-city="{{ $house->city_id }}"
+                                            data-sector="{{ $house->sector_id }}"
+                                            data-address="{{ $house->address }}"
+                                            {{ old('house_id') == $house->id ? 'selected' : '' }}>
+                                            {{ $house->username }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('house_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="client_name" class="form-label text-white">Complainant Name</label>
+                                <input type="text" class="form-control @error('client_name') is-invalid @enderror"
+                                    id="client_name" name="client_name" value="{{ old('client_name') }}"
+                                    placeholder="Enter complainant name">
+                                @error('client_name')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
@@ -273,116 +292,113 @@
 
 @push('scripts')
     <script>
-        // Stock validation and auto-adjustment
         document.addEventListener('DOMContentLoaded', function() {
-            // Phone number input validation - only allow numbers
+            // 1. Element Definitions
             const phoneInput = document.getElementById('phone');
-            if (phoneInput) {
-                phoneInput.addEventListener('input', function(e) {
-                    this.value = this.value.replace(/[^0-9]/g, '');
-                });
-                phoneInput.addEventListener('paste', function(e) {
-                    e.preventDefault();
-                    const pastedText = (e.clipboardData || window.clipboardData).getData('text');
-                    const numbersOnly = pastedText.replace(/[^0-9]/g, '');
-                    this.value = numbersOnly;
-                });
-            }
-            
+            const houseSelect = document.getElementById('house_id');
+            const citySelect = document.getElementById('city_id');
+            const sectorSelect = document.getElementById('sector_id');
+            const addressInput = document.getElementById('address');
             const spareSelect = document.getElementById('spare_select');
             const quantityInput = document.getElementById('quantity_input');
             const stockWarning = document.getElementById('stock_warning');
             const categorySelect = document.getElementById('category');
-            
-            // Get form reference once (will be used for multiple validations)
+            const employeeSelect = document.getElementById('assigned_employee_id');
+            const titleSelect = document.getElementById('title');
+            const titleOtherInput = document.getElementById('title_other');
             const complaintForm = document.querySelector('form[action*="complaints"]');
-            
-            // Form validation - check phone number before submit
-            if (complaintForm && phoneInput) {
-                complaintForm.addEventListener('submit', function(e) {
-                    const phoneValue = phoneInput.value.trim();
-                    if (phoneValue && phoneValue.length < 11) {
-                        e.preventDefault();
-                        alert('Phone number must be at least 11 digits.');
-                        phoneInput.focus();
-                        return false;
+
+            // 2. Helper Functions
+
+            // Load sectors based on city
+            function loadSectors(cityId, targetSectorId = null) {
+                if (!sectorSelect) return;
+                if (!cityId) {
+                    sectorSelect.innerHTML = '<option value="">Select GE Groups First</option>';
+                    sectorSelect.disabled = true;
+                    return;
+                }
+
+                sectorSelect.innerHTML = '<option value="">Loading GE Nodes...</option>';
+                sectorSelect.disabled = true;
+
+                fetch(`{{ route('admin.sectors.by-city') }}?city_id=${cityId}`, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json',
+                        },
+                        credentials: 'same-origin'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        sectorSelect.innerHTML = '<option value="">Select GE Nodes</option>';
+                        if (data && data.length > 0) {
+                            data.forEach(sector => {
+                                const option = document.createElement('option');
+                                option.value = sector.id;
+                                option.textContent = sector.name;
+                                if (targetSectorId && String(sector.id) === String(targetSectorId)) {
+                                    option.selected = true;
+                                }
+                                sectorSelect.appendChild(option);
+                            });
+                            sectorSelect.disabled = false;
+                        } else {
+                            sectorSelect.innerHTML = '<option value="">No GE Nodes found</option>';
+                            sectorSelect.disabled = false;
+                        }
+                        
+                        // Trigger change to update dependent filters
+                        sectorSelect.dispatchEvent(new Event('change'));
+                    })
+                    .catch(error => {
+                        console.error('Error loading GE Nodes:', error);
+                        sectorSelect.innerHTML = '<option value="">Error loading GE Nodes</option>';
+                        sectorSelect.disabled = false;
+                    });
+            }
+
+            function filterHouses() {
+                if (!houseSelect) return;
+                const cityId = citySelect ? citySelect.value : '';
+                const sectorId = sectorSelect ? sectorSelect.value : '';
+                const currentSelectedId = houseSelect.value;
+                let currentlySelectedIsHidden = false;
+
+                Array.from(houseSelect.options).forEach(opt => {
+                    if (!opt.value) return; 
+                    const optCity = opt.getAttribute('data-city') || '';
+                    const optSector = opt.getAttribute('data-sector') || '';
+                    
+                    let show = true;
+                    if (cityId && String(optCity) !== String(cityId)) show = false;
+                    if (sectorId && String(optSector) !== String(sectorId)) show = false;
+                    
+                    opt.hidden = !show;
+                    opt.style.display = show ? '' : 'none';
+                    opt.disabled = !show;
+
+                    if (!show && opt.value === currentSelectedId) {
+                        currentlySelectedIsHidden = true;
                     }
                 });
-            }
 
-            // Stock validation and auto-adjustment (only if spare/quantity inputs exist)
-            if (spareSelect && quantityInput) {
-                function updateStockWarning() {
-                    if (!spareSelect.value) {
-                        stockWarning && (stockWarning.style.display = 'none');
-                        return;
-                    }
-
-                    const selectedOption = spareSelect.options[spareSelect.selectedIndex];
-                    const stock = selectedOption ? parseInt(selectedOption.getAttribute('data-stock') || 0) : 0;
-                    const requestedQty = parseInt(quantityInput.value) || 0;
-
-                    if (stockWarning) {
-                        if (requestedQty > stock && stock > 0) {
-                            // Auto-adjust quantity to available stock
-                            quantityInput.value = stock;
-                            stockWarning.textContent =
-                                `Insufficient stock! Quantity adjusted to available stock: ${stock}`;
-                            stockWarning.style.display = 'block';
-                            stockWarning.className = 'text-warning mt-1';
-                        } else if (stock === 0) {
-                            stockWarning.textContent = 'Warning: This product has zero stock available.';
-                            stockWarning.style.display = 'block';
-                            stockWarning.className = 'text-danger mt-1';
-                        } else {
-                            stockWarning.style.display = 'none';
-                        }
-                    }
-                }
-
-                // Update warning when product or quantity changes
-                spareSelect.addEventListener('change', updateStockWarning);
-                quantityInput.addEventListener('input', updateStockWarning);
-                quantityInput.addEventListener('change', updateStockWarning);
-
-                // Form submission validation
-                const form = document.querySelector('form[action*="complaints.store"]');
-                if (form) {
-                    form.addEventListener('submit', function(e) {
-                        // Validate quantity only if product is selected
-                        if (spareSelect.value && (!quantityInput.value || parseInt(quantityInput.value) <=
-                                0)) {
-                            e.preventDefault();
-                            alert('Please enter quantity for selected product.');
-                            return false;
-                        }
-                        // If quantity is entered but no product selected
-                        if (quantityInput.value && parseInt(quantityInput.value) > 0 && !spareSelect
-                            .value) {
-                            e.preventDefault();
-                            alert('Please select a product for the quantity.');
-                            return false;
-                        }
-                    });
+                if (currentlySelectedIsHidden) {
+                    houseSelect.value = '';
                 }
             }
 
-            const employeeSelect = document.getElementById('assigned_employee_id');
-
-            // Employee filter: by Category, City, Sector
             function filterEmployees() {
                 if (!employeeSelect) return;
                 const category = categorySelect ? categorySelect.value : '';
-                const cityId = document.getElementById('city_id') ? document.getElementById('city_id').value : '';
-                const sectorId = document.getElementById('sector_id') ? document.getElementById('sector_id').value :
-                    '';
+                const cityId = citySelect ? citySelect.value : '';
+                const sectorId = sectorSelect ? sectorSelect.value : '';
                 
-                // Store current selection to check if it gets hidden
                 const currentSelectedId = employeeSelect.value;
                 let currentlySelectedIsHidden = false;
 
                 Array.from(employeeSelect.options).forEach(opt => {
-                    if (!opt.value) return; // placeholder
+                    if (!opt.value) return; 
                     const optCategory = opt.getAttribute('data-category') || '';
                     const optCity = opt.getAttribute('data-city') || '';
                     const optSector = opt.getAttribute('data-sector') || '';
@@ -393,50 +409,56 @@
                     
                     const show = matchCategory && matchCity && matchSector;
                     
-                    // Use both hidden and style.display for best compatibility
                     opt.hidden = !show;
                     opt.style.display = show ? '' : 'none';
-                    opt.disabled = !show; // Also disable to prevent keyboard selection
+                    opt.disabled = !show;
 
                     if (!show && opt.value === currentSelectedId) {
                         currentlySelectedIsHidden = true;
                     }
                 });
 
-                // If selected option is hidden or disabled, clear selection
                 if (currentlySelectedIsHidden) {
                     employeeSelect.value = '';
                 }
             }
-            if (employeeSelect) {
-                categorySelect && categorySelect.addEventListener('change', filterEmployees);
-                const citySelectEl = document.getElementById('city_id');
-                const sectorSelectEl = document.getElementById('sector_id');
-                citySelectEl && citySelectEl.addEventListener('change', filterEmployees);
-                sectorSelectEl && sectorSelectEl.addEventListener('change', filterEmployees);
-                filterEmployees();
+
+            function updateStockWarning() {
+                if (!spareSelect || !quantityInput || !stockWarning) return;
+                if (!spareSelect.value) {
+                    stockWarning.style.display = 'none';
+                    return;
+                }
+
+                const selectedOption = spareSelect.options[spareSelect.selectedIndex];
+                const stock = selectedOption ? parseInt(selectedOption.getAttribute('data-stock') || 0) : 0;
+                const requestedQty = parseInt(quantityInput.value) || 0;
+
+                if (requestedQty > stock && stock > 0) {
+                    quantityInput.value = stock;
+                    stockWarning.textContent = `Insufficient stock! Quantity adjusted to available stock: ${stock}`;
+                    stockWarning.style.display = 'block';
+                    stockWarning.className = 'text-warning mt-1';
+                } else if (stock === 0) {
+                    stockWarning.textContent = 'Warning: This product has zero stock available.';
+                    stockWarning.style.display = 'block';
+                    stockWarning.className = 'text-danger mt-1';
+                } else {
+                    stockWarning.style.display = 'none';
+                }
             }
 
-            // Category -> Complaint Titles dynamic loading
-            const titleSelect = document.getElementById('title');
-            const titleOtherInput = document.getElementById('title_other');
-
-            // Handle "Other" option selection
             function handleTitleChange() {
                 if (!titleSelect || !titleOtherInput) return;
-
                 const selectedValue = titleSelect.value;
 
                 if (selectedValue === 'other') {
-                    // Hide dropdown and show input field in same position
                     titleSelect.style.display = 'none';
                     titleOtherInput.style.display = 'block';
                     titleOtherInput.required = true;
                     titleSelect.removeAttribute('required');
-                    // Focus on input field
                     setTimeout(() => titleOtherInput.focus(), 100);
                 } else {
-                    // Show dropdown and hide input field
                     titleSelect.style.display = 'block';
                     titleOtherInput.style.display = 'none';
                     titleOtherInput.required = false;
@@ -444,293 +466,172 @@
                 }
             }
 
-            if (titleSelect) {
-                titleSelect.addEventListener('change', handleTitleChange);
+            // 3. Event Listeners
+
+            if (phoneInput) {
+                phoneInput.addEventListener('input', function(e) {
+                    this.value = this.value.replace(/[^0-9]/g, '');
+                });
+                phoneInput.addEventListener('paste', function(e) {
+                    e.preventDefault();
+                    const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+                    this.value = pastedText.replace(/[^0-9]/g, '');
+                });
             }
 
-            // Sync title_other input to title field when typing
-            if (titleOtherInput) {
-                titleOtherInput.addEventListener('input', function() {
-                    if (titleSelect.value === 'other') {
-                        // Update title select value to "other" (it's already selected)
-                        // The actual title value will be taken from title_other on submit
+            if (citySelect) {
+                citySelect.addEventListener('change', function() {
+                    loadSectors(this.value);
+                    filterHouses();
+                    filterEmployees();
+                });
+            }
+
+            if (sectorSelect) {
+                sectorSelect.addEventListener('change', function() {
+                    filterHouses();
+                    filterEmployees();
+                });
+            }
+
+            if (houseSelect) {
+                houseSelect.addEventListener('change', function() {
+                    const selectedOption = this.options[this.selectedIndex];
+                    if (!selectedOption || !selectedOption.value) return;
+
+                    const cityId = selectedOption.getAttribute('data-city');
+                    const sectorId = selectedOption.getAttribute('data-sector');
+                    const address = selectedOption.getAttribute('data-address');
+
+                    if (cityId) {
+                        citySelect.value = cityId;
+                        loadSectors(cityId, sectorId);
+                        filterEmployees();
+                    }
+
+                    if (address) {
+                        addressInput.value = address;
                     }
                 });
             }
 
-            if (categorySelect && titleSelect) {
-                categorySelect.addEventListener('change', function() {
-                    const category = this.value;
-
-                    // Clear existing options
-                    titleSelect.innerHTML = '<option value="">Loading titles...</option>';
-                    titleSelect.disabled = true;
-                    if (titleOtherInput) {
-                        titleOtherInput.style.display = 'none';
-                        titleOtherInput.value = '';
-                    }
-                    // Ensure dropdown is visible when loading
-                    if (titleSelect) {
-                        titleSelect.style.display = 'block';
-                    }
-
-                    if (!category) {
-                        titleSelect.innerHTML =
-                            '<option value="">Select Category first, then choose title</option>';
-                        titleSelect.disabled = false;
-                        return;
-                    }
-
-                    // Fetch complaint titles by category
-                    fetch(`{{ route('admin.complaint-titles.by-category') }}?category=${encodeURIComponent(category)}`, {
-                            method: 'GET',
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json',
-                            },
-                            credentials: 'same-origin'
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            // Clear options
-                            titleSelect.innerHTML = '<option value="">Select Complaint Title</option>';
-
-                            if (data && data.length > 0) {
-                                // Sort titles in ascending order by title name (natural/numeric sorting)
-                                const sortedData = data.sort((a, b) => {
-                                    const titleA = (a.title || '').toLowerCase();
-                                    const titleB = (b.title || '').toLowerCase();
-                                    return titleA.localeCompare(titleB, undefined, { numeric: true, sensitivity: 'base' });
-                                });
-                                
-                                sortedData.forEach(title => {
-                                    const option = document.createElement('option');
-                                    option.value = title.title;
-                                    option.textContent = title.title;
-                                    if (title.description) {
-                                        option.setAttribute('title', title.description);
-                                    }
-                                    titleSelect.appendChild(option);
-                                });
-                            } else {
-                                const option = document.createElement('option');
-                                option.value = '';
-                                option.textContent = 'No titles found for this category';
-                                titleSelect.appendChild(option);
-                            }
-
-                            // Add "Other" option
-                            const otherOption = document.createElement('option');
-                            otherOption.value = 'other';
-                            otherOption.textContent = 'Other';
-                            titleSelect.appendChild(otherOption);
-
-                            titleSelect.disabled = false;
-                            // Restore previously selected title if any
-                            const previous = titleSelect.getAttribute('data-prev');
-                            if (previous) {
-                                const opt = Array.from(titleSelect.options).find(o => o.value ===
-                                    previous);
-                                if (opt) {
-                                    titleSelect.value = previous;
-                                } else if (previous === 'other') {
-                                    // If previous was "other", restore it
-                                    titleSelect.value = 'other';
-                                    if (titleOtherInput) {
-                                        const oldOther = '{{ old('title_other') }}';
-                                        if (oldOther) {
-                                            titleOtherInput.value = oldOther;
-                                        }
-                                        // Hide dropdown and show input field
-                                        titleSelect.style.display = 'none';
-                                        titleOtherInput.style.display = 'block';
-                                        titleOtherInput.required = true;
-                                        titleSelect.removeAttribute('required');
-                                    }
-                                }
-                            }
-                            handleTitleChange();
-                        })
-                        .catch(error => {
-                            console.error('Error loading complaint titles:', error);
-                            titleSelect.innerHTML =
-                                '<option value="">Failed to load titles. Please try again.</option>';
-                            titleSelect.disabled = false;
-                        });
-                });
-
-                // Trigger on page load if category is pre-selected
-                if (categorySelect.value) {
-                    // Preserve old title if present
-                    if (titleSelect && titleSelect.value) {
-                        titleSelect.setAttribute('data-prev', titleSelect.value);
-                    } else if ('{{ old('title') }}') {
-                        const oldTitle = @json(old('title'));
-                        titleSelect.setAttribute('data-prev', oldTitle);
-                        // If old title was "other", check for title_other
-                        if (oldTitle === 'other' && titleOtherInput) {
-                            const oldOther = '{{ old('title_other') }}';
-                            if (oldOther) {
-                                titleOtherInput.value = oldOther;
-                            }
-                            // Hide dropdown and show input field
-                            titleSelect.style.display = 'none';
-                            titleOtherInput.style.display = 'block';
-                            titleOtherInput.required = true;
-                            titleSelect.removeAttribute('required');
-                        }
-                    }
-                    categorySelect.dispatchEvent(new Event('change'));
-                }
-            }
-
-            // City -> Sector dynamic loading
-            const citySelect = document.getElementById('city_id');
-            const sectorSelect = document.getElementById('sector_id');
-            const addressInput = document.getElementById('address');
-
-            // Auto-replace space with hyphen in address field
             if (addressInput) {
                 addressInput.addEventListener('keydown', function(e) {
-                    // If space key is pressed
                     if (e.key === ' ' || e.keyCode === 32) {
-                        e.preventDefault(); // Prevent default space
-                        
-                        // Get current cursor position
+                        e.preventDefault();
                         const cursorPos = this.selectionStart;
                         const currentValue = this.value;
-                        
-                        // Insert hyphen at cursor position
                         const newValue = currentValue.substring(0, cursorPos) + '-' + currentValue.substring(cursorPos);
                         this.value = newValue;
-                        
-                        // Set cursor position after the inserted hyphen
                         this.setSelectionRange(cursorPos + 1, cursorPos + 1);
                     }
                 });
-                
-                // Also handle paste events to replace spaces with hyphens
                 addressInput.addEventListener('paste', function(e) {
                     e.preventDefault();
                     const pastedText = (e.clipboardData || window.clipboardData).getData('text');
                     const replacedText = pastedText.replace(/\s+/g, '-');
-                    
-                    // Get current cursor position
                     const cursorPos = this.selectionStart;
                     const currentValue = this.value;
-                    
-                    // Insert replaced text at cursor position
                     const newValue = currentValue.substring(0, cursorPos) + replacedText + currentValue.substring(this.selectionEnd);
                     this.value = newValue;
-                    
-                    // Set cursor position after the inserted text
                     this.setSelectionRange(cursorPos + replacedText.length, cursorPos + replacedText.length);
                 });
             }
 
-            if (citySelect && sectorSelect) {
-                citySelect.addEventListener('change', function() {
-                    const cityId = this.value;
-
-                    if (!cityId) {
-                        sectorSelect.innerHTML = '<option value="">Select GE Groups First</option>';
-                        sectorSelect.disabled = true;
-                        return;
-                    }
-
-                    sectorSelect.innerHTML = '<option value="">Loading GE Nodes...</option>';
-                    sectorSelect.disabled = true;
-
-                    fetch(`{{ route('admin.sectors.by-city') }}?city_id=${cityId}`, {
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json',
-                            },
-                            credentials: 'same-origin'
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            sectorSelect.innerHTML = '<option value="">Select GE Nodes</option>';
-                            if (data && data.length > 0) {
-                                data.forEach(sector => {
-                                    const option = document.createElement('option');
-                                    option.value = sector.id;
-                                    option.textContent = sector.name;
-                                    sectorSelect.appendChild(option);
-                                });
-                            } else {
-                                sectorSelect.innerHTML =
-                                    '<option value="">No GE Nodes found for this GE Groups</option>';
-                            }
-                            sectorSelect.disabled = false;
-                        })
-                        .catch(error => {
-                            console.error('Error loading GE Nodes:', error);
-                            sectorSelect.innerHTML = '<option value="">Error loading GE Nodes</option>';
-                            sectorSelect.disabled = false;
-                        });
-                });
-
-                // If city is pre-selected (e.g., for Department Staff), load sectors and select default
-                const defaultCityId = @json(old('city_id', $defaultCityId));
-                const defaultSectorId = @json(old('sector_id', $defaultSectorId));
-                if (defaultCityId) {
-                    citySelect.value = defaultCityId;
-                    // Trigger fetch to load sectors, then select default
-                    fetch(`{{ route('admin.sectors.by-city') }}?city_id=${defaultCityId}`, {
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json',
-                            },
-                            credentials: 'same-origin'
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-
-                            sectorSelect.innerHTML = '<option value="">Select GE Nodes</option>';
-                            if (data && data.length > 0) {
-                                data.forEach(sector => {
-                                    const option = document.createElement('option');
-                                    option.value = sector.id;
-                                    option.textContent = sector.name;
-                                    sectorSelect.appendChild(option);
-                                });
-
-                                // Explicitly set the value if default sector exists in the list
-                                if (defaultSectorId) {
-                                    // Convert to string for comparison to be safe
-                                    const targetId = String(defaultSectorId);
-                                    // Check if option exists
-                                    const optionExists = Array.from(sectorSelect.options).some(opt => opt.value === targetId);
-                                    
-                                    if (optionExists) {
-                                        sectorSelect.value = targetId;
-                                        // Trigger change event so dependent fields (like employee filter) update
-                                        sectorSelect.dispatchEvent(new Event('change'));
-                                    } else {
-                                        console.warn(`Default sector ID ${defaultSectorId} not found in loaded sectors for city ${defaultCityId}`);
-                                    }
-                                }
-                            } else {
-                                sectorSelect.innerHTML =
-                                    '<option value="">No GE Nodes found for this GE Groups</option>';
-                            }
-                            sectorSelect.disabled = false;
-                        })
-                        .catch(error => {
-                            console.error('Error loading GE Nodes:', error);
-                            sectorSelect.innerHTML = '<option value="">Error loading GE Nodes</option>';
-                            sectorSelect.disabled = false;
-                        });
-                }
+            if (spareSelect && quantityInput) {
+                spareSelect.addEventListener('change', updateStockWarning);
+                quantityInput.addEventListener('input', updateStockWarning);
+                quantityInput.addEventListener('change', updateStockWarning);
             }
 
-            // Form submit handler: sync title_other to title when "Other" is selected
-            // Use the same form reference declared above
-            if (complaintForm && titleSelect && titleOtherInput) {
+            if (categorySelect) {
+                categorySelect.addEventListener('change', function() {
+                    filterEmployees();
+                    
+                    if (titleSelect) {
+                        const category = this.value;
+                        titleSelect.innerHTML = '<option value="">Loading titles...</option>';
+                        titleSelect.disabled = true;
+                        if (titleOtherInput) {
+                            titleOtherInput.style.display = 'none';
+                            titleOtherInput.value = '';
+                        }
+                        titleSelect.style.display = 'block';
+
+                        if (!category) {
+                            titleSelect.innerHTML = '<option value="">Select Category first</option>';
+                            titleSelect.disabled = false;
+                            return;
+                        }
+
+                        fetch(`{{ route('admin.complaint-titles.by-category') }}?category=${encodeURIComponent(category)}`, {
+                                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                titleSelect.innerHTML = '<option value="">Select Complaint Title</option>';
+                                if (data && data.length > 0) {
+                                    data.sort((a, b) => (a.title || '').toLowerCase().localeCompare((b.title || '').toLowerCase(), undefined, { numeric: true }))
+                                        .forEach(title => {
+                                            const option = document.createElement('option');
+                                            option.value = title.title;
+                                            option.textContent = title.title;
+                                            if (title.description) option.setAttribute('title', title.description);
+                                            titleSelect.appendChild(option);
+                                        });
+                                } else {
+                                    titleSelect.innerHTML = '<option value="">No titles found</option>';
+                                }
+                                
+                                const otherOption = document.createElement('option');
+                                otherOption.value = 'other';
+                                otherOption.textContent = 'Other';
+                                titleSelect.appendChild(otherOption);
+                                
+                                titleSelect.disabled = false;
+                                
+                                const previous = titleSelect.getAttribute('data-prev');
+                                if (previous) {
+                                    if (Array.from(titleSelect.options).some(o => o.value === previous)) {
+                                        titleSelect.value = previous;
+                                    } else if (previous === 'other') {
+                                        titleSelect.value = 'other';
+                                        handleTitleChange();
+                                    }
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error loading titles:', error);
+                                titleSelect.innerHTML = '<option value="">Failed to load titles</option>';
+                                titleSelect.disabled = false;
+                            });
+                    }
+                });
+            }
+
+            if (titleSelect) {
+                titleSelect.addEventListener('change', handleTitleChange);
+            }
+
+            if (complaintForm) {
                 complaintForm.addEventListener('submit', function(e) {
-                    if (titleSelect.value === 'other' || titleOtherInput.style.display !== 'none') {
-                        // User selected "Other" option
+                    // Phone validation
+                    if (phoneInput && phoneInput.value.trim() && phoneInput.value.trim().length < 11) {
+                        e.preventDefault();
+                        alert('Phone number must be at least 11 digits.');
+                        phoneInput.focus();
+                        return false;
+                    }
+
+                    // Stock validation
+                    if (spareSelect && spareSelect.value && (!quantityInput.value || parseInt(quantityInput.value) <= 0)) {
+                        e.preventDefault();
+                        alert('Please enter quantity for selected product.');
+                        return false;
+                    }
+
+                    // Title mapping
+                    if (titleSelect && (titleSelect.value === 'other' || titleOtherInput.style.display !== 'none')) {
                         if (!titleOtherInput.value || titleOtherInput.value.trim() === '') {
                             e.preventDefault();
                             alert('Please enter a custom complaint title.');
@@ -738,52 +639,48 @@
                             return false;
                         }
 
-                        // Remove any existing hidden title input
-                        const existingHiddenTitle = document.getElementById('title_hidden');
-                        if (existingHiddenTitle) {
-                            existingHiddenTitle.remove();
-                        }
-
-                        // Remove name from select dropdown so it doesn't send "other"
+                        // Remove name from select and send hidden input
                         titleSelect.removeAttribute('name');
-                        titleSelect.disabled = true; // Disable to prevent sending value
+                        titleSelect.disabled = true;
 
-                        // Create hidden input with custom title value
                         const hiddenTitle = document.createElement('input');
                         hiddenTitle.type = 'hidden';
-                        hiddenTitle.id = 'title_hidden';
                         hiddenTitle.name = 'title';
                         hiddenTitle.value = titleOtherInput.value.trim();
-                        complaintForm.appendChild(hiddenTitle);
-
-                        // Also send title_other field explicitly
-                        if (!document.getElementById('title_other_field')) {
-                            const titleOtherField = document.createElement('input');
-                            titleOtherField.type = 'hidden';
-                            titleOtherField.id = 'title_other_field';
-                            titleOtherField.name = 'title_other';
-                            titleOtherField.value = titleOtherInput.value.trim();
-                            complaintForm.appendChild(titleOtherField);
-                        }
-                    } else {
-                        // Normal title selected - ensure select has name attribute
-                        titleSelect.setAttribute('name', 'title');
-                        titleSelect.disabled = false;
-                        titleSelect.required = true;
-
-                        // Remove hidden inputs if they exist
-                        const hiddenTitle = document.getElementById('title_hidden');
-                        if (hiddenTitle) {
-                            hiddenTitle.remove();
-                        }
-                        const titleOtherField = document.getElementById('title_other_field');
-                        if (titleOtherField) {
-                            titleOtherField.remove();
-                        }
+                        this.appendChild(hiddenTitle);
+                        
+                        const hiddenOther = document.createElement('input');
+                        hiddenOther.type = 'hidden';
+                        hiddenOther.name = 'title_other';
+                        hiddenOther.value = titleOtherInput.value.trim();
+                        this.appendChild(hiddenOther);
                     }
                 });
             }
 
+            // 4. Initial Setup
+            const defaultCityId = @json(old('city_id', $defaultCityId));
+            const defaultSectorId = @json(old('sector_id', $defaultSectorId));
+            
+            if (defaultCityId) {
+                loadSectors(defaultCityId, defaultSectorId);
+            } else {
+                if (sectorSelect) {
+                    sectorSelect.innerHTML = '<option value="">Select GE Groups First</option>';
+                    sectorSelect.disabled = true;
+                }
+            }
+
+            // Restore "Other" title if needed
+            if (titleSelect && '{{ old('title') }}' === 'other') {
+                titleSelect.value = 'other';
+                const oldOther = @json(old('title_other'));
+                if (titleOtherInput && oldOther) titleOtherInput.value = oldOther;
+                handleTitleChange();
+            }
+
+            filterHouses();
+            filterEmployees();
         });
     </script>
 @endpush

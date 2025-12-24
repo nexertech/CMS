@@ -12,6 +12,7 @@ use App\Models\ComplaintCategory;
 use App\Models\City;
 use App\Models\Sector;
 use Illuminate\Support\Facades\Schema;
+use App\Models\House;
 use App\Models\SpareApprovalPerforma;
 use App\Models\SpareApprovalItem;
 use App\Models\ComplaintAttachment;
@@ -115,7 +116,9 @@ class ComplaintController extends Controller
 
         // Order by ID descending (3, 2, 1...) - newest/highest ID first
         // Clear any existing orders and set explicit descending order
-        $query->reorder()->orderBy('id', 'desc');
+        $query->with(['client', 'assignedEmployee', 'house'])
+              ->reorder()
+              ->orderBy('id', 'desc');
         $complaints = $query->paginate(15);
 
         // Filter employees by location
@@ -159,7 +162,12 @@ class ComplaintController extends Controller
             $defaultSectorId = $authUser->sector_id;
         }
 
-        return view('admin.complaints.create', compact('employees', 'categories', 'cities', 'sectors', 'defaultCityId', 'defaultSectorId'));
+        // Get houses filtered by location
+        $housesQuery = House::where('status', 'active')->orderBy('username');
+        $this->filterHousesByLocation($housesQuery, $authUser);
+        $houses = $housesQuery->get();
+
+        return view('admin.complaints.create', compact('employees', 'categories', 'cities', 'sectors', 'defaultCityId', 'defaultSectorId', 'houses'));
     }
 
     /**
@@ -179,7 +187,7 @@ class ComplaintController extends Controller
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             'title_other' => 'nullable|string|max:255',
-            'client_name' => 'required|string|max:255',
+            'client_name' => 'nullable|string|max:255',
             // Allow any category string (column changed to VARCHAR)
             'category' => 'required|string|max:100',
             'priority' => 'required|in:low,medium,high,urgent,emergency',
@@ -191,6 +199,7 @@ class ComplaintController extends Controller
             'attachments.*' => 'file|mimes:jpg,jpeg,png,pdf,doc,docx|max:10240', // 10MB max
             'city_id' => 'nullable|exists:cities,id',
             'sector_id' => 'nullable|exists:sectors,id',
+            'house_id' => 'required|exists:houses,id',
             'address' => 'nullable|string|max:500',
             'email' => 'nullable|string|max:150',
             'phone' => 'nullable|string|min:11|max:50',
@@ -223,11 +232,20 @@ class ComplaintController extends Controller
                 $sectorName = $sector ? $sector->name : null;
             }
 
+            // Determine client name - if provided use it, otherwise use house username
+            $clientName = trim($request->client_name);
+            if (empty($clientName) && $request->house_id) {
+                $house = House::find($request->house_id);
+                $clientName = $house ? $house->username : 'Unknown';
+            } elseif (empty($clientName)) {
+                $clientName = 'Unknown';
+            }
+
             // Find or create client by name
             $client = Client::firstOrCreate(
-                ['client_name' => trim($request->client_name)],
+                ['client_name' => $clientName],
                 [
-                    'contact_person' => $request->input('contact_person') ?: trim($request->client_name),
+                    'contact_person' => $request->input('contact_person') ?: $clientName,
                     'email' => $request->input('email', ''),
                     'phone' => $request->input('phone', ''),
                     'city' => $cityName ?? '',
@@ -266,6 +284,7 @@ class ComplaintController extends Controller
             $complaint = Complaint::create([
                 'title' => $finalTitle,
                 'client_id' => $client->id,
+                'house_id' => $request->house_id ?: null,
                 'city_id' => $request->city_id ?: null,
                 'sector_id' => $request->sector_id ?: null,
                 'category' => $request->category,
@@ -337,6 +356,7 @@ class ComplaintController extends Controller
                 'city',
                 'sector',
                 'attachments',
+                'house',
                 'logs.actionBy',
                 'spareParts.spare',
                 'spareParts.usedBy',
@@ -419,6 +439,11 @@ class ComplaintController extends Controller
                 ->get();
         }
 
+        // Get houses filtered by location
+        $housesQuery = House::where('status', 'active')->orderBy('username');
+        $this->filterHousesByLocation($housesQuery, Auth::user());
+        $houses = $housesQuery->get();
+
         return view('admin.complaints.edit', compact(
             'complaint',
             'employees',
@@ -426,7 +451,8 @@ class ComplaintController extends Controller
             'cities',
             'sectors',
             'defaultCityId',
-            'defaultSectorId'
+            'defaultSectorId',
+            'houses'
         ));
     }
 
@@ -438,7 +464,7 @@ class ComplaintController extends Controller
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             'title_other' => 'nullable|string|max:255',
-            'client_name' => 'required|string|max:255',
+            'client_name' => 'nullable|string|max:255',
             // Allow any category string (column changed to VARCHAR)
             'category' => 'required|string|max:100',
             'priority' => 'required|in:low,medium,high,urgent,emergency',
@@ -454,6 +480,7 @@ class ComplaintController extends Controller
             'spare_parts.0.quantity' => 'nullable|integer|min:1',
             'city_id' => 'nullable|exists:cities,id',
             'sector_id' => 'nullable|exists:sectors,id',
+            'house_id' => 'required|exists:houses,id',
             'address' => 'nullable|string|max:500',
             'email' => 'nullable|string|max:150',
             'phone' => 'nullable|string|min:11|max:50',
@@ -481,11 +508,20 @@ class ComplaintController extends Controller
         $cityName = $cityName ?? ($request->city ?: null);
         $sectorName = $sectorName ?? ($request->sector ?: null);
 
+        // Determine client name - if provided use it, otherwise use house username
+        $clientName = trim($request->client_name);
+        if (empty($clientName) && $request->house_id) {
+            $house = House::find($request->house_id);
+            $clientName = $house ? $house->username : 'Unknown';
+        } elseif (empty($clientName)) {
+            $clientName = 'Unknown';
+        }
+
         // Find or create client by name and update details
         $client = Client::firstOrCreate(
-            ['client_name' => trim($request->client_name)],
+            ['client_name' => $clientName],
             [
-                'contact_person' => $request->input('contact_person') ?: trim($request->client_name),
+                'contact_person' => $request->input('contact_person') ?: $clientName,
                 'email' => $request->input('email', ''),
                 'phone' => $request->input('phone', ''),
                 'address' => $request->input('address'),
@@ -496,7 +532,7 @@ class ComplaintController extends Controller
         );
         // Update existing client with provided fields
         $client->fill([
-            'contact_person' => $request->input('contact_person') ?: trim($request->client_name),
+            'contact_person' => $request->input('contact_person') ?: $clientName,
             'email' => $request->input('email', $client->email),
             'phone' => $request->input('phone', $client->phone),
             'address' => $request->input('address', $client->address),
@@ -523,6 +559,7 @@ class ComplaintController extends Controller
         $complaint->update([
             'title' => $finalTitle,
             'client_id' => $client->id,
+            'house_id' => $request->house_id ?: null,
             'city_id' => $request->city_id ?: null,
             'sector_id' => $request->sector_id ?: null,
             'category' => $request->category,
@@ -906,7 +943,7 @@ class ComplaintController extends Controller
      */
     public function printSlip(Complaint $complaint)
     {
-        $complaint->load(['client', 'assignedEmployee', 'attachments']);
+        $complaint->load(['client', 'assignedEmployee', 'attachments', 'house']);
 
         return view('admin.complaints.print-slip', compact('complaint'));
     }
