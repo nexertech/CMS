@@ -20,7 +20,7 @@
     body {
       margin: 0;
       padding: 0;
-      height: 100%;
+      min-height: 100%;
       font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
     }
 
@@ -79,6 +79,13 @@
     if (typeof feather !== 'undefined') {
       feather.replace();
     }
+
+    // Fix for "Page Expired" (CSRF) issues when using back button or after logout
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            window.location.reload();
+        }
+    });
   </script>
   @stack('scripts')
 </body>

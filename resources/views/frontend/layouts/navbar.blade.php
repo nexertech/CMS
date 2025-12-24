@@ -10,11 +10,12 @@
 <nav class="navbar navbar-expand-lg navbar-dark"
   style="background: transparent !important; background-color: transparent !important; box-shadow: none !important;">
   <div class="container-fluid px-1">
-    <!-- Brand Text Only -->
     <a class="navbar-brand d-flex align-items-center" href="{{ url('/') }}">
-      <span class="fw-bold text-white"
+      <span class="fw-bold text-white d-none d-lg-inline"
         style="font-size: 2.0rem !important; font-weight: 700 !important; letter-spacing: 0.5px;">MES Complaint
         Management System</span>
+      <span class="fw-bold text-white d-inline d-lg-none"
+        style="font-size: 1.5rem !important; font-weight: 700 !important; letter-spacing: 0.5px;">MES Complaints</span>
     </a>
 
     <!-- Mobile Toggle -->
@@ -122,8 +123,8 @@
   }
 
   .main-logo {
-    width: 120px;
-    height: 120px;
+    width: 90px;
+    height: 90px;
     object-fit: contain;
     animation: pageFlip 6s ease-in-out infinite;
     transform-origin: center center;
@@ -142,8 +143,8 @@
     transition: all 0.3s ease;
     z-index: 1030;
     margin: 0 !important;
-    padding: 0.75rem 0;
-    padding-left: 130px !important;
+    padding: 0.5rem 0;
+    padding-left: 110px !important;
     /* Space for logo */
     background: linear-gradient(135deg, #001f3f 0%, #003366 50%, #0066cc 100%) !important;
     background-size: cover !important;
@@ -284,6 +285,22 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   }
 
+  @media (max-width: 1100px) {
+    .navbar-brand span {
+      font-size: 1.5rem !important;
+    }
+
+    .navbar {
+      padding-left: 110px !important;
+    }
+
+    .nav-link {
+      font-size: 0.85rem !important;
+      padding-left: 0.5rem !important;
+      padding-right: 0.5rem !important;
+    }
+  }
+
   @media (max-width: 991px) {
     .logo-container {
       padding: 5px 10px;
@@ -296,19 +313,72 @@
 
     .navbar {
       padding-left: 90px !important;
-      /* Less space for smaller logo */
+    }
+
+    /* Floating Right-Aligned Mobile Menu */
+    .navbar-collapse {
+        position: absolute;
+        top: 100%;
+        right: 15px;
+        width: 250px;
+        background: linear-gradient(135deg, rgba(0, 31, 63, 0.95) 0%, rgba(0, 51, 102, 0.95) 100%);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 15px;
+        margin-top: 5px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        z-index: 1050;
+    }
+
+    .navbar-nav {
+      padding-top: 0;
+      align-items: flex-end;
+    }
+
+    .nav-item {
+      margin-bottom: 0.25rem;
+      width: 100%;
+      text-align: right;
+    }
+
+    .nav-link {
+        padding: 8px 15px !important;
+        justify-content: flex-end;
     }
 
     .nav-link::after {
       display: none;
     }
 
-    .navbar-nav {
-      padding-top: 1rem;
+    .navbar-brand span {
+      font-size: 1.2rem !important;
     }
 
-    .nav-item {
-      margin-bottom: 0.5rem;
+    /* Auth dropdown in mobile */
+    .dropdown-menu-end {
+        position: static !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding-left: 20px;
+        text-align: right;
+    }
+
+    .dropdown-item {
+        color: rgba(255, 255, 255, 0.8) !important;
+        justify-content: flex-end;
+        padding: 8px 0 !important;
+    }
+
+    .dropdown-item:hover {
+        background: transparent !important;
+        color: #ffd700 !important;
+    }
+
+    .dropdown-divider {
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
     }
   }
 </style>

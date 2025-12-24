@@ -4,47 +4,47 @@
 
 @section('content')
   <!-- PAGE HEADER -->
-  <div class="mb-4">
+  <div class="mb-2">
     <div class="d-flex justify-content-between align-items-center">
       <div>
-        <h2 class="text-white mb-2">Total Complaints</h2>
-        <p class="text-light">View and manage complaint records</p>
+        <h4 class="text-white mb-1" style="font-size: 1.2rem;">Total Complaints</h4>
+        <p class="text-light small mb-0" style="font-size: 0.8rem;">View and manage complaint records</p>
       </div>
       <div class="d-flex gap-2">
-        <button class="btn btn-outline-secondary" onclick="refreshPage()">
-          <i data-feather="refresh-cw" class="me-2"></i>Refresh
+        <button class="btn btn-outline-secondary btn-sm" onclick="refreshPage()" style="padding: 0.25rem 0.6rem; font-size: 0.8rem;">
+          <i data-feather="refresh-cw" class="me-1" style="width: 14px; height: 14px;"></i>Refresh
         </button>
       </div>
     </div>
   </div>
 
   <!-- FILTERS -->
-  <div class="card-glass mb-4" style="display: inline-block; width: fit-content;">
+  <div class="card-glass mb-2" style="display: inline-block; width: fit-content; padding: 0.75rem;">
     <form id="approvalsFiltersForm" method="GET" action="{{ route('admin.approvals.index') }}"
       onsubmit="event.preventDefault(); submitApprovalsFilters(event); return false;">
       <div class="row g-2 align-items-end">
         <div class="col-auto">
           <label class="form-label small mb-1"
-            style="font-size: 0.8rem; color: #000000 !important; font-weight: 500;">Search</label>
-          <input type="text" class="form-control" id="searchInput" name="search" placeholder="Complaint ID or Address..."
-            value="{{ request('search') }}" autocomplete="off" style="font-size: 0.9rem; width: 200px;">
+            style="font-size: 0.75rem; color: #000000 !important; font-weight: 500;">Search</label>
+          <input type="text" class="form-control form-control-sm" id="searchInput" name="search" placeholder="Complaint ID..."
+            value="{{ request('search') }}" autocomplete="off" style="font-size: 0.8rem; width: 160px; height: 30px;">
         </div>
         <div class="col-auto">
           <label class="form-label small mb-1"
-            style="font-size: 0.8rem; color: #000000 !important; font-weight: 500;">From Date</label>
-          <input type="date" class="form-control" name="complaint_date" value="{{ request('complaint_date') }}"
-            placeholder="Select Date" autocomplete="off" style="font-size: 0.9rem; width: 150px;">
+            style="font-size: 0.75rem; color: #000000 !important; font-weight: 500;">From Date</label>
+          <input type="date" class="form-control form-control-sm" name="complaint_date" value="{{ request('complaint_date') }}"
+            placeholder="Select Date" autocomplete="off" style="font-size: 0.8rem; width: 130px; height: 30px;">
         </div>
         <div class="col-auto">
-          <label class="form-label small mb-1" style="font-size: 0.8rem; color: #000000 !important; font-weight: 500;">To
+          <label class="form-label small mb-1" style="font-size: 0.75rem; color: #000000 !important; font-weight: 500;">To
             Date</label>
-          <input type="date" class="form-control" name="date_to" value="{{ request('date_to') }}" placeholder="End Date"
-            autocomplete="off" style="font-size: 0.9rem; width: 150px;">
+          <input type="date" class="form-control form-control-sm" name="date_to" value="{{ request('date_to') }}" placeholder="End Date"
+            autocomplete="off" style="font-size: 0.8rem; width: 130px; height: 30px;">
         </div>
         <div class="col-auto">
           <label class="form-label small mb-1"
-            style="font-size: 0.8rem; color: #000000 !important; font-weight: 500;">Category</label>
-          <select class="form-select" name="category" autocomplete="off" style="font-size: 0.9rem; width: 140px;">
+            style="font-size: 0.75rem; color: #000000 !important; font-weight: 500;">Category</label>
+          <select class="form-select form-select-sm" name="category" autocomplete="off" style="font-size: 0.8rem; width: 120px; height: 30px;">
             <option value="" {{ request('category') ? '' : 'selected' }}>All</option>
             @if(isset($categories) && $categories->count() > 0)
               @foreach($categories as $cat)
@@ -65,9 +65,9 @@
         </div>
         <div class="col-auto">
           <label class="form-label small mb-1"
-            style="font-size: 0.8rem; color: #000000 !important; font-weight: 500;">Status</label>
-          <select class="form-select" name="status" autocomplete="off" onchange="submitApprovalsFilters()"
-            style="font-size: 0.9rem; width: 180px;">
+            style="font-size: 0.75rem; color: #000000 !important; font-weight: 500;">Status</label>
+          <select class="form-select form-select-sm" name="status" autocomplete="off" onchange="submitApprovalsFilters()"
+            style="font-size: 0.8rem; width: 150px; height: 30px;">
             <option value="" {{ request('status') ? '' : 'selected' }}>All</option>
             @if(isset($statusesForFilter) && $statusesForFilter->count() > 0)
               @foreach($statusesForFilter as $statusValue => $statusLabel)
@@ -108,10 +108,10 @@
           </select>
         </div>
         <div class="col-auto">
-          <label class="form-label small text-muted mb-1" style="font-size: 0.8rem;">&nbsp;</label>
+          <label class="form-label small text-muted mb-1" style="font-size: 0.75rem;">&nbsp;</label>
           <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetApprovalsFilters()"
-            style="font-size: 0.9rem; padding: 0.35rem 0.8rem;">
-            <i data-feather="refresh-cw" class="me-1" style="width: 14px; height: 14px;"></i>Reset
+            style="font-size: 0.8rem; padding: 0.2rem 0.6rem; height: 30px; display: flex; align-items: center;">
+            <i data-feather="refresh-cw" class="me-1" style="width: 12px; height: 12px;"></i>Reset
           </button>
         </div>
       </div>
@@ -120,21 +120,21 @@
 
   <!-- APPROVALS TABLE -->
 
-  <div class="card-glass">
+  <div class="card-glass p-2">
     <div class="table-responsive">
-      <table class="table table-dark table-sm">
+      <table class="table table-dark table-sm mb-0" style="font-size: 0.75rem;">
         <thead>
-          <tr>
-            <th style="text-align: left; white-space: nowrap;">CMP-ID</th>
-            <th style="white-space: nowrap;">Registration Date/Time</th>
-            <th style="text-align: left; white-space: nowrap;">Addressed Date/Time</th>
-            <th>Complainant Name</th>
-            <th>Address</th>
-            <th>Complaint Nature & Type</th>
-            <th>Phone No.</th>
-            <th style="text-align: center;">Performa Required</th>
-            <th style="text-align: center;">Status</th>
-            <th>Actions|Feedback</th>
+          <tr style="font-size: 0.7rem; text-transform: uppercase;">
+            <th style="text-align: left; white-space: nowrap; padding: 2px 4px; width: 1%;">CMP-ID</th>
+            <th style="white-space: nowrap; padding: 2px 4px; width: 1%;">Reg Date</th>
+            <th style="text-align: left; white-space: nowrap; padding: 2px 4px; width: 1%;">Addressed Date</th>
+            <th style="white-space: nowrap; padding: 2px 4px; width: 1%;">Name</th>
+            <th style="white-space: nowrap; padding: 2px 4px; width: 1%;">Address</th>
+            <th style="padding: 2px 4px; width: auto;">Nature & Type</th>
+            <th style="white-space: nowrap; padding: 2px 4px; width: 1%;">Phone</th>
+            <th style="text-align: center; white-space: nowrap; padding: 2px 4px; width: 1%;">Performa</th>
+            <th style="text-align: center; white-space: nowrap; padding: 2px 4px; width: 1%;">Status</th>
+            <th style="padding: 2px 4px; width: 95px; white-space: nowrap; text-align: center;">Actions|Feedback</th>
           </tr>
         </thead>
         <tbody id="approvalsTableBody">
@@ -227,44 +227,28 @@
                     {{ (int) ($complaint->complaint_id ?? $complaint->id) }}
                   </a>
                 </td>
-                <td>
-                  {{ $complaint->created_at ? $complaint->created_at->timezone('Asia/Karachi')->format('M d, Y H:i') : 'N/A' }}
+                <td class="px-1" style="font-size: 0.8rem;">
+                  {{ $complaint->created_at ? $complaint->created_at->timezone('Asia/Karachi')->format('M d, y H:i') : 'N/A' }}
                 </td>
-                <td style="text-align: left;">
+                <td class="px-1" style="text-align: left; font-size: 0.75rem;">
                   @if($complaint->closed_at)
                     @php
-                      // Get closed_at - Laravel casts it to Carbon automatically
                       $closedAt = $complaint->closed_at;
-
-                      // Ensure it's a Carbon instance
-                      if (!$closedAt instanceof \Carbon\Carbon) {
-                        if (is_string($closedAt)) {
-                          $closedAt = \Carbon\Carbon::parse($closedAt);
-                        } else {
-                          echo '<span style="display: block; text-align: center;">-</span>';
-                          $closedAt = null;
-                        }
-                      }
-
                       if ($closedAt instanceof \Carbon\Carbon) {
-                        // Laravel stores timestamps in UTC in database
-                        // Ensure we're converting from UTC to Asia/Karachi
-                        // Set timezone to UTC first if not already, then convert to Asia/Karachi
-                        $closedAtUTC = $closedAt->utc();
-                        $closedAtKarachi = $closedAtUTC->setTimezone('Asia/Karachi');
-                        echo $closedAtKarachi->format('M d, Y H:i');
+                        $closedAtKarachi = $closedAt->utc()->setTimezone('Asia/Karachi');
+                        echo $closedAtKarachi->format('M d, y H:i');
                       }
                     @endphp
                   @else
                     <span style="display: block; text-align: center;">-</span>
                   @endif
                 </td>
-                <td>{{ $complaint->client->client_name ?? 'N/A' }}</td>
-                <td>{{ $complaint->client->address ?? 'N/A' }}</td>
-                <td>
-                  <div class="text-white">{{ $displayText }}</div>
+                <td class="px-1" style="font-size: 0.75rem; white-space: nowrap; width: 1%;">{{ $complaint->client->client_name ?? 'N/A' }}</td>
+                <td class="px-1" style="font-size: 0.73rem; white-space: nowrap; width: 1%; max-width: 150px; overflow: hidden; text-overflow: ellipsis;" title="{{ $complaint->client->address ?? 'N/A' }}">{{ $complaint->client->address ?? 'N/A' }}</td>
+                <td class="px-1" style="width: auto;">
+                  <div class="text-white" style="font-size: 0.75rem; line-height: 1.1; white-space: normal; min-width: 180px;">{{ $displayText }}</div>
                 </td>
-                <td>{{ $complaint->client->phone ?? 'N/A' }}</td>
+                <td class="px-1" style="font-size: 0.75rem; white-space: nowrap; width: 1%;">{{ $complaint->client->phone ?? 'N/A' }}</td>
                 <td style="color: white !important; position: relative; text-align: center; vertical-align: middle;">
                   @if($complaintStatus == 'resolved' || $complaintStatus == 'closed')
                     <span style="color: white !important;">-</span>
@@ -294,7 +278,7 @@
                     @endphp
                     @if($performaTypeToShow)
                       <span class="badge performa-badge"
-                        style="width: 140px; height: 32px; padding: 0; font-weight: 700; color: white !important; background-color: {{ $badgeColor }} !important; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px;">
+                        style="width: 100px; height: 24px; padding: 0; font-weight: 700; color: white !important; background-color: {{ $badgeColor }} !important; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 9px;">
                         {{ $performaTypeLabel }}
                       </span>
                     @else
@@ -315,8 +299,8 @@
                   @endphp
                   @if($complaintStatus == 'resolved')
                     <div class="status-chip"
-                      style="background-color: {{ $statusColors['resolved']['bg'] }}; color: {{ $statusColors['resolved']['text'] }}; border-color: {{ $statusColors['resolved']['border'] }}; width: 140px; height: 32px; justify-content: center;">
-                      <span style="font-size: 11px; font-weight: 700; color: white !important;">Addressed</span>
+                      style="background-color: {{ $statusColors['resolved']['bg'] }}; color: {{ $statusColors['resolved']['text'] }}; border-color: {{ $statusColors['resolved']['border'] }}; width: 100px; height: 24px; justify-content: center;">
+                      <span style="font-size: 9px; font-weight: 700; color: white !important;">Addressed</span>
                     </div>
                   @elseif($complaintStatus == 'in_progress' || ($hasPerformaType && in_array($performaTypeValue, ['product_na', 'work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa']) && $complaintStatus != 'resolved') || in_array($rawStatus, ['work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa', 'product_na']))
                     @php
@@ -346,12 +330,12 @@
                       }
                     @endphp
                     <div class="status-chip"
-                      style="background-color: {{ $currentStatusColorForSelect['bg'] }}; color: {{ $currentStatusColorForSelect['text'] }}; border-color: {{ $currentStatusColorForSelect['border'] }}; position: relative; overflow: hidden;">
+                      style="background-color: {{ $currentStatusColorForSelect['bg'] }}; color: {{ $currentStatusColorForSelect['text'] }}; border-color: {{ $currentStatusColorForSelect['border'] }}; position: relative; overflow: hidden; height: 24px; width: 100px;">
                       {{-- waiting_for_authority removed - no blinking dot needed --}}
                       {{-- status-indicator removed for performa types to avoid extra red line --}}
                       <select class="form-select form-select-sm status-select" data-complaint-id="{{ $complaint->id }}"
                         data-actual-status="{{ $rawStatus }}" data-status-color="{{ $statusColorKey }}"
-                        style="width: 140px; font-size: 11px; font-weight: 700; height: 32px; text-align: center; text-align-last: center; background-color: {{ $currentStatusColorForSelect['bg'] }} !important; color: {{ $currentStatusColorForSelect['text'] }} !important; border-color: {{ $currentStatusColorForSelect['border'] }} !important;">
+                        style="width: 100px; font-size: 9px; font-weight: 700; height: 24px; text-align: center; text-align-last: center; background-color: {{ $currentStatusColorForSelect['bg'] }} !important; color: {{ $currentStatusColorForSelect['text'] }} !important; border-color: {{ $currentStatusColorForSelect['border'] }} !important; padding: 0;">
                         @if(isset($statuses) && $statuses->count() > 0)
                           @foreach($statuses as $statusValue => $statusLabel)
                             <option value="{{ $statusValue }}" {{ $displayStatusForSelect == $statusValue ? 'selected' : '' }}>
@@ -383,12 +367,12 @@
                     </div>
                   @elseif(($complaintStatus == 'work_performa' || (isset($performaBadge) && strpos($performaBadge ?? '', 'Work') !== false)) && !$hasPerformaType)
                     <div class="status-chip"
-                      style="background-color: {{ $statusColors['work_performa']['bg'] }}; color: {{ $statusColors['work_performa']['text'] }}; border-color: {{ $statusColors['work_performa']['border'] }}; position: relative; overflow: hidden;">
+                      style="background-color: {{ $statusColors['work_performa']['bg'] }}; color: {{ $statusColors['work_performa']['text'] }}; border-color: {{ $statusColors['work_performa']['border'] }}; position: relative; overflow: hidden; height: 24px; width: 100px;">
                       <span class="status-indicator"
                         style="background-color: {{ $statusColors['work_performa']['bg'] }}; border-color: {{ $statusColors['work_performa']['border'] }};"></span>
                       <select class="form-select form-select-sm status-select" data-complaint-id="{{ $complaint->id }}"
                         data-actual-status="{{ $rawStatus }}" data-status-color="work_performa"
-                        style="width: 140px; font-size: 11px; font-weight: 700; height: 32px; text-align: center; text-align-last: center;">
+                        style="width: 100px; font-size: 9px; font-weight: 700; height: 24px; text-align: center; text-align-last: center; padding: 0;">
                         @if(isset($statuses) && $statuses->count() > 0)
                           @foreach($statuses as $statusValue => $statusLabel)
                             <option value="{{ $statusValue }}" {{ $complaintStatus == $statusValue ? 'selected' : '' }}>
@@ -416,12 +400,12 @@
                     </div>
                   @elseif(($complaintStatus == 'maint_performa' || (isset($performaBadge) && (strpos($performaBadge ?? '', 'Maint') !== false || strpos($performaBadge ?? '', 'Maintenance') !== false))) && !$hasPerformaType && !in_array($performaTypeValue, ['work_priced_performa', 'maint_priced_performa']))
                     <div class="status-chip"
-                      style="background-color: {{ $statusColors['maint_performa']['bg'] }}; color: {{ $statusColors['maint_performa']['text'] }}; border-color: {{ $statusColors['maint_performa']['border'] }}; position: relative; overflow: hidden;">
+                      style="background-color: {{ $statusColors['maint_performa']['bg'] }}; color: {{ $statusColors['maint_performa']['text'] }}; border-color: {{ $statusColors['maint_performa']['border'] }}; position: relative; overflow: hidden; height: 24px; width: 100px;">
                       <span class="status-indicator"
                         style="background-color: {{ $statusColors['maint_performa']['bg'] }}; border-color: {{ $statusColors['maint_performa']['border'] }};"></span>
                       <select class="form-select form-select-sm status-select" data-complaint-id="{{ $complaint->id }}"
                         data-actual-status="{{ $rawStatus }}" data-status-color="maint_performa"
-                        style="width: 140px; font-size: 11px; font-weight: 700; height: 32px; text-align: center; text-align-last: center;">
+                        style="width: 100px; font-size: 9px; font-weight: 700; height: 24px; text-align: center; text-align-last: center; padding: 0;">
                         @if(isset($statuses) && $statuses->count() > 0)
                           @foreach($statuses as $statusValue => $statusLabel)
                             <option value="{{ $statusValue }}" {{ $complaintStatus == $statusValue ? 'selected' : '' }}>
@@ -447,12 +431,12 @@
                     </div>
                   @elseif($complaintStatus == 'un_authorized')
                     <div class="status-chip"
-                      style="background-color: {{ $statusColors['un_authorized']['bg'] }}; color: {{ $statusColors['un_authorized']['text'] }}; border-color: {{ $statusColors['un_authorized']['border'] }}; position: relative; overflow: hidden;">
+                      style="background-color: {{ $statusColors['un_authorized']['bg'] }}; color: {{ $statusColors['un_authorized']['text'] }}; border-color: {{ $statusColors['un_authorized']['border'] }}; position: relative; overflow: hidden; height: 24px; width: 100px;">
                       <span class="status-indicator"
                         style="background-color: {{ $statusColors['un_authorized']['bg'] }}; border-color: {{ $statusColors['un_authorized']['border'] }};"></span>
                       <select class="form-select form-select-sm status-select" data-complaint-id="{{ $complaint->id }}"
                         data-actual-status="{{ $rawStatus }}" data-status-color="un_authorized"
-                        style="width: 140px; font-size: 11px; font-weight: 700; height: 32px; text-align: center; text-align-last: center;">
+                        style="width: 100px; font-size: 9px; font-weight: 700; height: 24px; text-align: center; text-align-last: center; padding: 0;">
                         @if(isset($statuses) && $statuses->count() > 0)
                           @foreach($statuses as $statusValue => $statusLabel)
                             <option value="{{ $statusValue }}" {{ $complaintStatus == $statusValue ? 'selected' : '' }}>
@@ -480,12 +464,12 @@
                     </div>
                   @elseif($complaintStatus == 'pertains_to_ge_const_isld')
                     <div class="status-chip"
-                      style="background-color: {{ $statusColors['pertains_to_ge_const_isld']['bg'] }}; color: {{ $statusColors['pertains_to_ge_const_isld']['text'] }}; border-color: {{ $statusColors['pertains_to_ge_const_isld']['border'] }}; position: relative; overflow: hidden;">
+                      style="background-color: {{ $statusColors['pertains_to_ge_const_isld']['bg'] }}; color: {{ $statusColors['pertains_to_ge_const_isld']['text'] }}; border-color: {{ $statusColors['pertains_to_ge_const_isld']['border'] }}; position: relative; overflow: hidden; height: 24px; width: 100px;">
                       <span class="status-indicator"
                         style="background-color: {{ $statusColors['pertains_to_ge_const_isld']['bg'] }}; border-color: {{ $statusColors['pertains_to_ge_const_isld']['border'] }};"></span>
                       <select class="form-select form-select-sm status-select" data-complaint-id="{{ $complaint->id }}"
                         data-actual-status="{{ $rawStatus }}" data-status-color="pertains_to_ge_const_isld"
-                        style="width: 140px; font-size: 11px; font-weight: 700; height: 32px; text-align: center; text-align-last: center;">
+                        style="width: 100px; font-size: 9px; font-weight: 700; height: 24px; text-align: center; text-align-last: center; padding: 0;">
                         @if(isset($statuses) && $statuses->count() > 0)
                           @foreach($statuses as $statusValue => $statusLabel)
                             <option value="{{ $statusValue }}" {{ $complaintStatus == $statusValue ? 'selected' : '' }}>
@@ -513,12 +497,12 @@
                     </div>
                   @elseif($complaintStatus == 'barak_damages')
                     <div class="status-chip"
-                      style="background-color: {{ $statusColors['barak_damages']['bg'] }}; color: {{ $statusColors['barak_damages']['text'] }}; border-color: {{ $statusColors['barak_damages']['border'] }}; position: relative; overflow: hidden;">
+                      style="background-color: {{ $statusColors['barak_damages']['bg'] }}; color: {{ $statusColors['barak_damages']['text'] }}; border-color: {{ $statusColors['barak_damages']['border'] }}; position: relative; overflow: hidden; height: 24px; width: 100px;">
                       <span class="status-indicator"
                         style="background-color: {{ $statusColors['barak_damages']['bg'] }}; border-color: {{ $statusColors['barak_damages']['border'] }};"></span>
                       <select class="form-select form-select-sm status-select" data-complaint-id="{{ $complaint->id }}"
                         data-actual-status="{{ $rawStatus }}" data-status-color="barak_damages"
-                        style="width: 140px; font-size: 11px; font-weight: 700; height: 32px; text-align: center; text-align-last: center;">
+                        style="width: 100px; font-size: 9px; font-weight: 700; height: 24px; text-align: center; text-align-last: center; padding: 0;">
                         @if(isset($statuses) && $statuses->count() > 0)
                           @foreach($statuses as $statusValue => $statusLabel)
                             <option value="{{ $statusValue }}" {{ $complaintStatus == $statusValue ? 'selected' : '' }}>
@@ -546,12 +530,12 @@
                     </div>
                   @else
                     <div class="status-chip"
-                      style="background-color: {{ $statusColors['assigned']['bg'] }}; color: {{ $statusColors['assigned']['text'] }}; border-color: {{ $statusColors['assigned']['border'] }}; position: relative; overflow: hidden;">
+                      style="background-color: {{ $statusColors['assigned']['bg'] }}; color: {{ $statusColors['assigned']['text'] }}; border-color: {{ $statusColors['assigned']['border'] }}; position: relative; overflow: hidden; height: 24px; width: 100px;">
                       <span class="status-indicator"
                         style="background-color: {{ $statusColors['assigned']['bg'] }}; border-color: {{ $statusColors['assigned']['border'] }};"></span>
                       <select class="form-select form-select-sm status-select" data-complaint-id="{{ $complaint->id }}"
                         data-actual-status="{{ $rawStatus }}" data-status-color="assigned"
-                        style="width: 140px; font-size: 11px; font-weight: 700; height: 32px; text-align: center; text-align-last: center;">
+                        style="width: 100px; font-size: 9px; font-weight: 700; height: 24px; text-align: center; text-align-last: center; padding: 0;">
                         @if(isset($statuses) && $statuses->count() > 0)
                           @foreach($statuses as $statusValue => $statusLabel)
                             <option value="{{ $statusValue }}" {{ $complaintStatus == $statusValue ? 'selected' : '' }}>
@@ -579,30 +563,30 @@
                     </div>
                   @endif
                 </td>
-                <td>
-                  <div class="btn-group" role="group">
+                <td class="px-1" style="width: 1%; white-space: nowrap;">
+                  <div class="d-flex align-items-center" style="gap: 1.5px;">
                     <button type="button" class="btn btn-outline-success btn-sm" title="View Details"
-                      onclick="viewApproval({{ $approval->id }})" style="padding: 3px 8px;">
-                      <i data-feather="eye" style="width: 16px; height: 16px;"></i>
+                      onclick="viewApproval({{ $approval->id }})" style="padding: 1px 3px;">
+                      <i data-feather="eye" style="width: 12px; height: 12px;"></i>
                     </button>
                     @if($complaintStatus == 'resolved' || $complaintStatus == 'closed')
                       <button type="button" class="btn btn-outline-secondary btn-sm add-stock-btn"
-                        title="Stock cannot be issued for addressed complaints" data-approval-id="{{ $approval->id }}"
-                        data-category="{{ $category }}" disabled style="padding: 3px 8px; cursor: not-allowed; opacity: 0.6;">
-                        <i data-feather="plus-circle" style="width: 16px; height: 16px;"></i>
+                        title="Stock cannot be issued" data-approval-id="{{ $approval->id }}"
+                        data-category="{{ $category }}" disabled style="padding: 1px 3px; cursor: not-allowed; opacity: 0.6;">
+                        <i data-feather="plus-circle" style="width: 12px; height: 12px;"></i>
                       </button>
                     @elseif(isset($approval->has_issued_stock) && $approval->has_issued_stock)
-                      <button type="button" class="btn btn-outline-secondary btn-sm add-stock-btn" title="Stock already issued"
+                      <button type="button" class="btn btn-outline-secondary btn-sm add-stock-btn" title="Stock issued"
                         data-approval-id="{{ $approval->id }}" data-category="{{ $category }}" disabled
-                        style="padding: 3px 8px; cursor: not-allowed; opacity: 0.6;">
-                        <i data-feather="plus-circle" style="width: 16px; height: 16px;"></i>
+                        style="padding: 1px 3px; cursor: not-allowed; opacity: 0.6;">
+                        <i data-feather="plus-circle" style="width: 12px; height: 12px;"></i>
                       </button>
                     @else
                       <button type="button" class="btn btn-outline-primary btn-sm add-stock-btn" title="Submit"
                         data-approval-id="{{ $approval->id }}" data-category="{{ $category }}"
                         onclick="openAddStockModal({{ $approval->id }}, '{{ $category }}')"
-                        style="padding: 3px 8px; cursor: pointer;">
-                        <i data-feather="plus-circle" style="width: 16px; height: 16px;"></i>
+                        style="padding: 1px 3px; cursor: pointer;">
+                        <i data-feather="plus-circle" style="width: 12px; height: 12px;"></i>
                       </button>
                     @endif
                     @if($complaintStatus == 'resolved' || $complaintStatus == 'closed')
@@ -645,20 +629,20 @@
                         @if($isGE)
                           <a href="javascript:void(0)" onclick="viewFeedbackEdit({{ $feedbackId }})" class="btn btn-success btn-sm"
                             title="Edit Feedback"
-                            style="padding: 3px 8px; background-color: #16a34a !important; border-color: #16a34a !important; color: #ffffff !important;">
-                            <i data-feather="check-circle" style="width: 16px; height: 16px; color: #ffffff;"></i>
+                            style="padding: 1px 3px; background-color: #16a34a !important; border-color: #16a34a !important; color: #ffffff !important;">
+                            <i data-feather="check-circle" style="width: 12px; height: 12px; color: #ffffff;"></i>
                           </a>
                         @else
-                          <span class="btn btn-success btn-sm" title="Feedback (View Only - Only GE can edit)"
-                            style="padding: 3px 8px; background-color: #16a34a !important; border-color: #16a34a !important; color: #ffffff !important; cursor: default; opacity: 0.7;">
-                            <i data-feather="check-circle" style="width: 16px; height: 16px; color: #ffffff;"></i>
+                          <span class="btn btn-success btn-sm" title="Feedback (View Only)"
+                            style="padding: 1px 3px; background-color: #16a34a !important; border-color: #16a34a !important; color: #ffffff !important; cursor: default; opacity: 0.7;">
+                            <i data-feather="check-circle" style="width: 12px; height: 12px; color: #ffffff;"></i>
                           </span>
                         @endif
                       @else
                         <a href="javascript:void(0)" onclick="viewFeedbackCreate({{ $complaint->id }})"
-                          class="btn btn-outline-warning btn-sm" title="Add Feedback"
-                          style="padding: 3px 8px; border-color: #f59e0b !important; color: #f59e0b !important;">
-                          <i data-feather="message-square" style="width: 16px; height: 16px; color: #f59e0b;"></i>
+                          class="btn btn-warning btn-sm" title="Add Feedback"
+                          style="padding: 1px 3px; background-color: #f59e0b !important; border-color: #f59e0b !important; color: #ffffff !important;">
+                          <i data-feather="message-square" style="width: 12px; height: 12px; color: #ffffff;"></i>
                         </a>
                       @endif
                     @endif
@@ -679,15 +663,15 @@
     </div>
 
     <!-- TOTAL RECORDS -->
-    <div id="approvalsTableFooter" class="text-center py-2 mt-2"
-      style="background-color: rgba(59, 130, 246, 0.2); border-top: 2px solid #3b82f6; border-radius: 0 0 8px 8px;">
-      <strong style="color: #ffffff; font-size: 14px;">
+    <div id="approvalsTableFooter" class="text-center py-1 mt-1"
+      style="background-color: rgba(59, 130, 246, 0.2); border-top: 1px solid #3b82f6; border-radius: 0 0 8px 8px;">
+      <strong style="color: #ffffff; font-size: 12px;">
         Total Records: {{ $approvals->total() }}
       </strong>
     </div>
 
     <!-- PAGINATION -->
-    <div class="d-flex justify-content-center mt-3" id="approvalsPagination">
+    <div class="d-flex justify-content-center mt-2 small" id="approvalsPagination" style="transform: scale(0.9); transform-origin: center;">
       <div>
         {{ $approvals->links() }}
       </div>
@@ -700,10 +684,10 @@
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
       <div class="modal-content card-glass"
         style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); border: 1px solid rgba(59, 130, 246, 0.3);">
-        <div class="modal-header" style="border-bottom: 2px solid rgba(59, 130, 246, 0.2);">
-          <h5 class="modal-title text-white" id="addStockModalLabel">
-            <i data-feather="package" class="me-2" style="width: 20px; height: 20px;"></i>Authority / Stock Management
-          </h5>
+        <div class="modal-header py-2" style="border-bottom: 2px solid rgba(59, 130, 246, 0.2);">
+          <h6 class="modal-title text-white" id="addStockModalLabel">
+            <i data-feather="package" class="me-2" style="width: 18px; height: 18px;"></i>Authority / Stock Management
+          </h6>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" tabindex="0"
             style="background-color: rgba(255, 255, 255, 0.2); border-radius: 4px; padding: 0.5rem !important; opacity: 1 !important; filter: invert(1); background-size: 1.5em;"></button>
         </div>
@@ -732,10 +716,10 @@
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content card-glass"
         style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); border: 1px solid rgba(59, 130, 246, 0.3);">
-        <div class="modal-header" style="border-bottom: 2px solid rgba(59, 130, 246, 0.2);">
-          <h5 class="modal-title text-white" id="complaintModalLabel">
-            <i data-feather="alert-triangle" class="me-2"></i>Complaint Details
-          </h5>
+        <div class="modal-header py-2" style="border-bottom: 2px solid rgba(59, 130, 246, 0.2);">
+          <h6 class="modal-title text-white" id="complaintModalLabel">
+            <i data-feather="alert-triangle" class="me-2" style="width: 18px; height: 18px;"></i>Complaint Details
+          </h6>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"
             onclick="closeComplaintModal()"
             style="background-color: rgba(255, 255, 255, 0.2); border-radius: 4px; padding: 0.5rem !important; opacity: 1 !important; filter: invert(1); background-size: 1.5em;"></button>
@@ -756,10 +740,10 @@
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content card-glass"
         style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); border: 1px solid rgba(59, 130, 246, 0.3);">
-        <div class="modal-header" style="border-bottom: 2px solid rgba(59, 130, 246, 0.2);">
-          <h5 class="modal-title text-white" id="approvalModalLabel">
-            <i data-feather="file-text" class="me-2"></i>Complaint Details
-          </h5>
+        <div class="modal-header py-2" style="border-bottom: 2px solid rgba(59, 130, 246, 0.2);">
+          <h6 class="modal-title text-white" id="approvalModalLabel">
+            <i data-feather="file-text" class="me-2" style="width: 18px; height: 18px;"></i>Complaint Details
+          </h6>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"
             onclick="closeApprovalModal()"
             style="background-color: rgba(255, 255, 255, 0.2); border-radius: 4px; padding: 0.5rem !important; opacity: 1 !important; filter: invert(1); background-size: 1.5em;"></button>

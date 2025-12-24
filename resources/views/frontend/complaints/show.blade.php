@@ -3,7 +3,7 @@
 @section('title', 'Complaint Details')
 
 @section('content')
-<div class="container py-4" style="margin-top: 80px;">
+<div class="container py-4" style="margin-top: 110px; max-width: 800px; margin-left: auto; margin-right: auto;">
 
 <!-- PAGE HEADER -->
 <!-- <div class="mb-4">
@@ -86,7 +86,7 @@
       
       <div class="card-body">
         <!-- Main Info Grid -->
-        <div class="row g-4">
+        <div class="row g-2">
             <!-- Left Column: Complainant Info -->
             <div class="col-md-6 border-end-md">
                 <h6 class="text-primary fw-bold text-uppercase mb-3 small border-bottom pb-2">Complainant Details</h6>
@@ -190,7 +190,7 @@
                         <i data-feather="clock" class="me-3 text-muted" style="width: 16px; height: 16px; margin-top: 3px;"></i>
                         <div>
                             <div class="text-muted small text-uppercase">Availability Time</div>
-                            <div class="fw-medium text-dark">{{ $complaint->availability_time ?? 'N/A' }}</div>
+                            <div class="fw-medium text-dark">{{ str_replace('T', ' ', $complaint->availability_time ?? 'N/A') }}</div>
                         </div>
                     </div>
                 </div>
@@ -242,160 +242,135 @@
             </div>
         </div>
 
-        <!-- Authority & Stock Section -->
-        @php
-          $approval = $complaint->spareApprovals->first();
-          $authorityNumber = $approval?->authority_number ?? null;
-          
-          $issuedStock = \App\Models\SpareStockLog::where('reference_id', $complaint->id)
-            ->where('change_type', 'out')
-            ->with('spare:id,item_name')
-            ->orderBy('created_at', 'desc')
-            ->get();
-        @endphp
-
-        @if($authorityNumber || $issuedStock->count() > 0)
+        <!-- Authority & Feedback Side-by-Side Row -->
+        @if(($authorityNumber || $issuedStock->count() > 0) || ($complaint->status == 'resolved' || $complaint->status == 'closed' || $complaint->feedback))
         <hr class="my-4">
-        <h6 class="text-primary fw-bold text-uppercase mb-3 small">Authority & Stock Details</h6>
-        <div class="bg-light rounded p-3 pt-3">
-             @if($authorityNumber)
-             <div class="mb-3 d-flex align-items-center">
-                <span class="text-muted small text-uppercase me-2">Authority No:</span>
-                <span class="fw-bold text-dark">{{ $authorityNumber }}</span>
-             </div>
-             @endif
-
-             @if($issuedStock->count() > 0)
-                <div class="table-responsive">
-                    <table class="table table-sm table-bordered mb-0 bg-white">
-                        <thead class="table-light">
-                            <tr>
-                                <th class="small">Product</th>
-                                <th class="small">Qty</th>
-                                <th class="small">Issued At</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($issuedStock as $stock)
-                            <tr>
-                                <td class="small">{{ $stock->spare->item_name ?? 'N/A' }}</td>
-                                <td class="small fw-bold">{{ $stock->quantity }}</td>
-                                <td class="small">{{ $stock->created_at ? $stock->created_at->timezone('Asia/Karachi')->format('M d, Y H:i') : '-' }}</td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-             @endif
-        </div>
-        @endif
-
-        <!-- Attachments Section -->
-        @if($complaint->attachments->count() > 0)
-        <hr class="my-4">
-        <h6 class="text-primary fw-bold text-uppercase mb-3 small">Attachments</h6>
-        <div class="row g-2">
-            @foreach($complaint->attachments as $attachment)
-            <div class="col-md-3 col-6">
-                <div class="border rounded p-2 d-flex flex-column align-items-center bg-light h-100 justify-content-center text-center">
-                    <i data-feather="file" class="text-secondary mb-2"></i>
-                    <span class="small text-truncate w-100 mb-2" title="{{ $attachment->original_name }}">{{ $attachment->original_name }}</span>
-                    <a href="{{ Storage::url($attachment->file_path) }}" target="_blank" class="btn btn-xs btn-outline-primary py-0" style="font-size: 0.75rem;">View</a>
-                </div>
-            </div>
-            @endforeach
-        </div>
-        @endif
-
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- FEEDBACK SECTION -->
-@if($complaint->status == 'resolved' || $complaint->status == 'closed' || $complaint->feedback)
-<div class="row mt-4">
-  <div class="col-12 d-flex justify-content-center">
-    <div style="max-width: 900px; width: 100%;">
-      <div class="card-glass">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title mb-0 text-white">
-          <i data-feather="message-circle" class="me-2"></i>Complainant Feedback
-        </h5>
-        @if(!$complaint->feedback)
-          <a href="{{ route('frontend.feedback', $complaint->id) }}" class="btn btn-outline-secondary btn-sm" title="Add Feedback" style="padding: 3px 8px;">
-            <i data-feather="plus-circle" style="width: 16px; height: 16px;"></i>
-          </a>
-        @endif
-      </div>
-      <div class="card-body">
-        @if($complaint->feedback)
-          <div class="row">
+        <div class="row g-4">
+            <!-- Left Column: Authority & Stock -->
             <div class="col-md-6">
-              <table class="table table-borderless">
-                <tr>
-                  <td class="text-white"><strong>Overall Rating:</strong></td>
-                  <td>
-                    <span class="badge bg-{{ $complaint->feedback->rating_badge_color }}" style="color: #ffffff !important;">
-                      {{ $complaint->feedback->overall_rating_display }}
-                    </span>
-                    @if($complaint->feedback->rating_score)
-                      <span class="text-white ms-2">({{ $complaint->feedback->rating_score }}/5)</span>
-                    @endif
-                  </td>
-                </tr>
-                <tr>
-                  <td class="text-white"><strong>Feedback Date:</strong></td>
-                  <td class="text-white">
-                    {{ $complaint->feedback->created_at->timezone('Asia/Karachi')->format('M d, Y H:i:s') }}
-                  </td>
-                </tr>
-                <tr>
-                  <td class="text-white"><strong>Entered By:</strong></td>
-                  <td class="text-white">
-                    @if($complaint->feedback->enteredBy)
-                      {{ $complaint->feedback->enteredBy->name ?? 'System' }}
-                      <span class="badge badge-light">Staff</span>
-                    @elseif($complaint->feedback->submitted_by)
-                      {{ $complaint->feedback->submitted_by }}
-                      <span class="badge badge-info text-white">Client</span>
-                    @else
-                      Client (Web)
-                    @endif
-                  </td>
-                </tr>
-              </table>
-            </div>
-          </div>
-          @if($complaint->feedback->comments)
-          <div class="row mt-3">
-            <div class="col-12">
-              <h6 class="text-white fw-bold mb-2" style="font-size: 0.9rem;">Complainant Comments:</h6>
-              <div class="card-glass" style="background-color: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3);">
-                <div class="card-body">
-                  <p class="text-white mb-0" style="color: #dbeafe; line-height: 1.6;">
-                    {{ $complaint->feedback->comments }}
-                  </p>
+                @if($authorityNumber || $issuedStock->count() > 0)
+                <h6 class="text-primary fw-bold text-uppercase mb-3 small">Authority & Stock Details</h6>
+                <div class="bg-light rounded p-4 h-100">
+                     @if($authorityNumber)
+                     <div class="mb-3 d-flex align-items-center">
+                        <span class="text-muted small text-uppercase me-2">Authority No:</span>
+                        <span class="fw-bold text-dark">{{ $authorityNumber }}</span>
+                     </div>
+                     @endif
+        
+                     @if($issuedStock->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered mb-0 bg-white">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="small">Product</th>
+                                        <th class="small">Qty</th>
+                                        <th class="small">Issued At</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($issuedStock as $stock)
+                                    <tr>
+                                        <td class="small">{{ $stock->spare->item_name ?? 'N/A' }}</td>
+                                        <td class="small fw-bold">{{ $stock->quantity }}</td>
+                                        <td class="small">{{ $stock->created_at ? $stock->created_at->timezone('Asia/Karachi')->format('M d, Y H:i') : '-' }}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                     @endif
                 </div>
-              </div>
+                @endif
             </div>
-          </div>
-          @endif
-        @else
-          <div class="text-center py-4">
-            <i data-feather="message-circle" class="feather-lg mb-3 text-muted"></i>
-            <p class="text-muted mb-3">No feedback has been recorded for this complaint.</p>
-            <a href="{{ route('frontend.feedback', $complaint->id) }}" class="btn btn-primary">
-              <i data-feather="plus-circle" class="me-2"></i>Add Complainant Feedback
-            </a>
-          </div>
+
+            <!-- Right Column: Feedback Details -->
+            <div class="col-md-6">
+                @if($complaint->status == 'resolved' || $complaint->status == 'closed' || $complaint->feedback)
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="text-primary fw-bold text-uppercase small mb-0">Complainant Feedback</h6>
+                    @if(!$complaint->feedback)
+                      <a href="{{ route('frontend.feedback', $complaint->id) }}" class="btn btn-outline-secondary btn-sm" title="Add Feedback" style="padding: 2px 6px; font-size: 0.75rem;">
+                        <i data-feather="plus-circle" style="width: 14px; height: 14px;"></i> Add
+                      </a>
+                    @endif
+                </div>
+                
+                <div class="bg-light rounded p-4 h-100">
+                    @if($complaint->feedback)
+                      <div class="row">
+                        <div class="col-12">
+                          <!-- Rating Row -->
+                          <div class="mb-3 d-flex align-items-center justify-content-between border-bottom pb-3">
+                              <div class="d-flex align-items-center">
+                                  <i data-feather="star" class="me-3 text-muted" style="width: 18px; height: 18px;"></i>
+                                  <span class="text-muted small text-uppercase">Overall Rating:</span>
+                              </div>
+                              <div class="d-flex align-items-center">
+                                  <span class="badge bg-{{ $complaint->feedback->rating_badge_color }}" style="font-size: 0.9rem; padding: 5px 12px; color: #ffffff !important;">
+                                      {{ $complaint->feedback->overall_rating_display }}
+                                  </span>
+                                  @if($complaint->feedback->rating_score)
+                                      <span class="text-dark small ms-2 fw-bold">({{ $complaint->feedback->rating_score }}/5)</span>
+                                  @endif
+                              </div>
+                          </div>
+
+                          <!-- Date Row -->
+                          <div class="mb-3 d-flex align-items-center justify-content-between border-bottom pb-3">
+                              <div class="d-flex align-items-center">
+                                  <i data-feather="calendar" class="me-3 text-muted" style="width: 18px; height: 18px;"></i>
+                                  <span class="text-muted small text-uppercase">Feedback Date:</span>
+                              </div>
+                              <span class="text-dark fw-medium">
+                                  {{ $complaint->feedback->created_at ? $complaint->feedback->created_at->timezone('Asia/Karachi')->format('M d, Y H:i:s') : 'N/A' }}
+                              </span>
+                          </div>
+
+                          <!-- Author Row -->
+                          <div class="mb-3 d-flex align-items-center justify-content-between">
+                              <div class="d-flex align-items-center">
+                                  <i data-feather="user" class="me-3 text-muted" style="width: 18px; height: 18px;"></i>
+                                  <span class="text-muted small text-uppercase">Entered By:</span>
+                              </div>
+                              <div class="d-flex align-items-center">
+                                  <span class="text-dark fw-medium text-end">
+                                      @if($complaint->feedback->enteredBy)
+                                          {{ $complaint->feedback->enteredBy->name }}
+                                      @elseif($complaint->feedback->submitted_by)
+                                          {{ $complaint->feedback->submitted_by }}
+                                      @else
+                                          {{ $complaint->client->client_name ?? 'Client' }}
+                                      @endif
+                                  </span>
+                                  <span class="badge bg-secondary ms-2" style="font-size: 0.7rem;">
+                                      {{ $complaint->feedback->enteredBy ? 'Staff' : 'Client' }}
+                                  </span>
+                              </div>
+                          </div>
+                        </div>
+                      </div>
+                      @if($complaint->feedback->comments)
+                      <div class="mt-4">
+                        <h6 class="text-dark fw-bold mb-2 small text-uppercase">Complainant Comments:</h6>
+                        <div class="p-3 rounded border" style="background-color: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.3);">
+                          <p class="text-dark mb-0" style="line-height: 1.6; font-size: 0.85rem;">
+                            {{ $complaint->feedback->comments }}
+                          </p>
+                        </div>
+                      </div>
+                      @endif
+                    @else
+                      <div class="text-center py-4">
+                        <i data-feather="message-circle" class="text-muted mb-2" style="width: 32px; height: 32px;"></i>
+                        <p class="text-muted small mb-0">No feedback recorded yet.</p>
+                      </div>
+                    @endif
+                </div>
+                @endif
+            </div>
+        </div>
         @endif
-      </div>
-    </div>
-  </div>
-  </div>
-</div>
-@endif
 
 </div>
 @push('styles')
@@ -452,7 +427,7 @@
   .card-glass .card-header {
     background: linear-gradient(135deg, var(--navy-primary), var(--navy-dark));
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 1rem 1.25rem;
+    padding: 0.5rem 0.75rem;
   }
   
   /* Header text inside card should be white now that header bg is dark */
@@ -465,16 +440,45 @@
   }
   
   .card-glass .card-body {
-    padding: 1.25rem;
+    padding: 0.25rem 0.5rem;
   }
   
   .info-item {
-    padding: 12px 0;
+    padding: 2px 0;
     border-bottom: 1px solid #f1f5f9;
   }
   
   .info-item:last-child {
     border-bottom: none;
+  }
+
+  /* Aggressive Font Reductions */
+  .info-item div .text-muted.small {
+    font-size: 0.65rem !important;
+  }
+  .info-item div .fw-medium.text-dark {
+    font-size: 0.75rem !important;
+  }
+  .card-glass .card-header h5 {
+    font-size: 0.85rem !important;
+  }
+  .card-glass .card-header i {
+    width: 14px !important;
+    height: 14px !important;
+  }
+  h6.text-primary {
+    font-size: 0.7rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+  p.text-dark.small {
+    font-size: 0.7rem !important;
+  }
+  .badge {
+    padding: 3px 8px !important;
+    font-size: 0.65rem !important;
+  }
+  hr {
+    margin: 0.5rem 0 !important;
   }
 
   /* Text Colors Adjustment for White Card Body */

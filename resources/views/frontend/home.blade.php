@@ -4,9 +4,19 @@
 
 @push('styles')
 <style>
-  body {
+  * {
+    box-sizing: border-box;
+  }
+
+  html, body {
     margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-x: hidden;
     font-family: 'Inter', Arial, sans-serif;
+  }
+
+  body {
     background: url('{{ asset('assests/Background.jpg') }}') no-repeat center center/cover;
     background-attachment: fixed;
     position: relative;
@@ -69,7 +79,7 @@
   main {
     padding: 0 !important;
     margin: 0 !important;
-    padding-top: 25px !important;
+    padding-top: 10px !important;
     position: relative;
     z-index: 2;
     flex: 1;
@@ -78,14 +88,14 @@
   /* Custom navbar for home page */
   .home-navbar {
     text-align: center;
-    padding: 30px 30px;
+    padding: 10px 30px;
     font-size: 16px;
     color: #fff;
     letter-spacing: 2px;
     position: relative;
     z-index: 10;
     width: 100%;
-    margin-bottom: 40px;
+    margin-bottom: 5px;
   }
 
   .home-navbar a {
@@ -101,10 +111,10 @@
   }
 
   .container {
-    width: 90%;
-    max-width: 1100px;
-    margin: 15px auto;
-    margin-top: 75px;
+    width: 85%;
+    max-width: 850px;
+    margin: 10px auto;
+    margin-top:85px;
     padding: 0;
     display: flex;
     background: rgba(255, 255, 255, 0.95);
@@ -117,8 +127,8 @@
   }
 
   .left-section {
-    flex: 1.3;
-    min-height: 420px;
+    flex: 1.5;
+    min-height: 220px;
     background: url('{{ asset('assests/slider1.jpg') }}') no-repeat center center/cover;
     background-size: cover;
     position: relative;
@@ -149,7 +159,7 @@
   .right-section {
     flex: 0.7;
     background: #fff;
-    padding: 40px 35px;
+    padding: 15px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -160,30 +170,30 @@
 
   .logo {
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     margin-top: -10px;
   }
 
   .logo img {
-    width: 120px;
+    width: 80px;
     height: auto;
     display: block;
     margin: 0 auto;
   }
 
   .logo svg {
-    width: 120px;
-    height: 120px;
+    width: 100px;
+    height: 100px;
     display: block;
     margin: 0 auto;
   }
 
   .heading {
     text-align: center;
-    font-size: 28px !important;
+    font-size: 20px !important;
     font-weight: 700 !important;
-    margin-top: 15px;
-    margin-bottom: 5px;
+    margin-top: 8px;
+    margin-bottom: 2px;
     color: #003366;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -192,18 +202,18 @@
 
   .subtitle {
     text-align: center;
-    font-size: 14px;
+    font-size: 13px;
     color: #6c757d;
-    margin-bottom: 30px;
+    margin-bottom: 5px;
     font-weight: 400;
   }
 
   .form {
-    margin-top: 20px;
+    margin-top: 5px;
   }
 
   .form-group {
-    margin-top: 15px;
+    margin-top: 10px;
   }
 
   .form-group label {
@@ -218,7 +228,7 @@
   input[type="password"],
   input[type="text"] {
     width: 100%;
-    padding: 12px 14px;
+    padding: 8px 10px;
     margin-top: 6px;
     border-radius: 8px;
     border: 2px solid #3b82f6;
@@ -274,13 +284,13 @@
 
   .sign-btn {
     width: 100%;
-    margin-top: 25px;
-    padding: 12px;
+    margin-top: 15px;
+    padding: 10px;
     background: #2563eb;
     color: white;
     border: none;
     border-radius: 8px;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -313,7 +323,7 @@
     color: #6c757d;
     margin-top: 10px;
     font-size: 0.95rem;
-    margin-bottom: 25px;
+    margin-bottom: 10px;
   }
 
   /* Responsive */
@@ -322,30 +332,38 @@
       flex-direction: column;
       width: 95%;
       margin: 20px auto;
+      margin-top: 180px;
     }
 
     .left-section {
-      min-height: 300px;
+      min-height: 250px;
+      border-radius: 20px 20px 0 0 !important;
     }
 
     .right-section {
       padding: 30px;
+      border-radius: 0 0 20px 20px !important;
     }
 
-    .navbar a {
-      margin: 0 15px;
-      font-size: 16px;
+    .home-navbar {
+      padding: 20px 15px;
+      margin-bottom: 50px;
+    }
+
+    .home-navbar a {
+      margin: 0 5px;
+      font-size: 13px;
     }
   }
 
   @media (max-width: 576px) {
-    .navbar {
+    .home-navbar {
       padding: 15px;
     }
 
-    .navbar a {
-      margin: 0 10px;
-      font-size: 14px;
+    .home-navbar a {
+      margin: 0 5px;
+      font-size: 12px;
     }
 
     .right-section {
@@ -353,7 +371,17 @@
     }
 
     .heading {
-      font-size: 22px !important;
+      font-size: 20px !important;
+    }
+
+    .sign-btn {
+      padding: 10px;
+      margin-top: 15px;
+    }
+
+    .container {
+      width: 90%;
+      margin-top: 150px;
     }
 
     .image-slider {
@@ -373,13 +401,13 @@
 <div style="display: flex; flex-direction: column; min-height: calc(100vh - 100px);">
 
   <div class="container">                                                                                                            
-    <div class="left-section" id="leftSection" @auth('frontend') style="border-radius: 20px; min-height: 650px;" @endauth>
+    <div class="left-section" id="leftSection" @auth('frontend') style="border-radius: 20px; min-height: 500px;" @endauth>
     </div>
 
     @guest('frontend')
     <div class="right-section">
         <div class="logo">
-            <img src="{{ asset('assests/logo.png') }}" alt="Pakistan Navy Emblem" style="width: 120px; height: 120px; object-fit: contain;" />
+            <img src="{{ asset('assests/logo.png') }}" alt="Pakistan Navy Emblem" style="width: 100px; height: 100px; object-fit: contain;" />
         </div>
         <div class="heading">MES COMPLAINT MANAGEMENT SYSTEM</div>
         <p class="subtitle">Nice to see you again</p>

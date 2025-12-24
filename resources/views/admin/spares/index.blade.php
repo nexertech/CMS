@@ -10,8 +10,8 @@
       <h2 class=" mb-2">Product Management</h2>
       <p class="text-light">Manage inventory and Product</p>
     </div>
-    <a href="{{ route('admin.spares.create') }}" class="btn btn-outline-secondary">
-      <i class="fas fa-plus me-2"></i>Add Product
+    <a href="{{ route('admin.spares.create') }}" class="btn btn-outline-secondary btn-sm">
+      <i class="fas fa-plus me-1"></i>Add
     </a>
   </div>
 </div>
@@ -59,55 +59,51 @@
     <table class="table table-dark table-sm" style="margin-bottom: 0;">
       <thead>
         <tr>
-          <th style="padding: 0.4rem 0.5rem; font-size: 0.8rem; white-space: nowrap;">Sr.No</th>
-                    <th style="padding: 0.4rem 0.5rem; font-size: 0.8rem; white-space: nowrap;">Product Name</th>
-
-          <th style="padding: 0.4rem 0.5rem; font-size: 0.8rem; white-space: nowrap;">Brand Name</th>
-                    <th style="padding: 0.4rem 0.5rem; font-size: 0.8rem; white-space: nowrap;">Product Code</th>
-
-          <th style="padding: 0.4rem 0.5rem; font-size: 0.8rem; white-space: nowrap;">Category</th>
-          <th style="padding: 0.4rem 0.5rem; font-size: 0.8rem; white-space: nowrap;">Total Received</th>
-          <th style="padding: 0.4rem 0.5rem; font-size: 0.8rem; white-space: nowrap;">Issued Qty</th>
-          <th style="padding: 0.4rem 0.5rem; font-size: 0.8rem; white-space: nowrap;">Balance Qty</th>
-          <th style="padding: 0.4rem 0.5rem; font-size: 0.8rem; white-space: nowrap;">% Utilized</th>
-          <th style="padding: 0.4rem 0.5rem; font-size: 0.8rem; white-space: nowrap;">Stock Status</th>
-          <th style="padding: 0.4rem 0.5rem; font-size: 0.8rem; white-space: nowrap;">Last Stock Out</th>
-          <th style="padding: 0.4rem 0.5rem; font-size: 0.8rem; white-space: nowrap;">Actions</th>
+          <th style="padding: 1px 3px; font-size: 0.68rem; white-space: nowrap;">SR</th>
+          <th style="padding: 1px 3px; font-size: 0.68rem; white-space: nowrap;">Product</th>
+          <th style="padding: 1px 3px; font-size: 0.68rem; white-space: nowrap;">Brand</th>
+          <th style="padding: 1px 3px; font-size: 0.68rem; white-space: nowrap;">Code</th>
+          <th style="padding: 1px 3px; font-size: 0.68rem; white-space: nowrap;">Category</th>
+          <th style="padding: 1px 3px; font-size: 0.68rem; white-space: nowrap;">Received</th>
+          <th style="padding: 1px 3px; font-size: 0.68rem; white-space: nowrap;">Issued</th>
+          <th style="padding: 1px 3px; font-size: 0.68rem; white-space: nowrap;">Balance</th>
+          <th style="padding: 1px 3px; font-size: 0.68rem; white-space: nowrap;">% Utilized</th>
+          <th style="padding: 1px 3px; font-size: 0.68rem; white-space: nowrap;">Status</th>
+          <th style="padding: 1px 3px; font-size: 0.68rem; white-space: nowrap;">Last Out</th>
+          <th style="padding: 1px 3px; font-size: 0.68rem; white-space: nowrap;">Actions</th>
         </tr>
       </thead>
       <tbody id="sparesTableBody">
         @forelse($spares as $spare)
         <tr>
-          <td class="text-muted" style="padding: 0.4rem 0.5rem;">{{ ($spares->currentPage() - 1) * $spares->perPage() + $loop->iteration }}</td>
-                    <td style="padding: 0.4rem 0.5rem;">{{ $spare->item_name }}</td>
-
-          <td style="padding: 0.4rem 0.5rem;">{{ $spare->brand_name ?? 'N/A' }}</td>
-                    <td style="padding: 0.4rem 0.5rem;">{{ $spare->product_code ?? 'N/A' }}</td>
-
-          <td style="padding: 0.4rem 0.5rem;">{{ ucfirst($spare->category ?? 'N/A') }}</td>
-          <td style="padding: 0.4rem 0.5rem;"><span class="text-success">{{ number_format((float)($spare->total_received_quantity ?? 0), 0) }}</span></td>
-          <td style="padding: 0.4rem 0.5rem;"><span class="text-danger">{{ number_format((float)($spare->issued_quantity ?? 0), 0) }}</span></td>
-          <td style="padding: 0.4rem 0.5rem;">{{ number_format((float)($spare->stock_quantity ?? 0), 0) }}</td>
-          <td style="padding: 0.4rem 0.5rem;">{{ number_format((float)($spare->utilization_percent ?? 0), 0) }}%</td>
-          <td style="padding: 0.4rem 0.5rem;">
+          <td class="text-muted" style="padding: 1px 3px; font-size: 0.72rem;">{{ ($spares->currentPage() - 1) * $spares->perPage() + $loop->iteration }}</td>
+          <td style="padding: 1px 3px; font-size: 0.72rem;">{{ $spare->item_name }}</td>
+          <td style="padding: 1px 3px; font-size: 0.72rem;">{{ $spare->brand_name ?? 'N/A' }}</td>
+          <td style="padding: 1px 3px; font-size: 0.72rem;">{{ $spare->product_code ?? 'N/A' }}</td>
+          <td style="padding: 1px 3px; font-size: 0.72rem;">{{ ucfirst($spare->category ?? 'N/A') }}</td>
+          <td style="padding: 1px 3px; font-size: 0.72rem;"><span class="text-success">{{ number_format((float)($spare->total_received_quantity ?? 0), 0) }}</span></td>
+          <td style="padding: 1px 3px; font-size: 0.72rem;"><span class="text-danger">{{ number_format((float)($spare->issued_quantity ?? 0), 0) }}</span></td>
+          <td style="padding: 1px 3px; font-size: 0.72rem;">{{ number_format((float)($spare->stock_quantity ?? 0), 0) }}</td>
+          <td style="padding: 1px 3px; font-size: 0.72rem;">{{ number_format((float)($spare->utilization_percent ?? 0), 0) }}%</td>
+          <td style="padding: 1px 3px; font-size: 0.72rem;">
             @if(($spare->stock_quantity ?? 0) <= 0)
-              <span class="badge bg-danger" style="font-size: 0.75rem; color: #ffffff !important;">Out</span>
+              <span class="badge bg-danger" style="font-size: 0.65rem; color: #ffffff !important; padding: 2px 4px;">Out</span>
             @elseif(($spare->stock_quantity ?? 0) <= ($spare->threshold_level ?? 0))
-              <span class="badge bg-warning" style="font-size: 0.75rem; color: #ffffff !important;">Low</span>
+              <span class="badge bg-warning" style="font-size: 0.65rem; color: #ffffff !important; padding: 2px 4px;">Low</span>
             @else
-              <span class="badge bg-success" style="font-size: 0.75rem; color: #ffffff !important;">In</span>
+              <span class="badge bg-success" style="font-size: 0.65rem; color: #ffffff !important; padding: 2px 4px;">In</span>
             @endif
           </td>
-          <td style="padding: 0.4rem 0.5rem; font-size: 0.8rem;">
+          <td style="padding: 1px 3px; font-size: 0.68rem;">
             @if(($spare->stock_quantity ?? 0) <= 0 && $spare->last_stock_out)
-              <span class="text-danger">{{ $spare->last_stock_out->format('d M Y') }}</span>
+              <span class="text-danger">{{ $spare->last_stock_out->format('d M y') }}</span>
             @elseif($spare->last_stock_out)
-              {{ $spare->last_stock_out->format('d M Y') }}
+              {{ $spare->last_stock_out->format('d M y') }}
             @else
               <span class="text-muted">Never</span>
             @endif
           </td>
-          <td style="padding: 0.4rem 0.5rem;">
+          <td style="padding: 1px 3px;">
             <div class="btn-group" role="group">
               <button class="btn btn-outline-success btn-sm" style="padding: 3px 8px;" onclick="viewSpare('{{ $spare->id }}')" title="View">
                 <i data-feather="eye" style="width: 16px; height: 16px;"></i>

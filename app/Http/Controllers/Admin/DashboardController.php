@@ -457,38 +457,29 @@ class DashboardController extends Controller
                     $this->applyFilters($resolvedComplaintsQuery, null, $sectorId, $category, $approvalStatus, null, $dateRange, $cmesId);
 
                     $resolvedComplaints = $resolvedComplaintsQuery->get();
-
-                    // Calculate progress based on feedback
-                    // Good feedback (excellent, good) = +1 point
-                    // Bad feedback (average, poor) = -0.5 points (reduces percentage)
-                    // No feedback = 0 points (doesn't affect)
-                    $positivePoints = 0;
-                    $negativePoints = 0;
                     $resolvedWithGoodFeedback = 0;
                     $resolvedWithBadFeedback = 0;
-                    $totalFeedbacks = 0; // NEW: Track total feedbacks received
+                    $totalFeedbacks = 0;
+                    $ratingSum = 0;
 
                     foreach ($resolvedComplaints as $complaint) {
-                        if ($complaint->feedback) {
-                            $totalFeedbacks++; // NEW: Increment total feedbacks
+                        if ($complaint->feedback && $complaint->feedback->rating_score) {
+                            $totalFeedbacks++;
+                            $ratingSum += $complaint->feedback->rating_score;
+                            
                             $rating = $complaint->feedback->overall_rating;
                             if (in_array($rating, ['excellent', 'good'])) {
-                                $positivePoints += 1;
                                 $resolvedWithGoodFeedback++;
                             } elseif (in_array($rating, ['average', 'poor'])) {
-                                $negativePoints += 0.5; // Reduces percentage
                                 $resolvedWithBadFeedback++;
                             }
                         }
                     }
 
                     // Calculate progress percentage
-                    // CHANGED: Use total feedbacks as denominator instead of total complaints
-                    // Formula: (positive points - negative points) / total feedbacks * 100
-                    // This ensures percentages are based on feedbacks received, not total complaints
-                    $netPoints = $positivePoints - $negativePoints;
+                    // Formula: (Sum of Stars / (Total Feedbacks * 5)) * 100
                     $progressPercentage = $totalFeedbacks > 0
-                        ? max(0, round(($netPoints / $totalFeedbacks) * 100, 2))
+                        ? round(($ratingSum / ($totalFeedbacks * 5)) * 100, 2)
                         : 0;
 
                     $geProgress[] = [

@@ -221,7 +221,10 @@ class HomeController extends Controller
 
     public function index()
     {
-        return view('frontend.home');
+        return response()->view('frontend.home')
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', 'Sat, 01 Jan 2000 00:00:00 GMT');
     }
 
     public function features()
@@ -594,11 +597,103 @@ class HomeController extends Controller
             })
             ->values();
 
-        // Get monthly complaints data (current year)
+        // Get rolling 12-month complaints data
         $monthlyComplaints = [];
         $monthLabels = [];
-        for ($i = 0; $i < 12; $i++) { // Jan to Dec
-            $date = now()->startOfYear()->addMonths($i);
+
+        $applyGlobalFilters = function ($q, $dateRangeOverride = null, $tablePrefix = 'complaints') use ($request, $category, $status, $dateRange, $cmesId, $cityId, $sectorId, $locationScope, $user, $self) {
+            // Qualify columns with table prefix to avoid ambiguity in joined queries
+            $cityCol = $tablePrefix ? $tablePrefix . '.city_id' : 'city_id';
+            $sectorCol = $tablePrefix ? $tablePrefix . '.sector_id' : 'sector_id';
+            $statusCol = $tablePrefix ? $tablePrefix . '.status' : 'status';
+            $categoryCol = $tablePrefix ? $tablePrefix . '.category' : 'category';
+            $createdAtCol = $tablePrefix ? $tablePrefix . '.created_at' : 'created_at';
+
+            // Priority 1: Direct GE Group (city) / Node (sector) filters
+            if ($cityId) {
+                if ($self->canAccessCity((int) $cityId, $locationScope)) {
+                    if ($sectorId) {
+                        if ($self->canAccessSector((int) $sectorId, $locationScope)) {
+                            $q->where($sectorCol, $sectorId);
+                        } else {
+                            $q->whereRaw('1 = 0');
+                        }
+                    } else {
+                        if (!empty($locationScope['city_ids']) && in_array((int) $cityId, $locationScope['city_ids'])) {
+                            $q->where($cityCol, $cityId);
+                        } else {
+                            $allowedSectors = $self->getPermittedSectorsForCity((int) $cityId, $locationScope);
+                            if (!empty($allowedSectors)) {
+                                $q->whereIn($sectorCol, $allowedSectors);
+                            } else {
+                                $q->whereRaw('1 = 0');
+                            }
+                        }
+                    }
+                } else {
+                    $q->whereRaw('1 = 0');
+                }
+            } elseif ($sectorId) {
+                if ($self->canAccessSector((int) $sectorId, $locationScope)) {
+                    $q->where($sectorCol, $sectorId);
+                } else {
+                    $q->whereRaw('1 = 0');
+                }
+            } elseif ($cmesId) {
+                // Priority 2: CMES filter (if no city/sector selected)
+                $cityIdsForCmes = City::where('cme_id', $cmesId)->pluck('id')->toArray();
+                $sectorIdsForCmes = Sector::where(function ($sq) use ($cmesId, $cityIdsForCmes) {
+                    $sq->where('cme_id', $cmesId);
+                    if (!empty($cityIdsForCmes)) $sq->orWhereIn('city_id', $cityIdsForCmes);
+                })->pluck('id')->toArray();
+
+                $q->where(function ($sub) use ($cityIdsForCmes, $sectorIdsForCmes, $cityCol, $sectorCol) {
+                    if (!empty($cityIdsForCmes)) $sub->whereIn($cityCol, $cityIdsForCmes);
+                    if (!empty($sectorIdsForCmes)) {
+                        $method = !empty($cityIdsForCmes) ? 'orWhereIn' : 'whereIn';
+                        $sub->{$method}($sectorCol, $sectorIdsForCmes);
+                    }
+                });
+            } elseif (!empty($locationScope['restricted'])) {
+                // Priority 3: Default Location Scan
+                $self->applyFrontendLocationScope($q, $locationScope, $cityCol, $sectorCol);
+            }
+
+            // Global Metadata Filters
+            if ($category && $category !== 'all') {
+                $q->where($categoryCol, $category);
+            }
+            if ($status && $status !== 'all') {
+                $q->where($statusCol, $status);
+            }
+
+            $effectiveDateRange = $dateRangeOverride ?? $dateRange;
+            if ($effectiveDateRange) {
+                $now = now();
+                switch ($effectiveDateRange) {
+                    case 'yesterday': $q->whereDate($createdAtCol, $now->copy()->subDay()->toDateString()); break;
+                    case 'today': $q->whereDate($createdAtCol, $now->toDateString()); break;
+                    case 'this_week': $q->whereBetween($createdAtCol, [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()]); break;
+                    case 'last_week': $q->whereBetween($createdAtCol, [$now->copy()->subWeek()->startOfWeek(), $now->copy()->subWeek()->endOfWeek()]); break;
+                    case 'this_month': $q->whereMonth($createdAtCol, $now->month)->whereYear($createdAtCol, $now->year); break;
+                    case 'last_month': $q->whereMonth($createdAtCol, $now->copy()->subMonth()->month)->whereYear($createdAtCol, $now->copy()->subMonth()->year); break;
+                    case 'last_6_months': $q->where($createdAtCol, '>=', $now->copy()->subMonths(6)->startOfDay()); break;
+                    case 'this_year': $q->whereYear($createdAtCol, $now->year); break;
+                    case 'last_year': $q->whereYear($createdAtCol, $now->copy()->subYear()->year); break;
+                    case 'custom':
+                        if ($request->has('start_date') && $request->has('end_date')) {
+                            $q->whereBetween($createdAtCol, [
+                                \Carbon\Carbon::parse($request->start_date)->startOfDay(),
+                                \Carbon\Carbon::parse($request->end_date)->endOfDay()
+                            ]);
+                        }
+                        break;
+                }
+            }
+        };
+
+        for ($i = 11; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
             $monthLabels[] = $date->format('M'); // Short month names
             $monthQuery = (clone $complaintsQuery)
                 ->whereYear('created_at', $date->year)
@@ -620,8 +715,8 @@ class HomeController extends Controller
         $yearTdData = [];
         $unauthorizedData = [];
         $performaData = [];
-        for ($i = 0; $i < 12; $i++) { // Jan to Dec
-            $date = now()->startOfYear()->addMonths($i);
+        for ($i = 11; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
             $monthQuery = (clone $complaintsQuery)
                 ->whereYear('created_at', $date->year)
                 ->whereMonth('created_at', $date->month);
@@ -642,7 +737,8 @@ class HomeController extends Controller
                 ->whereIn('status', ['work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa'])
                 ->count();
 
-            // Year TD (Year to Date) - cumulative from start of year
+            // Year TD (Year to Date) - cumulative for that specific month in history
+            // For rolling 12 months, "Year to Date" is less meaningful, so we show cumulative for the year of that month
             $yearTdQuery = (clone $complaintsQuery)
                 ->whereYear('created_at', $date->year)
                 ->whereMonth('created_at', '<=', $date->month);
@@ -652,22 +748,24 @@ class HomeController extends Controller
         $employeePerformanceQuery = Employee::query();
         $this->filterEmployeesByLocation($employeePerformanceQuery, $user);
         $this->applyFrontendLocationScope($employeePerformanceQuery, $locationScope);
+
+        // Apply dynamic dashboard filters to Employee list
+        if ($cityId) {
+            $employeePerformanceQuery->where('city_id', $cityId);
+        } elseif ($sectorId) {
+            $employeePerformanceQuery->where('sector_id', $sectorId);
+        } elseif ($cmesId) {
+            $cityIdsForEmp = City::where('cme_id', $cmesId)->pluck('id')->toArray();
+            $employeePerformanceQuery->whereIn('city_id', $cityIdsForEmp);
+        }
         $employeePerformance = $employeePerformanceQuery
             ->withCount([
-                'assignedComplaints' => function ($query) use ($user, $self, $locationScope) {
-                    $query->where('created_at', '>=', now()->subDays(30));
-                    // Apply location filter to assigned complaints count
-                    $self->filterComplaintsByLocationForFrontend($query, $user, $locationScope);
+                'assignedComplaints' => function ($query) use ($applyGlobalFilters) {
+                    $applyGlobalFilters($query);
                 },
-                'assignedComplaints as pending_complaints_count' => function ($query) use ($user, $self, $locationScope) {
-                    $query->where('created_at', '>=', now()->subDays(30))
-                        ->whereIn('status', ['new', 'assigned', 'in_progress']);
-                    $self->filterComplaintsByLocationForFrontend($query, $user, $locationScope);
-                },
-                'assignedComplaints as resolved_complaints_count' => function ($query) use ($user, $self, $locationScope) {
-                    $query->where('created_at', '>=', now()->subDays(30))
-                        ->whereIn('status', ['resolved', 'closed']);
-                    $self->filterComplaintsByLocationForFrontend($query, $user, $locationScope);
+                'assignedComplaints as resolved_complaints_count' => function ($query) use ($applyGlobalFilters) {
+                    $applyGlobalFilters($query);
+                    $query->whereIn('status', ['resolved', 'closed']);
                 }
             ])
             ->orderBy('assigned_complaints_count', 'desc')
@@ -683,21 +781,24 @@ class HomeController extends Controller
         $employeeLeastAssignedQuery = Employee::query();
         $this->filterEmployeesByLocation($employeeLeastAssignedQuery, $user);
         $this->applyFrontendLocationScope($employeeLeastAssignedQuery, $locationScope);
+
+        // Apply dynamic dashboard filters to Employee list
+        if ($cityId) {
+            $employeeLeastAssignedQuery->where('city_id', $cityId);
+        } elseif ($sectorId) {
+            $employeeLeastAssignedQuery->where('sector_id', $sectorId);
+        } elseif ($cmesId) {
+            $cityIdsForEmpLeast = City::where('cme_id', $cmesId)->pluck('id')->toArray();
+            $employeeLeastAssignedQuery->whereIn('city_id', $cityIdsForEmpLeast);
+        }
         $employeeLeastAssigned = $employeeLeastAssignedQuery
             ->withCount([
-                'assignedComplaints' => function ($query) use ($user, $self, $locationScope) {
-                    $query->where('created_at', '>=', now()->subDays(30));
-                    $self->filterComplaintsByLocationForFrontend($query, $user, $locationScope);
+                'assignedComplaints' => function ($query) use ($applyGlobalFilters) {
+                    $applyGlobalFilters($query);
                 },
-                'assignedComplaints as pending_complaints_count' => function ($query) use ($user, $self, $locationScope) {
-                    $query->where('created_at', '>=', now()->subDays(30))
-                        ->whereIn('status', ['new', 'assigned', 'in_progress']);
-                    $self->filterComplaintsByLocationForFrontend($query, $user, $locationScope);
-                },
-                'assignedComplaints as resolved_complaints_count' => function ($query) use ($user, $self, $locationScope) {
-                    $query->where('created_at', '>=', now()->subDays(30))
-                        ->whereIn('status', ['resolved', 'closed']);
-                    $self->filterComplaintsByLocationForFrontend($query, $user, $locationScope);
+                'assignedComplaints as resolved_complaints_count' => function ($query) use ($applyGlobalFilters) {
+                    $applyGlobalFilters($query);
+                    $query->whereIn('status', ['resolved', 'closed']);
                 }
             ])
             ->orderBy('assigned_complaints_count', 'asc') // Ascending to get least assigned
@@ -814,50 +915,6 @@ class HomeController extends Controller
                     }
                 });
 
-                // Apply Global Filters (Category, Status)
-                if ($category && $category !== 'all') {
-                    $cityBaseQuery->where('category', $category);
-                }
-                if ($status && $status !== 'all') {
-                    $cityBaseQuery->where('status', $status);
-                }
-
-                // Apply Date Filter
-                if ($cmeDateRange) {
-                    $now = now();
-                    switch ($cmeDateRange) {
-                        case 'yesterday':
-                            $cityBaseQuery->whereDate('created_at', $now->copy()->subDay()->toDateString());
-                            break;
-                        case 'today':
-                            $cityBaseQuery->whereDate('created_at', $now->toDateString());
-                            break;
-                        case 'this_week':
-                            $cityBaseQuery->whereBetween('created_at', [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()]);
-                            break;
-                        case 'last_week':
-                            $cityBaseQuery->whereBetween('created_at', [$now->copy()->subWeek()->startOfWeek(), $now->copy()->subWeek()->endOfWeek()]);
-                            break;
-                        case 'this_month':
-                            $cityBaseQuery->whereMonth('created_at', $now->month)
-                                ->whereYear('created_at', $now->year);
-                            break;
-                        case 'last_month':
-                            $cityBaseQuery->whereMonth('created_at', $now->copy()->subMonth()->month)
-                                ->whereYear('created_at', $now->copy()->subMonth()->year);
-                            break;
-                        case 'last_6_months':
-                            $cityBaseQuery->where('created_at', '>=', $now->copy()->subMonths(6)->startOfDay());
-                            break;
-                        case 'this_year':
-                            $cityBaseQuery->whereYear('created_at', $now->year);
-                            break;
-                        case 'last_year':
-                            $cityBaseQuery->whereYear('created_at', $now->copy()->subYear()->year);
-                            break;
-                    }
-                }
-
                 // Count total complaints for this GE Group
                 $cmeGraphData[] = (clone $cityBaseQuery)->count();
 
@@ -876,50 +933,6 @@ class HomeController extends Controller
 
                 // Base query for this GE Node (sector)
                 $sectorBaseQuery = \App\Models\Complaint::where('sector_id', $sector->id);
-
-                // Apply Global Filters (Category, Status)
-                if ($category && $category !== 'all') {
-                    $sectorBaseQuery->where('category', $category);
-                }
-                if ($status && $status !== 'all') {
-                    $sectorBaseQuery->where('status', $status);
-                }
-
-                // Apply Date Filter
-                if ($cmeDateRange) {
-                    $now = now();
-                    switch ($cmeDateRange) {
-                        case 'yesterday':
-                            $sectorBaseQuery->whereDate('created_at', $now->copy()->subDay()->toDateString());
-                            break;
-                        case 'today':
-                            $sectorBaseQuery->whereDate('created_at', $now->toDateString());
-                            break;
-                        case 'this_week':
-                            $sectorBaseQuery->whereBetween('created_at', [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()]);
-                            break;
-                        case 'last_week':
-                            $sectorBaseQuery->whereBetween('created_at', [$now->copy()->subWeek()->startOfWeek(), $now->copy()->subWeek()->endOfWeek()]);
-                            break;
-                        case 'this_month':
-                            $sectorBaseQuery->whereMonth('created_at', $now->month)
-                                ->whereYear('created_at', $now->year);
-                            break;
-                        case 'last_month':
-                            $sectorBaseQuery->whereMonth('created_at', $now->copy()->subMonth()->month)
-                                ->whereYear('created_at', $now->copy()->subMonth()->year);
-                            break;
-                        case 'last_6_months':
-                            $sectorBaseQuery->where('created_at', '>=', $now->copy()->subMonths(6)->startOfDay());
-                            break;
-                        case 'this_year':
-                            $sectorBaseQuery->whereYear('created_at', $now->year);
-                            break;
-                        case 'last_year':
-                            $sectorBaseQuery->whereYear('created_at', $now->copy()->subYear()->year);
-                            break;
-                    }
-                }
 
                 // Count total complaints for this GE Node
                 $cmeGraphData[] = (clone $sectorBaseQuery)->count();
@@ -954,50 +967,6 @@ class HomeController extends Controller
                     }
                 });
 
-                // Apply Global Filters (Category, Status) - consistent with other stats
-                if ($category && $category !== 'all') {
-                    $cmeBaseQuery->where('category', $category);
-                }
-                if ($status && $status !== 'all') {
-                    $cmeBaseQuery->where('status', $status);
-                }
-
-                // Apply Date Filter (Specific or Global)
-                if ($cmeDateRange) {
-                    $now = now();
-                    switch ($cmeDateRange) {
-                        case 'yesterday':
-                            $cmeBaseQuery->whereDate('created_at', $now->copy()->subDay()->toDateString());
-                            break;
-                        case 'today':
-                            $cmeBaseQuery->whereDate('created_at', $now->toDateString());
-                            break;
-                        case 'this_week':
-                            $cmeBaseQuery->whereBetween('created_at', [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()]);
-                            break;
-                        case 'last_week':
-                            $cmeBaseQuery->whereBetween('created_at', [$now->copy()->subWeek()->startOfWeek(), $now->copy()->subWeek()->endOfWeek()]);
-                            break;
-                        case 'this_month':
-                            $cmeBaseQuery->whereMonth('created_at', $now->month)
-                                ->whereYear('created_at', $now->year);
-                            break;
-                        case 'last_month':
-                            $cmeBaseQuery->whereMonth('created_at', $now->copy()->subMonth()->month)
-                                ->whereYear('created_at', $now->copy()->subMonth()->year);
-                            break;
-                        case 'last_6_months':
-                            $cmeBaseQuery->where('created_at', '>=', $now->copy()->subMonths(6)->startOfDay());
-                            break;
-                        case 'this_year':
-                            $cmeBaseQuery->whereYear('created_at', $now->year);
-                            break;
-                        case 'last_year':
-                            $cmeBaseQuery->whereYear('created_at', $now->copy()->subYear()->year);
-                            break;
-                    }
-                }
-
                 // Count total complaints
                 $cmeGraphData[] = (clone $cmeBaseQuery)->count();
 
@@ -1007,8 +976,7 @@ class HomeController extends Controller
         }
 
         // Get Top 15 Products by Issued Quantity
-        $categoryDateRange = $request->get('category_date_range');
-
+        // REVERT: Use Spare model directly as ComplaintSpare might be empty or unpopulated
         $categoryUsageQuery = \App\Models\Spare::selectRaw('
                 item_name,
                 SUM(issued_quantity) as total_used,
@@ -1019,7 +987,21 @@ class HomeController extends Controller
             ->orderByDesc('total_used')
             ->limit(15);
 
-        // Apply date range filter if provided
+        // Apply Global Location Scoping
+        $this->applyFrontendLocationScope($categoryUsageQuery, $locationScope, 'city_id', 'sector_id');
+
+        // Apply dynamic dashboard filters to Products list
+        if ($cityId) {
+            $categoryUsageQuery->where('city_id', $cityId);
+        } elseif ($sectorId) {
+            $categoryUsageQuery->where('sector_id', $sectorId);
+        } elseif ($cmesId) {
+            $cityIdsForProducts = City::where('cme_id', $cmesId)->pluck('id')->toArray();
+            $categoryUsageQuery->whereIn('city_id', $cityIdsForProducts);
+        }
+
+        // If specific category date range is provided (Note: used_at/updated_at on Spare might be different)
+        $categoryDateRange = $request->get('category_date_range');
         if ($categoryDateRange) {
             $now = now();
             switch ($categoryDateRange) {
@@ -1038,9 +1020,6 @@ class HomeController extends Controller
                     break;
             }
         }
-
-        // Apply location filtering to product usage data based on user privileges
-        $this->applyFrontendLocationScope($categoryUsageQuery, $locationScope, 'city_id', 'sector_id');
 
         $categoryUsageData = $categoryUsageQuery->get();
 
@@ -1062,10 +1041,17 @@ class HomeController extends Controller
                 'performaData' => $performaData,
                 'cmeGraphLabels' => $cmeGraphLabels,
                 'cmeGraphData' => $cmeGraphData,
+                'cmeResolvedData' => $cmeResolvedData, // Keep it for initial load or special cases, but JS won't update it
                 'dashboardComplaints' => $dashboardComplaints,
                 'categoryLabels' => $categoryLabels,
                 'categoryUsageValues' => $categoryUsageValues,
                 'categoryTotalReceivedValues' => $categoryTotalReceivedValues,
+                'empGraphLabels' => $empGraphLabels,
+                'empGraphTotal' => $empGraphTotal,
+                'empGraphResolved' => $empGraphResolved,
+                'empLeastGraphLabels' => $empLeastGraphLabels,
+                'empLeastGraphTotal' => $empLeastGraphTotal,
+                'empLeastGraphResolved' => $empLeastGraphResolved,
             ]);
         }
 

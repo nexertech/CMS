@@ -243,6 +243,13 @@
     
     <script>
         feather.replace();
+
+        // Fix for "Page Expired" (CSRF) issues when using back button or after logout
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                window.location.reload();
+            }
+        });
     </script>
 </body>
 </html>

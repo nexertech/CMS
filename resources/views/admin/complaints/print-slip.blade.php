@@ -477,7 +477,7 @@
                     </tr>
                     <tr>
                         <td class="label">Availability:</td>
-                        <td class="value">{{ $complaint->availability_time ?? 'N/A' }}</td>
+                        <td class="value">{{ str_replace('T', ' ', $complaint->availability_time ?? 'N/A') }}</td>
                     </tr>
                     <tr>
                         <td class="label">Status:</td>
