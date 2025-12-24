@@ -1293,6 +1293,11 @@
             if (toggleView) {
                 complaintsTableSection.classList.remove('hidden');
                 graphsSection?.classList.add('hidden');
+                
+                // Auto-scroll to the section (helpful for mobile/tablet)
+                setTimeout(() => {
+                    complaintsTableSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 50);
             }
 
             if (!records.length) {

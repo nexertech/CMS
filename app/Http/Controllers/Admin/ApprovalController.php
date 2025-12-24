@@ -354,6 +354,7 @@ class ApprovalController extends Controller
             // For AJAX: Load only what's needed, skip heavy sync operations
             $approval->load([
                 'complaint.client',
+                'complaint.feedback.enteredBy', // Load feedback relationship
                 'requestedBy',
                 'approvedBy',
                 'items.spare'
@@ -364,6 +365,8 @@ class ApprovalController extends Controller
                 'complaint.client',
                 'complaint.spareParts.spare',
                 'complaint.stockLogs.spare',
+                'complaint.logs', // Load logs to trace historical status
+                'complaint.feedback.enteredBy', // Load feedback relationship
                 'requestedBy',
                 'approvedBy',
                 'items.spare'

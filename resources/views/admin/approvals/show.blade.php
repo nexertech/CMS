@@ -73,6 +73,25 @@
 @php
   // Extract performa type and authority number
   $performaType = $approval->performa_type ?? null;
+  
+  // If no performa type on approval, check if complaint status indicates one
+  if (!$performaType && $complaint) {
+      if (in_array($complaint->status, ['work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa', 'product_na'])) {
+          $performaType = $complaint->status;
+      } elseif ($complaint->logs) {
+          // If status matches none of the above (e.g. resolved), check history logs
+          foreach ($complaint->logs as $log) {
+              if ($log->action === 'status_changed' && $log->remarks) {
+                  // Check for "Status changed from work_performa to ..."
+                  if (preg_match('/Status changed from (work_performa|maint_performa|work_priced_performa|maint_priced_performa|product_na)/', $log->remarks, $matches)) {
+                      $performaType = $matches[1];
+                      break; // Found the most recent one (assuming logs are ordered or we take first found)
+                  }
+              }
+          }
+      }
+  }
+  
   $performaTypeLabel = $performaType ? ucwords(str_replace('_', ' ', $performaType)) : null;
   
   // Extract authority number - check dedicated column first, then remarks, then stock logs
@@ -495,6 +514,151 @@
         </div>
       </div>
     </div>
+  </div>
+</div>
+@endif
+
+<!-- FEEDBACK SECTION -->
+@if($complaint && ($complaint->status == 'resolved' || $complaint->status == 'closed' || $complaint->feedback))
+<div class="row mt-4">
+  <div class="col-12 d-flex justify-content-center">
+    <div style="max-width: 900px; width: 100%;">
+      <div class="card-glass">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0 text-white">
+          <i data-feather="message-circle" class="me-2"></i>Complainant Feedback
+        </h5>
+        @php
+          // Check if current user is GE (Garrison Engineer)
+          $isGE = false;
+          if (Auth::check() && Auth::user()->role) {
+            $roleName = strtolower(Auth::user()->role->role_name ?? '');
+            $isGE = in_array($roleName, ['garrison_engineer', 'garrison engineer']) || 
+                    strpos(strtolower($roleName), 'garrison') !== false ||
+                    strpos(strtolower($roleName), 'ge') !== false;
+          }
+        @endphp
+        @if(!$complaint->feedback)
+          <a href="{{ route('admin.feedback.create', $complaint->id) }}" class="btn btn-outline-secondary btn-sm" title="Add Feedback" style="padding: 3px 8px;">
+            <i data-feather="plus-circle" style="width: 16px; height: 16px;"></i>
+          </a>
+        @else
+          @if($isGE)
+            <a href="{{ route('admin.feedback.edit', $complaint->feedback->id) }}" class="btn btn-outline-primary btn-sm" title="Edit Feedback" style="padding: 6px 10px; border: 1px solid #3b82f6 !important; color: #3b82f6 !important; background-color: transparent !important; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; min-width: 36px; height: 36px;">
+              <i data-feather="edit" style="width: 16px; height: 16px; color: #3b82f6;"></i>
+            </a>
+          @endif
+        @endif
+      </div>
+      <div class="card-body">
+        @if($complaint->feedback)
+          <div class="row">
+            <div class="col-md-6">
+              <table class="table table-borderless">
+                <tr>
+                  <td class="text-white"><strong>Overall Rating:</strong></td>
+                  <td>
+                    <span class="badge" style="background-color: {{ $complaint->feedback->rating_color }}; color: #ffffff !important;">
+                      {{ $complaint->feedback->overall_rating_display }}
+                    </span>
+                    @if($complaint->feedback->rating_score)
+                      <span class="text-white ms-2">({{ $complaint->feedback->rating_score }}/5)</span>
+                    @endif
+                  </td>
+                </tr>
+                <tr>
+                  <td class="text-white"><strong>Feedback Date:</strong></td>
+                  <td class="text-white">
+                    @php
+                      $feedbackDate = 'N/A';
+                      if ($complaint->feedback) {
+                        try {
+                          if ($complaint->feedback->feedback_date) {
+                            $date = $complaint->feedback->feedback_date;
+                            if (is_string($date)) {
+                              $date = \Carbon\Carbon::parse($date);
+                            }
+                            if ($date instanceof \Carbon\Carbon) {
+                              $feedbackDate = $date->timezone('Asia/Karachi')->format('M d, Y H:i:s');
+                            }
+                          }
+                          if ($feedbackDate === 'N/A' && $complaint->feedback->created_at) {
+                            $feedbackDate = $complaint->feedback->created_at->timezone('Asia/Karachi')->format('M d, Y H:i:s');
+                          }
+                        } catch (\Exception $e) {
+                          // If all fails, use created_at as fallback
+                          try {
+                            if ($complaint->feedback->created_at) {
+                              $feedbackDate = $complaint->feedback->created_at->timezone('Asia/Karachi')->format('M d, Y H:i:s');
+                            }
+                          } catch (\Exception $e2) {
+                            $feedbackDate = 'N/A';
+                          }
+                        }
+                      }
+                      echo $feedbackDate;
+                    @endphp
+                  </td>
+                </tr>
+                <tr>
+                  <td class="text-white"><strong>Entered By:</strong></td>
+                  <td class="text-white">
+                    @if($complaint->feedback->enteredBy)
+                      {{ $complaint->feedback->enteredBy->name ?? 'System' }}
+                      <span class="badge badge-light">Staff</span>
+                    @elseif($complaint->feedback->submitted_by)
+                      {{ $complaint->feedback->submitted_by }}
+                      <span class="badge badge-info text-white">Client</span>
+                    @else
+                      Client (Web)
+                    @endif
+                  </td>
+                </tr>
+                @php
+                  $geUser = null;
+                  if ($complaint->city_id && $complaint->city) {
+                    $geUser = \App\Models\User::where('city_id', $complaint->city_id)
+                      ->whereHas('role', function($q) {
+                        $q->where('role_name', 'garrison_engineer');
+                      })
+                      ->first();
+                  }
+                @endphp
+                @if($geUser)
+                <tr>
+                  <td class="text-white"><strong>GE (GE Groups):</strong></td>
+                  <td class="text-white">{{ $geUser->name ?? $geUser->username ?? 'N/A' }}</td>
+                </tr>
+                @endif
+              </table>
+            </div>
+          </div>
+          @if($complaint->feedback->comments)
+          <div class="row mt-3">
+            <div class="col-12">
+              <h6 class="text-white fw-bold mb-2" style="font-size: 0.9rem;">Complainant Comments:</h6>
+              <div class="card-glass" style="background-color: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3);">
+                <div class="card-body">
+                  <p class="text-white mb-0" style="color: #dbeafe; line-height: 1.6;">
+                    {{ $complaint->feedback->comments }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          @endif
+        @else
+          <div class="text-center py-4">
+            <i data-feather="message-circle" class="feather-lg mb-3 text-muted"></i>
+            <p class="text-muted mb-3">No feedback has been recorded for this complaint.</p>
+            <a href="{{ route('admin.feedback.create', $complaint->id) }}" class="btn btn-primary">
+              <i data-feather="plus-circle" class="me-2"></i>Add Complainant Feedback
+            </a>
+          </div>
+        @endif
+      </div>
+    </div>
+  </div>
   </div>
 </div>
 @endif

@@ -4205,13 +4205,13 @@
             if (newStatus === 'work_performa') {
               performaBadge.textContent = 'Work Performa';
               performaBadge.style.backgroundColor = performaColors['work_performa'];
-              performaBadge.style.width = '140px';
-              performaBadge.style.height = '32px';
+              performaBadge.style.width = '100px';
+              performaBadge.style.height = '24px';
               performaBadge.style.padding = '0';
               performaBadge.style.display = 'inline-flex';
               performaBadge.style.alignItems = 'center';
               performaBadge.style.justifyContent = 'center';
-              performaBadge.style.fontSize = '11px';
+              performaBadge.style.fontSize = '9px';
               performaBadge.style.fontWeight = '700';
               performaBadge.style.color = '#ffffff';
               performaBadge.style.setProperty('color', '#ffffff', 'important');
@@ -4220,13 +4220,13 @@
             } else if (newStatus === 'maint_performa') {
               performaBadge.textContent = 'Maintenance Performa';
               performaBadge.style.backgroundColor = performaColors['maint_performa'];
-              performaBadge.style.width = '140px';
-              performaBadge.style.height = '32px';
+              performaBadge.style.width = '100px';
+              performaBadge.style.height = '24px';
               performaBadge.style.padding = '0';
               performaBadge.style.display = 'inline-flex';
               performaBadge.style.alignItems = 'center';
               performaBadge.style.justifyContent = 'center';
-              performaBadge.style.fontSize = '11px';
+              performaBadge.style.fontSize = '9px';
               performaBadge.style.fontWeight = '700';
               performaBadge.style.color = '#ffffff';
               performaBadge.style.setProperty('color', '#ffffff', 'important');
@@ -4234,13 +4234,13 @@
               updateStatusSelectColor(select, 'maint_performa');
             }
             if (performaBadge) {
-              performaBadge.style.width = '140px';
-              performaBadge.style.height = '32px';
+              performaBadge.style.width = '100px';
+              performaBadge.style.height = '24px';
               performaBadge.style.padding = '0';
               performaBadge.style.display = 'inline-flex';
               performaBadge.style.alignItems = 'center';
               performaBadge.style.justifyContent = 'center';
-              performaBadge.style.fontSize = '11px';
+              performaBadge.style.fontSize = '9px';
             }
           }
 
@@ -4311,13 +4311,13 @@
             if (newStatus === 'work_priced_performa') {
               performaBadge.textContent = 'Work Performa Priced';
               performaBadge.style.backgroundColor = '#9333ea';
-              performaBadge.style.width = '140px';
-              performaBadge.style.height = '32px';
+              performaBadge.style.width = '100px';
+              performaBadge.style.height = '24px';
               performaBadge.style.padding = '0';
               performaBadge.style.display = 'inline-flex';
               performaBadge.style.alignItems = 'center';
               performaBadge.style.justifyContent = 'center';
-              performaBadge.style.fontSize = '11px';
+              performaBadge.style.fontSize = '9px';
               performaBadge.style.fontWeight = '700';
               performaBadge.style.color = '#ffffff';
               performaBadge.style.setProperty('color', '#ffffff', 'important');
@@ -4329,13 +4329,13 @@
             } else if (newStatus === 'maint_priced_performa') {
               performaBadge.textContent = 'Maintenance Performa Priced';
               performaBadge.style.backgroundColor = '#ea580c';
-              performaBadge.style.width = '140px';
-              performaBadge.style.height = '32px';
+              performaBadge.style.width = '100px';
+              performaBadge.style.height = '24px';
               performaBadge.style.padding = '0';
               performaBadge.style.display = 'inline-flex';
               performaBadge.style.alignItems = 'center';
               performaBadge.style.justifyContent = 'center';
-              performaBadge.style.fontSize = '11px';
+              performaBadge.style.fontSize = '9px';
               performaBadge.style.fontWeight = '700';
               performaBadge.style.color = '#ffffff';
               performaBadge.style.setProperty('color', '#ffffff', 'important');
@@ -4347,13 +4347,13 @@
             } else if (newStatus === 'product_na') {
               performaBadge.textContent = 'Product N/A';
               performaBadge.style.backgroundColor = '#000000';
-              performaBadge.style.width = '140px';
-              performaBadge.style.height = '32px';
+              performaBadge.style.width = '100px';
+              performaBadge.style.height = '24px';
               performaBadge.style.padding = '0';
               performaBadge.style.display = 'inline-flex';
               performaBadge.style.alignItems = 'center';
               performaBadge.style.justifyContent = 'center';
-              performaBadge.style.fontSize = '11px';
+              performaBadge.style.fontSize = '9px';
               performaBadge.style.fontWeight = '700';
               performaBadge.style.color = '#ffffff';
               performaBadge.style.setProperty('color', '#ffffff', 'important');
@@ -4461,77 +4461,77 @@
             if (savedFlag === 'work') {
               performaBadge.textContent = 'Work Performa Required';
               performaBadge.style.backgroundColor = '#60a5fa';
-              performaBadge.style.width = '140px';
-              performaBadge.style.height = '32px';
+              performaBadge.style.width = '100px';
+              performaBadge.style.height = '24px';
               performaBadge.style.padding = '0';
               performaBadge.style.display = 'inline-flex';
               performaBadge.style.alignItems = 'center';
               performaBadge.style.justifyContent = 'center';
-              performaBadge.style.fontSize = '11px';
+              performaBadge.style.fontSize = '9px';
               performaBadge.style.fontWeight = '700';
               performaBadge.style.color = '#ffffff';
               performaBadge.style.setProperty('color', '#ffffff', 'important');
             } else if (savedFlag === 'maint') {
               performaBadge.textContent = 'Maintenance Performa Required';
               performaBadge.style.backgroundColor = '#eab308';
-              performaBadge.style.width = '140px';
-              performaBadge.style.height = '32px';
+              performaBadge.style.width = '100px';
+              performaBadge.style.height = '24px';
               performaBadge.style.padding = '0';
               performaBadge.style.display = 'inline-flex';
               performaBadge.style.alignItems = 'center';
               performaBadge.style.justifyContent = 'center';
-              performaBadge.style.fontSize = '11px';
+              performaBadge.style.fontSize = '9px';
               performaBadge.style.fontWeight = '700';
               performaBadge.style.color = '#ffffff';
               performaBadge.style.setProperty('color', '#ffffff', 'important');
             } else if (savedFlag === 'work_priced') {
               performaBadge.textContent = 'Work Performa Priced';
               performaBadge.style.backgroundColor = '#9333ea';
-              performaBadge.style.width = '140px';
-              performaBadge.style.height = '32px';
+              performaBadge.style.width = '100px';
+              performaBadge.style.height = '24px';
               performaBadge.style.padding = '0';
               performaBadge.style.display = 'inline-flex';
               performaBadge.style.alignItems = 'center';
               performaBadge.style.justifyContent = 'center';
-              performaBadge.style.fontSize = '11px';
+              performaBadge.style.fontSize = '9px';
               performaBadge.style.fontWeight = '700';
               performaBadge.style.color = '#ffffff';
               performaBadge.style.setProperty('color', '#ffffff', 'important');
             } else if (savedFlag === 'maint_priced') {
               performaBadge.textContent = 'Maintenance Performa Priced';
               performaBadge.style.backgroundColor = '#ea580c';
-              performaBadge.style.width = '140px';
-              performaBadge.style.height = '32px';
+              performaBadge.style.width = '100px';
+              performaBadge.style.height = '24px';
               performaBadge.style.padding = '0';
               performaBadge.style.display = 'inline-flex';
               performaBadge.style.alignItems = 'center';
               performaBadge.style.justifyContent = 'center';
-              performaBadge.style.fontSize = '11px';
+              performaBadge.style.fontSize = '9px';
               performaBadge.style.fontWeight = '700';
               performaBadge.style.color = '#ffffff';
               performaBadge.style.setProperty('color', '#ffffff', 'important');
             } else if (savedFlag === 'product_na') {
               performaBadge.textContent = 'Product N/A';
               performaBadge.style.backgroundColor = '#000000';
-              performaBadge.style.width = '140px';
-              performaBadge.style.height = '32px';
+              performaBadge.style.width = '100px';
+              performaBadge.style.height = '24px';
               performaBadge.style.padding = '0';
               performaBadge.style.display = 'inline-flex';
               performaBadge.style.alignItems = 'center';
               performaBadge.style.justifyContent = 'center';
-              performaBadge.style.fontSize = '11px';
+              performaBadge.style.fontSize = '9px';
               performaBadge.style.fontWeight = '700';
               performaBadge.style.color = '#ffffff';
               performaBadge.style.setProperty('color', '#ffffff', 'important');
             }
             if (performaBadge) {
-              performaBadge.style.width = '140px';
-              performaBadge.style.height = '32px';
+              performaBadge.style.width = '100px';
+              performaBadge.style.height = '24px';
               performaBadge.style.padding = '0';
               performaBadge.style.display = 'inline-flex';
               performaBadge.style.alignItems = 'center';
               performaBadge.style.justifyContent = 'center';
-              performaBadge.style.fontSize = '11px';
+              performaBadge.style.fontSize = '9px';
             }
           }
         }
@@ -4755,7 +4755,7 @@
               const badge = document.createElement('span');
               badge.className = 'badge';
               const resolvedColor = statusColors['resolved'];
-              badge.style.cssText = `background-color: ${resolvedColor.bg}; color: #ffffff !important; padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 4px; border: 1px solid ${resolvedColor.border}; width: 140px; height: 32px; display: inline-flex; align-items: center; justify-content: center;`;
+              badge.style.cssText = `background-color: ${resolvedColor.bg}; color: #ffffff !important; padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 4px; border: 1px solid ${resolvedColor.border}; width: 100px; height: 24px; display: inline-flex; align-items: center; justify-content: center;`;
               badge.style.setProperty('color', '#ffffff', 'important');
               badge.textContent = 'Addressed';
               // Replace select with badge
@@ -4763,7 +4763,7 @@
               if (statusChip) {
                 statusChip.innerHTML = '';
                 statusChip.appendChild(badge);
-                statusChip.style.cssText = `background-color: ${resolvedColor.bg}; color: ${resolvedColor.text}; border-color: ${resolvedColor.border}; width: 140px; height: 32px; justify-content: center;`;
+                statusChip.style.cssText = `background-color: ${resolvedColor.bg}; color: ${resolvedColor.text}; border-color: ${resolvedColor.border}; width: 100px; height: 24px; justify-content: center;`;
               } else {
                 select.replaceWith(badge);
               }
@@ -4771,20 +4771,24 @@
               // Show feedback button automatically when status becomes resolved
               const actionsCell = row?.querySelector('td:last-child');
               if (actionsCell) {
-                const btnGroup = actionsCell.querySelector('.btn-group');
-                if (btnGroup) {
+                // Determine container - could be just the td, or a d-flex container inside
+                const btnContainer = actionsCell.querySelector('.d-flex') || actionsCell;
+                
+                if (btnContainer) {
                   // Check if feedback button already exists (check for onclick with viewFeedbackCreate or viewFeedbackEdit)
-                  const existingFeedbackBtn = btnGroup.querySelector('a[onclick*="viewFeedback"]');
+                  const existingFeedbackBtn = btnContainer.querySelector('a[onclick*="viewFeedback"]');
                   if (!existingFeedbackBtn && complaintId) {
                     // Create "Add Feedback" button with same structure as existing buttons
                     const feedbackBtn = document.createElement('a');
                     feedbackBtn.href = 'javascript:void(0)';
                     feedbackBtn.setAttribute('onclick', `viewFeedbackCreate(${complaintId})`);
-                    feedbackBtn.className = 'btn btn-outline-warning btn-sm';
+                    feedbackBtn.className = 'btn btn-warning btn-sm';
                     feedbackBtn.title = 'Add Feedback';
-                    feedbackBtn.style.cssText = 'padding: 3px 8px; border-color: #f59e0b !important; color: #f59e0b !important;';
-                    feedbackBtn.innerHTML = '<i data-feather="message-square" style="width: 16px; height: 16px; color: #f59e0b;"></i>';
-                    btnGroup.appendChild(feedbackBtn);
+                    // Use exact styling from other feedback buttons (warning color: #f59e0b)
+                    feedbackBtn.style.cssText = 'padding: 1px 3px; background-color: #f59e0b !important; border-color: #f59e0b !important; color: #ffffff !important;';
+                    feedbackBtn.innerHTML = '<i data-feather="message-square" style="width: 12px; height: 12px; color: #ffffff;"></i>';
+                    
+                    btnContainer.appendChild(feedbackBtn);
                     // Reinitialize feather icons
                     if (typeof feather !== 'undefined') {
                       feather.replace();

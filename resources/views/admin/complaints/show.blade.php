@@ -405,7 +405,7 @@
                 <tr>
                   <td class="text-white"><strong>Overall Rating:</strong></td>
                   <td>
-                    <span class="badge bg-{{ $complaint->feedback->rating_badge_color }}" style="color: #ffffff !important;">
+                    <span class="badge" style="background-color: {{ $complaint->feedback->rating_color }}; color: #ffffff !important;">
                       {{ $complaint->feedback->overall_rating_display }}
                     </span>
                     @if($complaint->feedback->rating_score)
