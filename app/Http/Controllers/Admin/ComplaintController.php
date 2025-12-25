@@ -141,7 +141,9 @@ class ComplaintController extends Controller
         // Clear any old input data to ensure clean form
         request()->session()->forget('_old_input');
 
-        $employees = Employee::where('status', 'active')->orderBy('name')->get();
+        $employeesQuery = Employee::where('status', 'active')->orderBy('name');
+        $this->filterEmployeesByLocation($employeesQuery, Auth::user());
+        $employees = $employeesQuery->get();
         $categories = Schema::hasTable('complaint_categories')
             ? ComplaintCategory::orderBy('name')->pluck('name')
             : collect();
@@ -247,7 +249,7 @@ class ComplaintController extends Controller
                 [
                     'contact_person' => $request->input('contact_person') ?: $clientName,
                     'email' => $request->input('email', ''),
-                    'phone' => $request->input('phone', ''),
+                    'phone' => $request->input('phone', '') ?: 'N/A',
                     'city' => $cityName ?? '',
                     'sector' => $sectorName ?? '',
                     'address' => $request->input('address'),
@@ -416,7 +418,9 @@ class ComplaintController extends Controller
     {
         $complaint->load(['spareParts.spare']);
 
-        $employees = Employee::where('status', 'active')->orderBy('name')->get();
+        $employeesQuery = Employee::where('status', 'active')->orderBy('name');
+        $this->filterEmployeesByLocation($employeesQuery, Auth::user());
+        $employees = $employeesQuery->get();
         $categories = Schema::hasTable('complaint_categories')
             ? ComplaintCategory::orderBy('name')->pluck('name')
             : collect();

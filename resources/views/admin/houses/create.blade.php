@@ -33,8 +33,8 @@
         <div class="mb-3">
           <label for="password" class="form-label text-white">Password <span class="text-danger">*</span></label>
           <input type="password" class="form-control @error('password') is-invalid @enderror" 
-                 id="password" name="password" autocomplete="new-password" required minlength="8">
-          <small class="text-muted">Minimum 8 characters</small>
+                 id="password" name="password" autocomplete="new-password" required minlength="8" placeholder="Minimum 8 characters">
+          
           @error('password')
             <div class="invalid-feedback">{{ $message }}</div>
           @enderror
@@ -51,7 +51,7 @@
             <option value="">Select GE Group</option>
             @if(isset($cities) && $cities->count() > 0)
               @foreach ($cities as $city)
-                <option value="{{ $city->id }}" {{ old('city_id') == $city->id ? 'selected' : '' }}>{{ $city->name }}</option>
+                <option value="{{ $city->id }}" {{ old('city_id', $defaultCityId) == $city->id ? 'selected' : '' }}>{{ $city->name }}</option>
               @endforeach
             @endif
           </select>
@@ -92,7 +92,7 @@
         <div class="mb-3">
           <label for="address" class="form-label text-white">Address</label>
           <input type="text" class="form-control @error('address') is-invalid @enderror" 
-                 id="address" name="address" value="{{ old('address') }}" placeholder="e.g., 00/ST0/B0">
+                 id="address" name="address" value="{{ old('address') }}" placeholder="e.g., 00-ST0-B0">
           @error('address')
             <div class="invalid-feedback">{{ $message }}</div>
           @enderror
@@ -176,7 +176,7 @@
             
             // Initial call if city is pre-selected
             if (citySelect.value) {
-                const oldSectorId = '{{ old('sector_id') }}';
+                const oldSectorId = '{{ old('sector_id', $defaultSectorId) }}';
                 loadSectors(citySelect.value, oldSectorId);
             }
         }

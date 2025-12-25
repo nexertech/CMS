@@ -21,10 +21,6 @@ return new class extends Migration
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->timestamps();
             $table->softDeletes();
-
-            // Foreign key constraints
-            $table->foreign('city_id')->references('id')->on('cities')->onDelete('cascade');
-            $table->foreign('sector_id')->references('id')->on('sectors')->onDelete('cascade');
         });
     }
 

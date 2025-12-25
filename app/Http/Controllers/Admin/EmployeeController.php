@@ -87,19 +87,31 @@ class EmployeeController extends Controller
         // Clear any old input data to ensure clean form
         request()->session()->forget('_old_input');
         
+        $user = Auth::user();
+
         $categories = Schema::hasTable('complaint_categories')
             ? ComplaintCategory::orderBy('name')->pluck('name')
             : collect();
         
-        $cities = Schema::hasTable('cities')
-            ? City::where('status', 'active')->orderBy('id', 'asc')->get()
-            : collect();
+        // Filter cities based on user permissions
+        $cityIds = $this->getUserCityIds($user);
+        $citiesQuery = Schema::hasTable('cities') 
+            ? City::where('status', 'active')->orderBy('id', 'asc')
+            : City::whereRaw('1=0'); // Empty query if table doesn't exist
+
+        if ($cityIds !== null) {
+            $citiesQuery->whereIn('id', $cityIds);
+        }
+        $cities = $citiesQuery->get();
         
         $designations = Schema::hasTable('designations')
             ? Designation::where('status', 'active')->orderBy('name')->get()
             : collect();
+            
+        $defaultCityId = $user->city_id;
+        $defaultSectorId = $user->sector_id;
         
-        $response = response()->view('admin.employees.create', compact('categories', 'cities', 'designations'));
+        $response = response()->view('admin.employees.create', compact('categories', 'cities', 'designations', 'defaultCityId', 'defaultSectorId'));
         
         // Add cache-busting headers
         $response->headers->set('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -232,13 +244,22 @@ class EmployeeController extends Controller
      */
     public function edit(Employee $employee)
     {
+        $user = Auth::user();
+        
         $categories = Schema::hasTable('complaint_categories')
             ? ComplaintCategory::orderBy('name')->pluck('name')
             : collect();
         
-        $cities = Schema::hasTable('cities')
-            ? City::where('status', 'active')->orderBy('id', 'asc')->get()
-            : collect();
+        // Filter cities based on user permissions
+        $cityIds = $this->getUserCityIds($user);
+        $citiesQuery = Schema::hasTable('cities') 
+            ? City::where('status', 'active')->orderBy('id', 'asc')
+            : City::whereRaw('1=0');
+
+        if ($cityIds !== null) {
+            $citiesQuery->whereIn('id', $cityIds);
+        }
+        $cities = $citiesQuery->get();
         
         $designations = Schema::hasTable('designations')
             ? Designation::where('status', 'active')->orderBy('name')->get()
@@ -311,11 +332,20 @@ class EmployeeController extends Controller
             Log::warning('City not found', ['city_id' => $cityId]);
             return response()->json(['sectors' => []]);
         }
+        
+        $user = Auth::user();
+        
+        $query = Sector::where('city_id', '=', $cityId)
+            ->where('status', '=', 'active');
+            
+        // Apply data isolation
+        $sectorIds = $this->getUserSectorIds($user);
+        if ($sectorIds !== null) {
+            $query->whereIn('id', $sectorIds);
+        }
 
         // Explicitly filter by city_id - ensure only sectors for this city are returned
-        $sectors = Sector::where('city_id', '=', $cityId)
-            ->where('status', '=', 'active')
-            ->orderBy('id', 'asc')
+        $sectors = $query->orderBy('id', 'asc')
             ->get(['id', 'name']);
         
         // Log all sectors in database for debugging (remove in production)

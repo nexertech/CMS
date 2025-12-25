@@ -250,6 +250,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             }
                             sectorSelect.appendChild(option);
                         });
+                        
+                        // Auto-select if only one option is available (for restricted users)
+                        if (sectors.length === 1) {
+                            sectorSelect.value = sectors[0].id;
+                        }
+                        
                         sectorSelect.disabled = false;
                     } else {
                         sectorSelect.innerHTML = '<option value="">No GE Nodes Available</option>';

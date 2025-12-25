@@ -197,8 +197,13 @@ trait LocationFilterTrait
             return [$user->city_id]; // Only their city
         }
 
-        if (in_array($roleName, ['complaint_center', 'department_staff']) && $user->city_id) {
+        if (in_array($roleName, ['complaint_center', 'department_staff', 'staff']) && $user->city_id) {
             return [$user->city_id]; // Their city
+        }
+
+        // Fallback: If user has a city_id, return it
+        if ($user->city_id) {
+            return [$user->city_id];
         }
 
         return [];
@@ -226,8 +231,13 @@ trait LocationFilterTrait
                 ->toArray();
         }
 
-        if (in_array($roleName, ['complaint_center', 'department_staff']) && $user->sector_id) {
+        if (in_array($roleName, ['complaint_center', 'department_staff', 'staff']) && $user->sector_id) {
             return [$user->sector_id]; // Only their sector
+        }
+
+        // Fallback: If user has a sector_id, return it
+        if ($user->sector_id) {
+            return [$user->sector_id];
         }
 
         return [];

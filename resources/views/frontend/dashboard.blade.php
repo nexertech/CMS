@@ -2691,9 +2691,10 @@
                 const isNarrow = window.innerWidth < 1280;
                 
                 // Refresh all major charts if they exist
-                if (window.monthlyComplaintsChart) window.monthlyComplaintsChart.update();
-                if (window.resolutionTrendChart) window.resolutionTrendChart.update();
-                if (window.complaintsByStatusChart) window.complaintsByStatusChart.update();
+                // Refresh all major charts if they exist
+                if (typeof monthlyComplaintsChart !== 'undefined' && monthlyComplaintsChart) monthlyComplaintsChart.update();
+                if (typeof resolutionTrendChart !== 'undefined' && resolutionTrendChart) resolutionTrendChart.update();
+                if (typeof complaintsByStatusChart !== 'undefined' && complaintsByStatusChart) complaintsByStatusChart.update();
             }, 250);
         });
     });

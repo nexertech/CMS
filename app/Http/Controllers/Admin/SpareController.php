@@ -113,10 +113,13 @@ class SpareController extends Controller
             ? ComplaintCategory::orderBy('name')->pluck('name')
             : collect();
         
-        // Get cities and sectors based on user role
-        $cities = Schema::hasTable('cities')
-            ? City::where('status', 'active')->orderBy('id', 'asc')->get()
-            : collect();
+        // Get cities based on user role/location
+        $citiesQuery = City::where('status', 'active');
+        $userCityIds = $this->getUserCityIds($user);
+        if ($userCityIds !== null) {
+            $citiesQuery->whereIn('id', $userCityIds);
+        }
+        $cities = $citiesQuery->orderBy('id', 'asc')->get();
         
         $sectors = collect();
         // If user has city_id, show only sectors from that city
@@ -128,13 +131,9 @@ class SpareController extends Controller
                     ->get()
                 : collect();
         }
-        // Defaults for Department Staff: preselect their city and sector
-        $defaultCityId = null;
-        $defaultSectorId = null;
-        if ($user && $user->role && strtolower($user->role->role_name) === 'department_staff') {
-            $defaultCityId = $user->city_id;
-            $defaultSectorId = $user->sector_id;
-        }
+        // Defaults for location-restricted users: preselect their city and sector
+        $defaultCityId = $user->city_id;
+        $defaultSectorId = $user->sector_id;
         
         return view('admin.spares.create', compact('categories', 'cities', 'sectors', 'defaultCityId', 'defaultSectorId'));
     }
@@ -380,10 +379,13 @@ class SpareController extends Controller
             ? ComplaintCategory::orderBy('name')->pluck('name')
             : collect();
         
-        // Get cities and sectors based on user role
-        $cities = Schema::hasTable('cities')
-            ? City::where('status', 'active')->orderBy('id', 'asc')->get()
-            : collect();
+        // Get cities based on user role/location
+        $citiesQuery = City::where('status', 'active');
+        $userCityIds = $this->getUserCityIds($user);
+        if ($userCityIds !== null) {
+            $citiesQuery->whereIn('id', $userCityIds);
+        }
+        $cities = $citiesQuery->orderBy('id', 'asc')->get();
         
         $sectors = collect();
         // If user has city_id or spare has city_id, show sectors from that city

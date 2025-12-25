@@ -229,6 +229,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             option.textContent = sector.name;
                             sectorSelect.appendChild(option);
                         });
+                        
+                        // Auto-select if only one option (typical for restricted staff)
+                        if (sectors.length === 1) {
+                            sectorSelect.value = sectors[0].id;
+                        }
+                        
                         sectorSelect.disabled = false;
                     } else {
                         sectorSelect.innerHTML = '<option value="">No GE Nodes Available</option>';

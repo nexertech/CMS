@@ -14,6 +14,8 @@ use Illuminate\Validation\Rule;
 
 class SectorController extends Controller
 {
+    use \App\Traits\LocationFilterTrait;
+
     public function index()
     {
         if (!Schema::hasTable('sectors')) {
@@ -156,10 +158,21 @@ class SectorController extends Controller
         if (!$cityId) {
             return response()->json([]);
         }
+        
+        $user = auth()->user();
 
-        $sectors = Sector::where('city_id', $cityId)
-            ->where('status', 'active')
-            ->orderBy('id', 'asc')
+        $query = Sector::where('city_id', $cityId)
+            ->where('status', 'active');
+            
+        // Apply data isolation if user is logged in
+        if ($user) {
+            $sectorIds = $this->getUserSectorIds($user);
+            if ($sectorIds !== null) {
+                $query->whereIn('id', $sectorIds);
+            }
+        }
+
+        $sectors = $query->orderBy('id', 'asc')
             ->get(['id', 'name']);
 
         return response()->json($sectors);

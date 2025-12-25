@@ -150,13 +150,13 @@
         <i data-feather="user" class="me-2 text-primary" style="width: 18px; height: 18px;"></i>
         <h5 class="text-white mb-0" style="font-size: 1rem; font-weight: 600;">Complainant Information</h5>
       </div>
-      
+
       <div class="info-item mb-1">
         <div class="d-flex align-items-start">
           <i data-feather="user" class="me-2 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
-          <div class="flex-grow-1">
-            <div class="text-muted small mb-0" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Name</div>
-            <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->client->client_name ?? 'N/A' }}</div>
+         <div class="flex-grow-1">
+            <div class="text-muted small mb-0" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">House No.</div>
+            <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->house->username ?? 'N/A' }}</div>
           </div>
         </div>
       </div>
@@ -164,9 +164,9 @@
       <div class="info-item mb-1">
         <div class="d-flex align-items-start">
           <i data-feather="home" class="me-2 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
-          <div class="flex-grow-1">
-            <div class="text-muted small mb-0" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">House No.</div>
-            <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->house->username ?? 'N/A' }}</div>
+           <div class="flex-grow-1">
+            <div class="text-muted small mb-0" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Name</div>
+            <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->client->client_name ?? 'N/A' }}</div>
           </div>
         </div>
       </div>
