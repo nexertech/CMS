@@ -12,6 +12,9 @@ trait LocationFilterTrait
     /**
      * Apply location-based filtering to complaints query
      */
+    /**
+     * Apply location-based filtering to complaints query
+     */
     public function filterComplaintsByLocation(Builder $query, $user): Builder
     {
         if (!$user || !$user->role) {
@@ -32,10 +35,8 @@ trait LocationFilterTrait
 
             case 'garrison_engineer':
                 // GE can see only their city's complaints
-                if ($user->city_id && $user->city) {
-                    $query->whereHas('client', function ($q) use ($user) {
-                        $q->where('city', $user->city->name);
-                    });
+                if ($user->city_id) {
+                    $query->where('city_id', $user->city_id);
                 } else {
                     // If no city assigned, show nothing
                     $query->whereRaw('1 = 0');
@@ -44,11 +45,10 @@ trait LocationFilterTrait
 
             case 'complaint_center':
             case 'department_staff':
-                // Complaint Center and Department Staff can see only their sector's complaints
-                if ($user->sector_id && $user->sector) {
-                    $query->whereHas('client', function ($q) use ($user) {
-                        $q->where('sector', $user->sector->name);
-                    });
+            case 'staff':
+                // Complaint Center and Staff can see only their sector's complaints
+                if ($user->sector_id) {
+                    $query->where('sector_id', $user->sector_id);
                 } else {
                     // If no sector assigned, show nothing
                     $query->whereRaw('1 = 0');
@@ -56,12 +56,15 @@ trait LocationFilterTrait
                 break;
             
             default:
-                // For any other role, if they have city_id, filter by city
-                if ($user->city_id && $user->city) {
-                    $query->whereHas('client', function ($q) use ($user) {
-                        $q->where('city', $user->city->name);
-                    });
+                // For any other role
+                // If they have sector_id, filter by sector
+                // Else if they have city_id, filter by city
+                if ($user->sector_id) {
+                    $query->where('sector_id', $user->sector_id);
+                } elseif ($user->city_id) {
+                    $query->where('city_id', $user->city_id);
                 } else {
+                    // If restricted user has no location assigned, show nothing
                     $query->whereRaw('1 = 0');
                 }
                 break;

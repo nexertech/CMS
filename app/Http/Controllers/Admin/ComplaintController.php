@@ -149,9 +149,12 @@ class ComplaintController extends Controller
             : collect();
 
         // Get cities and sectors for dropdowns
-        $cities = Schema::hasTable('cities')
-            ? City::where('status', 'active')->orderBy('id', 'asc')->get()
-            : collect();
+        $citiesQuery = City::where('status', 'active')->orderBy('id', 'asc');
+        $userCityIds = $this->getUserCityIds(Auth::user());
+        if ($userCityIds !== null) {
+            $citiesQuery->whereIn('id', $userCityIds);
+        }
+        $cities = Schema::hasTable('cities') ? $citiesQuery->get() : collect();
 
         $sectors = collect(); // Will be loaded dynamically based on city selection
 
@@ -426,9 +429,12 @@ class ComplaintController extends Controller
             : collect();
 
         // Provide cities/sectors for dropdowns (match create() UX)
-        $cities = Schema::hasTable('cities')
-            ? City::where('status', 'active')->orderBy('id', 'asc')->get()
-            : collect();
+        $citiesQuery = City::where('status', 'active')->orderBy('id', 'asc');
+        $userCityIds = $this->getUserCityIds(Auth::user());
+        if ($userCityIds !== null) {
+            $citiesQuery->whereIn('id', $userCityIds);
+        }
+        $cities = Schema::hasTable('cities') ? $citiesQuery->get() : collect();
 
         // Get default city_id and sector_id from complaint
         $defaultCityId = $complaint->city_id;

@@ -45,6 +45,29 @@
     <div class="row">
       <div class="col-md-6">
         <div class="mb-3">
+          <label for="name" class="form-label text-white">Name</label>
+          <input type="text" class="form-control @error('name') is-invalid @enderror" 
+                 id="name" name="name" value="{{ old('name') }}" autocomplete="off" placeholder="Owner/Resident Name">
+          @error('name')
+            <div class="invalid-feedback">{{ $message }}</div>
+          @enderror
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="mb-3">
+          <label for="phone" class="form-label text-white">Phone</label>
+          <input type="text" class="form-control @error('phone') is-invalid @enderror" 
+                 id="phone" name="phone" value="{{ old('phone') }}" autocomplete="off" placeholder="Phone Number">
+          @error('phone')
+            <div class="invalid-feedback">{{ $message }}</div>
+          @enderror
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6">
+        <div class="mb-3">
           <label for="city_id" class="form-label text-white">GE Group <span class="text-danger">*</span></label>
           <select class="form-select @error('city_id') is-invalid @enderror" 
                   id="city_id" name="city_id" required>

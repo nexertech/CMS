@@ -101,6 +101,8 @@ class HouseController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'username' => 'required|string|max:150|unique:houses,username',
+            'name' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:20',
             'password' => 'required|string|min:8',
             'city_id' => 'required|exists:cities,id',
             'sector_id' => 'required|exists:sectors,id',
@@ -125,6 +127,8 @@ class HouseController extends Controller
 
             $house = House::create([
                 'username' => $request->username,
+                'name' => $request->name,
+                'phone' => $request->phone,
                 'password' => $request->password, // Will be hashed by mutator
                 'city_id' => $request->city_id,
                 'sector_id' => $request->sector_id,
@@ -216,6 +220,8 @@ class HouseController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'username' => ['required', 'string', 'max:150', Rule::unique('houses')->ignore($house->id)],
+            'name' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:8',
             'city_id' => 'required|exists:cities,id',
             'sector_id' => 'required|exists:sectors,id',
@@ -240,6 +246,8 @@ class HouseController extends Controller
 
             $updateData = [
                 'username' => $request->username,
+                'name' => $request->name,
+                'phone' => $request->phone,
                 'city_id' => $request->city_id,
                 'sector_id' => $request->sector_id,
                 'address' => $request->address,

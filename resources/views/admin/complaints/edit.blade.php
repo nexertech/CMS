@@ -75,6 +75,8 @@
                               data-city="{{ $house->city_id }}"
                               data-sector="{{ $house->sector_id }}"
                               data-address="{{ $house->address }}"
+                              data-name="{{ $house->name }}"
+                              data-phone="{{ $house->phone }}"
                               {{ old('house_id', $complaint->house_id) == $house->id ? 'selected' : '' }}>
                         {{ $house->username }}
                       </option>
@@ -248,13 +250,71 @@
 @endsection
 
 @push('styles')
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        /* Custom Select2 Styling for Light Theme */
+        .select2-container--default .select2-selection--single {
+            background-color: #ffffff;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            height: 38px;
+            color: #495057;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #495057;
+            line-height: 36px;
+            padding-left: 12px;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 36px;
+        }
+
+        .select2-dropdown {
+            background-color: #ffffff;
+            border: 1px solid #ced4da;
+            color: #495057;
+            z-index: 9999;
+        }
+
+        .select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+            background-color: #3b82f6; /* Keep accent color for selection */
+            color: white;
+        }
+
+        .select2-container--default .select2-results__option[aria-selected=true] {
+            background-color: #e9ecef;
+            color: #495057;
+        }
+
+        .select2-search--dropdown .select2-search__field {
+            background-color: #ffffff;
+            border: 1px solid #ced4da;
+            color: #495057;
+            border-radius: 4px;
+        }
+
+        .select2-container .select2-selection--single .select2-selection__rendered {
+            display: block;
+            padding-right: 20px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    </style>
 @endpush
 
 @push('scripts')
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // 1. Element Definitions
             const phoneInput = document.getElementById('client_phone');
+            const clientNameInput = document.getElementById('client_name');
             const houseSelect = document.getElementById('house_id');
             const citySelect = document.getElementById('city_id');
             const sectorSelect = document.getElementById('sector_id');
@@ -265,6 +325,42 @@
             const titleOtherInput = document.getElementById('title_other');
             const complaintForm = document.querySelector('form[action*="complaints"]');
             const currentTitle = '{{ old('title', $complaint->title) }}';
+
+            // Store original options for filtering (Select2-compatible approach)
+            let allHouseOptions = [];
+            if (houseSelect) {
+                Array.from(houseSelect.options).forEach(opt => {
+                    if (opt.value) { 
+                        allHouseOptions.push({
+                            value: opt.value,
+                            text: opt.innerText,
+                            city: opt.getAttribute('data-city'),
+                            sector: opt.getAttribute('data-sector'),
+                            address: opt.getAttribute('data-address'),
+                            name: opt.getAttribute('data-name'),
+                            phone: opt.getAttribute('data-phone'),
+                            selected: opt.selected
+                        });
+                    }
+                });
+            }
+
+            // Initialize Select2
+            $(document).ready(function() {
+                $('#house_id').select2({
+                    placeholder: "Select House Number",
+                    allowClear: true,
+                    width: '100%'
+                });
+
+                $('#house_id').on('select2:select', function (e) {
+                    houseSelect.dispatchEvent(new Event('change'));
+                });
+                
+                $('#house_id').on('select2:clear', function (e) {
+                    houseSelect.dispatchEvent(new Event('change'));
+                });
+            });
 
             // 2. Helper Functions
 
@@ -301,6 +397,11 @@
                                 sectorSelect.appendChild(option);
                             });
                             sectorSelect.disabled = false;
+                            
+                            // Auto-select if only one option is available
+                            if (data.length === 1) {
+                                sectorSelect.value = data[0].id;
+                            }
                         } else {
                             sectorSelect.innerHTML = '<option value="">No GE Nodes found</option>';
                             sectorSelect.disabled = false;
@@ -318,32 +419,48 @@
 
             function filterHouses() {
                 if (!houseSelect) return;
+                
                 const cityId = citySelect ? citySelect.value : '';
                 const sectorId = sectorSelect ? sectorSelect.value : '';
-                const currentSelectedId = houseSelect.value;
-                let currentlySelectedIsHidden = false;
+                
+                // Get current selection from Select2 (or value)
+                const currentSelectedId = $(houseSelect).val(); 
+                
+                // Clear and rebuild options
+                houseSelect.innerHTML = '<option value="">Select House Number</option>';
+                
+                let hasSelection = false;
 
-                Array.from(houseSelect.options).forEach(opt => {
-                    if (!opt.value) return; 
-                    const optCity = opt.getAttribute('data-city') || '';
-                    const optSector = opt.getAttribute('data-sector') || '';
-                    
+                allHouseOptions.forEach(optData => {
                     let show = true;
-                    if (cityId && String(optCity) !== String(cityId)) show = false;
-                    if (sectorId && String(optSector) !== String(sectorId)) show = false;
+                    if (cityId && String(optData.city) !== String(cityId)) show = false;
+                    if (sectorId && String(optData.sector) !== String(sectorId)) show = false;
                     
-                    opt.hidden = !show;
-                    opt.style.display = show ? '' : 'none';
-                    opt.disabled = !show;
+                    if (show) {
+                        const option = document.createElement('option');
+                        option.value = optData.value;
+                        option.textContent = optData.text;
+                        option.setAttribute('data-city', optData.city);
+                        option.setAttribute('data-sector', optData.sector);
+                        option.setAttribute('data-address', optData.address);
+                        option.setAttribute('data-name', optData.name);
+                        option.setAttribute('data-phone', optData.phone);
+                        
+                        // Restore selection
+                        if (currentSelectedId && String(optData.value) === String(currentSelectedId)) {
+                            option.selected = true;
+                            hasSelection = true;
+                        } else if (!currentSelectedId && optData.selected && !hasSelection) {
+                            option.selected = true;
+                            hasSelection = true;
+                        }
 
-                    if (!show && opt.value === currentSelectedId) {
-                        currentlySelectedIsHidden = true;
+                        houseSelect.appendChild(option);
                     }
                 });
-
-                if (currentlySelectedIsHidden) {
-                    houseSelect.value = '';
-                }
+                
+                // Refresh Select2
+                $(houseSelect).trigger('change.select2');
             }
 
             function filterEmployees() {
@@ -437,13 +554,28 @@
                     const address = selectedOption.getAttribute('data-address');
 
                     if (cityId) {
-                        citySelect.value = cityId;
-                        loadSectors(cityId, sectorId);
+                        // Only update city/sector if they differ
+                         if (citySelect.value !== cityId) {
+                            citySelect.value = cityId;
+                            loadSectors(cityId, sectorId);
+                        } else if (sectorSelect.value !== sectorId) {
+                             sectorSelect.value = sectorId;
+                        }
                         filterEmployees();
                     }
 
                     if (address) {
                         addressInput.value = address;
+                    }
+                    
+                    const name = selectedOption.getAttribute('data-name');
+                    if (name && clientNameInput) {
+                        clientNameInput.value = name;
+                    }
+
+                    const phone = selectedOption.getAttribute('data-phone');
+                    if (phone && phoneInput) {
+                        phoneInput.value = phone;
                     }
                 });
             }
@@ -600,6 +732,12 @@
 
             filterHouses();
             filterEmployees();
+            
+            // Auto-select single city (for restricted users) if nothing selected
+            if (citySelect && citySelect.options.length === 2 && !citySelect.value) { 
+                 citySelect.selectedIndex = 1;
+                 citySelect.dispatchEvent(new Event('change'));
+            }
         });
     </script>
 @endpush
