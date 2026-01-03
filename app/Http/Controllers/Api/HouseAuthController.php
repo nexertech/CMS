@@ -45,6 +45,7 @@ class HouseAuthController extends Controller
             'user' => [
                 'id' => $house->id,
                 'username' => $house->username,
+                'house_no' => $house->house_no,
                 'name' => $house->name,
                 'city_id' => $house->city_id,
                 'sector_id' => $house->sector_id,

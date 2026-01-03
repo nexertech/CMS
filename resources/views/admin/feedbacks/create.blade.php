@@ -108,8 +108,9 @@
                 <option value="">Select Rating</option>
                 <option value="excellent" {{ old('overall_rating') == 'excellent' ? 'selected' : '' }}>Excellent ⭐⭐⭐⭐⭐</option>
                 <option value="good" {{ old('overall_rating') == 'good' ? 'selected' : '' }}>Good ⭐⭐⭐⭐</option>
-                <option value="average" {{ old('overall_rating') == 'average' ? 'selected' : '' }}>Average ⭐⭐⭐</option>
-                <option value="poor" {{ old('overall_rating') == 'poor' ? 'selected' : '' }}>Poor ⭐⭐</option>
+                <option value="satisfied" {{ old('overall_rating') == 'satisfied' ? 'selected' : '' }}>Satisfied ⭐⭐⭐</option>
+                <option value="fair" {{ old('overall_rating') == 'fair' ? 'selected' : '' }}>Fair ⭐⭐</option>
+                <option value="poor" {{ old('overall_rating') == 'poor' ? 'selected' : '' }}>Poor ⭐</option>
               </select>
               @error('overall_rating')
                 <div class="invalid-feedback">{{ $message }}</div>

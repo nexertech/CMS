@@ -78,7 +78,7 @@
                               data-name="{{ $house->name }}"
                               data-phone="{{ $house->phone }}"
                               {{ old('house_id', $complaint->house_id) == $house->id ? 'selected' : '' }}>
-                        {{ $house->username }}
+                        {{ $house->house_no }}
                       </option>
                     @endforeach
                   </select>

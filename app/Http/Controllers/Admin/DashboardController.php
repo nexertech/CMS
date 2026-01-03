@@ -466,12 +466,13 @@ class DashboardController extends Controller
                         if ($complaint->feedback && $complaint->feedback->rating_score) {
                             $totalFeedbacks++;
                             $ratingSum += $complaint->feedback->rating_score;
-                            
-                            $rating = $complaint->feedback->overall_rating;
-                            if (in_array($rating, ['excellent', 'good'])) {
-                                $resolvedWithGoodFeedback++;
-                            } elseif (in_array($rating, ['average', 'poor'])) {
-                                $resolvedWithBadFeedback++;
+                            if ($complaint->feedback->overall_rating) {
+                                $rating = $complaint->feedback->overall_rating;
+                                if (in_array($rating, ['excellent', 'good', 'satisfied'])) {
+                                    $resolvedWithGoodFeedback++;
+                                } elseif (in_array($rating, ['fair', 'poor'])) {
+                                    $resolvedWithBadFeedback++;
+                                }
                             }
                         }
                     }

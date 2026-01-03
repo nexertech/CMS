@@ -70,6 +70,16 @@ class ComplaintFeedback extends Model
      */
     public function getOverallRatingDisplayAttribute(): string
     {
+        if (empty($this->overall_rating) && $this->rating_score > 0) {
+            return match($this->rating_score) {
+                5 => 'Excellent',
+                4 => 'Good',
+                3 => 'Satisfied',
+                2 => 'Fair',
+                1 => 'Poor',
+                default => 'N/A'
+            };
+        }
         return ucfirst($this->overall_rating ?? 'N/A');
     }
 
@@ -78,10 +88,23 @@ class ComplaintFeedback extends Model
      */
     public function getRatingColorAttribute(): string
     {
-        return match ($this->overall_rating) {
+        $rating = !empty($this->overall_rating) ? strtolower($this->overall_rating) : null;
+        if (!$rating && $this->rating_score > 0) {
+            $rating = match($this->rating_score) {
+                5 => 'excellent',
+                4 => 'good',
+                3 => 'satisfied',
+                2 => 'fair',
+                1 => 'poor',
+                default => null
+            };
+        }
+
+        return match ($rating) {
             'excellent' => '#22c55e', // Green
             'good' => '#3b82f6',      // Blue
-            'average' => '#f59e0b',    // Orange
+            'satisfied' => '#0ea5e9', // Sky Blue/Cyan
+            'fair' => '#f59e0b',      // Orange
             'poor' => '#ef4444',      // Red
             default => '#64748b'      // Gray
         };
@@ -92,10 +115,23 @@ class ComplaintFeedback extends Model
      */
     public function getRatingBadgeColorAttribute(): string
     {
-        return match ($this->overall_rating) {
+        $rating = !empty($this->overall_rating) ? strtolower($this->overall_rating) : null;
+        if (!$rating && $this->rating_score > 0) {
+            $rating = match($this->rating_score) {
+                5 => 'excellent',
+                4 => 'good',
+                3 => 'satisfied',
+                2 => 'fair',
+                1 => 'poor',
+                default => null
+            };
+        }
+
+        return match ($rating) {
             'excellent' => 'success',
             'good' => 'primary',
-            'average' => 'warning',
+            'satisfied' => 'info',
+            'fair' => 'warning',
             'poor' => 'danger',
             default => 'secondary'
         };

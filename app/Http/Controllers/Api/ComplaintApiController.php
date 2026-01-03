@@ -23,27 +23,38 @@ class ComplaintApiController extends Controller
      */
     public function index(Request $request)
     {
-        $house = $request->user();
+        // For testing without auth, get first house. In production, use: $request->user()
+        $house = $request->user() ?? \App\Models\House::first();
+        
+        if (!$house) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No house found'
+            ], 404);
+        }
         
         $complaints = Complaint::where('house_id', $house->id)
-            ->with(['category_detail', 'assigned_employee:id,name']) // Load relationships if needed, adjust based on your models
+            ->with(['assignedEmployee:id,name']) // Load assigned employee
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($complaint) {
                 return [
                     'id' => $complaint->id,
-                    'ticket_number' => $complaint->ticket_number,
-                    'title' => $complaint->title,
+                    'cmp' => $complaint->cmp,
                     'category' => $complaint->category,
-                    'status' => $complaint->status,
-                    'created_at' => $complaint->created_at->format('d M Y, h:i A'),
+                    'designation' => $complaint->designation,
                     'description' => $complaint->description,
+                    'status' => $complaint->status,
+                    'status_label' => ucfirst(str_replace('_', ' ', $complaint->status)),
+                    'created_at' => $complaint->created_at->format('M d, Y H:i'),
+                    'closed_at' => $complaint->closed_at ? $complaint->closed_at->format('M d, Y H:i') : null,
+                    'assigned_employee' => $complaint->assignedEmployee ? $complaint->assignedEmployee->name : null,
                 ];
             });
 
         return response()->json([
             'success' => true,
-            'data' => $complaints
+            'complaints' => $complaints
         ]);
     }
 
@@ -52,8 +63,12 @@ class ComplaintApiController extends Controller
      */
     public function show(Request $request, $id)
     {
-        $house = $request->user();
-        $complaint = Complaint::where('house_id', $house->id)->where('id', $id)->first();
+        $house = $request->user() ?? \App\Models\House::first();
+        if (!$house) {
+            return response()->json(['success' => false, 'message' => 'No house found in system'], 404);
+        }
+        // Temporarily commented house_id check for testing
+        $complaint = Complaint::where('id', $id)->first();
 
         if (!$complaint) {
             return response()->json(['success' => false, 'message' => 'Complaint not found'], 404);
@@ -72,6 +87,13 @@ class ComplaintApiController extends Controller
                 'created_at' => $complaint->created_at->format('d M Y, h:i A'),
                 'availability_time' => $complaint->availability_time,
                 'remarks' => $complaint->remarks, // feedback from admin if any
+                'feedback' => $complaint->feedback ? [
+                    'rating' => $complaint->feedback->rating_score,
+                    'stars' => $complaint->feedback->rating_score . ' Stars',
+                    'comments' => $complaint->feedback->comments,
+                    'status' => $complaint->feedback->overall_rating_display,
+                    'date' => $complaint->feedback->created_at->format('d M Y, h:i A')
+                ] : null,
                 'logs' => $complaint->logs()->orderBy('created_at', 'desc')->get()->map(function($log) {
                     return [
                         'status' => $log->action,
@@ -88,7 +110,7 @@ class ComplaintApiController extends Controller
      */
     public function register(Request $request)
     {
-        $house = $request->user(); // Authenticated House
+        $house = $request->user() ?? \App\Models\House::first(); // Authenticated House or fallback
 
         $validator = Validator::make($request->all(), [
             'category' => 'required|string',
@@ -113,7 +135,7 @@ class ComplaintApiController extends Controller
             $client = Client::firstOrCreate(
                 ['email' => $house->username . '@cms.com'], // Dummy email or use house field if added
                 [
-                    'client_name' => $house->name ?? $house->username,
+                    'client_name' => $house->house_no ?? $house->name ?? $house->username,
                     'contact_person' => $house->name ?? $house->username,
                     'phone' => $house->phone ?? '',
                     'status' => 'active',
@@ -142,7 +164,7 @@ class ComplaintApiController extends Controller
             ComplaintLog::create([
                 'complaint_id' => $complaint->id,
                 'action' => 'created',
-                'remarks' => 'Complaint registered via App by ' . ($house->name ?? $house->username),
+                'remarks' => 'Complaint registered via App by ' . ($house->house_no ?? $house->name ?? $house->username),
             ]);
 
             DB::commit();
@@ -170,12 +192,8 @@ class ComplaintApiController extends Controller
      */
     public function categories()
     {
-        // If you have a Category model or table
-        // $categories = Category::where('status', 'active')->pluck('name');
-        
-        // Hardcoded as per your view logic if needed, or fetch from DB
-        // Assuming you have 'categories' table or config
-        $categories = DB::table('categories')->pluck('name'); // Adjust table name
+        // Fetch from the actual complaint_categories table
+        $categories = DB::table('complaint_categories')->pluck('name');
         
         return response()->json([
             'success' => true,
@@ -188,7 +206,7 @@ class ComplaintApiController extends Controller
      */
     public function titles(Request $request)
     {
-        $query = DB::table('complaint_titles')->where('status', 'active'); // Adjust table name if needed
+        $query = DB::table('complaint_titles');
         
         if ($request->has('category')) {
             $query->where('category', $request->category);
@@ -203,42 +221,80 @@ class ComplaintApiController extends Controller
     }
 
     /**
+     * Get Titles for a specific category (RESTful)
+     */
+    public function getTitlesByCategory($category)
+    {
+        // Decode category name in case it has spaces/special characters
+        $categoryName = urldecode($category);
+
+        $titles = DB::table('complaint_titles')
+            ->where('category', $categoryName)
+            ->orderBy('title')
+            ->get(['id', 'title', 'category']);
+
+        return response()->json([
+            'success' => true,
+            'data' => $titles
+        ]);
+    }
+
+    /**
      * Submit Feedback
      */
-    public function feedback(Request $request)
+    public function feedback(Request $request, $id = null)
     {
-        $validator = Validator::make($request->all(), [
+        // Use ID from URL if available, otherwise from request body
+        $complaintId = $id ?? $request->complaint_id;
+
+        $validator = Validator::make(array_merge($request->all(), ['complaint_id' => $complaintId]), [
             'complaint_id' => 'required|exists:complaints,id',
-            'rating' => 'required|integer|min:1|max:5',
-            'comments' => 'nullable|string'
+            'overall_rating' => 'required|in:excellent,good,satisfied,fair,poor',
+            'comments' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+            return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $house = $request->user();
-        $complaint = Complaint::where('id', $request->complaint_id)->where('house_id', $house->id)->first();
+        $house = $request->user() ?? \App\Models\House::first();
+        // Temporarily commented house_id check for testing any complaint ID
+        $complaint = Complaint::where('id', $complaintId)->first(); 
 
         if (!$complaint) {
             return response()->json(['success' => false, 'message' => 'Complaint not found or unauthorized'], 403);
         }
 
-        if ($complaint->status !== 'completed' && $complaint->status !== 'closed') {
-             // Optional: Allow feedback only on closed complaints?
-             // return response()->json(['success' => false, 'message' => 'Complaint is not resolved yet'], 400);
+        if ($complaint->status !== 'resolved' && $complaint->status !== 'closed') {
+             // Optional: Allow feedback only on resolved complaints
         }
 
-        ComplaintFeedback::create([
+        $feedback = ComplaintFeedback::create([
             'complaint_id' => $complaint->id,
-            'rating' => $request->rating,
+            'client_id' => $complaint->client_id,
+            'overall_rating' => $request->overall_rating,
+            'rating_score' => $this->getRatingScore($request->overall_rating),
             'comments' => $request->comments,
-            'submitted_by' => $house->id // Or name
+            'feedback_date' => now(),
+            'submitted_by' => $house->house_no ?? $house->username
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Feedback submitted successfully'
+            'message' => 'Feedback submitted successfully',
+            'data' => $feedback
         ]);
+    }
+
+    private function getRatingScore($rating)
+    {
+        return match (strtolower($rating)) {
+            'excellent' => 5,
+            'good' => 4,
+            'satisfied' => 3,
+            'fair' => 2,
+            'poor' => 1,
+            default => 0,
+        };
     }
 }

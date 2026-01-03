@@ -101,12 +101,12 @@ class FeedbackController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'overall_rating' => 'required|in:excellent,good,average,poor',
+            'overall_rating' => 'required|in:excellent,good,satisfied,fair,poor',
             'rating_score' => 'nullable|integer|min:1|max:5',
-            'service_quality' => 'nullable|in:excellent,good,average,poor',
-            'response_time' => 'nullable|in:excellent,good,average,poor',
-            'resolution_quality' => 'nullable|in:excellent,good,average,poor',
-            'staff_behavior' => 'nullable|in:excellent,good,average,poor',
+            'service_quality' => 'nullable|in:excellent,good,satisfied,fair,poor',
+            'response_time' => 'nullable|in:excellent,good,satisfied,fair,poor',
+            'resolution_quality' => 'nullable|in:excellent,good,satisfied,fair,poor',
+            'staff_behavior' => 'nullable|in:excellent,good,satisfied,fair,poor',
             'comments' => 'nullable|string|max:1000',
             'remarks' => 'nullable|string|max:1000',
             'feedback_date' => 'nullable|date',
@@ -239,12 +239,12 @@ class FeedbackController extends Controller
         }
         
         $validator = Validator::make($request->all(), [
-            'overall_rating' => 'required|in:excellent,good,average,poor',
+            'overall_rating' => 'required|in:excellent,good,satisfied,fair,poor',
             'rating_score' => 'nullable|integer|min:1|max:5',
-            'service_quality' => 'nullable|in:excellent,good,average,poor',
-            'response_time' => 'nullable|in:excellent,good,average,poor',
-            'resolution_quality' => 'nullable|in:excellent,good,average,poor',
-            'staff_behavior' => 'nullable|in:excellent,good,average,poor',
+            'service_quality' => 'nullable|in:excellent,good,satisfied,fair,poor',
+            'response_time' => 'nullable|in:excellent,good,satisfied,fair,poor',
+            'resolution_quality' => 'nullable|in:excellent,good,satisfied,fair,poor',
+            'staff_behavior' => 'nullable|in:excellent,good,satisfied,fair,poor',
             'comments' => 'nullable|string|max:1000',
             'remarks' => 'nullable|string|max:1000',
             'feedback_date' => 'nullable|date',
@@ -331,11 +331,12 @@ class FeedbackController extends Controller
      */
     private function getRatingScore($rating): int
     {
-        return match($rating) {
+        return match(strtolower($rating)) {
             'excellent' => 5,
             'good' => 4,
-            'average' => 3,
-            'poor' => 2,
+            'satisfied' => 3,
+            'fair' => 2,
+            'poor' => 1,
             default => 3
         };
     }

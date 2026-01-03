@@ -372,7 +372,7 @@
                 <label for="filterCMES" class="block text-white mb-1"
                     style="font-size: 0.95rem; font-weight: 700;">CMES</label>
                 @php
-                    $darkColors = ['#60a5fa', '#4ade80', '#fb923d', '#1e3a8a', '#5eead4', '#f87171', '#818cf8', '#c084fc', '#94a3b8', '#fbbf24'];
+                    $darkColors = ['#60a5fa', '#4ade80', '#fb923d', '#1e3a8a', '#1b9a87ff', '#f87171', '#818cf8', '#c084fc', '#94a3b8', '#fbbf24'];
                     $cmesColor = '';
                     $cmeColorMap = [];
                     if(isset($cmesList)) {
@@ -475,7 +475,7 @@
                 <select id="filterDateRange" name="date_range" class="p-1.5 border filter-select"
                     style="font-size: 0.85rem; width: 100%; border-radius: 4px; font-weight: bold; height: 38px;"
                     aria-label="Select Date Range" title="Select Date Range">
-                    <option value="">Select Date Range</option>
+                    <option value="all_time" {{ (!$dateRange || $dateRange == 'all_time') ? 'selected' : '' }}>All Time</option>
                     <option value="yesterday" {{ $dateRange == 'yesterday' ? 'selected' : '' }}>Yesterday</option>
                     <option value="today" {{ $dateRange == 'today' ? 'selected' : '' }}>Today</option>
                     <option value="this_week" {{ $dateRange == 'this_week' ? 'selected' : '' }}>This Week</option>
@@ -545,7 +545,7 @@
                 </div>
                 <!-- Complaint Resolution Trend -->
                 <div class="bg-white p-6 rounded-xl shadow">
-                    <h2 class="text-xl font-semibold mb-4">Complaint Resolution Trend</h2>
+                    <h2 class="text-xl font-semibold mb-2">Complaint Resolution Trend</h2>
                     <div class="h-96">
                         <canvas id="resolutionTrendChart"></canvas>
                     </div>
@@ -573,16 +573,16 @@
                                 <th class="px-3 py-2 text-left font-semibold text-gray-700">Registration</th>
                                 <th class="px-3 py-2 text-left font-semibold text-gray-700">Addressed</th>
                                 <th class="px-3 py-2 text-left font-semibold text-gray-700">Complainant</th>
+                                <th class="px-3 py-2 text-left font-semibold text-gray-700">House</th>
                                 <th class="px-3 py-2 text-left font-semibold text-gray-700">Address</th>
                                 <th class="px-3 py-2 text-left font-semibold text-gray-700">Type</th>
-                                <th class="px-3 py-2 text-left font-semibold text-gray-700">Phone</th>
                                 <th class="px-3 py-2 text-left font-semibold text-gray-700 text-center">Status</th>
                                 <th class="px-3 py-2 text-left font-semibold text-gray-700 text-center">View</th>
                             </tr>
                         </thead>
                         <tbody id="complaintsTableBody" class="divide-y divide-gray-100 bg-white">
                             <tr>
-                                <td colspan="9" class="px-3 py-6 text-center text-gray-500">Select a status card to
+                                <td colspan="10" class="px-3 py-6 text-center text-gray-500">Select a status card to
                                     load complaints.</td>
                             </tr>
                         </tbody>
@@ -735,7 +735,7 @@
                             <div id="cmeGraphFilterContainer">
                                 <select id="cmeGraphFilter"
                                     class="p-1.5 border rounded text-sm font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    <option value="">Select</option>
+                                    <option value="">All Time</option>
                                     <option value="this_month">This Month</option>
                                     <option value="last_6_months">Last 6 Months</option>
                                     <option value="this_year">This Year</option>
@@ -754,12 +754,6 @@
                                     </button>
                                      <div id="monthlyReportDropdown" class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-2xl bg-gray-200 ring-1 ring-black ring-opacity-20 focus:outline-none hidden" style="z-index: 9999;">
                                         <div class="py-1">
-                                            <button onclick="printSection('cmeTableContainer'); toggleDropdown('monthlyReportDropdown')" class="text-gray-700 group flex items-center px-4 py-2 text-sm hover:bg-gray-300 w-full text-left">
-                                                <svg class="mr-3 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path d="M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z" />
-                                                </svg>
-                                                PDF
-                                            </button>
                                             <button onclick="exportTableToExcel('monthlyPerformanceTable', 'monthly_performance_report'); toggleDropdown('monthlyReportDropdown')" class="text-gray-700 group flex items-center px-4 py-2 text-sm hover:bg-gray-300 w-full text-left">
                                                 <svg class="mr-3 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                                     <path d="M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z" />
@@ -863,7 +857,12 @@
                 <div class="bg-white rounded-xl shadow monthly-complaints-chart" style="position: relative; padding: 1rem;">
                     <div class="flex justify-between items-center mb-4 flex-wrap gap-2 relative" style="z-index: 50;">
                         <div class="flex items-center gap-4">
-                            <h2 class="text-xl font-semibold">Top 10 Most Issued Products</h2>
+                            <div class="flex items-center gap-3">
+                                <h2 class="text-xl font-semibold">Top 10 Most Issued Products</h2>
+                                <a href="{{ route('frontend.stock.all') }}" class="text-blue-600 hover:text-blue-800 text-sm font-bold flex items-center gap-1">
+                                    View All <i data-feather="external-link" style="width: 14px; height: 14px;"></i>
+                                </a>
+                            </div>
                              <div class="flex bg-gray-100 p-1 rounded-lg">
                                 <button onclick="toggleView('stock', 'graph')" id="stockGraphBtn" class="px-3 py-1 text-sm font-bold rounded-md bg-white shadow text-blue-600 transition-all">Graph</button>
                                 <button onclick="toggleView('stock', 'table')" id="stockTableBtn" class="px-3 py-1 text-sm font-bold rounded-md text-gray-500 hover:text-gray-700 transition-all">Table</button>
@@ -892,12 +891,6 @@
                                     </button>
                                      <div id="stockReportDropdown" class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-2xl bg-gray-200 ring-1 ring-black ring-opacity-20 focus:outline-none hidden" style="z-index: 9999;">
                                         <div class="py-1">
-                                            <button onclick="printSection('stockTableContainer'); toggleDropdown('stockReportDropdown')" class="text-gray-700 group flex items-center px-4 py-2 text-sm hover:bg-gray-300 w-full text-left">
-                                                <svg class="mr-3 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path d="M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z" />
-                                                </svg>
-                                                PDF
-                                            </button>
                                             <button onclick="exportTableToExcel('stockConsumptionTable', 'stock_consumption_report'); toggleDropdown('stockReportDropdown')" class="text-gray-700 group flex items-center px-4 py-2 text-sm hover:bg-gray-300 w-full text-left">
                                                 <svg class="mr-3 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                                     <path d="M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z" />
@@ -1222,7 +1215,7 @@
         const modalClose = document.getElementById('closeComplaintModal');
         let activeStatusKey = null;
         let currentPage = 1;
-        const pageSize = 13;
+        const pageSize = 12;
 
         const statusBadgeColors = {
             assigned: '#16a34a',
@@ -1242,9 +1235,9 @@
         const statusLabelOverrides = {
             pertains_to_ge_const_isld: 'Pertains to GE',
             work_performa: 'Work Performa',
-            maint_performa: 'Maint Performa',
+            maint_performa: 'Maintenance Performa',
             work_priced_performa: 'Work Performa',
-            maint_priced_performa: 'Maint Performa',
+            maint_priced_performa: 'Maintenance Performa',
             product_na: 'Product NA',
             in_progress: 'In Progress',
         };
@@ -1259,7 +1252,7 @@
                 return dashboardComplaints;
             }
             if (statusKey === 'resolved') {
-                return dashboardComplaints.filter(c => c.status === 'resolved');
+                return dashboardComplaints.filter(c => ['resolved', 'closed'].includes(c.status));
             }
             if (statusKey === 'overdue') {
                 return dashboardComplaints.filter(c => c.overdue);
@@ -1288,7 +1281,7 @@
                 return (complaintsByStatus && complaintsByStatus[activeStatusKey] !== undefined) ? complaintsByStatus[activeStatusKey] : records.length;
             })();
 
-            complaintsTableSubtitle.textContent = `${records.length} sample record${records.length === 1 ? '' : 's'} of ${totalForStatus} total`;
+            complaintsTableSubtitle.textContent = `${records.length} of ${totalForStatus} records`;
 
             if (toggleView) {
                 complaintsTableSection.classList.remove('hidden');
@@ -1301,7 +1294,7 @@
             }
 
             if (!records.length) {
-                complaintsTableBody.innerHTML = `<tr><td colspan="9" class="px-3 py-6 text-center text-gray-500">No complaints found for this status.</td></tr>`;
+                complaintsTableBody.innerHTML = `<tr><td colspan="10" class="px-3 py-6 text-center text-gray-500">No complaints found for this status.</td></tr>`;
                 updatePagination(0, 0, 0);
                 return;
             }
@@ -1332,9 +1325,9 @@
                         <td class="px-3 py-2 text-gray-700">${row.created_at ?? '-'}</td>
                         <td class="px-3 py-2 text-gray-700">${row.closed_at ?? '-'}</td>
                         <td class="px-3 py-2 text-gray-700">${row.client_name ?? 'N/A'}</td>
+                        <td class="px-3 py-2 text-gray-700">${row.house_no ?? 'N/A'}</td>
                         <td class="px-3 py-2 text-gray-700">${row.address ?? 'N/A'}</td>
                         <td class="px-3 py-2 text-gray-700">${typeLabel ?? 'N/A'}</td>
-                        <td class="px-3 py-2 text-gray-700">${row.phone ?? '-'}</td>
                         <td class="px-3 py-2 text-center">${statusBadge}</td>
                         <td class="px-3 py-2 text-center">
                             <button class="view-complaint-btn inline-flex items-center justify-center px-3 py-1 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded decoration-0"
@@ -1665,7 +1658,7 @@
                 layout: {
                     padding: {
                         bottom: 10,
-                        top: 5
+                        top: 10
                     }
                 },
                 plugins: {
@@ -1678,7 +1671,7 @@
                                 weight: 'bold',
                                 family: 'Arial, sans-serif'
                             },
-                            padding: 35,
+                            padding: 20,
                             usePointStyle: true
                         }
                     },
@@ -1737,7 +1730,7 @@
                             display: false
                         },
                         ticks: {
-                            padding: 8,
+                            padding: 20,
                             font: {
                                 size: 11,
                                 weight: 'bold',
@@ -1747,6 +1740,7 @@
                         }
                     },
                     y: {
+                        grace: '10%',
                         beginAtZero: true,
                         grid: {
                             color: 'rgba(0, 0, 0, 0.05)'
@@ -2090,7 +2084,7 @@
             'in_progress': { label: 'In Progress', color: '#ec5454' }, // Red
             'resolved': { label: 'Addressed', color: '#64748b' }, // Grey
             'work_performa': { label: 'Work Performa', color: '#60a5fa' }, // Light Blue
-            'maint_performa': { label: 'Maint Performa', color: '#eab308' }, // Yellow
+            'maint_performa': { label: 'Maintenance Performa', color: '#eab308' }, // Yellow
             'work_priced_performa': { label: 'Work Priced', color: '#9333ea' }, // Purple
             'maint_priced_performa': { label: 'Maint Priced', color: '#ea580c' }, // Dark Orange
             'product_na': { label: 'Product N/A', color: '#0deb7c' }, // Green

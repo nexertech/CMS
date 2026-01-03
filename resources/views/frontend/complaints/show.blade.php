@@ -307,11 +307,11 @@
                                   <span class="text-muted small text-uppercase">Overall Rating:</span>
                               </div>
                               <div class="d-flex align-items-center">
-                                  <span class="badge bg-{{ $complaint->feedback->rating_badge_color }}" style="font-size: 0.9rem; padding: 5px 12px; color: #ffffff !important;">
+                                  <span class="badge" style="background-color: {{ $complaint->feedback->rating_color }}; color: #ffffff !important; padding: 5px 12px;">
                                       {{ $complaint->feedback->overall_rating_display }}
                                   </span>
                                   @if($complaint->feedback->rating_score)
-                                      <span class="text-dark small ms-2 fw-bold">({{ $complaint->feedback->rating_score }}/5)</span>
+                                      <span class="text-dark small ms-2 fw-bold">{{ $complaint->feedback->rating_score }} / 5 Stars</span>
                                   @endif
                               </div>
                           </div>
@@ -370,6 +370,10 @@
                 @endif
             </div>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
         @endif
 
 </div>

@@ -88,7 +88,7 @@
           <i data-feather="home" class="me-3 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
           <div class="flex-grow-1">
             <div class="text-muted small mb-1" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">House NO.</div>
-            <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->house->username }}</div>
+            <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->house->house_no ?? 'N/A' }}</div>
           </div>
         </div>
       </div>
@@ -422,7 +422,7 @@
                       {{ $complaint->feedback->overall_rating_display }}
                     </span>
                     @if($complaint->feedback->rating_score)
-                      <span class="text-white ms-2">({{ $complaint->feedback->rating_score }}/5)</span>
+                      <span class="text-white ms-2">{{ $complaint->feedback->rating_score }} / 5 Stars</span>
                     @endif
                   </td>
                 </tr>
@@ -494,16 +494,23 @@
             </div>
           </div>
           @if($complaint->feedback->comments)
-          <div class="row mt-3">
-            <div class="col-12">
-              <h6 class="text-white fw-bold mb-2" style="font-size: 0.9rem;">Complainant Comments:</h6>
-              <div class="card-glass" style="background-color: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3);">
-                <div class="card-body">
-                  <p class="text-white mb-0" style="color: #dbeafe; line-height: 1.6;">
-                    {{ $complaint->feedback->comments }}
-                  </p>
-                </div>
-              </div>
+          <div class="mt-3">
+            <h6 class="text-white fw-bold mb-2" style="font-size: 0.9rem;">Complainant Comments:</h6>
+            <div class="p-3 rounded" style="background-color: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3);">
+              <p class="text-white mb-0" style="color: #dbeafe; line-height: 1.6;">
+                {{ $complaint->feedback->comments }}
+              </p>
+            </div>
+          </div>
+          @endif
+          
+          @if($complaint->feedback->remarks)
+          <div class="mt-3">
+            <h6 class="text-white fw-bold mb-2" style="font-size: 0.9rem;">Technician Remarks:</h6>
+            <div class="p-3 rounded" style="background-color: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);">
+              <p class="text-white mb-0" style="color: #ecfdf5; line-height: 1.6;">
+                {{ $complaint->feedback->remarks }}
+              </p>
             </div>
           </div>
           @endif

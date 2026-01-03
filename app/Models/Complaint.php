@@ -282,7 +282,7 @@ class Complaint extends Model
 
     public function isOverdue(): bool
     {
-        if ($this->isCompleted()) {
+        if (!in_array($this->status, ['new', 'assigned', 'in_progress'])) {
             return false;
         }
 

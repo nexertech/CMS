@@ -12,6 +12,10 @@
             <td>{{ $house->id }}</td>
           </tr>
           <tr>
+            <th class="px-4 py-2 text-left font-semibold text-light" style="width: 30%;">House Number</th>
+            <td class="px-4 py-2 whitespace-nowrap">{{ $house->house_no }}</td>
+          </tr>
+          <tr>
             <th>Username</th>
             <td>{{ $house->username }}</td>
           </tr>

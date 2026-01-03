@@ -196,102 +196,110 @@
   });
 
   // Dynamic sector loading based on city
-  const citySelect = document.getElementById('city_id');
-  const sectorSelect = document.getElementById('sector_id');
-  const roleSelect = document.getElementById('role_id');
+  document.addEventListener('DOMContentLoaded', function() {
+    const citySelect = document.getElementById('city_id');
+    const sectorSelect = document.getElementById('sector_id');
+    const roleSelect = document.getElementById('role_id');
 
-  if (citySelect && sectorSelect) {
-    citySelect.addEventListener('change', function() {
-      const cityId = this.value;
-      const roleText = roleSelect ? roleSelect.options[roleSelect.selectedIndex].text.toLowerCase() : '';
-      
-      // Don't load sectors if role is GE (garrison_engineer) - GE sees all sectors
-      if (roleText.includes('garrison engineer') || roleText.includes('garrison_engineer')) {
-        sectorSelect.innerHTML = '<option value="">N/A (GE sees all sectors)</option>';
-        sectorSelect.disabled = true;
-        return;
-      }
-      
-      if (!cityId) {
-        sectorSelect.innerHTML = '<option value="">Select GE Groups first</option>';
-        sectorSelect.disabled = true;
-        return;
-      }
-
-      sectorSelect.innerHTML = '<option value="">Loading sectors...</option>';
-      sectorSelect.disabled = true;
-
-      fetch(`{{ route('admin.sectors.by-city') }}?city_id=${cityId}`, {
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-          'Accept': 'application/json',
-        },
-        credentials: 'same-origin'
-      })
-      .then(response => response.json())
-      .then(data => {
-        sectorSelect.innerHTML = '<option value="">Select Sector</option>';
-        if (data && data.length > 0) {
-          data.forEach(sector => {
-            const option = document.createElement('option');
-            option.value = sector.id;
-            option.textContent = sector.name;
-            sectorSelect.appendChild(option);
-          });
-        }
-        sectorSelect.disabled = false;
-      })
-      .catch(error => {
-        console.error('Error loading sectors:', error);
-        sectorSelect.innerHTML = '<option value="">Error loading sectors</option>';
-        sectorSelect.disabled = false;
-      });
-    });
-
-    // Handle role change - show/hide city/sector fields
-    if (roleSelect) {
-      roleSelect.addEventListener('change', function() {
-        const roleId = this.value;
-        const roleText = this.options[this.selectedIndex].text.toLowerCase();
+    if (citySelect && sectorSelect) {
+      citySelect.addEventListener('change', function() {
+        const cityId = this.value;
+        const roleText = roleSelect ? roleSelect.options[roleSelect.selectedIndex].text.toLowerCase() : '';
         
-        // Enable/disable city and sector based on role
-        if (roleText.includes('director') || roleText.includes('admin')) {
-          citySelect.disabled = true;
+        // Don't load sectors if role is GE (garrison_engineer) - GE sees all sectors
+        if (roleText.includes('garrison engineer') || roleText.includes('garrison_engineer')) {
+          sectorSelect.innerHTML = '<option value="">N/A (GE sees all sectors)</option>';
           sectorSelect.disabled = true;
-          citySelect.value = '';
-          sectorSelect.innerHTML = '<option value="">Select GE Groups first</option>';
-          citySelect.required = false;
-          sectorSelect.required = false;
-        } else if (roleText.includes('garrison engineer') || roleText.includes('garrison_engineer')) {
-          citySelect.disabled = false;
-          sectorSelect.disabled = true;
-          sectorSelect.innerHTML = '<option value="">N/A</option>';
-          citySelect.required = true;
-          sectorSelect.required = false;
-        } else if (roleText.includes('complaint center') || roleText.includes('complaint_center') || 
-                   roleText.includes('department staff') || roleText.includes('department_staff')) {
-          citySelect.disabled = false;
-          citySelect.required = true;
-          sectorSelect.required = true;
-          // Sector will be enabled when city is selected
-        } else {
-          citySelect.disabled = false;
-          sectorSelect.disabled = false;
-          citySelect.required = false;
-          sectorSelect.required = false;
+          return;
         }
+        
+        if (!cityId) {
+          sectorSelect.innerHTML = '<option value="">Select GE Groups first</option>';
+          sectorSelect.disabled = true;
+          return;
+        }
+
+        sectorSelect.innerHTML = '<option value="">Loading sectors...</option>';
+        sectorSelect.disabled = true;
+
+        fetch(`{{ route('admin.sectors.by-city') }}?city_id=${cityId}`, {
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+          },
+          credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+          sectorSelect.innerHTML = '<option value="">Select Sector</option>';
+          if (data && data.length > 0) {
+            data.forEach(sector => {
+              const option = document.createElement('option');
+              option.value = sector.id;
+              option.textContent = sector.name;
+              sectorSelect.appendChild(option);
+            });
+          }
+          sectorSelect.disabled = false;
+        })
+        .catch(error => {
+          console.error('Error loading sectors:', error);
+          sectorSelect.innerHTML = '<option value="">Error loading sectors</option>';
+          sectorSelect.disabled = false;
+        });
       });
 
-      // Trigger on page load if role is pre-selected
-      if (roleSelect.value) {
-        roleSelect.dispatchEvent(new Event('change'));
+      // Handle role change - show/hide city/sector fields
+      if (roleSelect) {
+        roleSelect.addEventListener('change', function() {
+          const roleId = this.value;
+          // Guard against empty selection (placeholder)
+          const selectedOption = this.options[this.selectedIndex];
+          const roleText = selectedOption ? selectedOption.text.toLowerCase() : '';
+          
+          // Enable/disable city and sector based on role
+          if (roleText.includes('director') || roleText.includes('admin')) {
+            citySelect.disabled = true;
+            sectorSelect.disabled = true;
+            citySelect.value = '';
+            sectorSelect.innerHTML = '<option value="">Select GE Groups first</option>';
+            citySelect.required = false;
+            sectorSelect.required = false;
+          } else if (roleText.includes('garrison engineer') || roleText.includes('garrison_engineer')) {
+            citySelect.disabled = false;
+            sectorSelect.disabled = true;
+            sectorSelect.innerHTML = '<option value="">N/A</option>';
+            citySelect.required = true;
+            sectorSelect.required = false;
+          } else if (roleText.includes('complaint center') || roleText.includes('complaint_center') || 
+                     roleText.includes('department staff') || roleText.includes('department_staff')) {
+            citySelect.disabled = false;
+            citySelect.required = true;
+            sectorSelect.required = true;
+            // Sector will be enabled when city is selected
+          } else {
+            // Default: Enable fields for other roles
+            citySelect.disabled = false;
+            // sectorSelect is controlled by citySelect change
+            citySelect.required = false;
+            sectorSelect.required = false;
+          }
+        });
+
+        // Trigger on page load
+        if (roleSelect.value) {
+          roleSelect.dispatchEvent(new Event('change'));
+        } else {
+           // Ensure it's enabled by default if no role is selected yet
+           citySelect.disabled = false;
+        }
+      }
+
+      // Trigger city change if pre-selected
+      if (citySelect.value) {
+        citySelect.dispatchEvent(new Event('change'));
       }
     }
-
-    // Trigger city change if pre-selected
-    if (citySelect.value) {
-      citySelect.dispatchEvent(new Event('change'));
-    }
-  }
+  });
 </script>
 @endpush

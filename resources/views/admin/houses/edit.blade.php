@@ -20,31 +20,34 @@
     @method('PUT')
     
     <div class="row">
-      <div class="col-md-6">
-        <div class="mb-3">
-          <label for="username" class="form-label text-white">Username <span class="text-danger">*</span></label>
-          <input type="text" class="form-control @error('username') is-invalid @enderror" 
-                 id="username" name="username" value="{{ old('username', $house->username) }}" autocomplete="off" required>
-          @error('username')
-            <div class="invalid-feedback">{{ $message }}</div>
-          @enderror
-        </div>
+      <div class="col-md-4 mb-3">
+        <label for="house_no" class="form-label text-white">House Number <span class="text-danger">*</span></label>
+        <input type="text" class="form-control @error('house_no') is-invalid @enderror" id="house_no" name="house_no" value="{{ old('house_no', $house->house_no) }}" placeholder="e.g., H-101" required>
+        @error('house_no')
+          <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
       </div>
-      <div class="col-md-6">
-        <div class="mb-3">
-          <label for="password" class="form-label text-white">Password</label>
-          <input type="password" class="form-control @error('password') is-invalid @enderror" 
-                 id="password" name="password" autocomplete="new-password" minlength="8">
-          <small class="text-muted">Leave blank to keep current password. Minimum 8 characters if changing.</small>
-          @error('password')
-            <div class="invalid-feedback">{{ $message }}</div>
-          @enderror
-        </div>
+      <div class="col-md-4 mb-3">
+        <label for="username" class="form-label text-white">Username (for login) <span class="text-danger">*</span></label>
+        <input type="text" class="form-control @error('username') is-invalid @enderror" 
+                id="username" name="username" value="{{ old('username', $house->username) }}" autocomplete="off" placeholder="e.g., resident_101" required>
+        @error('username')
+          <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+      </div>
+      <div class="col-md-4 mb-3">
+        <label for="password" class="form-label text-white">Password</label>
+        <input type="password" class="form-control @error('password') is-invalid @enderror" 
+                id="password" name="password" autocomplete="new-password" minlength="8">
+        <small class="text-muted" style="display: block;">Leave blank to keep current password.</small>
+        @error('password')
+          <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
       </div>
     </div>
 
     <div class="row">
-      <div class="col-md-6">
+      <div class="col-md-4">
         <div class="mb-3">
           <label for="name" class="form-label text-white">Name</label>
           <input type="text" class="form-control @error('name') is-invalid @enderror" 
@@ -54,7 +57,7 @@
           @enderror
         </div>
       </div>
-      <div class="col-md-6">
+      <div class="col-md-4">
         <div class="mb-3">
           <label for="phone" class="form-label text-white">Phone</label>
           <input type="text" class="form-control @error('phone') is-invalid @enderror" 
@@ -64,10 +67,7 @@
           @enderror
         </div>
       </div>
-    </div>
-
-    <div class="row">
-      <div class="col-md-6">
+      <div class="col-md-4">
         <div class="mb-3">
           <label for="city_id" class="form-label text-white">GE Group <span class="text-danger">*</span></label>
           <select class="form-select @error('city_id') is-invalid @enderror" 
@@ -84,7 +84,10 @@
           @enderror
         </div>
       </div>
-      <div class="col-md-6">
+    </div>
+
+    <div class="row">
+      <div class="col-md-4">
         <div class="mb-3">
           <label for="sector_id" class="form-label text-white">GE Node <span class="text-danger">*</span></label>
           <select class="form-select @error('sector_id') is-invalid @enderror" 
@@ -101,10 +104,7 @@
           @enderror
         </div>
       </div>
-    </div>
-
-    <div class="row">
-      <div class="col-md-6">
+      <div class="col-md-4">
         <div class="mb-3">
           <label for="status" class="form-label text-white">Status <span class="text-danger">*</span></label>
           <select class="form-select @error('status') is-invalid @enderror" 
@@ -117,7 +117,7 @@
           @enderror
         </div>
       </div>
-      <div class="col-md-6">
+      <div class="col-md-4">
         <div class="mb-3">
           <label for="address" class="form-label text-white">Address</label>
           <input type="text" class="form-control @error('address') is-invalid @enderror" 

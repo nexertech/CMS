@@ -430,7 +430,7 @@
                     </tr>
                     <tr>
                         <td class="label">House No:</td>
-                        <td class="value">{{ $complaint->house->username ?? 'N/A' }}</td>
+                        <td class="value">{{ $complaint->house->house_no ?? 'N/A' }}</td>
                     </tr>
                     @if($complaint->client && $complaint->client->phone)
                         <tr>
@@ -528,6 +528,14 @@
             <p>{{ $complaint->description ?: 'No detailed description provided.' }}</p>
         </div>
 
+        <!-- Technician Remarks -->
+        <div class="section-title">Technician Remarks / Work Done</div>
+        <div class="description-box" style="min-height: 100px; border: 1px dashed var(--secondary-color);">
+            <div style="border-bottom: 1px dotted var(--border-color); margin-top: 20px;"></div>
+            <div style="border-bottom: 1px dotted var(--border-color); margin-top: 20px;"></div>
+            <div style="border-bottom: 1px dotted var(--border-color); margin-top: 20px;"></div>
+        </div>
+
         <!-- Feedback & Closing Section -->
         <div class="feedback-container">
             <div class="feedback-header">
@@ -553,17 +561,29 @@
 
                         <!-- Good -->
                         <div class="rating-box">
-                            <svg class="emoji-icon" viewBox="0 0 24 24" style="stroke: #b45309;">
+                            <svg class="emoji-icon" viewBox="0 0 24 24" style="stroke: #2563eb;">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <path d="M8 14a4 4 0 0 0 8 0"></path>
                                 <line x1="9" y1="9" x2="9.01" y2="9"></line>
                                 <line x1="15" y1="9" x2="15.01" y2="9"></line>
                             </svg>
-                            <label class="rating-label" style="color: #b45309;">Good</label>
+                            <label class="rating-label" style="color: #2563eb;">Good</label>
                             <div class="circle-checkbox" style="margin-top: 5px;"></div>
                         </div>
 
-                        <!-- Average -->
+                        <!-- Satisfied -->
+                        <div class="rating-box">
+                            <svg class="emoji-icon" viewBox="0 0 24 24" style="stroke: #0ea5e9;">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M8 13.5s1.5 1.5 4 1.5 4-1.5 4-1.5"></path>
+                                <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                                <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                            </svg>
+                            <label class="rating-label" style="color: #0ea5e9;">Satisfied</label>
+                            <div class="circle-checkbox" style="margin-top: 5px;"></div>
+                        </div>
+
+                        <!-- Fair -->
                         <div class="rating-box">
                             <svg class="emoji-icon" viewBox="0 0 24 24" style="stroke: #ca8a04;">
                                 <circle cx="12" cy="12" r="10"></circle>
@@ -571,7 +591,7 @@
                                 <line x1="9" y1="9" x2="9.01" y2="9"></line>
                                 <line x1="15" y1="9" x2="15.01" y2="9"></line>
                             </svg>
-                            <label class="rating-label" style="color: #ca8a04;">Average</label>
+                            <label class="rating-label" style="color: #ca8a04;">Fair</label>
                             <div class="circle-checkbox" style="margin-top: 5px;"></div>
                         </div>
 

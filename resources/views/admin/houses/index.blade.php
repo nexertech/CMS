@@ -72,7 +72,7 @@
       <thead>
         <tr>
           <th>ID</th>
-          <th>Username</th>
+          <th>House No</th>
           <th>GE Group</th>
           <th>GE Node</th>
           <th>Address</th>
@@ -85,9 +85,7 @@
         @forelse($houses as $house)
         <tr>
           <td>{{ $house->id }}</td>
-          <td>
-            <div class="fw-bold">{{ $house->username }}</div>
-          </td>
+          <td class="px-4 py-2 whitespace-nowrap">{{ $house->house_no }}</td>
           <td>{{ $house->city ? $house->city->name : 'N/A' }}</td>
           <td>{{ $house->sector ? $house->sector->name : 'N/A' }}</td>
           <td>{{ Str::limit($house->address, 30) ?: 'N/A' }}</td>
@@ -179,7 +177,7 @@
         </div>
         <div id="houseDetails" class="text-white">
           <p class="mb-1"><strong>House ID:</strong> <span id="houseIdModal"></span></p>
-          <p class="mb-0"><strong>Username:</strong> <span id="houseUsernameModal"></span></p>
+          <p class="mb-0"><strong>House No:</strong> <span id="houseUsernameModal"></span></p>
         </div>
       </div>
       <div class="modal-footer" style="border-top: 1px solid rgba(239, 68, 68, 0.2);">
@@ -327,7 +325,7 @@
     if (!row) return;
     
     const houseIdCell = row.cells[0].textContent.trim();
-    const houseUsernameCell = row.cells[1].querySelector('.fw-bold')?.textContent || 'Unknown';
+    const houseUsernameCell = row.cells[1].textContent.trim() || 'Unknown';
     
     document.getElementById('houseIdModal').textContent = houseIdCell;
     document.getElementById('houseUsernameModal').textContent = houseUsernameCell;

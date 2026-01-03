@@ -241,7 +241,7 @@ class ComplaintController extends Controller
             $clientName = trim($request->client_name);
             if (empty($clientName) && $request->house_id) {
                 $house = House::find($request->house_id);
-                $clientName = $house ? $house->username : 'Unknown';
+                $clientName = $house ? ($house->house_no ?? $house->username) : 'Unknown';
             } elseif (empty($clientName)) {
                 $clientName = 'Unknown';
             }
@@ -522,7 +522,7 @@ class ComplaintController extends Controller
         $clientName = trim($request->client_name);
         if (empty($clientName) && $request->house_id) {
             $house = House::find($request->house_id);
-            $clientName = $house ? $house->username : 'Unknown';
+            $clientName = $house ? ($house->house_no ?? $house->username) : 'Unknown';
         } elseif (empty($clientName)) {
             $clientName = 'Unknown';
         }

@@ -22,6 +22,7 @@ Route::middleware('auth:frontend')->group(function () {
     Route::get('/change-password', [FrontendHomeController::class, 'changePassword'])->name('frontend.password');
     Route::post('/change-password', [FrontendHomeController::class, 'updatePassword'])->name('frontend.password.update');
     Route::get('/complaint/{id}', [FrontendHomeController::class, 'show'])->name('frontend.complaint.show');
+    Route::get('/stock', [FrontendHomeController::class, 'stockAll'])->name('frontend.stock.all');
 });
 
 

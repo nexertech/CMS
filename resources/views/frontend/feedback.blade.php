@@ -69,45 +69,117 @@
                     </div>
 
                     <div class="mb-6">
-                        <label class="block text-gray-700 text-sm font-bold mb-2">Overall Experience</label>
-                        <div class="grid grid-cols-2 gap-4">
-                            <label class="cursor-pointer">
-                                <input type="radio" name="overall_rating" value="excellent" class="peer sr-only" required>
-                                <div
-                                    class="p-4 rounded-lg border-2 border-gray-200 peer-checked:border-green-500 peer-checked:bg-green-50 hover:bg-gray-50 transition-all text-center">
-                                    <div class="text-2xl mb-1">😃</div>
-                                    <div class="text-sm font-medium text-gray-700">Excellent</div>
-                                </div>
-                            </label>
+                        <label class="block text-gray-700 text-sm font-bold mb-4 text-center">Overall Experience</label>
+                        
+                        <div class="bg-gray-50 p-6 rounded-2xl border border-gray-100 shadow-sm">
+                            <div class="flex flex-row-reverse justify-center items-center gap-2 mb-4" id="star-rating">
+                                <input type="radio" id="star5" name="overall_rating" value="excellent" class="sr-only" required />
+                                <label for="star5" class="cursor-pointer transition-all duration-200 hover:scale-110 active:scale-90 text-gray-300" data-rating="excellent" data-text="Excellent">
+                                    <svg class="w-12 h-12 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                </label>
 
-                            <label class="cursor-pointer">
-                                <input type="radio" name="overall_rating" value="good" class="peer sr-only">
-                                <div
-                                    class="p-4 rounded-lg border-2 border-gray-200 peer-checked:border-blue-500 peer-checked:bg-blue-50 hover:bg-gray-50 transition-all text-center">
-                                    <div class="text-2xl mb-1">🙂</div>
-                                    <div class="text-sm font-medium text-gray-700">Good</div>
-                                </div>
-                            </label>
+                                <input type="radio" id="star4" name="overall_rating" value="good" class="sr-only" />
+                                <label for="star4" class="cursor-pointer transition-all duration-200 hover:scale-110 active:scale-90 text-gray-300" data-rating="good" data-text="Good">
+                                    <svg class="w-12 h-12 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                </label>
 
-                            <label class="cursor-pointer">
-                                <input type="radio" name="overall_rating" value="average" class="peer sr-only">
-                                <div
-                                    class="p-4 rounded-lg border-2 border-gray-200 peer-checked:border-yellow-500 peer-checked:bg-yellow-50 hover:bg-gray-50 transition-all text-center">
-                                    <div class="text-2xl mb-1">😐</div>
-                                    <div class="text-sm font-medium text-gray-700">Average</div>
-                                </div>
-                            </label>
+                                <input type="radio" id="star3" name="overall_rating" value="satisfied" class="sr-only" />
+                                <label for="star3" class="cursor-pointer transition-all duration-200 hover:scale-110 active:scale-90 text-gray-300" data-rating="satisfied" data-text="Satisfied">
+                                    <svg class="w-12 h-12 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                </label>
 
-                            <label class="cursor-pointer">
-                                <input type="radio" name="overall_rating" value="poor" class="peer sr-only">
-                                <div
-                                    class="p-4 rounded-lg border-2 border-gray-200 peer-checked:border-red-500 peer-checked:bg-red-50 hover:bg-gray-50 transition-all text-center">
-                                    <div class="text-2xl mb-1">😞</div>
-                                    <div class="text-sm font-medium text-gray-700">Poor</div>
-                                </div>
-                            </label>
+                                <input type="radio" id="star2" name="overall_rating" value="fair" class="sr-only" />
+                                <label for="star2" class="cursor-pointer transition-all duration-200 hover:scale-110 active:scale-90 text-gray-300" data-rating="fair" data-text="Fair">
+                                    <svg class="w-12 h-12 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                </label>
+
+                                <input type="radio" id="star1" name="overall_rating" value="poor" class="sr-only" />
+                                <label for="star1" class="cursor-pointer transition-all duration-200 hover:scale-110 active:scale-90 text-gray-300" data-rating="poor" data-text="Poor">
+                                    <svg class="w-12 h-12 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                </label>
+                            </div>
+                            
+                            <div id="rating-label" class="text-center font-bold text-lg text-gray-400 h-8 transition-all duration-300">
+                                Tap to Rate
+                            </div>
                         </div>
+
                         @error('overall_rating')
+                            <p class="text-red-500 text-xs italic mt-2 text-center">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <style>
+                        #star-rating label:hover,
+                        #star-rating label:hover ~ label {
+                            color: #fbbf24;
+                        }
+                        
+                        #star-rating input:checked ~ label {
+                            color: #f59e0b;
+                        }
+
+                        #star-rating .star-active {
+                             color: #f59e0b;
+                        }
+                    </style>
+
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const labels = document.querySelectorAll('#star-rating label');
+                            const ratingText = document.getElementById('rating-label');
+                            const inputs = document.querySelectorAll('#star-rating input');
+                            
+                            const colorMap = {
+                                'excellent': 'text-green-600',
+                                'good': 'text-blue-600',
+                                'satisfied': 'text-sky-500',
+                                'fair': 'text-yellow-600',
+                                'poor': 'text-red-600'
+                            };
+
+                            labels.forEach(label => {
+                                label.addEventListener('mouseenter', () => {
+                                    if (!document.querySelector('#star-rating input:checked')) {
+                                        ratingText.textContent = label.getAttribute('data-text');
+                                        ratingText.className = 'text-center font-bold text-lg text-yellow-500';
+                                    }
+                                });
+
+                                label.addEventListener('mouseleave', () => {
+                                    const checkedInput = document.querySelector('#star-rating input:checked');
+                                    if (checkedInput) {
+                                        const checkedLabel = document.querySelector(`label[for="${checkedInput.id}"]`);
+                                        updateLabel(checkedLabel);
+                                    } else {
+                                        ratingText.textContent = 'Tap to Rate';
+                                        ratingText.className = 'text-center font-bold text-lg text-gray-400';
+                                    }
+                                });
+                            });
+
+                            inputs.forEach(input => {
+                                input.addEventListener('change', () => {
+                                    const label = document.querySelector(`label[for="${input.id}"]`);
+                                    updateLabel(label);
+                                });
+                            });
+
+                            function updateLabel(label) {
+                                const text = label.getAttribute('data-text');
+                                const rating = label.getAttribute('data-rating');
+                                ratingText.textContent = text;
+                                ratingText.className = `text-center font-bold text-lg ${colorMap[rating]}`;
+                            }
+                        });
+                    </script>
+
+                    <div class="mb-4">
+                        <label for="remarks" class="block text-gray-700 text-sm font-bold mb-2">Technician Remarks (Optional)</label>
+                        <textarea id="remarks" name="remarks" rows="2"
+                            class="shadow-sm focus:ring-blue-500 focus:border-blue-500 mt-1 block w-full sm:text-sm border border-gray-300 rounded-md p-2"
+                            placeholder="Enter technician remarks..."></textarea>
+                        @error('remarks')
                             <p class="text-red-500 text-xs italic mt-1">{{ $message }}</p>
                         @enderror
                     </div>

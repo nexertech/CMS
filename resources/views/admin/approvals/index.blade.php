@@ -231,7 +231,7 @@
                   {{ $complaint->created_at ? $complaint->created_at->timezone('Asia/Karachi')->format('M d, y H:i') : 'N/A' }}
                 </td>
                 <td class="px-1" style="font-size: 0.8rem; color: #fbbf24; font-weight: 500;">
-                  {{ $complaint->house->username ?? 'N/A' }}
+                  {{ $complaint->house->house_no ?? 'N/A' }}
                 </td>
                 <td class="px-1" style="text-align: left; font-size: 0.75rem;">
                   @if($complaint->closed_at)

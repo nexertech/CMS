@@ -15,6 +15,7 @@ class House extends Model
 
     protected $fillable = [
         'username',
+        'house_no',
         'password',
         'name',
         'phone',

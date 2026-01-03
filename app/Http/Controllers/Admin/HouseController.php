@@ -31,6 +31,7 @@ class HouseController extends Controller
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('username', 'like', "%{$search}%")
+                  ->orWhere('house_no', 'like', "%{$search}%")
                   ->orWhere('address', 'like', "%{$search}%");
             });
         }
@@ -101,6 +102,7 @@ class HouseController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'username' => 'required|string|max:150|unique:houses,username',
+            'house_no' => 'required|string|max:150',
             'name' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:20',
             'password' => 'required|string|min:8',
@@ -127,6 +129,7 @@ class HouseController extends Controller
 
             $house = House::create([
                 'username' => $request->username,
+                'house_no' => $request->house_no,
                 'name' => $request->name,
                 'phone' => $request->phone,
                 'password' => $request->password, // Will be hashed by mutator
@@ -220,6 +223,7 @@ class HouseController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'username' => ['required', 'string', 'max:150', Rule::unique('houses')->ignore($house->id)],
+            'house_no' => 'required|string|max:150',
             'name' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:8',
@@ -246,6 +250,7 @@ class HouseController extends Controller
 
             $updateData = [
                 'username' => $request->username,
+                'house_no' => $request->house_no,
                 'name' => $request->name,
                 'phone' => $request->phone,
                 'city_id' => $request->city_id,

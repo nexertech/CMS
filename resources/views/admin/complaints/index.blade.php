@@ -136,7 +136,7 @@
                             </td>
                             <td style="white-space: nowrap;">{{ $complaint->created_at ? $complaint->created_at->timezone('Asia/Karachi')->format('M d, Y H:i:s') : '' }}</td>
                             <td style="white-space: nowrap; text-align: {{ $complaint->closed_at ? 'left' : 'center' }};">{{ $complaint->closed_at ? $complaint->closed_at->timezone('Asia/Karachi')->format('M d, Y H:i:s') : '-' }}</td>
-                            <td style="white-space: nowrap;">{{ $complaint->house->username ?? 'N/A' }}</td>
+                            <td style="white-space: nowrap;">{{ $complaint->house->house_no ?? 'N/A' }}</td>
                             <td style="white-space: nowrap;">{{ $complaint->client->client_name ?? 'N/A' }}</td>
                             <td>{{ $complaint->client->address ?? 'N/A' }}</td>
                             <td>
