@@ -13,6 +13,7 @@ class ComplaintTitle extends Model
         'category',
         'title',
         'description',
+        'questions',
     ];
 
     /**

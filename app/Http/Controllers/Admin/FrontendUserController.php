@@ -13,8 +13,13 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
+use App\Traits\LocationFilterTrait;
+use Illuminate\Support\Facades\Auth;
+
 class FrontendUserController extends Controller
 {
+    use LocationFilterTrait;
+
     public function __construct()
     {
         // Middleware is applied in routes
@@ -26,6 +31,9 @@ class FrontendUserController extends Controller
     public function index(Request $request)
     {
         $query = FrontendUser::query();
+
+        // Apply location-based filtering
+        $this->filterFrontendUsersByLocation($query, Auth::user());
 
         // Search functionality
         if ($request->has('search') && $request->search) {

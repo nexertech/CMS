@@ -130,7 +130,7 @@
                     id="city_id" name="city_id">
               <option value="">Select GE Groups</option>
               @foreach($cities as $city)
-                <option value="{{ $city->id }}" data-province="{{ $city->province ?? '' }}" {{ old('city_id') == $city->id ? 'selected' : '' }}>
+                <option value="{{ $city->id }}" data-province="{{ $city->province ?? '' }}" {{ (old('city_id') == $city->id || (isset($defaultCityId) && $defaultCityId == $city->id)) ? 'selected' : '' }}>
                   {{ $city->name }}{{ $city->province ? ' (' . $city->province . ')' : '' }}
                 </option>
               @endforeach
@@ -173,6 +173,13 @@
 @endsection
 
 @push('styles')
+<style>
+    .readonly-select {
+        pointer-events: none;
+        background-color: #e9ecef;
+        opacity: 1;
+    }
+</style>
 @endpush
 
 @push('scripts')
@@ -258,7 +265,7 @@
           const roleText = selectedOption ? selectedOption.text.toLowerCase() : '';
           
           // Enable/disable city and sector based on role
-          if (roleText.includes('director') || roleText.includes('admin')) {
+          if (roleText.includes('director')) {
             citySelect.disabled = true;
             sectorSelect.disabled = true;
             citySelect.value = '';
@@ -291,13 +298,25 @@
           roleSelect.dispatchEvent(new Event('change'));
         } else {
            // Ensure it's enabled by default if no role is selected yet
-           citySelect.disabled = false;
-        }
       }
+      
+      }
+      
+      // Pre-select Default Values
+      const defaultSectorId = "{{ $defaultSectorId ?? '' }}";
 
-      // Trigger city change if pre-selected
       if (citySelect.value) {
-        citySelect.dispatchEvent(new Event('change'));
+          citySelect.dispatchEvent(new Event('change'));
+          
+          // Wait for sectors to load before selecting sector
+          const checkSectorsLoaded = setInterval(function() {
+              if (sectorSelect.options.length > 1 && !sectorSelect.disabled) {
+                  clearInterval(checkSectorsLoaded);
+                  if (defaultSectorId) {
+                      sectorSelect.value = defaultSectorId;
+                  }
+              }
+          }, 100);
       }
     }
   });

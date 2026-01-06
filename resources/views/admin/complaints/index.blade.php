@@ -32,6 +32,11 @@
                                value="{{ request('search') }}" oninput="handleComplaintsSearchInput()" style="font-size: 0.9rem; width: 180px;">
                     </div>
                     <div class="col-auto">
+                        <label class="form-label small mb-1" style="font-size: 0.8rem; color: #000000 !important; font-weight: 500;">House No.</label>
+                        <input type="text" class="form-control" id="houseNoInput" name="house_no" placeholder="House No..." 
+                               value="{{ request('house_no') }}" oninput="handleComplaintsSearchInput()" style="font-size: 0.9rem; width: 140px;">
+                    </div>
+                    <div class="col-auto">
                         <label class="form-label small mb-1" style="font-size: 0.8rem; color: #000000 !important; font-weight: 500;">Priority</label>
                         <select class="form-select" name="priority" onchange="submitComplaintsFilters()" style="font-size: 0.9rem; width: 140px;">
                             <option value="" {{ request('priority') ? '' : 'selected' }}>All</option>
@@ -117,7 +122,7 @@
                     <tr>
                         <th style="width: 100px;">CMP-ID</th>
                         <th style="width: 130px;">Registration Date/Time</th>
-                        <th style="width: 130px; text-align: left;">Completion Time</th>
+                        <th style="width: 130px; text-align: left;">Addressed Time</th>
                         <th style="width: 100px;">House No.</th>
                         <th style="width: 120px;">Complainant Name</th>
                         <th style="width: 150px;">Address</th>

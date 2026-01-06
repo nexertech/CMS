@@ -11,9 +11,13 @@ use App\Models\Sector;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use App\Traits\LocationFilterTrait;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
+    use LocationFilterTrait;
+
     public function __construct()
     {
         // Middleware is applied in routes
@@ -25,6 +29,9 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $query = User::with(['role', 'city', 'sector']);
+
+        // Apply location-based filtering
+        $this->filterUsersByLocation($query, Auth::user());
 
         // Search functionality
         if ($request->has('search') && $request->search) {
@@ -58,9 +65,22 @@ class UserController extends Controller
     public function create()
     {
         $roles = Role::all();
-        $cities = City::where('status', 'active')->orderBy('id', 'asc')->get();
+        $user = Auth::user();
+
+        // Get cities based on user location privileges
+        $cityIds = $this->getUserCityIds($user);
+        $citiesQuery = City::where('status', 'active');
+        if ($cityIds !== null) {
+            $citiesQuery->whereIn('id', $cityIds);
+        }
+        $cities = $citiesQuery->orderBy('id', 'asc')->get();
+
         $sectors = collect(); // Will be populated dynamically based on selected city
-        return view('admin.users.create', compact('roles', 'cities', 'sectors'));
+        
+        $defaultCityId = $user->city_id;
+        $defaultSectorId = $user->sector_id;
+
+        return view('admin.users.create', compact('roles', 'cities', 'sectors', 'defaultCityId', 'defaultSectorId'));
     }
 
     /**
@@ -97,7 +117,7 @@ class UserController extends Controller
                 ->withInput();
         }
 
-        if (in_array($roleName, ['complaint_center', 'department_staff']) && (!$request->city_id || !$request->sector_id)) {
+        if (in_array($roleName, ['complaint_center', 'department_staff', 'admin']) && (!$request->city_id || !$request->sector_id)) {
             return redirect()->back()
                 ->withErrors(['city_id' => 'City and Sector are required for this role', 'sector_id' => 'City and Sector are required for this role'])
                 ->withInput();
@@ -139,11 +159,25 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $roles = Role::all();
-        $cities = City::where('status', 'active')->orderBy('id', 'asc')->get();
+        
+        // Filter cities based on logged-in user's permissions
+        $loggedInUser = Auth::user();
+        $cityIds = $this->getUserCityIds($loggedInUser);
+        
+        $citiesQuery = City::where('status', 'active');
+        if ($cityIds !== null) {
+            $citiesQuery->whereIn('id', $cityIds);
+        }
+        $cities = $citiesQuery->orderBy('id', 'asc')->get();
+
         $sectors = $user->city_id 
             ? Sector::where('city_id', $user->city_id)->where('status', 'active')->orderBy('id', 'asc')->get()
             : collect();
-        return view('admin.users.edit', compact('user', 'roles', 'cities', 'sectors'));
+        
+        $defaultCityId = $loggedInUser->city_id;
+        $defaultSectorId = $loggedInUser->sector_id;
+            
+        return view('admin.users.edit', compact('user', 'roles', 'cities', 'sectors', 'defaultCityId', 'defaultSectorId'));
     }
 
     /**
@@ -210,7 +244,8 @@ class UserController extends Controller
             ];
 
             // If role doesn't require location, clear city_id and sector_id
-            if ($roleName === 'director' || $roleName === 'admin') {
+            // If role doesn't require location, clear city_id and sector_id
+            if ($roleName === 'director') {
                 $updateData['city_id'] = null;
                 $updateData['sector_id'] = null;
             } else {

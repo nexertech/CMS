@@ -62,8 +62,13 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         Auth::guard('frontend')->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+
+        // Only invalidate session if no other guard is logged in
+        if (!Auth::guard('web')->check()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
+
         return redirect()->route('frontend.home');
     }
 

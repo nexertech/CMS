@@ -50,10 +50,28 @@
                 <form action="{{ route('admin.complaints.store') }}" method="POST" autocomplete="off" novalidate>
                     @csrf
 
-                    <!-- Hidden dummy fields to prevent browser autofill -->
                     <div style="display: none;">
                         <input type="text" name="fake_title" autocomplete="off">
                         <input type="text" name="fake_description" autocomplete="off">
+                    </div>
+
+                    <!-- Complementary Remarks for Receiver -->
+                    <div class="alert alert-info mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
+                        <div class="d-flex align-items-center">
+                            <i data-feather="message-circle" class="me-3" style="width: 32px; height: 32px; color: #ffffff;"></i>
+                            <div style="flex: 1;">
+                                <h6 class="mb-2 text-white fw-bold" style="font-size: 16px;">Greeting Guidelines for Complaint Receiver</h6>
+                                <p class="mb-1 text-white" style="font-size: 14px; opacity: 0.95;">
+                                    <strong>Start with:</strong> السلام علیکم (As'salam O Alaikum)
+                                </p>
+                                <p class="mb-1 text-white" style="font-size: 14px; opacity: 0.95;">
+                                    <strong>Ask politely:</strong> How may I assist you today? / آپ کی کیا مدد کر سکتا ہوں؟
+                                </p>
+                                <p class="mb-0 text-white" style="font-size: 13px; opacity: 0.85; font-style: italic;">
+                                    Remember to be courteous, patient, and professional while recording the complaint.
+                                </p>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Complainant Information Section (matching index file columns) -->
@@ -267,6 +285,10 @@
                     <div class="row">
                         <div class="col-12">
                             <div class="mb-3">
+                                <div id="fixed-questions-container" class="alert alert-info mb-3" style="display: none;">
+                                    <strong><i data-feather="help-circle" class="me-2" style="width: 16px; height: 16px;"></i>Questions to ask:</strong>
+                                    <p id="fixed-questions-text" class="mb-0 mt-1"></p>
+                                </div>
                                 <label for="description" class="form-label text-white">Description</label>
                                 <textarea class="form-control @error('description') is-invalid @enderror" id="description" name="description"
                                     rows="4" autocomplete="off">{{ old('description') }}</textarea>
@@ -568,6 +590,12 @@
             function handleTitleChange() {
                 if (!titleSelect || !titleOtherInput) return;
                 const selectedValue = titleSelect.value;
+                const questionsContainer = document.getElementById('fixed-questions-container');
+                const questionsText = document.getElementById('fixed-questions-text');
+
+                // Reset questions
+                if (questionsContainer) questionsContainer.style.display = 'none';
+                if (questionsText) questionsText.textContent = '';
 
                 if (selectedValue === 'other') {
                     titleSelect.style.display = 'none';
@@ -580,6 +608,17 @@
                     titleOtherInput.style.display = 'none';
                     titleOtherInput.required = false;
                     titleSelect.required = true;
+
+                    // Show questions if available
+                    const selectedOption = titleSelect.options[titleSelect.selectedIndex];
+                    const questions = selectedOption ? selectedOption.getAttribute('data-questions') : null;
+                    
+                    if (questions && questionsContainer && questionsText) {
+                        questionsText.textContent = questions;
+                        questionsContainer.style.display = 'block';
+                        // Re-initialize feather icons if needed, or just let the CSS handle it
+                        if(typeof feather !== 'undefined') feather.replace();
+                    }
                 }
             }
 
@@ -708,6 +747,8 @@
                                             option.value = title.title;
                                             option.textContent = title.title;
                                             if (title.description) option.setAttribute('title', title.description);
+                                            // Store questions in data attribute
+                                            if (title.questions) option.setAttribute('data-questions', title.questions);
                                             titleSelect.appendChild(option);
                                         });
                                 } else {

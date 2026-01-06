@@ -45,6 +45,14 @@ class ComplaintController extends Controller
         // Apply location-based filtering
         $this->filterComplaintsByLocation($query, $user);
 
+        // Filter by House No.
+        if ($request->has('house_no') && $request->house_no) {
+            $houseNo = trim($request->house_no);
+            $query->whereHas('house', function ($q) use ($houseNo) {
+                $q->where('house_no', 'like', "%{$houseNo}%");
+            });
+        }
+
         // Search functionality - by Name and ID
         if ($request->has('search') && $request->search) {
             $search = trim($request->search);

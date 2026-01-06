@@ -155,6 +155,8 @@ class SectorController extends Controller
     {
         $cityId = $request->query('city_id');
 
+        Log::info('getSectorsByCity called', ['city_id' => $cityId, 'user_id' => auth()->id()]);
+
         if (!$cityId) {
             return response()->json([]);
         }
@@ -167,6 +169,13 @@ class SectorController extends Controller
         // Apply data isolation if user is logged in
         if ($user) {
             $sectorIds = $this->getUserSectorIds($user);
+            
+            Log::info('getUserSectorIds result', [
+                'user_role' => $user->role->role_name ?? 'null',
+                'user_city' => $user->city_id,
+                'sector_ids_result' => $sectorIds
+            ]);
+
             if ($sectorIds !== null) {
                 $query->whereIn('id', $sectorIds);
             }
@@ -174,6 +183,8 @@ class SectorController extends Controller
 
         $sectors = $query->orderBy('id', 'asc')
             ->get(['id', 'name']);
+
+        Log::info('Sectors query result count', ['count' => $sectors->count()]);
 
         return response()->json($sectors);
     }

@@ -44,9 +44,11 @@ class AuthenticatedSessionController extends Controller
     {
         Auth::guard('web')->logout();
 
-        $request->session()->invalidate();
-
-        $request->session()->regenerateToken();
+        // Only invalidate session if no other guard is logged in
+        if (!Auth::guard('frontend')->check()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
 
         // Redirect to admin login page instead of frontend
         return redirect()->route('login');

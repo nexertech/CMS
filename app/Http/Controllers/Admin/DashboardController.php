@@ -358,41 +358,39 @@ class DashboardController extends Controller
         // 1. If user's city_id AND sector_id are both null - show all data
         // 2. If user's city_id is set but sector_id is null - show only their city's data
         // 3. If user has sector_id - they shouldn't see GE Feedback Overview
-        $canSeeAllData = (!$user->city_id && !$user->sector_id);
-        $canSeeCityData = ($user->city_id && !$user->sector_id);
+        // Check if user has permission to see GE Feedback Overview
+        // Allow: Director, Admin, Garrison Engineer (regardless of location assignments)
+        $userRole = $user->role ? strtolower($user->role->role_name) : '';
+        $isBigBoss = $userRole === 'director' || str_contains($userRole, 'admin'); // Director or Admin
+        $isGE = str_contains($userRole, 'garrison') || str_contains($userRole, 'ge'); // GE
+        
+        // Also fallback to original location check (no sector_id) for backward compatibility or other roles
+        $shouldShowGeProgress = $isBigBoss || $isGE || (!$user->sector_id);
 
-        // Check if user has permission to see GE Feedback Overview based on location filter
         // Always initialize geProgress array even if empty, so view can check permissions
-        if ($canSeeAllData || $canSeeCityData) {
-            // Load GE Groups from cities table (cities with names containing 'GE' or 'AGE')
+        if ($shouldShowGeProgress) {
             // Check if cities table exists
             if (Schema::hasTable('cities')) {
-                // Load GE Groups from cities table (cities with names containing 'GE' or 'AGE')
-                $geGroupsQuery = City::where(function ($q) {
-                    $q->where('name', 'LIKE', '%GE%')
-                        ->orWhere('name', 'LIKE', '%AGE%')
-                        ->orWhere('name', 'LIKE', '%ge%')
-                        ->orWhere('name', 'LIKE', '%age%');
-                })
-                    ->where('status', 'active') // Only active cities
-                    ->orderBy('name');
+                // Base query for cities
+                $geGroupsQuery = City::where('status', 'active')->orderBy('name');
 
-                // Apply location filtering based on logged-in user's city_id and sector_id
-                // If user's city_id AND sector_id are both null, show all GE Groups (no filter)
-                // If user's sector_id is null but city_id has value, show only that GE Group
-                if (!$user->city_id && !$user->sector_id) {
-                    // User has no city_id and no sector_id - show all GE Groups (no filter)
-                } elseif ($user->city_id && !$user->sector_id) {
-                    // User has city_id but no sector_id - show only that GE Group
-                    $geGroupsQuery->where('id', $user->city_id);
-                }
-
-                // Apply GE filter if city_id is selected in dashboard filter (priority)
-                // Dashboard filter uses city_id for GE Groups
+                // Determine effective City ID filter
+                $effectiveCityId = null;
                 if ($cityId) {
-                    $geGroupsQuery->where('id', $cityId);
+                    // Priority 1: Dashboard filter
+                    $effectiveCityId = $cityId;
+                } elseif ($user->city_id) {
+                    // Priority 2: User's assigned city (Ignore sector_id if they are GE/Admin to ensure visibility)
+                    $effectiveCityId = $user->city_id;
                 }
 
+                if ($effectiveCityId) {
+                    // If a specific city is targeted, filter by ID
+                    $geGroupsQuery->where('id', $effectiveCityId);
+                }
+                
+                // If viewing all/overview, we simply show ALL active cities (no name filtering needed)
+                
                 $geGroups = $geGroupsQuery->get();
 
                 foreach ($geGroups as $geGroup) {

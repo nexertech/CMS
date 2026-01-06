@@ -31,6 +31,12 @@
         </div>
         <div class="col-auto">
           <label class="form-label small mb-1"
+            style="font-size: 0.75rem; color: #000000 !important; font-weight: 500;">House No.</label>
+          <input type="text" class="form-control form-control-sm" id="houseNoInput" name="house_no" placeholder="House No..."
+            value="{{ request('house_no') }}" autocomplete="off" style="font-size: 0.8rem; width: 160px; height: 30px;">
+        </div>
+        <div class="col-auto">
+          <label class="form-label small mb-1"
             style="font-size: 0.75rem; color: #000000 !important; font-weight: 500;">From Date</label>
           <input type="date" class="form-control form-control-sm" name="complaint_date" value="{{ request('complaint_date') }}"
             placeholder="Select Date" autocomplete="off" style="font-size: 0.8rem; width: 130px; height: 30px;">
@@ -3713,6 +3719,23 @@
         console.error('Search input NOT found!');
       }
 
+      // Attach event listener to house number input (instant response)
+      const houseNoInput = document.getElementById('houseNoInput');
+      if (houseNoInput) {
+        console.log('House No. input found, attaching event listener');
+        houseNoInput.addEventListener('input', handleApprovalsSearchInput);
+        houseNoInput.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            e.stopPropagation();
+            if (approvalsSearchTimeout) {
+              clearTimeout(approvalsSearchTimeout);
+            }
+            loadApprovals();
+          }
+        });
+      }
+
       // Attach event listener to date input
       const dateInput = form.querySelector('input[name="complaint_date"]');
       if (dateInput) {
@@ -4695,7 +4718,7 @@
             // Handle resolved status - hide performa badge and update UI
             if (newStatus === 'resolved') {
               // Update addressed date cell
-              const addressedDateCell = row?.querySelector('td:nth-child(3)');
+              const addressedDateCell = row?.querySelector('td:nth-child(4)');
               if (addressedDateCell) {
                 if (updated && updated.closed_at) {
                   addressedDateCell.textContent = updated.closed_at;

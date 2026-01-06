@@ -66,7 +66,7 @@ class ComplaintTitleController extends Controller
         $validator = Validator::make($request->all(), [
             'category' => 'required|string|max:100',
             'title' => 'required|string|max:255|unique:complaint_titles,title,NULL,id,category,' . $request->category . ',deleted_at,NULL',
-            'description' => 'nullable|string',
+            'questions' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -78,7 +78,7 @@ class ComplaintTitleController extends Controller
         ComplaintTitle::create([
             'category' => $request->category,
             'title' => $request->title,
-            'description' => $request->description,
+            'questions' => $request->questions,
         ]);
 
         return redirect()->route('admin.complaint-titles.index')
@@ -113,7 +113,7 @@ class ComplaintTitleController extends Controller
         $validator = Validator::make($request->all(), [
             'category' => 'required|string|max:100',
             'title' => 'required|string|max:255|unique:complaint_titles,title,' . $complaintTitle->id . ',id,category,' . $request->category . ',deleted_at,NULL',
-            'description' => 'nullable|string',
+            'questions' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -125,7 +125,7 @@ class ComplaintTitleController extends Controller
         $complaintTitle->update([
             'category' => $request->category,
             'title' => $request->title,
-            'description' => $request->description,
+            'questions' => $request->questions,
         ]);
 
         if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
@@ -163,7 +163,7 @@ class ComplaintTitleController extends Controller
 
         $titles = ComplaintTitle::where('category', $category)
             ->orderBy('title')
-            ->get(['id', 'title', 'description']);
+            ->get(['id', 'title', 'questions']);
 
         return response()->json($titles);
     }

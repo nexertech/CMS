@@ -585,15 +585,18 @@
   $showGEFeedback = false;
   $user = auth()->user();
 
-  // Location filter logic:
-  // 1. If user's city_id AND sector_id are both null - show all data
-  // 2. If user's city_id is set but sector_id is null - show only their city's data
-  // 3. If user has sector_id - they shouldn't see GE Feedback Overview
-  $canSeeAllData = (!$user->city_id && !$user->sector_id);
-  $canSeeCityData = ($user->city_id && !$user->sector_id);
+  // Role-based visibility logic:
+  // Allow: Director, Admin, Garrison Engineer (regardless of location assignments)
+  $userRole = $user->role ? strtolower($user->role->role_name) : '';
+  $isBigBoss = $userRole === 'director' || str_contains($userRole, 'admin'); 
+  $isGE = str_contains($userRole, 'garrison') || str_contains($userRole, 'ge');
+  
+  // Also fallback to original location check (no sector_id) for backward compatibility
+  // 1. If user's city_id AND sector_id are both null - show all
+  // 2. If user's city_id is set but sector_id is null - show city data
+  $hasNoSectorRestriction = (!$user->sector_id);
 
-  // Show section based on location filter only
-  if ($canSeeAllData || $canSeeCityData) {
+  if ($isBigBoss || $isGE || $hasNoSectorRestriction) {
     $showGEFeedback = true;
   }
 @endphp

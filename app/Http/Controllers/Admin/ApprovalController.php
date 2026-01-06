@@ -97,6 +97,14 @@ class ApprovalController extends Controller
                 }
             }
 
+            // Filter by House No.
+            if ($request->has('house_no') && $request->house_no) {
+                $houseNo = trim($request->house_no);
+                $query->whereHas('complaint.house', function ($q) use ($houseNo) {
+                    $q->where('house_no', 'like', "%{$houseNo}%");
+                });
+            }
+
             // Filter by Complaint Registration Date (From Date)
             if ($request->has('complaint_date') && $request->complaint_date) {
                 $query->whereDate('complaints.created_at', '>=', $request->complaint_date);

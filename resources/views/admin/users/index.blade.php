@@ -95,7 +95,9 @@
             @php
               $roleName = strtolower($user->role->role_name ?? '');
             @endphp
-            @if(in_array($roleName, ['director', 'admin']))
+            @if(in_array($roleName, ['director']))
+              <span class="badge bg-info">All GE Groups</span>
+            @elseif($roleName === 'admin' && !$user->city_id)
               <span class="badge bg-info">All GE Groups</span>
             @else
               {{ $user->city->name ?? 'N/A' }}
@@ -105,7 +107,9 @@
             @php
               $roleName = strtolower($user->role->role_name ?? '');
             @endphp
-            @if(in_array($roleName, ['director', 'admin']))
+            @if(in_array($roleName, ['director']))
+              <span class="badge bg-info">All GE Nodes</span>
+            @elseif($roleName === 'admin' && !$user->sector_id)
               <span class="badge bg-info">All GE Nodes</span>
             @elseif($roleName === 'garrison_engineer')
               <span class="badge bg-info">All GE Nodes</span>

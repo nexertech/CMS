@@ -117,18 +117,7 @@
               @enderror
             </div>
 
-            <!-- Rating Score -->
-            <div class="col-md-6 mb-3">
-              <label class="form-label text-white fw-bold mb-1" style="font-size: 0.9rem;">
-                Rating Score (1-5)
-              </label>
-              <input type="number" class="form-control @error('rating_score') is-invalid @enderror" 
-                     name="rating_score" min="1" max="5" value="{{ old('rating_score') }}" 
-                     placeholder="Enter score (1-5)">
-              @error('rating_score')
-                <div class="invalid-feedback">{{ $message }}</div>
-              @enderror
-            </div>
+
           </div>
 
           <!-- Comments -->
