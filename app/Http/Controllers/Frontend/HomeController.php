@@ -1486,6 +1486,28 @@ class HomeController extends Controller
             'feedback.enteredBy'
         ])->findOrFail($id);
 
+        // Check Access
+        $user = Auth::user();
+        if ($user) {
+            $scope = $this->getFrontendUserLocationScope($user);
+            if (!empty($scope['restricted'])) {
+                $cityIds = $scope['city_ids'] ?? [];
+                $sectorIds = $scope['sector_ids'] ?? [];
+
+                // Valid if complaint's city is in user's city_ids
+                // OR complaint's sector is in user's sector_ids
+                $hasCityAccess = !empty($cityIds) && in_array($complaint->city_id, $cityIds);
+                $hasSectorAccess = !empty($sectorIds) && in_array($complaint->sector_id, $sectorIds);
+
+                if (!$hasCityAccess && !$hasSectorAccess) {
+                    if ($request->ajax()) {
+                        return response('<div class="p-4 text-center text-danger font-weight-bold">You are not authorized to view this complaint.</div>', 403);
+                    }
+                    abort(403, 'Unauthorized access to this complaint.');
+                }
+            }
+        }
+
         if ($request->ajax()) {
             return view('frontend.complaints.partials.detail_card', compact('complaint'))->render();
         }

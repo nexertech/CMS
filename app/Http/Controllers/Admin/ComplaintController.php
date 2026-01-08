@@ -77,6 +77,11 @@ class ComplaintController extends Controller
             });
         }
 
+        // Filter by overdue status
+        if ($request->has('filter') && $request->filter === 'overdue') {
+            $query->overdue();
+        }
+
         // Filter by status
         if ($request->has('status') && $request->status) {
             $statusValue = $request->status;

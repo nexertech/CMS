@@ -6,6 +6,75 @@
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
 <style>
+  /* Modal Background Blur */
+  body.modal-open-blur > .wrapper, 
+  body.modal-open-blur > .main-header, 
+  body.modal-open-blur > .main-sidebar, 
+  body.modal-open-blur > .content-wrapper {
+      filter: blur(5px);
+      transition: filter 0.3s ease;
+  }
+
+  /* Compact Modal Table Styles */
+  #complaintsListModal .table th,
+  #complaintsListModal .table td {
+      font-size: 0.7rem !important; /* Smaller text */
+      white-space: normal !important; /* Wrap text to avoid scroll */
+      padding: 0.3rem 0.4rem !important;
+      vertical-align: middle;
+      line-height: 1.2;
+  }
+  
+  #complaintsListModal .table th {
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap !important; /* Keep headers single line if possible */
+  }
+
+  /* Override badge sizes in modal */
+  #complaintsListModal .badge,
+  #complaintsListModal .status-badge,
+  #complaintsListModal .priority-badge {
+      font-size: 0.6rem !important;
+      padding: 2px 0 !important; /* Reduced side padding, rely on width */
+      min-width: 60px !important; /* Fixed width for equality */
+      max-width: 60px !important;
+      display: inline-block !important;
+      text-align: center !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+  }
+
+  /* Ensure the priority column centers its content */
+  #complaintsListModal table th:nth-child(8), 
+  #complaintsListModal table td:nth-child(8) {
+      text-align: center;
+      vertical-align: middle;
+  }
+
+  /* Smaller Action Buttons in Modal */
+  #complaintsListModal .table .btn {
+      padding: 1px 4px !important;
+      font-size: 0.6rem !important;
+      line-height: 1 !important;
+      height: 20px !important;
+      width: 20px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+  }
+  
+  #complaintsListModal .table .btn i,
+  #complaintsListModal .table .btn svg {
+      width: 10px !important;
+      height: 10px !important;
+      min-width: 10px !important;
+      min-height: 10px !important;
+  }
+
+
   /* Enhanced matte finish for stat cards */
   .stat-card {
     position: relative;
@@ -417,7 +486,7 @@
 <!-- STATISTICS CARDS -->
 <div class="row mb-5 g-3 justify-content-center">
   <div class="col-md-2 col-lg-2">
-    <div class="stat-card" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important;">
+    <div class="stat-card" onclick="showComplaintsModal('all')" style="cursor: pointer; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important;">
       <div class="d-flex align-items-center justify-content-between">
         <div class="flex-grow-1">
           <div class="stat-number">{{ $stats['total_complaints'] ?? 0 }}</div>
@@ -431,7 +500,7 @@
   </div>
 
   <div class="col-md-2 col-lg-2">
-    <div class="stat-card" style="background: linear-gradient(135deg, #dd4040ff 0%, #b13030 100%) !important;">
+    <div class="stat-card" onclick="showComplaintsModal('in_progress')" style="cursor: pointer; background: linear-gradient(135deg, #dd4040ff 0%, #b13030 100%) !important;">
       <div class="d-flex align-items-center justify-content-between">
         <div class="flex-grow-1">
           <div class="stat-number">{{ $stats['in_progress_complaints'] ?? 0 }}</div>
@@ -445,7 +514,7 @@
   </div>
 
   <div class="col-md-2 col-lg-2">
-    <div class="stat-card" style="background: linear-gradient(135deg, #475569 0%, #334155 100%) !important;">
+    <div class="stat-card" onclick="showComplaintsModal('resolved')" style="cursor: pointer; background: linear-gradient(135deg, #475569 0%, #334155 100%) !important;">
       <div class="d-flex align-items-center justify-content-between">
         <div class="flex-grow-1">
           <div class="stat-number">{{ $stats['addressed_complaints'] ?? 0 }}</div>
@@ -459,7 +528,7 @@
   </div>
 
   <div class="col-md-2 col-lg-2">
-    <div class="stat-card" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;">
+    <div class="stat-card" onclick="showComplaintsModal('work_performa')" style="cursor: pointer; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;">
       <div class="d-flex align-items-center justify-content-between">
         <div class="flex-grow-1">
           <div class="stat-number">{{ $stats['work_performa'] ?? 0 }}</div>
@@ -473,7 +542,7 @@
   </div>
 
   <div class="col-md-2 col-lg-2">
-    <div class="stat-card" style="background: linear-gradient(135deg, #eab308 0%, #fcbd2bff 100%) !important;">
+    <div class="stat-card" onclick="showComplaintsModal('maint_performa')" style="cursor: pointer; background: linear-gradient(135deg, #eab308 0%, #fcbd2bff 100%) !important;">
       <div class="d-flex align-items-center justify-content-between">
         <div class="flex-grow-1">
           <div class="stat-number">{{ $stats['maint_performa'] ?? 0 }}</div>
@@ -487,7 +556,7 @@
   </div>
 
   <div class="col-md-2 col-lg-2">
-    <div class="stat-card" style="background: linear-gradient(135deg, #ec4899 0%, #db2777 100%) !important;">
+    <div class="stat-card" onclick="showComplaintsModal('un_authorized')" style="cursor: pointer; background: linear-gradient(135deg, #ec4899 0%, #db2777 100%) !important;">
       <div class="d-flex align-items-center justify-content-between">
         <div class="flex-grow-1">
           <div class="stat-number">{{ $stats['un_authorized'] ?? 0 }}</div>
@@ -501,7 +570,7 @@
   </div>
 
   <div class="col-md-2 col-lg-2">
-    <div class="stat-card" style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;">
+    <div class="stat-card" onclick="showComplaintsModal('product_na')" style="cursor: pointer; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;">
       <div class="d-flex align-items-center justify-content-between">
         <div class="flex-grow-1">
           <div class="stat-number">{{ $stats['product_na'] ?? 0 }}</div>
@@ -515,7 +584,7 @@
   </div>
 
   <div class="col-md-2 col-lg-2">
-    <div class="stat-card" style="background: linear-gradient(135deg, #05cbee 0%, #05bfee 100%) !important;">
+    <div class="stat-card" onclick="showComplaintsModal('pertains_to_ge_const_isld')" style="cursor: pointer; background: linear-gradient(135deg, #05cbee 0%, #05bfee 100%) !important;">
       <div class="d-flex align-items-center justify-content-between">
         <div class="flex-grow-1">
           <div class="stat-number">{{ $stats['pertains_to_ge_const_isld'] ?? 0 }}</div>
@@ -529,7 +598,7 @@
   </div>
 
   <div class="col-md-2 col-lg-2">
-    <div class="stat-card" style="background: linear-gradient(135deg, #808000 0%, #808000 100%) !important;">
+    <div class="stat-card" onclick="showComplaintsModal('barak_damages')" style="cursor: pointer; background: linear-gradient(135deg, #808000 0%, #808000 100%) !important;">
       <div class="d-flex align-items-center justify-content-between">
         <div class="flex-grow-1">
           <div class="stat-number">{{ $stats['barak_damages'] ?? 0 }}</div>
@@ -543,7 +612,7 @@
   </div>
 
   <div class="col-md-2 col-lg-2">
-    <div class="stat-card" style="background: linear-gradient(135deg, #e00d0dff 0%, #b91c1c 100%) !important;">
+    <div class="stat-card" onclick="showComplaintsModal('overdue')" style="cursor: pointer; background: linear-gradient(135deg, #e00d0dff 0%, #b91c1c 100%) !important;">
       <div class="d-flex align-items-center justify-content-between">
         <div class="flex-grow-1">
           <div class="stat-number">{{ $stats['overdue_complaints'] ?? 0 }}</div>
@@ -796,6 +865,71 @@
   </div>
 </div>
 
+<!-- Complaints List Modal -->
+<div class="modal fade" id="complaintsListModal" tabindex="-1" aria-labelledby="complaintsListModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content card-glass" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); border: 1px solid rgba(59, 130, 246, 0.3);">
+            <div class="modal-header" style="border-bottom: 2px solid rgba(59, 130, 246, 0.2);">
+                <h5 class="modal-title text-white" id="complaintsListModalLabel">
+                    <i data-feather="list" class="me-2"></i>Complaints
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="background-color: rgba(255, 255, 255, 0.2); border-radius: 4px; padding: 0.5rem !important; opacity: 1 !important; filter: invert(1); background-size: 1.5em;"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="table-responsive-xl">
+                    <table class="table table-dark table-sm table-compact mb-0" style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr>
+                                <th style="width: 8%;">CMP-ID</th>
+                                <th style="width: 12%;">Reg. Date</th>
+                                <th style="width: 12%; text-align: left;">Addr. Time</th>
+                                <th style="width: 8%;">House</th>
+                                <th style="width: 12%;">Complainant</th>
+                                <th style="width: 15%;">Address</th>
+                                <th style="width: 18%;">Nature & Type</th>
+                                <th style="width: 8%;">Priority</th>
+                                <th style="width: 7%;">Act</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalComplaintsTableBody">
+                            <!-- Content will be loaded via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top: 2px solid rgba(59, 130, 246, 0.2); justify-content: space-between;">
+                <div id="modalPaginationContainer" class="w-100"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Complaint Details Modal -->
+<div class="modal fade" id="complaintModal" tabindex="-1" aria-labelledby="complaintModalLabel" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content card-glass" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); border: 1px solid rgba(59, 130, 246, 0.3);">
+            <div class="modal-header" style="border-bottom: 2px solid rgba(59, 130, 246, 0.2);">
+                <h5 class="modal-title text-white" id="complaintModalLabel">
+                    <i data-feather="alert-triangle" class="me-2"></i>Complaint Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" onclick="closeComplaintModal()" style="background-color: rgba(255, 255, 255, 0.2); border-radius: 4px; padding: 0.5rem !important; opacity: 1 !important; filter: invert(1); background-size: 1.5em;"></button>
+            </div>
+            <div class="modal-body" id="complaintModalBody">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top: 2px solid rgba(59, 130, 246, 0.2);">
+                <a href="#" id="printSlipBtn" class="btn btn-outline-primary" target="_blank" style="display: none;">
+                    <i data-feather="printer" class="me-2" style="width: 16px; height: 16px;"></i>Print Slip
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- TABLES ROW -->
 <div class="row mb-5">
   <div class="col-12">
@@ -1023,7 +1157,7 @@
               <i data-feather="alert-triangle" class="me-2"></i>Low Stock Alerts
             </h5>
             <a href="{{ route('admin.spares.index') }}" class="btn btn-outline-warning btn-sm">Manage Stock</a>
-        </div>
+          </div>
         <div class="table-responsive">
             <table class="table table-dark ">
             <thead>
@@ -1823,6 +1957,195 @@
         // Reinitialize feather icons
         feather.replace();
       }
+    }
+
+    // --- Added for Dashboard Popup ---
+    window.showComplaintsModal = function(param) {
+        const modalElement = document.getElementById('complaintsListModal');
+        const modal = new bootstrap.Modal(modalElement);
+        const titleEl = document.getElementById('complaintsListModalLabel');
+        const tbody = document.getElementById('modalComplaintsTableBody');
+        const paginationContainer = document.getElementById('modalPaginationContainer');
+
+        let url = "{{ route('admin.complaints.index') }}";
+        let title = 'Complaints';
+
+        // Map params to titles and query params
+        if (param === 'all') {
+            title = 'Total Complaints';
+        } else if (param === 'overdue') {
+            title = 'Overdue Complaints';
+            url += '?filter=overdue';
+        } else {
+            title = formatTitle(param) + ' Complaints';
+            url += '?status=' + param;
+        }
+
+        titleEl.innerHTML = `<i data-feather="list" class="me-2"></i>${title}`;
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
+        paginationContainer.innerHTML = '';
+        
+        // Add blur effect
+        document.body.classList.add('modal-open-blur');
+        modal.show();
+        feather.replace();
+
+        // Remove blur when hidden
+        modalElement.addEventListener('hidden.bs.modal', function () {
+            document.body.classList.remove('modal-open-blur');
+            const backdrop = document.querySelector('.modal-backdrop');
+            if(backdrop) backdrop.remove();
+        }, { once: true });
+
+        // Fetch data
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newTbody = doc.querySelector('#complaintsTableBody');
+            const newPagination = doc.querySelector('#complaintsPagination');
+
+            if (newTbody) {
+                // Remove inline styles from the fetched rows that might conflict or look bad in modal
+                tbody.innerHTML = newTbody.innerHTML;
+                
+                // Initialize icons
+                feather.replace();
+            } else {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4">No complaints found.</td></tr>';
+            }
+
+            if (newPagination) {
+                paginationContainer.innerHTML = newPagination.innerHTML;
+                
+                // Hijack pagination links to stay in modal
+                const links = paginationContainer.querySelectorAll('a');
+                links.forEach(link => {
+                    link.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const href = this.getAttribute('href');
+                        if (href) {
+                            tbody.innerHTML = '<tr><td colspan="9" class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
+                            fetch(href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                                .then(res => res.text())
+                                .then(pageHtml => {
+                                    const pageDoc = parser.parseFromString(pageHtml, 'text/html');
+                                    const pageTbody = pageDoc.querySelector('#complaintsTableBody');
+                                    if (pageTbody) {
+                                        tbody.innerHTML = pageTbody.innerHTML;
+                                        feather.replace();
+                                    }
+                                });
+                        }
+                    });
+                });
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-danger">Error loading data.</td></tr>';
+        });
+    }
+
+    function formatTitle(str) {
+        return str.split('_')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+    }
+
+    // View Complaint Details
+    window.viewComplaint = function(complaintId) {
+        if (!complaintId) {
+            alert('Invalid complaint ID');
+            return;
+        }
+        
+        const modalElement = document.getElementById('complaintModal');
+        const modalBody = document.getElementById('complaintModalBody');
+        
+        // Show loading state
+        modalBody.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+        
+        // Hide print slip button initially
+        const printSlipBtn = document.getElementById('printSlipBtn');
+        if (printSlipBtn) {
+            printSlipBtn.style.display = 'none';
+        }
+        
+        const modal = new bootstrap.Modal(modalElement, {
+            backdrop: true,
+            keyboard: true,
+            focus: true
+        });
+        modal.show();
+        
+        // Fetch details
+        fetch(`/admin/complaints/${complaintId}?format=html`, {
+            method: 'GET',
+            headers: { 'Accept': 'text/html' },
+        })
+        .then(response => response.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // Extract duplicate script removal logic from index.blade.php
+            const allScripts = doc.querySelectorAll('script');
+            allScripts.forEach(script => script.remove());
+            
+            let contentSection = doc.querySelector('section.content') || doc.querySelector('.content') || doc.querySelector('main') || doc.body;
+            let complaintContent = '';
+            
+            // Extract rows
+            const allRows = contentSection.querySelectorAll('.row');
+            allRows.forEach(row => {
+                 const hasCardGlass = row.querySelector('.card-glass');
+                 const isInHeader = row.closest('.mb-4') && row.closest('.mb-4').querySelector('h2');
+                 
+                 if (hasCardGlass && !isInHeader) {
+                     complaintContent += row.outerHTML;
+                 }
+            });
+
+             // Fallback
+            if (!complaintContent) {
+                const allCards = contentSection.querySelectorAll('.card-glass');
+                allCards.forEach(card => {
+                    const parentRow = card.closest('.row');
+                    const isInHeader = parentRow && parentRow.closest('.mb-4') && parentRow.closest('.mb-4').querySelector('h2');
+                    if (!isInHeader) {
+                        complaintContent += '<div class="mb-3">' + card.outerHTML + '</div>';
+                    }
+                });
+            }
+
+            if (complaintContent) {
+                 modalBody.innerHTML = complaintContent;
+                 
+                 if (printSlipBtn && complaintId) {
+                    printSlipBtn.href = `/admin/complaints/${complaintId}/print-slip`;
+                    printSlipBtn.style.display = 'inline-block';
+                }
+                 feather.replace();
+            } else {
+                 modalBody.innerHTML = '<div class="text-center py-5 text-danger">Error: Could not load content.</div>';
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            modalBody.innerHTML = '<div class="text-center py-5 text-danger">Error loading data.</div>';
+        });
+    }
+
+    window.closeComplaintModal = function() {
+        const modalElement = document.getElementById('complaintModal');
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        if (modal) modal.hide();
     }
 </script>
 @endpush

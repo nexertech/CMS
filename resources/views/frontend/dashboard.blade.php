@@ -458,18 +458,6 @@
                 </select>
             </div>
             <div style="flex: 0 1 150px; min-width: 120px;" class="filter-item">
-                <label for="filterStatus" class="block text-white mb-1"
-                    style="font-size: 0.95rem; font-weight: 700;">Status</label>
-                <select id="filterStatus" name="status" class="p-1.5 border filter-select"
-                    style="font-size: 0.85rem; width: 100%; border-radius: 4px; font-weight: bold; height: 38px;"
-                    aria-label="Select Complaints Status" title="Select Complaints Status">
-                    <option value="all">Select Status</option>
-                    @foreach($statuses as $key => $label)
-                        <option value="{{ $key }}" {{ $status == $key ? 'selected' : '' }}>{{ $label }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div style="flex: 0 1 150px; min-width: 120px;" class="filter-item">
                 <label for="filterDateRange" class="block text-white mb-1" style="font-size: 0.95rem; font-weight: 700;">Date
                     Range</label>
                 <select id="filterDateRange" name="date_range" class="p-1.5 border filter-select"
@@ -485,6 +473,23 @@
                     <option value="last_6_months" {{ $dateRange == 'last_6_months' ? 'selected' : '' }}>Last 6 Months</option>
                     <option value="custom" {{ $dateRange == 'custom' ? 'selected' : '' }}>Custom Range</option>
                 </select>
+            </div>
+            
+            <div style="flex: 0 1 180px; min-width: 140px;" class="filter-item">
+                <label for="trackComplaintId" class="block text-white mb-1" style="font-size: 0.95rem; font-weight: 700;">Complaint Status</label>
+                <div class="flex items-center">
+                    <input type="text" id="trackComplaintInput" 
+                        class="p-1.5 border border-r-0 rounded-l focus:outline-none" 
+                        style="font-size: 0.85rem; width: 100%; font-weight: bold; height: 38px;" 
+                        placeholder="Enter CMP No.">
+                    <button id="btnTrackComplaint" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-3 flex items-center justify-center border border-l-0 rounded-r" 
+                        style="height: 38px;" title="Track Complaint">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                             <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
             </div>
             
             <!-- Custom Date Range Inputs (Hidden by default) -->
@@ -1462,6 +1467,35 @@
                 currentPage = 1;
                 renderComplaintsTable(statusKey, titleText, true);
             });
+        });
+
+        // Track Complaint Logic
+        const trackComplaintInput = document.getElementById('trackComplaintInput');
+        const btnTrackComplaint = document.getElementById('btnTrackComplaint');
+
+        function handleTrackComplaint() {
+            const rawValue = trackComplaintInput.value.trim();
+            if (!rawValue) {
+                alert('Please enter a complaint number.');
+                return;
+            }
+            // Strip "CMP-" or non-digits to get the integer ID
+            const id = rawValue.replace(/\D/g, ''); 
+            
+            if (!id) {
+                alert('Invalid complaint number. Please enter a valid ID (e.g., 25 or CMP-0025).');
+                return;
+            }
+
+            openComplaintModal(id);
+        }
+
+        btnTrackComplaint.addEventListener('click', handleTrackComplaint);
+        
+        trackComplaintInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                handleTrackComplaint();
+            }
         });
 
         complaintsPagination?.addEventListener('click', (e) => {

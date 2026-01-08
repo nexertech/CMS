@@ -320,15 +320,18 @@
             ->with('spare:id,item_name')
             ->orderBy('created_at', 'desc')
             ->get();
+
+          $hasStock = ($authorityNumber || $issuedStock->count() > 0);
+          $hasFeedback = !empty($complaint->feedback);
         @endphp
 
         <!-- Authority & Feedback Side-by-Side Row -->
-        @if(($authorityNumber || $issuedStock->count() > 0) || $complaint->feedback)
+        @if($hasStock || $hasFeedback)
         <hr class="my-4">
         <div class="row g-3">
             <!-- Left Column: Authority & Stock -->
-            <div class="col-md-6">
-                @if($authorityNumber || $issuedStock->count() > 0)
+            @if($hasStock)
+            <div class="{{ $hasFeedback ? 'col-md-6' : 'col-12' }}">
                 <h6 class="text-primary fw-bold text-uppercase mb-3 small">Authority & Stock Details</h6>
                 <div class="bg-light rounded p-3 h-100">
                      @if($authorityNumber)
@@ -361,12 +364,12 @@
                         </div>
                      @endif
                 </div>
-                @endif
             </div>
+            @endif
 
             <!-- Right Column: Feedback Details -->
-            <div class="col-md-6">
-                @if($complaint->feedback)
+            @if($hasFeedback)
+            <div class="{{ $hasStock ? 'col-md-6' : 'col-12' }}">
                 <h6 class="text-primary fw-bold text-uppercase mb-3 small">Feedback Details</h6>
                 <div class="bg-light rounded p-3 h-100">
                     <!-- Rating Row -->
@@ -429,8 +432,8 @@
                     </div>
                     @endif
                 </div>
-                @endif
             </div>
+            @endif
         </div>
         @endif
       </div>
