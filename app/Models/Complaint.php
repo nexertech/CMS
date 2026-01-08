@@ -155,6 +155,7 @@ class Complaint extends Model
     public static function getStatuses(): array
     {
         return [
+            'unassigned' => 'Unassigned',
             'assigned' => 'Assigned',
             'in_progress' => 'In Process',
             'resolved' => 'Resolved',
@@ -188,8 +189,8 @@ class Complaint extends Model
      */
     public function getStatusDisplayAttribute(): string
     {
-        // Map 'new' status to 'assigned' for display purposes
-        $status = $this->status === 'new' ? 'assigned' : $this->status;
+        // Map 'new' status to 'unassigned' for display purposes
+        $status = $this->status === 'new' ? 'unassigned' : $this->status;
         return self::getStatuses()[$status] ?? $status;
     }
 

@@ -726,6 +726,8 @@
                                     Report of GE
                                 @elseif($isGeUser)
                                     Report of Node
+                                @elseif($isNodeUser)
+                                    Report of Node
                                 @else
                                     Report of CMES
                                 @endif
@@ -1240,9 +1242,9 @@
         const statusLabelOverrides = {
             pertains_to_ge_const_isld: 'Pertains to GE',
             work_performa: 'Work Performa',
-            maint_performa: 'Maintenance Performa',
-            work_priced_performa: 'Work Performa',
-            maint_priced_performa: 'Maintenance Performa',
+            maint_performa: 'Maint Performa',
+            work_priced_performa: 'Work Priced',
+            maint_priced_performa: 'Maint Priced',
             product_na: 'Product NA',
             in_progress: 'In Progress',
         };

@@ -113,8 +113,8 @@ class ComplaintApiController extends Controller
         $house = $request->user() ?? \App\Models\House::first(); // Authenticated House or fallback
 
         $validator = Validator::make($request->all(), [
-            'category' => 'required|string',
-            'title' => 'required|string',
+            'category' => 'required|exists:complaint_categories,name',
+            'title' => 'required|exists:complaint_titles,title',
             'description' => 'required|string',
             'availability_time' => 'nullable|string',
             'priority' => 'nullable|in:low,medium,high,urgent'

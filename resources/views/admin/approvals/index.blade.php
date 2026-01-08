@@ -56,16 +56,6 @@
               @foreach($categories as $cat)
                 <option value="{{ $cat }}" {{ request('category') == $cat ? 'selected' : '' }}>{{ ucfirst($cat) }}</option>
               @endforeach
-            @else
-              <option value="electric">Electric</option>
-              <option value="technical">Technical</option>
-              <option value="service">Service</option>
-              <option value="billing">Billing</option>
-              <option value="water">Water Supply</option>
-              <option value="sanitary">Sanitary</option>
-              <option value="plumbing">Plumbing</option>
-              <option value="kitchen">Kitchen</option>
-              <option value="other">Other</option>
             @endif
           </select>
         </div>
@@ -90,6 +80,7 @@
                 @endif
               @endforeach
             @else
+              <option value="unassigned" {{ request('status') == 'unassigned' ? 'selected' : '' }}>Unassigned</option>
               <option value="assigned" {{ request('status') == 'assigned' ? 'selected' : '' }}>Assigned</option>
               <option value="in_progress" {{ request('status') == 'in_progress' ? 'selected' : '' }}>In Progress</option>
               <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>Addressed</option>
@@ -152,21 +143,7 @@
               @php
                 $category = $complaint->category ?? 'N/A';
                 $designation = $complaint->assignedEmployee->designation ?? 'N/A';
-                // Use original complaint category as-is, don't change it
-                // Only format basic categories, keep all other categories as they are
-                $categoryDisplay = [
-                  'electric' => 'Electric',
-                  'technical' => 'Technical',
-                  'service' => 'Service',
-                  'billing' => 'Billing',
-                  'water' => 'Water Supply',
-                  'sanitary' => 'Sanitary',
-                  'plumbing' => 'Plumbing',
-                  'kitchen' => 'Kitchen',
-                  'other' => 'Other',
-                ];
-                // If category exists in mapping, use it; otherwise use original category as-is
-                $catDisplay = $categoryDisplay[strtolower($category)] ?? $category;
+                $catDisplay = ucfirst($category);
                 $displayText = $catDisplay . ' - ' . $designation;
 
                 // Logic: If performa_type is set, use it as status, otherwise use complaint status
@@ -181,7 +158,7 @@
                 // Otherwise use complaint status
                 if ($rawStatus === 'resolved' || $rawStatus === 'closed') {
                   // Always preserve resolved/closed status - don't override with performa type
-                  $complaintStatus = ($rawStatus == 'new') ? 'assigned' : $rawStatus;
+                  $complaintStatus = ($rawStatus == 'new') ? 'unassigned' : $rawStatus;
                 } elseif ($hasPerformaType && in_array($performaTypeValue, ['product_na', 'work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa'])) {
                   // For all performa types, use in_progress for display (like product_na)
                   $complaintStatus = 'in_progress';
@@ -189,7 +166,7 @@
                   // If complaint status is a performa type, show "In Progress" in status column
                   $complaintStatus = 'in_progress';
                 } else {
-                  $complaintStatus = ($rawStatus == 'new') ? 'assigned' : $rawStatus;
+                  $complaintStatus = ($rawStatus == 'new') ? 'unassigned' : $rawStatus;
                 }
 
                 $statusDisplay = $complaintStatus == 'in_progress' ? 'In Progress' :
@@ -218,11 +195,12 @@
                   'un_authorized' => ['bg' => '#ec4899', 'text' => '#ffffff', 'border' => '#db2777'], // Pink
                   'pertains_to_ge_const_isld' => ['bg' => '#06b6d4', 'text' => '#ffffff', 'border' => '#0891b2'], // Aqua/Cyan
                   'barak_damages' => ['bg' => '#808000', 'text' => '#ffffff', 'border' => '#666600'], // Olive (matching Users card)
-                  'assigned' => ['bg' => '#16a34a', 'text' => '#ffffff', 'border' => '#15803d'], // Green (swapped from grey)
+                  'assigned' => ['bg' => '#16a34a', 'text' => '#ffffff', 'border' => '#15803d'], // Green
+                  'unassigned' => ['bg' => '#000000', 'text' => '#ffffff', 'border' => '#333333'], // Black
                 ];
 
                 // Get current status color or default
-                $currentStatusColor = $statusColors[$complaintStatus] ?? $statusColors['assigned'];
+                $currentStatusColor = $statusColors[$complaintStatus] ?? $statusColors['unassigned'];
               @endphp
               <tr style="position: relative;">
                 {{-- waiting_for_authority removed - no blinking dot needed --}}
@@ -346,11 +324,17 @@
                         style="width: 100px; font-size: 9px; font-weight: 700; height: 24px; text-align: center; text-align-last: center; background-color: {{ $currentStatusColorForSelect['bg'] }} !important; color: {{ $currentStatusColorForSelect['text'] }} !important; border-color: {{ $currentStatusColorForSelect['border'] }} !important; padding: 0;">
                         @if(isset($statuses) && $statuses->count() > 0)
                           @foreach($statuses as $statusValue => $statusLabel)
+                            @if($statusValue === 'unassigned' && $displayStatusForSelect !== 'unassigned')
+                                @continue
+                            @endif
                             <option value="{{ $statusValue }}" {{ $displayStatusForSelect == $statusValue ? 'selected' : '' }}>
                               {{ $statusLabel }}
                             </option>
                           @endforeach
                         @else
+                          @if($displayStatusForSelect === 'unassigned')
+                            <option value="unassigned" selected>Unassigned</option>
+                          @endif
                           <option value="assigned" {{ $displayStatusForSelect == 'assigned' ? 'selected' : '' }}>Assigned</option>
                           <option value="in_progress" {{ $displayStatusForSelect == 'in_progress' ? 'selected' : '' }}>In Progress
                           </option>
@@ -383,11 +367,17 @@
                         style="width: 100px; font-size: 9px; font-weight: 700; height: 24px; text-align: center; text-align-last: center; padding: 0;">
                         @if(isset($statuses) && $statuses->count() > 0)
                           @foreach($statuses as $statusValue => $statusLabel)
+                            @if($statusValue === 'unassigned' && $complaintStatus !== 'unassigned')
+                                @continue
+                            @endif
                             <option value="{{ $statusValue }}" {{ $complaintStatus == $statusValue ? 'selected' : '' }}>
                               {{ $statusLabel }}
                             </option>
                           @endforeach
                         @else
+                          @if($complaintStatus === 'unassigned')
+                            <option value="unassigned" selected>Unassigned</option>
+                          @endif
                           <option value="assigned" {{ $complaintStatus == 'assigned' ? 'selected' : '' }}>Assigned</option>
                           <option value="in_progress" {{ $complaintStatus == 'in_progress' ? 'selected' : '' }}>In Progress</option>
                           <option value="resolved" {{ $complaintStatus == 'resolved' ? 'selected' : '' }}>Addressed</option>
@@ -416,11 +406,17 @@
                         style="width: 100px; font-size: 9px; font-weight: 700; height: 24px; text-align: center; text-align-last: center; padding: 0;">
                         @if(isset($statuses) && $statuses->count() > 0)
                           @foreach($statuses as $statusValue => $statusLabel)
+                            @if($statusValue === 'unassigned' && $complaintStatus !== 'unassigned')
+                                @continue
+                            @endif
                             <option value="{{ $statusValue }}" {{ $complaintStatus == $statusValue ? 'selected' : '' }}>
                               {{ $statusLabel }}
                             </option>
                           @endforeach
                         @else
+                          @if($complaintStatus === 'unassigned')
+                            <option value="unassigned" selected>Unassigned</option>
+                          @endif
                           <option value="assigned" {{ $complaintStatus == 'assigned' ? 'selected' : '' }}>Assigned</option>
                           <option value="in_progress" {{ $complaintStatus == 'in_progress' ? 'selected' : '' }}>In Progress</option>
                           <option value="resolved" {{ $complaintStatus == 'resolved' ? 'selected' : '' }}>Addressed</option>
@@ -447,11 +443,17 @@
                         style="width: 100px; font-size: 9px; font-weight: 700; height: 24px; text-align: center; text-align-last: center; padding: 0;">
                         @if(isset($statuses) && $statuses->count() > 0)
                           @foreach($statuses as $statusValue => $statusLabel)
+                            @if($statusValue === 'unassigned' && $complaintStatus !== 'unassigned')
+                                @continue
+                            @endif
                             <option value="{{ $statusValue }}" {{ $complaintStatus == $statusValue ? 'selected' : '' }}>
                               {{ $statusLabel }}
                             </option>
                           @endforeach
                         @else
+                          @if($complaintStatus === 'unassigned')
+                            <option value="unassigned" selected>Unassigned</option>
+                          @endif
                           <option value="assigned" {{ $complaintStatus == 'assigned' ? 'selected' : '' }}>Assigned</option>
                           <option value="in_progress" {{ $complaintStatus == 'in_progress' ? 'selected' : '' }}>In Progress</option>
                           <option value="resolved" {{ $complaintStatus == 'resolved' ? 'selected' : '' }}>Addressed</option>
@@ -480,11 +482,17 @@
                         style="width: 100px; font-size: 9px; font-weight: 700; height: 24px; text-align: center; text-align-last: center; padding: 0;">
                         @if(isset($statuses) && $statuses->count() > 0)
                           @foreach($statuses as $statusValue => $statusLabel)
+                            @if($statusValue === 'unassigned' && $complaintStatus !== 'unassigned')
+                                @continue
+                            @endif
                             <option value="{{ $statusValue }}" {{ $complaintStatus == $statusValue ? 'selected' : '' }}>
                               {{ $statusLabel }}
                             </option>
                           @endforeach
                         @else
+                          @if($complaintStatus === 'unassigned')
+                            <option value="unassigned" selected>Unassigned</option>
+                          @endif
                           <option value="assigned" {{ $complaintStatus == 'assigned' ? 'selected' : '' }}>Assigned</option>
                           <option value="in_progress" {{ $complaintStatus == 'in_progress' ? 'selected' : '' }}>In Progress</option>
                           <option value="resolved" {{ $complaintStatus == 'resolved' ? 'selected' : '' }}>Addressed</option>
@@ -513,11 +521,17 @@
                         style="width: 100px; font-size: 9px; font-weight: 700; height: 24px; text-align: center; text-align-last: center; padding: 0;">
                         @if(isset($statuses) && $statuses->count() > 0)
                           @foreach($statuses as $statusValue => $statusLabel)
+                            @if($statusValue === 'unassigned' && $complaintStatus !== 'unassigned')
+                                @continue
+                            @endif
                             <option value="{{ $statusValue }}" {{ $complaintStatus == $statusValue ? 'selected' : '' }}>
                               {{ $statusLabel }}
                             </option>
                           @endforeach
                         @else
+                          @if($complaintStatus === 'unassigned')
+                            <option value="unassigned" selected>Unassigned</option>
+                          @endif
                           <option value="assigned" {{ $complaintStatus == 'assigned' ? 'selected' : '' }}>Assigned</option>
                           <option value="in_progress" {{ $complaintStatus == 'in_progress' ? 'selected' : '' }}>In Progress</option>
                           <option value="resolved" {{ $complaintStatus == 'resolved' ? 'selected' : '' }}>Addressed</option>
@@ -538,19 +552,25 @@
                     </div>
                   @else
                     <div class="status-chip"
-                      style="background-color: {{ $statusColors['assigned']['bg'] }}; color: {{ $statusColors['assigned']['text'] }}; border-color: {{ $statusColors['assigned']['border'] }}; position: relative; overflow: hidden; height: 24px; width: 100px;">
+                      style="background-color: {{ $statusColors[$complaintStatus]['bg'] ?? $statusColors['assigned']['bg'] }}; color: {{ $statusColors[$complaintStatus]['text'] ?? $statusColors['assigned']['text'] }}; border-color: {{ $statusColors[$complaintStatus]['border'] ?? $statusColors['assigned']['border'] }}; position: relative; overflow: hidden; height: 24px; width: 100px;">
                       <span class="status-indicator"
-                        style="background-color: {{ $statusColors['assigned']['bg'] }}; border-color: {{ $statusColors['assigned']['border'] }};"></span>
+                        style="background-color: {{ $statusColors[$complaintStatus]['bg'] ?? $statusColors['assigned']['bg'] }}; border-color: {{ $statusColors[$complaintStatus]['border'] ?? $statusColors['assigned']['border'] }};"></span>
                       <select class="form-select form-select-sm status-select" data-complaint-id="{{ $complaint->id }}"
-                        data-actual-status="{{ $rawStatus }}" data-status-color="assigned"
+                        data-actual-status="{{ $rawStatus }}" data-status-color="{{ $complaintStatus }}"
                         style="width: 100px; font-size: 9px; font-weight: 700; height: 24px; text-align: center; text-align-last: center; padding: 0;">
                         @if(isset($statuses) && $statuses->count() > 0)
                           @foreach($statuses as $statusValue => $statusLabel)
+                            @if($statusValue === 'unassigned' && $complaintStatus !== 'unassigned')
+                                @continue
+                            @endif
                             <option value="{{ $statusValue }}" {{ $complaintStatus == $statusValue ? 'selected' : '' }}>
                               {{ $statusLabel }}
                             </option>
                           @endforeach
                         @else
+                          @if($complaintStatus === 'unassigned')
+                            <option value="unassigned" selected>Unassigned</option>
+                          @endif
                           <option value="assigned" {{ $complaintStatus == 'assigned' ? 'selected' : '' }}>Assigned</option>
                           <option value="in_progress" {{ $complaintStatus == 'in_progress' ? 'selected' : '' }}>In Progress</option>
                           <option value="resolved" {{ $complaintStatus == 'resolved' ? 'selected' : '' }}>Addressed</option>
@@ -1800,6 +1820,98 @@
         }
       }
       document.body.classList.remove('modal-open-blur');
+    }
+
+    // Function to open complaint edit modal
+    function editComplaintModal(complaintId) {
+      if (!complaintId) {
+        alert('Invalid complaint ID');
+        return;
+      }
+
+      currentComplaintId = complaintId;
+
+      const modalElement = document.getElementById('complaintModal');
+      const modalBody = document.getElementById('complaintModalBody');
+
+      // Show loading state
+      modalBody.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+
+      // Add blur effect
+      document.body.classList.add('modal-open-blur');
+
+      // Show modal WITHOUT backdrop
+      const modal = new bootstrap.Modal(modalElement, {
+        backdrop: false,
+        keyboard: true,
+        focus: true
+      });
+      modal.show();
+
+      // Ensure any backdrop is removed
+      const removeBackdrop = () => {
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(backdrop => backdrop.remove());
+      };
+
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === 1 && node.classList && node.classList.contains('modal-backdrop')) {
+              node.remove();
+            }
+          });
+        });
+        removeBackdrop();
+      });
+
+      observer.observe(document.body, { childList: true, subtree: true });
+      removeBackdrop();
+
+      modalElement.addEventListener('hidden.bs.modal', function () {
+        observer.disconnect();
+        removeBackdrop();
+        document.body.classList.remove('modal-open-blur');
+      }, { once: true });
+
+      // Load complaint edit form via AJAX
+      const redirectTo = encodeURIComponent(window.location.href);
+      fetch(`/admin/complaints/${complaintId}/edit?format=html&redirect_to=${redirectTo}`, {
+        method: 'GET',
+        headers: { 'Accept': 'text/html' },
+        credentials: 'same-origin'
+      })
+      .then(response => {
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return response.text();
+      })
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        // Extract content section
+        let contentSection = doc.querySelector('section.content') || doc.querySelector('.content') || doc.body;
+        
+        // Remove scripts we don't need in modal
+        contentSection.querySelectorAll('script').forEach(s => s.remove());
+
+        modalBody.innerHTML = contentSection.innerHTML;
+
+        // Initialize any Select2 or other required JS for the loaded content
+        setTimeout(() => {
+          feather.replace();
+          // If the edit form uses Select2 and it's available, initialize it
+          if (typeof $ !== 'undefined' && $.fn.select2) {
+             $(modalBody).find('.select2').select2({
+               dropdownParent: $(modalElement)
+             });
+          }
+        }, 100);
+      })
+      .catch(error => {
+        console.error('Error loading edit form:', error);
+        modalBody.innerHTML = '<div class="text-center py-5 text-danger">Error loading edit form: ' + error.message + '</div>';
+      });
     }
 
     // Approval Functions
@@ -4162,6 +4274,7 @@
       'un_authorized': { bg: '#ec4899', text: '#ffffff', border: '#db2777' }, // Pink
       'pertains_to_ge_const_isld': { bg: '#06b6d4', text: '#ffffff', border: '#0891b2' }, // Aqua/Cyan
       'assigned': { bg: '#16a34a', text: '#ffffff', border: '#15803d' }, // Green (swapped from grey)
+      'unassigned': { bg: '#000000', text: '#ffffff', border: '#333333' }, // Black
       'barak_damages': { bg: '#808000', text: '#ffffff', border: '#666600' }, // Olive
     };
 
@@ -4171,7 +4284,7 @@
       // If status is in_progress or any performa type, always use red color
       const performaTypes = ['in_progress', 'work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa', 'product_na'];
       // If status is a performa type, use red color; otherwise use the status color or default to assigned
-      const color = performaTypes.includes(normalizedStatus) ? statusColors['in_progress'] : (statusColors[normalizedStatus] || statusColors['assigned']);
+      const color = performaTypes.includes(normalizedStatus) ? statusColors['in_progress'] : (statusColors[normalizedStatus] || statusColors['unassigned'] || statusColors['assigned']);
       select.style.backgroundColor = color.bg;
       select.style.color = '#ffffff';
       select.style.setProperty('color', '#ffffff', 'important');
@@ -4575,6 +4688,22 @@
 
         const oldStatus = select.dataset.oldStatus || select.value;
         const labelMap = { in_progress: 'In Progress', resolved: 'Addressed', assigned: 'Assigned', new: 'New', closed: 'Closed' };
+        
+        // INTERCEPT ASSIGNED STATUS
+        if (newStatus === 'assigned') {
+          // Revert selection immediately
+          select.value = select.dataset.oldStatus || '';
+          updateStatusSelectColor(select, select.value);
+          
+          // Trigger edit modal instead
+          if (typeof editComplaintModal === 'function') {
+            editComplaintModal(complaintId);
+          } else {
+            window.location.href = `/admin/complaints/${complaintId}/edit`;
+          }
+          return;
+        }
+
         const confirmMsg = `Are you sure you want to change status to "${labelMap[newStatus] || newStatus}"?`;
         if (!skipConfirm) {
           if (!confirm(confirmMsg)) {

@@ -5,13 +5,7 @@
 @section('content')
 <!-- PAGE HEADER -->
 <div class="mb-4">
-  <div class="d-flex justify-content-between align-items-center">
-    <div>
-      <h2 class="text-white mb-2">Edit Complaint</h2>
-      <p class="text-light">Update complaint information</p>
-    </div>
-   
-  </div>
+  
 </div>
 
 <!-- COMPLAINT FORM -->
@@ -20,6 +14,10 @@
           <form action="{{ route('admin.complaints.update', $complaint) }}" method="POST">
             @csrf
             @method('PUT')
+            
+            @if(request('redirect_to'))
+              <input type="hidden" name="redirect_to" value="{{ request('redirect_to') }}">
+            @endif
             
             <!-- Complainant Information Section (matching index file columns) -->
             <div class="row mb-4">
@@ -149,7 +147,7 @@
                 <div class="mb-3">
                   <label for="title" class="form-label text-white">Complaint Type <span class="text-danger">*</span></label>
                   <select class="form-select @error('title') is-invalid @enderror" 
-                          id="title" name="title" autocomplete="off" required>
+                          id="title" name="title" autocomplete="off" required data-prev="{{ old('title', $complaint->title) }}">
                     <option value="">Select Complaint Type</option>
                     @if(old('title', $complaint->title))
                       <option value="{{ old('title', $complaint->title) }}" selected>{{ old('title', $complaint->title) }}</option>
@@ -198,9 +196,9 @@
 
               <div class="col-md-4">
                 <div class="mb-3">
-                  <label for="assigned_employee_id" class="form-label text-white">Assign Employee</label>
+                  <label for="assigned_employee_id" class="form-label text-white">Assign Employee <span class="text-danger">*</span></label>
                   <select class="form-select @error('assigned_employee_id') is-invalid @enderror" 
-                          id="assigned_employee_id" name="assigned_employee_id">
+                          id="assigned_employee_id" name="assigned_employee_id" required>
                     <option value="">Select Employee</option>
                     @if(isset($employees) && $employees->count() > 0)
                       @foreach($employees as $employee)
@@ -238,7 +236,7 @@
             </div>
 
             <div class="d-flex justify-content-end gap-2">
-              <a href="{{ route('admin.complaints.index', $complaint) }}" class="btn btn-outline-secondary">Cancel</a>
+              <a href="{{ request('redirect_to', route('admin.complaints.index')) }}" class="btn btn-outline-secondary">Cancel</a>
               <button type="submit" class="btn btn-accent">Update Complaint</button>
             </div>
           </form>
@@ -649,11 +647,12 @@
                                 
                                 titleSelect.disabled = false;
                                 
-                                const previous = titleSelect.getAttribute('data-prev') || currentTitle;
+                                const previous = titleSelect.getAttribute('data-prev');
                                 if (previous) {
                                     const opt = Array.from(titleSelect.options).find(o => o.value === previous);
                                     if (opt) {
                                         titleSelect.value = previous;
+                                        handleTitleChange();
                                     } else if (previous === 'other' || previous) {
                                         // If not in list, it's a custom title
                                         titleSelect.value = 'other';
@@ -732,6 +731,11 @@
 
             filterHouses();
             filterEmployees();
+            
+            // Auto-populate house details if house_id is set
+            if (houseSelect && houseSelect.value) {
+                houseSelect.dispatchEvent(new Event('change'));
+            }
             
             // Auto-select single city (for restricted users) if nothing selected
             if (citySelect && citySelect.options.length === 2 && !citySelect.value) { 

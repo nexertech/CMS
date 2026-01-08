@@ -239,6 +239,7 @@ class ApprovalController extends Controller
 
             // Define all possible status labels - show all these in dropdown
             $statusLabels = [
+                'unassigned' => 'Unassigned',
                 'assigned' => 'Assigned',
                 'in_progress' => 'In-Progress',
                 'resolved' => 'Addressed',
@@ -268,6 +269,7 @@ class ApprovalController extends Controller
             // 4-5. Work/Maintenance Performa Required (after Addressed),
             // 6+. Rest of the statuses
             $orderedStatusesForFilter = [
+                'unassigned' => $statusLabels['unassigned'] ?? 'Unassigned',
                 'assigned' => $statusLabels['assigned'],
                 'in_progress' => $statusLabels['in_progress'],
                 'resolved' => $statusLabels['resolved'],
@@ -278,7 +280,7 @@ class ApprovalController extends Controller
             
             // Add remaining statuses (excluding already added ones and work_performa/maint_performa from filter)
             foreach ($statusLabels as $key => $label) {
-                if (!in_array($key, ['assigned', 'in_progress', 'resolved', 'work_performa', 'maint_performa'])) {
+                if (!in_array($key, ['unassigned', 'assigned', 'in_progress', 'resolved', 'work_performa', 'maint_performa'])) {
                     $orderedStatusesForFilter[$key] = $label;
                 }
             }
@@ -290,6 +292,7 @@ class ApprovalController extends Controller
 
             // Build statuses collection for TABLE ROWS (excludes performa options)
             $orderedStatusesForTable = [
+                'unassigned' => $statusLabels['unassigned'] ?? 'Unassigned',
                 'assigned' => $statusLabels['assigned'],
                 'in_progress' => $statusLabels['in_progress'],
                 'resolved' => $statusLabels['resolved'],
@@ -297,7 +300,7 @@ class ApprovalController extends Controller
             
             // Add remaining statuses (excluding already added ones)
             foreach ($statusLabels as $key => $label) {
-                if (!in_array($key, ['assigned', 'in_progress', 'resolved'])) {
+                if (!in_array($key, ['unassigned', 'assigned', 'in_progress', 'resolved'])) {
                     $orderedStatusesForTable[$key] = $label;
                 }
             }

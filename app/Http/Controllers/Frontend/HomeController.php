@@ -1020,6 +1020,42 @@ class HomeController extends Controller
                 // Count addressed (resolved + closed) complaints
                 $cmeResolvedData[] = (clone $sectorBaseQuery)->whereIn('status', ['resolved', 'closed'])->count();
             }
+        } elseif (!$hasUnrestrictedAccess && $user && !empty($user->node_ids)) {
+            // Node User: Show only their assigned GE Nodes (sectors)
+            $userNodes = \App\Models\Sector::whereIn('id', $user->node_ids)
+                ->where('status', 'active')
+                ->orderBy('name')
+                ->get();
+
+            foreach ($userNodes as $sector) {
+                // Label with Sector Name
+                $cmeGraphLabels[] = $sector->name;
+
+                // Query specifically for this sector
+                $nodeBaseQuery = \App\Models\Complaint::where('sector_id', $sector->id);
+
+                // Apply CMES date range filter
+                if ($cmeDateRange) {
+                    $now = now();
+                    switch ($cmeDateRange) {
+                        case 'this_month':
+                            $nodeBaseQuery->whereMonth('created_at', $now->month)->whereYear('created_at', $now->year);
+                            break;
+                        case 'last_6_months':
+                            $nodeBaseQuery->where('created_at', '>=', $now->copy()->subMonths(6)->startOfDay());
+                            break;
+                        case 'this_year':
+                            $nodeBaseQuery->whereYear('created_at', $now->year);
+                            break;
+                        case 'last_year':
+                            $nodeBaseQuery->whereYear('created_at', $now->copy()->subYear()->year);
+                            break;
+                    }
+                }
+
+                $cmeGraphData[] = (clone $nodeBaseQuery)->count();
+                $cmeResolvedData[] = (clone $nodeBaseQuery)->whereIn('status', ['resolved', 'closed'])->count();
+            }
         } else {
             // Non-CME/GE User or Admin: Show CMEs as before
             foreach ($cmesList as $cme) {
@@ -1149,6 +1185,9 @@ class HomeController extends Controller
             $entityType = 'city';
         } elseif ($isGeUser) {
             $tableEntities = $geNodesForGroup ?? collect([]);
+            $entityType = 'sector';
+        } elseif ($isNodeUser) {
+            $tableEntities = $userNodes ?? collect([]);
             $entityType = 'sector';
         } else {
             $tableEntities = $cmesList;

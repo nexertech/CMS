@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\CityController as AdminCityController;
 use App\Http\Controllers\Admin\CmeController as AdminCmeController;
 use App\Http\Controllers\Admin\DesignationController as AdminDesignationController;
 use App\Http\Controllers\Admin\FeedbackController as AdminFeedbackController;
+use App\Http\Middleware\AdminAccessMiddleware;
 use App\Http\Controllers\SearchController;
 // Frontend routes are defined in routes/frontend.php and loaded here
 
@@ -66,7 +67,7 @@ require __DIR__.'/auth.php';
 | Admin Routes (Protected)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'verified', 'admin.access'])
+Route::middleware(['auth', 'verified', AdminAccessMiddleware::class])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {

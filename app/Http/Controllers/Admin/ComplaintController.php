@@ -151,8 +151,6 @@ class ComplaintController extends Controller
      */
     public function create()
     {
-        // Clear any old input data to ensure clean form
-        request()->session()->forget('_old_input');
 
         $employeesQuery = Employee::where('status', 'active')->orderBy('name');
         $this->filterEmployeesByLocation($employeesQuery, Auth::user());
@@ -211,7 +209,7 @@ class ComplaintController extends Controller
             'priority' => 'required|in:low,medium,high,urgent,emergency',
             'availability_time' => 'nullable|string|max:255',
             'description' => 'nullable|string',
-            'assigned_employee_id' => 'nullable|exists:employees,id',
+            'assigned_employee_id' => 'required|exists:employees,id',
             // Status removed from form - will be managed in approvals view, default to 'new'
             'attachments' => 'nullable|array|max:5',
             'attachments.*' => 'file|mimes:jpg,jpeg,png,pdf,doc,docx|max:10240', // 10MB max
@@ -434,7 +432,10 @@ class ComplaintController extends Controller
     {
         $complaint->load(['spareParts.spare']);
 
-        $employeesQuery = Employee::where('status', 'active')->orderBy('name');
+        $employeesQuery = Employee::where('status', 'active')
+            ->where('category', $complaint->category)
+            ->where('sector_id', $complaint->sector_id)
+            ->orderBy('name');
         $this->filterEmployeesByLocation($employeesQuery, Auth::user());
         $employees = $employeesQuery->get();
         $categories = Schema::hasTable('complaint_categories')
@@ -493,7 +494,7 @@ class ComplaintController extends Controller
             'priority' => 'required|in:low,medium,high,urgent,emergency',
             'availability_time' => 'nullable|string|max:255',
             'description' => 'nullable|string',
-            'assigned_employee_id' => 'nullable|exists:employees,id',
+            'assigned_employee_id' => 'required|exists:employees,id',
             // Status removed from form - will be managed in approvals view, keep existing status
             'attachments' => 'nullable|array|max:5',
             'attachments.*' => 'file|mimes:jpg,jpeg,png,pdf,doc,docx|max:10240',
@@ -579,6 +580,12 @@ class ComplaintController extends Controller
             $finalTitle = $request->title_other ? trim($request->title_other) : 'other';
         }
 
+        $newStatus = $complaint->status;
+        // Automatically change status from 'new' (Unassigned) to 'assigned' if an employee is assigned
+        if ($newStatus === 'new' && $request->assigned_employee_id) {
+            $newStatus = 'assigned';
+        }
+
         $complaint->update([
             'title' => $finalTitle,
             'client_id' => $client->id,
@@ -590,8 +597,7 @@ class ComplaintController extends Controller
             'availability_time' => $request->availability_time,
             'description' => $request->description,
             'assigned_employee_id' => $request->assigned_employee_id ?: null,
-            // Status not updated here - will be managed in approvals view
-            // Keep existing status and closed_at
+            'status' => $newStatus,
         ]);
 
         // Update product (spare) selection only if provided
@@ -681,6 +687,11 @@ class ComplaintController extends Controller
                     'remarks' => $assignmentNote,
                 ]);
             }
+        }
+
+        if ($request->filled('redirect_to')) {
+            return redirect($request->redirect_to)
+                ->with('success', 'Complaint updated successfully.');
         }
 
         return redirect()->route('admin.complaints.index')

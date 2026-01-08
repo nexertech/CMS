@@ -205,7 +205,7 @@
                                 <label for="title" class="form-label text-white">Complaint Type <span
                                         class="text-danger">*</span></label>
                                 <select class="form-select @error('title') is-invalid @enderror" id="title"
-                                    name="title" autocomplete="off" required>
+                                    name="title" autocomplete="off" required data-prev="{{ old('title') }}">
                                 </select>
                                 <input type="text" class="form-select @error('title') is-invalid @enderror"
                                     id="title_other" name="title_other" placeholder="Enter custom title..."
@@ -257,9 +257,9 @@
 
                         <div class="col-md-4">
                             <div class="mb-3">
-                                <label for="assigned_employee_id" class="form-label text-white">Assign Employee</label>
+                                <label for="assigned_employee_id" class="form-label text-white">Assign Employee <span class="text-danger">*</span></label>
                                 <select class="form-select @error('assigned_employee_id') is-invalid @enderror"
-                                    id="assigned_employee_id" name="assigned_employee_id">
+                                    id="assigned_employee_id" name="assigned_employee_id" required>
                                     <option value="">Select Employee</option>
                                     @if (isset($employees) && $employees->count() > 0)
                                         @foreach ($employees as $employee)
@@ -764,11 +764,15 @@
                                 
                                 const previous = titleSelect.getAttribute('data-prev');
                                 if (previous) {
-                                    if (Array.from(titleSelect.options).some(o => o.value === previous)) {
+                                    const opt = Array.from(titleSelect.options).find(o => o.value === previous);
+                                    if (opt) {
                                         titleSelect.value = previous;
-                                    } else if (previous === 'other') {
+                                        handleTitleChange();
+                                    } else {
+                                        // If not in list, it might be a custom title (from "other")
                                         titleSelect.value = 'other';
                                         handleTitleChange();
+                                        if (titleOtherInput) titleOtherInput.value = previous;
                                     }
                                 }
                             })
@@ -843,19 +847,21 @@
                 }
             }
 
-            // Restore "Other" title if needed
-            if (titleSelect && '{{ old('title') }}' === 'other') {
-                titleSelect.value = 'other';
-                const oldOther = @json(old('title_other'));
-                if (titleOtherInput && oldOther) titleOtherInput.value = oldOther;
-                handleTitleChange();
+
+            if (categorySelect && categorySelect.value) {
+                categorySelect.dispatchEvent(new Event('change'));
             }
 
             filterHouses();
             filterEmployees();
             
+            // Auto-populate house details if house_id is set by old input
+            if (houseSelect && houseSelect.value) {
+                houseSelect.dispatchEvent(new Event('change'));
+            }
+            
             // Auto-select single city (for restricted users)
-            if (citySelect && citySelect.options.length === 2) { // 1 placeholder + 1 option
+            if (citySelect && citySelect.options.length === 2 && !citySelect.value) { 
                  citySelect.selectedIndex = 1;
                  citySelect.dispatchEvent(new Event('change'));
             }
