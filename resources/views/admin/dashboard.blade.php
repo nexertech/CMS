@@ -387,7 +387,7 @@
         @if(isset($cmesList) && $cmesList->count() > 0)
         <div class="col-auto">
           <label class="form-label mb-1" style="font-size: 0.8rem !important; color: #1e293b !important; font-weight: 700 !important;">CMES</label>
-          <select class="form-select" id="cmesFilter" name="cmes_id" style="font-size: 0.8rem; width: 135px;">
+          <select class="form-select" id="cmesFilter" name="cmes_id" style="font-size: 0.8rem; width: 155px;">
             <option value="">Select CMES</option>
             @foreach($cmesList as $cme)
               <option value="{{ $cme->id }}" {{ (request('cmes_id') == $cme->id || (isset($cmesId) && $cmesId == $cme->id)) ? 'selected' : '' }}>{{ $cme->name }}</option>
@@ -397,7 +397,7 @@
         @endif
         <div class="col-auto" id="cityFilterContainer">
           <label class="form-label mb-1" style="font-size: 0.8rem !important; color: #1e293b !important; font-weight: 700 !important;">GE</label>
-          <select class="form-select" id="cityFilter" name="city_id" style="font-size: 0.8rem; width: 135px; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;">
+          <select class="form-select" id="cityFilter" name="city_id" style="font-size: 0.8rem; width: 155px; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;">
             <option value="">Select GE</option>
             @if($cities && $cities->count() > 0)
               @foreach($cities as $city)
@@ -422,7 +422,7 @@
         @if($showSectorFilter)
         <div class="col-auto">
           <label class="form-label mb-1" style="font-size: 0.8rem !important; color: #1e293b !important; font-weight: 700 !important;">GE Nodes</label>
-          <select class="form-select" id="sectorFilter" name="sector_id" style="font-size: 0.8rem; width: 135px; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;">
+          <select class="form-select" id="sectorFilter" name="sector_id" style="font-size: 0.8rem; width: 155px; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;">
             <option value="">Select GE Nodes</option>
             @if($sectors && $sectors->count() > 0)
               @foreach($sectors as $sector)
@@ -435,7 +435,7 @@
 
         <div class="col-auto">
           <label class="form-label mb-1" style="font-size: 0.8rem !important; color: #1e293b !important; font-weight: 700 !important;">Category</label>
-          <select class="form-select" id="categoryFilter" name="category" style="font-size: 0.8rem; width: 135px; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;">
+          <select class="form-select" id="categoryFilter" name="category" style="font-size: 0.8rem; width: 155px; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;">
             <option value="">Select Category</option>
             @if($categories && $categories->count() > 0)
               @foreach($categories as $cat)
@@ -448,7 +448,7 @@
         @if(isset($complaintStatuses) && count($complaintStatuses) > 0)
         <div class="col-auto">
           <label class="form-label mb-1" style="font-size: 0.8rem !important; color: #1e293b !important; font-weight: 700 !important;">Status</label>
-          <select class="form-select" id="complaintStatusFilter" name="complaint_status" style="font-size: 0.8rem; width: 135px; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;">
+          <select class="form-select" id="complaintStatusFilter" name="complaint_status" style="font-size: 0.8rem; width: 155px; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;">
             <option value="">Select Status</option>
             @foreach($complaintStatuses as $statusKey => $statusLabel)
               <option value="{{ $statusKey }}" {{ (request('complaint_status') == $statusKey || $complaintStatus == $statusKey) ? 'selected' : '' }}>{{ $statusLabel }}</option>
@@ -459,7 +459,7 @@
 
         <div class="col-auto">
           <label class="form-label mb-1" style="font-size: 0.8rem !important; color: #1e293b !important; font-weight: 700 !important;">Date Range</label>
-          <select class="form-select" id="dateRangeFilter" name="date_range" style="font-size: 0.8rem; width: 135px; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;">
+          <select class="form-select" id="dateRangeFilter" name="date_range" style="font-size: 0.8rem; width: 155px; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;">
             <option value="">Select Date Range</option>
             <option value="yesterday" {{ (request('date_range') == 'yesterday' || $dateRange == 'yesterday') ? 'selected' : '' }}>Yesterday</option>
             <option value="today" {{ (request('date_range') == 'today' || $dateRange == 'today') ? 'selected' : '' }}>Today</option>

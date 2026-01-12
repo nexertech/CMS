@@ -547,9 +547,15 @@ class DashboardController extends Controller
      */
     private function applyFilters($query, $cityId = null, $sectorId = null, $category = null, $approvalStatus = null, $complaintStatus = null, $dateRange = null, $cmesId = null)
     {
-        // Filter by city - use direct city_id field on complaints table
+        // Filter by city - inclusive: check complaint's city_id OR if its sector belongs to this city
         if ($cityId) {
-            $query->where('city_id', $cityId);
+            $sectorIdsForCity = Sector::where('city_id', $cityId)->pluck('id')->toArray();
+            $query->where(function ($q) use ($cityId, $sectorIdsForCity) {
+                $q->where('city_id', $cityId);
+                if (!empty($sectorIdsForCity)) {
+                    $q->orWhereIn('sector_id', $sectorIdsForCity);
+                }
+            });
         }
 
         // Filter by sector - use direct sector_id field on complaints table

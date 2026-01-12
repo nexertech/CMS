@@ -23,6 +23,10 @@ Route::middleware('auth:frontend')->group(function () {
     Route::post('/change-password', [FrontendHomeController::class, 'updatePassword'])->name('frontend.password.update');
     Route::get('/complaint/{id}', [FrontendHomeController::class, 'show'])->name('frontend.complaint.show');
     Route::get('/stock', [FrontendHomeController::class, 'stockAll'])->name('frontend.stock.all');
+    
+    // AJAX cascading filter routes
+    Route::get('/dashboard/cities-by-cmes', [FrontendHomeController::class, 'getCitiesByCmeAjax'])->name('frontend.dashboard.cities-by-cmes');
+    Route::get('/dashboard/sectors-by-city', [FrontendHomeController::class, 'getSectorsByCityAjax'])->name('frontend.dashboard.sectors-by-city');
 });
 
 

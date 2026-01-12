@@ -1528,7 +1528,7 @@
 
         // Monthly Complaints Chart (Grouped Bar Chart)
         const ctx = document.getElementById('monthlyComplaintsChart').getContext('2d');
-        const monthlyComplaintsChart = new Chart(ctx, {
+        window.monthlyComplaintsChart = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: monthLabels,
@@ -1633,7 +1633,7 @@
 
         // Complaint Resolution Trend Chart (Line Chart)
         const ctx2 = document.getElementById('resolutionTrendChart').getContext('2d');
-        const resolutionTrendChart = new Chart(ctx2, {
+        window.resolutionTrendChart = new Chart(ctx2, {
             type: 'line',
             data: {
                 labels: monthLabels,
@@ -1902,11 +1902,11 @@
 
         // Employee Performance Chart (Overlaid Bar)
         const empLabels = @json($empGraphLabels ?? []);
-        const empTotalData = @json($empGraphTotal ?? []);
-        const empResolvedData = @json($empGraphResolved ?? []);
+        let empTotalData = @json($empGraphTotal ?? []);
+        let empResolvedData = @json($empGraphResolved ?? []);
 
         const ctxEmp = document.getElementById('employeePerformanceChart').getContext('2d');
-        const employeePerformanceChart = new Chart(ctxEmp, {
+        window.employeePerformanceChart = new Chart(ctxEmp, {
             type: 'bar',
             data: {
                 labels: empLabels,
@@ -1997,11 +1997,11 @@
 
         // Least Assigned Employees Chart (Bottom 10)
         const empLeastLabels = @json($empLeastGraphLabels ?? []);
-        const empLeastTotalData = @json($empLeastGraphTotal ?? []);
-        const empLeastResolvedData = @json($empLeastGraphResolved ?? []);
+        let empLeastTotalData = @json($empLeastGraphTotal ?? []);
+        let empLeastResolvedData = @json($empLeastGraphResolved ?? []);
 
         const ctxEmpLeast = document.getElementById('employeeLeastAssignedChart').getContext('2d');
-        const employeeLeastAssignedChart = new Chart(ctxEmpLeast, {
+        window.employeeLeastAssignedChart = new Chart(ctxEmpLeast, {
             type: 'bar',
             data: {
                 labels: empLeastLabels,
@@ -2289,7 +2289,7 @@
             }
         };
 
-        const complaintsByStatusChart = new Chart(ctx3, {
+        window.complaintsByStatusChart = new Chart(ctx3, {
             type: 'doughnut',
             data: {
                 labels: statusLabels,
@@ -2424,53 +2424,108 @@
             });
         }
 
+        // Export cmeColorMap for JavaScript use
+        const cmeColorMap = @json($cmeColorMap ?? []);
+
         // Handle CMES change to update GE Groups and GE Nodes
         const filterCMES = document.getElementById('filterCMES');
         if (filterCMES) {
             filterCMES.addEventListener('change', function() {
                 const cmesId = this.value;
-                const category = document.getElementById('filterCategory').value;
-                const status = document.getElementById('filterStatus').value;
-                const dateRange = document.getElementById('filterDateRange').value;
+                const citySelect = document.getElementById('filterCity');
+                const sectorSelect = document.getElementById('filterSector');
 
-                // Build params for reload (clear city/sector when CMES changes)
-                const params = new URLSearchParams();
-                if (cmesId) params.append('cmes_id', cmesId);
-                if (category && category !== 'all') params.append('category', category);
-                if (status && status !== 'all') params.append('status', status);
-                if (dateRange) params.append('date_range', dateRange);
+                // Update styling of the dropdowns if a color is associated with this CMES
+                const color = cmeColorMap[cmesId] || '';
+                [filterCMES, citySelect, sectorSelect].forEach(el => {
+                    if (el) {
+                        el.style.backgroundColor = color;
+                        el.style.color = color ? '#ffffff' : '';
+                    }
+                });
 
-                // Reload page with new CMES filter to get updated GE Groups/Nodes
-                window.location.href = '{{ route("frontend.dashboard") }}?' + params.toString();
+                // Clear downstream dropdowns
+                if (citySelect) {
+                    citySelect.innerHTML = '<option value="" style="background: white; color: #374151;">Select GE</option>';
+                    citySelect.disabled = !cmesId;
+                }
+                if (sectorSelect) {
+                    sectorSelect.innerHTML = '<option value="" style="background: white; color: #374151;">Select GE Nodes</option>';
+                    sectorSelect.disabled = true;
+                }
+
+                if (cmesId) {
+                    // Fetch cities for this CMES (respects privileges and naming filters)
+                    fetch('{{ route("frontend.dashboard.cities-by-cmes") }}?cme_id=' + cmesId)
+                        .then(response => response.json())
+                        .then(cities => {
+                            if (citySelect) {
+                                cities.forEach(city => {
+                                    const option = document.createElement('option');
+                                    option.value = city.id;
+                                    option.textContent = city.name;
+                                    option.style.backgroundColor = color || 'white';
+                                    option.style.color = color ? '#ffffff' : '#374151';
+                                    citySelect.appendChild(option);
+                                });
+                                citySelect.disabled = false;
+                            }
+                            applyFilters();
+                        })
+                        .catch(error => {
+                            console.error('Error fetching cities:', error);
+                            applyFilters();
+                        });
+                } else {
+                    applyFilters();
+                }
             });
         }
 
         // Handle GE change to update GE Nodes
-        document.getElementById('filterCity').addEventListener('change', function() {
-            const cityId = this.value;
-            const sectorSelect = document.getElementById('filterSector');
-            const category = document.getElementById('filterCategory').value;
-            const status = document.getElementById('filterStatus').value;
-            const dateRange = document.getElementById('filterDateRange').value;
-            const cmesId = document.getElementById('filterCMES') ? document.getElementById('filterCMES').value : null;
+        const filterCity = document.getElementById('filterCity');
+        if (filterCity) {
+            filterCity.addEventListener('change', function() {
+                const cityId = this.value;
+                const sectorSelect = document.getElementById('filterSector');
+                const cmesId = document.getElementById('filterCMES') ? document.getElementById('filterCMES').value : null;
 
-            // Clear GE Nodes selection when GE Group changes
-            if (sectorSelect) {
-                sectorSelect.value = '';
-            }
+                // Color for the new options
+                const color = cmeColorMap[cmesId] || '';
 
-            // Build params for reload
-            const params = new URLSearchParams();
-            if (cityId) params.append('city_id', cityId);
-            // Don't include sector_id when city changes
-            if (cmesId) params.append('cmes_id', cmesId);
-            if (category && category !== 'all') params.append('category', category);
-            if (status && status !== 'all') params.append('status', status);
-            if (dateRange) params.append('date_range', dateRange);
+                // Clear GE Nodes dropdown
+                if (sectorSelect) {
+                    sectorSelect.innerHTML = '<option value="" style="background: white; color: #374151;">Select GE Nodes</option>';
+                    sectorSelect.disabled = !cityId;
+                }
 
-            // Reload page with new city filter to get updated GE Nodes dropdown
-            window.location.href = '{{ route("frontend.dashboard") }}?' + params.toString();
-        });
+                if (cityId) {
+                    // Fetch sectors for this city (respects privileges)
+                    fetch('{{ route("frontend.dashboard.sectors-by-city") }}?city_id=' + cityId)
+                        .then(response => response.json())
+                        .then(sectors => {
+                            if (sectorSelect) {
+                                sectors.forEach(sector => {
+                                    const option = document.createElement('option');
+                                    option.value = sector.id;
+                                    option.textContent = sector.name;
+                                    option.style.backgroundColor = color || 'white';
+                                    option.style.color = color ? '#ffffff' : '#374151';
+                                    sectorSelect.appendChild(option);
+                                });
+                                sectorSelect.disabled = false;
+                            }
+                            applyFilters();
+                        })
+                        .catch(error => {
+                            console.error('Error fetching sectors:', error);
+                            applyFilters();
+                        });
+                } else {
+                    applyFilters();
+                }
+            });
+        }
 
 
 
@@ -2772,7 +2827,7 @@
         const categoryUsageValues = @json($categoryUsageValues ?? []);
         const categoryTotalReceivedValues = @json($categoryTotalReceivedValues ?? []);
 
-        const categoryUsageChart = new Chart(categoryUsageCtx.getContext('2d'), {
+        window.categoryUsageChart = new Chart(categoryUsageCtx.getContext('2d'), {
             type: 'bar',
             data: {
                 labels: categoryLabels,

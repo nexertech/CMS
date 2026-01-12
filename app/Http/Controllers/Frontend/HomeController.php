@@ -1707,4 +1707,75 @@ class HomeController extends Controller
             default: return 0;
         }
     }
+
+    /**
+     * AJAX endpoint to get cities by CME, respecting user privileges
+     */
+    public function getCitiesByCmeAjax(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) return response()->json([]);
+
+        $locationScope = $this->getFrontendUserLocationScope($user);
+        $cmeId = $request->query('cme_id');
+
+        if (!$cmeId) {
+            return response()->json([]);
+        }
+
+        $query = \App\Models\City::where('cme_id', $cmeId)
+            ->where('status', 'active')
+            ->where(function ($q) {
+                $q->where('name', 'LIKE', '%GE%')
+                    ->orWhere('name', 'LIKE', '%AGE%')
+                    ->orWhere('name', 'LIKE', '%ge%')
+                    ->orWhere('name', 'LIKE', '%age%');
+            });
+
+        // Apply privileges
+        $accessibleCityIds = $this->getAccessibleCityIdsForDropdown($locationScope);
+        if ($accessibleCityIds !== null) {
+            $query->whereIn('id', $accessibleCityIds);
+        } elseif (!empty($locationScope['restricted'])) {
+            return response()->json([]);
+        }
+
+        $cities = $query->orderBy('name')->get(['id', 'name']);
+        return response()->json($cities);
+    }
+
+    /**
+     * AJAX endpoint to get sectors by city, respecting user privileges
+     */
+    public function getSectorsByCityAjax(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) return response()->json([]);
+
+        $locationScope = $this->getFrontendUserLocationScope($user);
+        $cityId = $request->query('city_id');
+
+        if (!$cityId) {
+            return response()->json([]);
+        }
+
+        $query = \App\Models\Sector::where('city_id', $cityId)
+            ->where('status', 'active');
+
+        // Apply privileges
+        if (!empty($locationScope['restricted'])) {
+            if (!empty($locationScope['sector_ids'])) {
+                $query->whereIn('id', $locationScope['sector_ids']);
+            } elseif (!empty($locationScope['city_ids'])) {
+                $query->whereIn('city_id', $locationScope['city_ids']);
+            } elseif (!empty($locationScope['city_sector_map'])) {
+                $query->whereIn('city_id', array_keys($locationScope['city_sector_map']));
+            } else {
+                return response()->json([]);
+            }
+        }
+
+        $sectors = $query->orderBy('name')->get(['id', 'name']);
+        return response()->json($sectors);
+    }
 }
