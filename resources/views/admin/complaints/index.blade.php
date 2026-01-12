@@ -146,20 +146,8 @@
                             <td>{{ $complaint->client->address ?? 'N/A' }}</td>
                             <td>
                                 @php
-                                    $category = $complaint->category ?? 'N/A';
                                     $designation = $complaint->assignedEmployee->designation ?? 'N/A';
-                                    $categoryDisplay = [
-                                        'electric' => 'Electric',
-                                        'technical' => 'Technical',
-                                        'service' => 'Service',
-                                        'billing' => 'Billing',
-                                        'water' => 'Water Supply',
-                                        'sanitary' => 'Sanitary',
-                                        'plumbing' => 'Plumbing',
-                                        'kitchen' => 'Kitchen',
-                                        'other' => 'Other',
-                                    ];
-                                    $catDisplay = $categoryDisplay[strtolower($category)] ?? ucfirst($category);
+                                    $catDisplay = $complaint->getCategoryDisplayAttribute();
                                     $displayText = $catDisplay . ' - ' . $designation;
                                 @endphp
                                 <div class="text-white" style="font-weight: normal;">{{ $displayText }}</div>

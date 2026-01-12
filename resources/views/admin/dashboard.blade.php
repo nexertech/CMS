@@ -134,12 +134,12 @@
   /* Global styling for stat numbers and labels */
   .stat-card .stat-number {
     font-weight: 800 !important;
-    font-size: 1.4rem !important;
+    font-size: 1.15rem !important; /* Reduced from 1.4rem */
   }
 
   .stat-card .stat-label {
     font-weight: 700 !important;
-    font-size: 1.0rem !important;
+    font-size: 0.8rem !important; /* Reduced from 1.0rem */
   }
 
   /* Matte finish for chart containers */
@@ -179,7 +179,7 @@
   /* Reduce column spacing in Recent Complaints table */
   .table-responsive .table.table-dark th,
   .table-responsive .table.table-dark td {
-    padding: 0.6rem 0.5rem !important;
+    padding: 0.4rem 0.35rem !important; /* Reduced from 0.6rem 0.5rem */
     white-space: nowrap;
   }
 
@@ -194,12 +194,12 @@
   }
 
   .table-responsive .table.table-dark th {
-    font-size: 0.85rem;
+    font-size: 0.75rem; /* Reduced from 0.85rem */
     font-weight: 600;
   }
 
   .table-responsive .table.table-dark td {
-    font-size: 0.875rem;
+    font-size: 0.8rem; /* Reduced from 0.875rem */
   }
 
   /* Subtle matte finish for status badges */
@@ -382,12 +382,12 @@
 <div class="mb-5 d-flex justify-content-center">
   <div class="filter-box" style="display: inline-block; width: fit-content;">
     <form id="dashboardFiltersForm" method="GET" action="{{ route('admin.dashboard') }}">
-      <div class="row g-3 align-items-end">
+      <div class="row g-2 align-items-end">
         @if($showCityFilter)
         @if(isset($cmesList) && $cmesList->count() > 0)
         <div class="col-auto">
-          <label class="form-label mb-1" style="font-size: 1rem !important; color: #1e293b !important; font-weight: 700 !important;">CMES</label>
-          <select class="form-select" id="cmesFilter" name="cmes_id" style="font-size: 0.9rem; width: 180px;">
+          <label class="form-label mb-1" style="font-size: 0.8rem !important; color: #1e293b !important; font-weight: 700 !important;">CMES</label>
+          <select class="form-select" id="cmesFilter" name="cmes_id" style="font-size: 0.8rem; width: 135px;">
             <option value="">Select CMES</option>
             @foreach($cmesList as $cme)
               <option value="{{ $cme->id }}" {{ (request('cmes_id') == $cme->id || (isset($cmesId) && $cmesId == $cme->id)) ? 'selected' : '' }}>{{ $cme->name }}</option>
@@ -396,8 +396,8 @@
         </div>
         @endif
         <div class="col-auto" id="cityFilterContainer">
-          <label class="form-label mb-1" style="font-size: 1rem !important; color: #1e293b !important; font-weight: 700 !important;">GE</label>
-          <select class="form-select" id="cityFilter" name="city_id" style="font-size: 0.9rem; width: 180px; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;">
+          <label class="form-label mb-1" style="font-size: 0.8rem !important; color: #1e293b !important; font-weight: 700 !important;">GE</label>
+          <select class="form-select" id="cityFilter" name="city_id" style="font-size: 0.8rem; width: 135px; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;">
             <option value="">Select GE</option>
             @if($cities && $cities->count() > 0)
               @foreach($cities as $city)
@@ -421,8 +421,8 @@
 
         @if($showSectorFilter)
         <div class="col-auto">
-          <label class="form-label mb-1" style="font-size: 1rem !important; color: #1e293b !important; font-weight: 700 !important;">GE Nodes</label>
-          <select class="form-select" id="sectorFilter" name="sector_id" style="font-size: 0.9rem; width: 180px; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;">
+          <label class="form-label mb-1" style="font-size: 0.8rem !important; color: #1e293b !important; font-weight: 700 !important;">GE Nodes</label>
+          <select class="form-select" id="sectorFilter" name="sector_id" style="font-size: 0.8rem; width: 135px; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;">
             <option value="">Select GE Nodes</option>
             @if($sectors && $sectors->count() > 0)
               @foreach($sectors as $sector)
@@ -434,8 +434,8 @@
         @endif
 
         <div class="col-auto">
-          <label class="form-label mb-1" style="font-size: 1rem !important; color: #1e293b !important; font-weight: 700 !important;">Complaint Category</label>
-          <select class="form-select" id="categoryFilter" name="category" style="font-size: 0.9rem; width: 180px; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;">
+          <label class="form-label mb-1" style="font-size: 0.8rem !important; color: #1e293b !important; font-weight: 700 !important;">Category</label>
+          <select class="form-select" id="categoryFilter" name="category" style="font-size: 0.8rem; width: 135px; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;">
             <option value="">Select Category</option>
             @if($categories && $categories->count() > 0)
               @foreach($categories as $cat)
@@ -447,8 +447,8 @@
 
         @if(isset($complaintStatuses) && count($complaintStatuses) > 0)
         <div class="col-auto">
-          <label class="form-label mb-1" style="font-size: 1rem !important; color: #1e293b !important; font-weight: 700 !important;">Complaints Status</label>
-          <select class="form-select" id="complaintStatusFilter" name="complaint_status" style="font-size: 0.9rem; width: 180px; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;">
+          <label class="form-label mb-1" style="font-size: 0.8rem !important; color: #1e293b !important; font-weight: 700 !important;">Status</label>
+          <select class="form-select" id="complaintStatusFilter" name="complaint_status" style="font-size: 0.8rem; width: 135px; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;">
             <option value="">Select Status</option>
             @foreach($complaintStatuses as $statusKey => $statusLabel)
               <option value="{{ $statusKey }}" {{ (request('complaint_status') == $statusKey || $complaintStatus == $statusKey) ? 'selected' : '' }}>{{ $statusLabel }}</option>
@@ -458,8 +458,8 @@
         @endif
 
         <div class="col-auto">
-          <label class="form-label mb-1" style="font-size: 1rem !important; color: #1e293b !important; font-weight: 700 !important;">Date Range</label>
-          <select class="form-select" id="dateRangeFilter" name="date_range" style="font-size: 0.9rem; width: 180px; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;">
+          <label class="form-label mb-1" style="font-size: 0.8rem !important; color: #1e293b !important; font-weight: 700 !important;">Date Range</label>
+          <select class="form-select" id="dateRangeFilter" name="date_range" style="font-size: 0.8rem; width: 135px; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;">
             <option value="">Select Date Range</option>
             <option value="yesterday" {{ (request('date_range') == 'yesterday' || $dateRange == 'yesterday') ? 'selected' : '' }}>Yesterday</option>
             <option value="today" {{ (request('date_range') == 'today' || $dateRange == 'today') ? 'selected' : '' }}>Today</option>
@@ -472,9 +472,9 @@
         </div>
 
         <div class="col-auto">
-          <label class="form-label small text-muted mb-1" style="font-size: 0.8rem;">&nbsp;</label>
-          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetDashboardFilters()" style="font-size: 0.9rem; padding: 0.5rem 1.25rem;">
-            <i data-feather="refresh-cw" class="me-1" style="width: 16px; height: 16px;"></i>Reset
+          <label class="form-label small text-muted mb-1" style="font-size: 0.7rem;">&nbsp;</label>
+          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetDashboardFilters()" style="font-size: 0.8rem; padding: 0.4rem 1rem;">
+            <i data-feather="refresh-cw" class="me-1" style="width: 14px; height: 14px;"></i>Reset
           </button>
         </div>
       </div>
@@ -678,10 +678,10 @@
 @endphp
 <div class="row mt-5 mb-5">
   <div class="col-12">
-    <div class="card-glass" style="padding: 2.5rem;">
+    <div class="card-glass" style="padding: 1.5rem;">
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h5 class="mb-0 text-white" style="font-weight: 700; font-size: 1.5rem;">
-          <i data-feather="users" class="me-2" style="width: 28px; height: 28px;"></i>GE Feedback Overview
+        <h5 class="mb-0 text-white" style="font-weight: 700; font-size: 1.2rem;">
+          <i data-feather="users" class="me-2" style="width: 22px; height: 22px;"></i>GE Feedback Overview
         </h5>
       </div>
       @if($hasData)
@@ -723,8 +723,8 @@
           <div class="ge-progress-card" style="padding: 1.25rem 1.5rem !important; background: {{ $colorScheme['bg'] }} !important; border: none !important; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important; border-radius: 0 !important;">
             <div class="d-flex justify-content-between align-items-start mb-2">
               <div>
-                <h6 class="mb-1 text-white" style="font-weight: 700; font-size: 1.15rem; color: #ffffff !important;">{{ $geData['ge_name'] ?? ($geData['ge']->name ?? $geData['ge']->username ?? 'N/A') }}</h6>
-                <p class="mb-0 text-white" style="font-size: 0.95rem; opacity: 0.95; color: #ffffff !important;">
+                <h6 class="mb-1 text-white" style="font-weight: 700; font-size: 1rem; color: #ffffff !important;">{{ $geData['ge_name'] ?? ($geData['ge']->name ?? $geData['ge']->username ?? 'N/A') }}</h6>
+                <p class="mb-0 text-white" style="font-size: 0.85rem; opacity: 0.95; color: #ffffff !important;">
                   <i data-feather="map-pin" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; color: #ffffff;"></i>
                   <span style="color: #ffffff !important; margin-left: 0.25rem;">{{ $geData['city'] }}</span>
                 </p>
@@ -735,8 +735,8 @@
             </div>
             <div class="mb-2">
               <div class="d-flex justify-content-between align-items-center mb-1">
-                <span class="text-white" style="font-size: 1rem; font-weight: 600; opacity: 0.95; color: #ffffff !important;">Performance</span>
-                <span class="text-white" style="font-weight: 800; font-size: 1.6rem; color: #ffffff !important;">{{ $geData['progress_percentage'] }}%</span>
+                <span class="text-white" style="font-size: 0.9rem; font-weight: 600; opacity: 0.95; color: #ffffff !important;">Performance</span>
+                <span class="text-white" style="font-weight: 800; font-size: 1.3rem; color: #ffffff !important;">{{ $geData['progress_percentage'] }}%</span>
               </div>
               <div class="progress" style="height: 14px; background-color: rgba(0, 0, 0, 0.25); border-radius: 8px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.15);">
                 <div class="progress-bar" role="progressbar"
@@ -946,7 +946,7 @@
           <thead>
             <tr>
               <th style="width: 8%;">ID</th>
-              <th style="width: 18%;">Complainant</th>
+              <th style="width: 18%;">House No.</th>
               <th style="width: 12%;">Category</th>
               <th style="width: 15%;">Assigned To</th>
               <th style="width: 18%;">Status</th>
@@ -958,7 +958,7 @@
             @forelse($recentComplaints ?? [] as $complaint)
             <tr>
               <td><strong>{{ (int)$complaint->id }}</strong></td>
-              <td>{{ $complaint->client->client_name ?? 'N/A' }}</td>
+              <td>{{ $complaint->house->house_no ?? 'N/A' }}</td>
               <td>{{ $complaint->getCategoryDisplayAttribute() }}</td>
               <td>
                 @if($complaint->assignedEmployee)
@@ -988,8 +988,14 @@
                    <span class="status-badge status-{{ $displayStatus }}" style="background-color: #64748b !important; color: #ffffff !important; border-color: #475569 !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; width: 120px !important; text-align: center !important;" title="{{ $fullStatusText }}">Addressed</span>
                   @elseif($displayStatus === 'in_progress')
                    <span class="status-badge status-{{ $displayStatus }}" style="background-color: #ec5454 !important; color: #ffffff !important; border-color: #b13030 !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; width: 120px !important; text-align: center !important;" title="{{ $fullStatusText }}">In Progress</span>
-                  @elseif($displayStatus === 'assigned')
-                   <span class="status-badge status-{{ $displayStatus }}" style="background-color: #16a34a !important; color: #ffffff !important; border-color: #15803d !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; width: 120px !important; text-align: center !important;" title="{{ $fullStatusText }}">{{ $fullStatusText }}</span>
+                @elseif($displayStatus === 'assigned')
+                  @if($fullStatusText === 'Unassigned')
+                    <span class="status-badge status-{{ $displayStatus }}" style="background-color: #000000 !important; color: #ffffff !important; border-color: #000000 !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; width: 120px !important; text-align: center !important;" title="{{ $fullStatusText }}">Unassigned</span>
+                  @else
+                    <span class="status-badge status-{{ $displayStatus }}" style="background-color: #16a34a !important; color: #ffffff !important; border-color: #15803d !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; width: 120px !important; text-align: center !important;" title="{{ $fullStatusText }}">{{ $fullStatusText }}</span>
+                  @endif
+                @elseif($displayStatus === 'unassigned')
+                   <span class="status-badge status-unassigned" style="background-color: #000000 !important; color: #ffffff !important; border-color: #000000 !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; width: 120px !important; text-align: center !important;" title="{{ $fullStatusText }}">Unassigned</span>
                 @elseif($displayStatus === 'work_performa')
                   <span class="status-badge status-{{ $displayStatus }}" style="background-color: #60a5fa !important; color: #ffffff !important; border-color: #3b82f6 !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; width: 120px !important; text-align: center !important;" title="{{ $fullStatusText }}">{{ $fullStatusText }}</span>
                 @elseif($displayStatus === 'maint_performa')
@@ -1062,7 +1068,7 @@
               <thead>
                 <tr>
                   <th style="width: 8%; padding: 0.4rem 0.5rem !important;">Complaint ID</th>
-                  <th style="width: 15%; padding: 0.4rem 0.5rem !important;">Complainant</th>
+                  <th style="width: 15%; padding: 0.4rem 0.5rem !important;">House No.</th>
                   <th style="width: 12%; padding: 0.4rem 0.5rem !important;">Assigned To</th>
                   <th style="width: 11%; padding: 0.4rem 0.5rem !important;">Category</th>
                   <th style="width: 10%; padding: 0.4rem 0.5rem !important;">Status</th>
@@ -1075,24 +1081,12 @@
                 @foreach($pendingApprovals as $approval)
                 <tr>
                   <td style="padding: 0.4rem 0.5rem !important;">{{ $approval->complaint ? (int)$approval->complaint->id : 'N/A' }}</td>
-                  <td style="padding: 0.4rem 0.5rem !important;">{{ $approval->complaint && $approval->complaint->client ? $approval->complaint->client->client_name : 'N/A' }}</td>
+                  <td style="padding: 0.4rem 0.5rem !important;">{{ $approval->complaint && $approval->complaint->house ? $approval->complaint->house->house_no : 'N/A' }}</td>
                   <td style="padding: 0.4rem 0.5rem !important;">{{ $approval->requestedBy->name ?? 'N/A' }}</td>
                   <td style="padding: 0.4rem 0.5rem !important;">
                     @if($approval->complaint)
                       @php
-                        $category = $approval->complaint->category ?? 'N/A';
-                        $categoryDisplay = [
-                          'electric' => 'Electric',
-                          'technical' => 'Technical',
-                          'service' => 'Service',
-                          'billing' => 'Billing',
-                          'water' => 'Water Supply',
-                          'sanitary' => 'Sanitary',
-                          'plumbing' => 'Plumbing',
-                          'kitchen' => 'Kitchen',
-                          'other' => 'Other',
-                        ];
-                        $catDisplay = $categoryDisplay[strtolower($category)] ?? ucfirst($category);
+                        $catDisplay = $approval->complaint->getCategoryDisplayAttribute();
                       @endphp
                       <span style="font-size: 0.75rem;">{{ $catDisplay }}</span>
                     @else
@@ -1212,20 +1206,22 @@
   @php
     // Status colors mapping (same as in approvals view)
     $statusColorMap = [
+      'unassigned' => '#000000', // Black
       'assigned' => '#16a34a', // Green (swapped from grey)
-      'in_progress' => '#ec5454', // Brown-Red mix
+      'in_progress' => '#ec5454', // Red-ish
       'resolved' => '#64748b', // Grey (swapped from green)
       'work_performa' => '#60a5fa', // Light Blue
       'maint_performa' => '#eab308', // Yellow
       'work_priced_performa' => '#9333ea', // Purple
       'maint_priced_performa' => '#ea580c', // Orange Red
-      'product_na' => '#f97316', // Orange (from Product N/A stat card)
-      'un_authorized' => '#ec4899', // Pink (same as approvals view)
-      'pertains_to_ge_const_isld' => '#06b6d4', // Aqua/Cyan (same as approvals view)
+      'product_na' => '#f97316', // Orange
+      'un_authorized' => '#ec4899', // Pink
+      'pertains_to_ge_const_isld' => '#06b6d4', // Aqua/Cyan
     ];
 
     // All possible statuses from approvals page (in order)
     $allPossibleStatuses = [
+      'unassigned',
       'assigned',
       'in_progress',
       'resolved',

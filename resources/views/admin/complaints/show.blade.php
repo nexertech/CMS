@@ -17,6 +17,7 @@
   $rawStatus = $complaint->status ?? 'new';
   $complaintStatus = ($rawStatus == 'new') ? 'assigned' : $rawStatus;
   $statusLabels = [
+    'unassigned' => 'Unassigned',
     'assigned' => 'Assigned',
     'in_progress' => 'In Progress',
     'resolved' => 'Addressed',
@@ -30,10 +31,15 @@
     'pertains_to_ge_const_isld' => 'GE Const Isld',
     'barak_damages' => 'Barak Damages',
   ];
-  $statusDisplay = $statusLabels[$complaintStatus] ?? ucfirst(str_replace('_', ' ', $complaintStatus));
+  
+  // Real mapping: 'new' is 'unassigned'
+  $displayStatus = ($rawStatus == 'new') ? 'unassigned' : $rawStatus;
+  $statusDisplay = $statusLabels[$displayStatus] ?? ucfirst(str_replace('_', ' ', $displayStatus));
+  
   $statusColors = [
+    'unassigned' => ['bg' => '#000000', 'text' => '#ffffff', 'border' => '#000000'],
     'in_progress' => ['bg' => '#dc2626', 'text' => '#ffffff', 'border' => '#b91c1c'],
-    'resolved' => ['bg' => '#64748b', 'text' => '#ffffff', 'border' => '#475569'], // Grey (swapped from green)
+    'resolved' => ['bg' => '#64748b', 'text' => '#ffffff', 'border' => '#475569'], // Grey
     'work_performa' => ['bg' => '#60a5fa', 'text' => '#ffffff', 'border' => '#3b82f6'],
     'maint_performa' => ['bg' => '#eab308', 'text' => '#ffffff', 'border' => '#ca8a04'],
     'work_priced_performa' => ['bg' => '#9333ea', 'text' => '#ffffff', 'border' => '#7e22ce'],
@@ -42,24 +48,13 @@
     'un_authorized' => ['bg' => '#ec4899', 'text' => '#ffffff', 'border' => '#db2777'],
     'pertains_to_ge_const_isld' => ['bg' => '#06b6d4', 'text' => '#ffffff', 'border' => '#0891b2'],
     'barak_damages' => ['bg' => '#808000', 'text' => '#ffffff', 'border' => '#666600'],
-    'assigned' => ['bg' => '#16a34a', 'text' => '#ffffff', 'border' => '#15803d'], // Green (swapped from grey)
+    'assigned' => ['bg' => '#16a34a', 'text' => '#ffffff', 'border' => '#15803d'], // Green
   ];
-  $currentStatusColor = $statusColors[$complaintStatus] ?? $statusColors['assigned'];
+  $currentStatusColor = $statusColors[$displayStatus] ?? $statusColors['assigned'];
   
   $category = $complaint->category ?? 'N/A';
   $designation = $complaint->assignedEmployee->designation ?? 'N/A';
-  $categoryDisplay = [
-    'electric' => 'Electric',
-    'technical' => 'Technical',
-    'service' => 'Service',
-    'billing' => 'Billing',
-    'water' => 'Water Supply',
-    'sanitary' => 'Sanitary',
-    'plumbing' => 'Plumbing',
-    'kitchen' => 'Kitchen',
-    'other' => 'Other',
-  ];
-  $catDisplay = $categoryDisplay[strtolower($category)] ?? ucfirst($category);
+  $catDisplay = $complaint->getCategoryDisplayAttribute();
   $displayText = $catDisplay . ' - ' . $designation;
 @endphp
 

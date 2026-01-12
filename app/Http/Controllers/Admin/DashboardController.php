@@ -186,7 +186,7 @@ class DashboardController extends Controller
             ->get();
 
         // Get approvals with location filtering and filters
-        $pendingApprovalsQuery = SpareApprovalPerforma::with(['complaint.client', 'complaint.assignedEmployee', 'requestedBy', 'items.spare']);
+        $pendingApprovalsQuery = SpareApprovalPerforma::with(['complaint.client', 'complaint.house', 'complaint.assignedEmployee', 'requestedBy', 'items.spare']);
 
         // Apply approval status filter directly on approvals (if specified, otherwise show only pending)
         if ($approvalStatus) {
@@ -246,10 +246,10 @@ class DashboardController extends Controller
             ->pluck('count', 'status')
             ->toArray();
 
-        // Map 'new' status to 'assigned' for display (same logic as approvals page)
+        // Map 'new' status to 'unassigned' for display
         $complaintsByStatus = [];
         foreach ($statusCounts as $status => $count) {
-            $displayStatus = ($status === 'new') ? 'assigned' : $status;
+            $displayStatus = ($status === 'new') ? 'unassigned' : $status;
             if (!isset($complaintsByStatus[$displayStatus])) {
                 $complaintsByStatus[$displayStatus] = 0;
             }
