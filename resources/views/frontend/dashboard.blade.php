@@ -866,7 +866,7 @@
                         <div class="flex items-center gap-4">
                             <div class="flex items-center gap-3">
                                 <h2 class="text-xl font-semibold">Top 10 Most Issued Products</h2>
-                                <a href="{{ route('frontend.stock.all') }}" class="text-blue-600 hover:text-blue-800 text-sm font-bold flex items-center gap-1">
+                                <a href="{{ route('frontend.stock.all') }}" id="viewAllProductsLink" class="text-blue-600 hover:text-blue-800 text-sm font-bold flex items-center gap-1">
                                     View All <i data-feather="external-link" style="width: 14px; height: 14px;"></i>
                                 </a>
                             </div>
@@ -2602,6 +2602,22 @@
 
                     // Update URL without reload
                     window.history.pushState({}, '', '{{ route("frontend.dashboard") }}?' + params.toString());
+                    
+                    // Update View All link for products
+                    const viewAllProductsLink = document.getElementById('viewAllProductsLink');
+                    if (viewAllProductsLink) {
+                        const linkParams = new URLSearchParams();
+                        if (cmesId) linkParams.append('cmes_id', cmesId);
+                        if (cityId) linkParams.append('city_id', cityId);
+                        if (sectorId) linkParams.append('sector_id', sectorId);
+                        if (dateRange) linkParams.append('date_range', dateRange);
+                        if (dateRange === 'custom' && startDate && endDate) {
+                            linkParams.append('start_date', startDate);
+                            linkParams.append('end_date', endDate);
+                        }
+                        
+                        viewAllProductsLink.href = '{{ route("frontend.stock.all") }}?' + linkParams.toString();
+                    }
                 }
             })
             .catch(error => {

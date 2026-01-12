@@ -1121,7 +1121,7 @@ class HomeController extends Controller
             ->whereNotNull('item_name')
             ->groupBy('item_name')
             ->orderByDesc('total_used')
-            ->limit(15);
+            ->limit(10);
 
         // Apply Global Location Scoping
         $this->applyFrontendLocationScope($categoryUsageQuery, $locationScope, 'city_id', 'sector_id');
@@ -1566,12 +1566,20 @@ class HomeController extends Controller
         
         $selectedYear = $request->get('year', 'all_time');
         
+        // Dashboard filters
+        $filters = [
+            'city_id' => $request->get('city_id'),
+            'sector_id' => $request->get('sector_id'),
+            'cmes_id' => $request->get('cmes_id'),
+            'date_range' => $request->get('date_range')
+        ];
+        
         $monthLabels = [];
         for ($m = 1; $m <= 12; $m++) {
             $monthLabels[] = date('M', mktime(0, 0, 0, $m, 1));
         }
 
-        $stockConsumptionData = $this->getStockConsumptionData($user, $locationScope, $selectedYear);
+        $stockConsumptionData = $this->getStockConsumptionData($user, $locationScope, $selectedYear, $filters);
 
         // Get available years for filter
         $years = collect(range(date('Y'), 2023))->unique()->values()->all();
@@ -1579,7 +1587,7 @@ class HomeController extends Controller
         return view('frontend.stock.all', compact('stockConsumptionData', 'monthLabels', 'selectedYear', 'years'));
     }
 
-    protected function getStockConsumptionData($user, $locationScope, $year = null)
+    protected function getStockConsumptionData($user, $locationScope, $year = null, $dashboardFilters = [])
     {
         $year = $year ?: date('Y');
         $hasUnrestrictedAccess = empty($locationScope['restricted']);
@@ -1587,6 +1595,26 @@ class HomeController extends Controller
         $sparesListQuery = \App\Models\Spare::orderBy('issued_quantity', 'desc');
 
         $this->applyFrontendLocationScope($sparesListQuery, $locationScope, 'city_id', 'sector_id');
+
+        // Apply dashboard filters to spares list
+        if (!empty($dashboardFilters['city_id'])) {
+            $sparesListQuery->where('city_id', $dashboardFilters['city_id']);
+        } elseif (!empty($dashboardFilters['sector_id'])) {
+            $sparesListQuery->where('sector_id', $dashboardFilters['sector_id']);
+        } elseif (!empty($dashboardFilters['cmes_id'])) {
+            $cmesId = $dashboardFilters['cmes_id'];
+            $cityIds = \App\Models\City::where('cme_id', $cmesId)->pluck('id')->toArray();
+            $sectorIds = \App\Models\Sector::where(function($sq) use ($cmesId, $cityIds) {
+                $sq->where('cme_id', $cmesId);
+                if (!empty($cityIds)) $sq->orWhereIn('city_id', $cityIds);
+            })->pluck('id')->toArray();
+
+            $sparesListQuery->where(function($q) use ($cityIds, $sectorIds) {
+                if (!empty($cityIds)) $q->whereIn('city_id', $cityIds);
+                if (!empty($sectorIds)) $q->orWhereIn('sector_id', $sectorIds);
+            });
+        }
+
         $sparesList = $sparesListQuery->get();
 
         $stockQuery = \App\Models\SpareStockLog::selectRaw('
@@ -1612,6 +1640,36 @@ class HomeController extends Controller
             $stockQuery->whereIn('spares.city_id', $user->group_ids);
         } elseif ($user && !empty($user->node_ids)) {
             $stockQuery->whereIn('spares.sector_id', $user->node_ids);
+        }
+
+        // Apply additional dashboard location filters to stock logs
+        if (!empty($dashboardFilters['city_id'])) {
+            $stockQuery->where('spares.city_id', $dashboardFilters['city_id']);
+        } elseif (!empty($dashboardFilters['sector_id'])) {
+            $stockQuery->where('spares.sector_id', $dashboardFilters['sector_id']);
+        } elseif (!empty($dashboardFilters['cmes_id'])) {
+            $cityIdsStats = \App\Models\City::where('cme_id', $dashboardFilters['cmes_id'])->pluck('id')->toArray();
+            $stockQuery->whereIn('spares.city_id', $cityIdsStats);
+        }
+
+        // Apply Date Range filter if present (Dashboard filters override Year filter)
+        if (!empty($dashboardFilters['date_range']) && $dashboardFilters['date_range'] !== 'all_time') {
+            $now = now();
+            switch ($dashboardFilters['date_range']) {
+                case 'this_month':
+                    $stockQuery->whereMonth('spare_stock_logs.created_at', $now->month)
+                               ->whereYear('spare_stock_logs.created_at', $now->year);
+                    break;
+                case 'last_6_months':
+                    $stockQuery->where('spare_stock_logs.created_at', '>=', $now->copy()->subMonths(6)->startOfDay());
+                    break;
+                case 'this_year':
+                    $stockQuery->whereYear('spare_stock_logs.created_at', $now->year);
+                    break;
+                case 'last_year':
+                    $stockQuery->whereYear('spare_stock_logs.created_at', $now->copy()->subYear()->year);
+                    break;
+            }
         }
 
         $stockResults = $stockQuery->groupBy('spare_stock_logs.spare_id', 'month')->get();
@@ -1642,6 +1700,36 @@ class HomeController extends Controller
             $stockReceivedQuery->whereIn('spares.city_id', $user->group_ids);
         } elseif ($user && !empty($user->node_ids)) {
             $stockReceivedQuery->whereIn('spares.sector_id', $user->node_ids);
+        }
+
+        // Apply additional dashboard location filters to stock logs (Received)
+        if (!empty($dashboardFilters['city_id'])) {
+            $stockReceivedQuery->where('spares.city_id', $dashboardFilters['city_id']);
+        } elseif (!empty($dashboardFilters['sector_id'])) {
+            $stockReceivedQuery->where('spares.sector_id', $dashboardFilters['sector_id']);
+        } elseif (!empty($dashboardFilters['cmes_id'])) {
+            $cityIdsStatsReceived = \App\Models\City::where('cme_id', $dashboardFilters['cmes_id'])->pluck('id')->toArray();
+            $stockReceivedQuery->whereIn('spares.city_id', $cityIdsStatsReceived);
+        }
+
+        // Apply Date Range filter to Received stock
+        if (!empty($dashboardFilters['date_range']) && $dashboardFilters['date_range'] !== 'all_time') {
+            $now = now();
+            switch ($dashboardFilters['date_range']) {
+                case 'this_month':
+                    $stockReceivedQuery->whereMonth('spare_stock_logs.created_at', $now->month)
+                                       ->whereYear('spare_stock_logs.created_at', $now->year);
+                    break;
+                case 'last_6_months':
+                    $stockReceivedQuery->where('spare_stock_logs.created_at', '>=', $now->copy()->subMonths(6)->startOfDay());
+                    break;
+                case 'this_year':
+                    $stockReceivedQuery->whereYear('spare_stock_logs.created_at', $now->year);
+                    break;
+                case 'last_year':
+                    $stockReceivedQuery->whereYear('spare_stock_logs.created_at', $now->copy()->subYear()->year);
+                    break;
+            }
         }
 
         $stockReceivedQuery->groupBy('spare_stock_logs.spare_id', 'month');
