@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin/login',
             'login',
             'logout',
+            'api/*', // Exclude all API routes from CSRF protection
         ]);
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,

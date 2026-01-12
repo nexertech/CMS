@@ -44,6 +44,10 @@ return [
             'driver' => 'session',
             'provider' => 'frontend_users',
         ],
+        'sanctum' => [
+            'driver' => 'sanctum',
+            'provider' => 'houses',
+        ],
     ],
 
     /*
@@ -72,6 +76,11 @@ return [
         'frontend_users' => [
             'driver' => 'eloquent',
             'model' => App\Models\FrontendUser::class,
+        ],
+
+        'houses' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\House::class,
         ],
 
         // 'users' => [

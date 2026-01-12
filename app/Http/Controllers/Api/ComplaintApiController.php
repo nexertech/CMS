@@ -19,18 +19,39 @@ use Illuminate\Support\Facades\Log;
 class ComplaintApiController extends Controller
 {
     /**
+     * Helper to get authenticated house from token or request
+     */
+    private function getAuthenticatedHouse(Request $request)
+    {
+        // Try getting from Sanctum (if middleware is active)
+        $house = $request->user();
+        
+        if (!$house) {
+            // Manual token check for cases where middleware might be bypassed
+            $token = $request->bearerToken();
+            if ($token) {
+                $personalAccessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
+                if ($personalAccessToken && $personalAccessToken->tokenable_type === \App\Models\House::class) {
+                    $house = $personalAccessToken->tokenable;
+                }
+            }
+        }
+        
+        return $house;
+    }
+
+    /**
      * Get all complaints for the logged-in house
      */
     public function index(Request $request)
     {
-        // For testing without auth, get first house. In production, use: $request->user()
-        $house = $request->user() ?? \App\Models\House::first();
+        $house = $this->getAuthenticatedHouse($request);
         
         if (!$house) {
             return response()->json([
                 'success' => false,
-                'message' => 'No house found'
-            ], 404);
+                'message' => 'Unauthorized. Please login again.'
+            ], 401);
         }
         
         $complaints = Complaint::where('house_id', $house->id)
@@ -63,12 +84,14 @@ class ComplaintApiController extends Controller
      */
     public function show(Request $request, $id)
     {
-        $house = $request->user() ?? \App\Models\House::first();
+        $house = $this->getAuthenticatedHouse($request);
         if (!$house) {
-            return response()->json(['success' => false, 'message' => 'No house found in system'], 404);
+            return response()->json(['success' => false, 'message' => 'Unauthorized. Please login again.'], 401);
         }
-        // Temporarily commented house_id check for testing
-        $complaint = Complaint::where('id', $id)->first();
+
+        $complaint = Complaint::where('id', $id)
+            ->where('house_id', $house->id)
+            ->first();
 
         if (!$complaint) {
             return response()->json(['success' => false, 'message' => 'Complaint not found'], 404);
@@ -110,7 +133,15 @@ class ComplaintApiController extends Controller
      */
     public function register(Request $request)
     {
-        $house = $request->user() ?? \App\Models\House::first(); // Authenticated House or fallback
+        $house = $this->getAuthenticatedHouse($request);
+        
+        // Check if house exists
+        if (!$house) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. No valid session found.'
+            ], 401);
+        }
 
         $validator = Validator::make($request->all(), [
             'category' => 'required|exists:complaint_categories,name',
@@ -157,7 +188,7 @@ class ComplaintApiController extends Controller
                 'priority' => $request->priority ?? 'medium',
                 'description' => $request->description,
                 'availability_time' => $request->availability_time,
-                'status' => 'new',
+                'status' => 'new', // Using 'new' until 'unassigned' is added to database enum
             ]);
 
             // Log activity
@@ -257,9 +288,14 @@ class ComplaintApiController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $house = $request->user() ?? \App\Models\House::first();
-        // Temporarily commented house_id check for testing any complaint ID
-        $complaint = Complaint::where('id', $complaintId)->first(); 
+        $house = $this->getAuthenticatedHouse($request);
+        if (!$house) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 401);
+        }
+
+        $complaint = Complaint::where('id', $complaintId)
+            ->where('house_id', $house->id)
+            ->first(); 
 
         if (!$complaint) {
             return response()->json(['success' => false, 'message' => 'Complaint not found or unauthorized'], 403);

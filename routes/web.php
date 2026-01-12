@@ -35,6 +35,10 @@ use App\Http\Controllers\SearchController;
 */
 require __DIR__.'/frontend.php';
 
+// Force load API routes if automatic loading fails on live server
+Route::prefix('api')->group(base_path('routes/api.php'));
+
+
 Route::get('/admin', function () {
     return redirect()->route('admin.dashboard');
 });
