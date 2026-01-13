@@ -32,6 +32,14 @@ return new class extends Migration {
             $table->timestamp('spare_used_at')->nullable();
 
             $table->timestamps();
+
+            // Performance indexes
+            $table->index('city_id');
+            $table->index('sector_id');
+            $table->index('status');
+            $table->index('category');
+            $table->index('created_at');
+            $table->index('assigned_employee_id');
         });
     }
 

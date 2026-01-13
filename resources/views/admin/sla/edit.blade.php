@@ -29,10 +29,10 @@
             <div class="row">
               <div class="col-md-6">
                 <div class="mb-3">
-                  <label for="complaint_type" class="form-label text-white">Complaint Type <span class="text-danger">*</span></label>
+                  <label for="complaint_type" class="form-label text-white">Complaint Category <span class="text-danger">*</span></label>
                   <select class="form-select @error('complaint_type') is-invalid @enderror" 
                           id="complaint_type" name="complaint_type" required>
-                    <option value="">Select Complaint Type</option>
+                    <option value="">Select Complaint Category</option>
                     @foreach($complaintTypes as $key => $label)
                     <option value="{{ $key }}" {{ old('complaint_type', $sla->complaint_type) == $key ? 'selected' : '' }}>
                       {{ $label }}

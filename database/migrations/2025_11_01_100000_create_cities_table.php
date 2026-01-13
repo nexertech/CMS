@@ -24,6 +24,8 @@ return new class extends Migration
                     if (!Schema::hasColumn('cities', 'cme_id')) {
                         Schema::table('cities', function (Blueprint $table) {
                             $table->unsignedBigInteger('cme_id')->nullable()->after('id');
+                            $table->index('cme_id');
+                            $table->index('status');
                         });
                     }
 
@@ -71,6 +73,10 @@ return new class extends Migration
             $table->string('name', 100)->unique();
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->timestamps();
+
+            // Performance indexes
+            $table->index('cme_id');
+            $table->index('status');
         });
     }
 

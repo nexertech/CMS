@@ -18,11 +18,17 @@ return new class extends Migration
                 });
             }
             if (!Schema::hasColumn('sectors', 'city_id')) {
-                 Schema::table('sectors', function (Blueprint $table) {
+                Schema::table('sectors', function (Blueprint $table) {
                     $table->unsignedBigInteger('city_id')->nullable()->after('cme_id');
                 });
             }
-             // If table exists, we assume other columns might exist or we just want to patch it.
+            // Ensure indexes exist even if columns did
+            Schema::table('sectors', function (Blueprint $table) {
+                $table->index('cme_id');
+                $table->index('city_id');
+                $table->index('status');
+            });
+            // If table exists, we assume other columns might exist or we just want to patch it.
              // But the original code was creating the table.
              // To be safe and consistent with the "cities" approach which seemed to return if table exists:
              // We should probably just return here if we are only patching.
@@ -39,6 +45,11 @@ return new class extends Migration
             $table->string('name', 100)->unique();
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->timestamps();
+
+            // Performance indexes
+            $table->index('cme_id');
+            $table->index('city_id');
+            $table->index('status');
         });
     }
 
