@@ -250,20 +250,31 @@ class FrontendUserController extends Controller
 
             $frontend_user->update($updateData);
 
-            // Handle "Grant all privileges" (Super Admin)
+            // Handle "Grant all privileges" (Super Admin) logic carefully
+            $totalActiveCmes = DB::table('cmes')->where('status', 'active')->count();
+            $totalActiveCities = DB::table('cities')->where('status', 'active')->count();
+            
+            $userCmeIds = $frontend_user->cme_ids ?? [];
+            $userCityIds = $frontend_user->group_ids ?? [];
+            
+            $wasSuperAdmin = ($totalActiveCmes > 0 && $totalActiveCities > 0) &&
+                            (count($userCmeIds) === $totalActiveCmes) && 
+                            (count($userCityIds) === $totalActiveCities);
+
             if ($request->has('is_super_admin') && $request->is_super_admin == 1) {
-                // Assign ALL CMEs, Cities, and Sectors
+                // Grant ALL CMEs, Cities, and Sectors
                 $frontend_user->cme_ids = DB::table('cmes')->where('status', 'active')->pluck('id')->toArray();
                 $frontend_user->group_ids = DB::table('cities')->where('status', 'active')->pluck('id')->toArray();
                 $frontend_user->node_ids = DB::table('sectors')->where('status', 'active')->pluck('id')->toArray();
                 $frontend_user->save();
-            } else {
-                // If "Grant all privileges" is unchecked, remove all privileges
+            } elseif ($wasSuperAdmin && !$request->has('is_super_admin')) {
+                // Was super admin but now unchecked, so demote (remove all)
                 $frontend_user->cme_ids = [];
                 $frontend_user->group_ids = [];
                 $frontend_user->node_ids = [];
                 $frontend_user->save();
             }
+            // else: regular user update, don't touch existing JSON privileges/locations
 
             return redirect()->route('admin.frontend-users.index')
                 ->with('success', 'Frontend user updated successfully.');

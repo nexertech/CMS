@@ -964,7 +964,7 @@
                 @if($complaint->assignedEmployee)
                   <span style="font-size: 0.875rem;">{{ $complaint->assignedEmployee->name ?? 'N/A' }}</span>
                 @else
-                  <span style="color: #94a3b8; font-style: italic; font-size: 0.875rem;">Unassigned</span>
+                  <span style="color: #94a3b8; font-size: 0.875rem;">Unassigned</span>
                 @endif
               </td>
               <td>

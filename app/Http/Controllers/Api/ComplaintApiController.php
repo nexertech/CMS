@@ -65,10 +65,11 @@ class ComplaintApiController extends Controller
                     'category' => $complaint->category,
                     'designation' => $complaint->designation,
                     'description' => $complaint->description,
+                    'availability_time' => $complaint->availability_time,
                     'status' => $complaint->status,
                     'status_label' => ucfirst(str_replace('_', ' ', $complaint->status)),
-                    'created_at' => $complaint->created_at->format('M d, Y H:i'),
-                    'closed_at' => $complaint->closed_at ? $complaint->closed_at->format('M d, Y H:i') : null,
+                    'created_at' => $complaint->created_at->timezone('Asia/Karachi')->format('M d, Y H:i'),
+                    'closed_at' => $complaint->closed_at ? $complaint->closed_at->timezone('Asia/Karachi')->format('M d, Y H:i') : null,
                     'assigned_employee' => $complaint->assignedEmployee ? $complaint->assignedEmployee->name : null,
                 ];
             });
@@ -107,7 +108,7 @@ class ComplaintApiController extends Controller
                 'status' => $complaint->status,
                 'priority' => $complaint->priority,
                 'description' => $complaint->description,
-                'created_at' => $complaint->created_at->format('d M Y, h:i A'),
+                'created_at' => $complaint->created_at->timezone('Asia/Karachi')->format('d M Y, h:i A'),
                 'availability_time' => $complaint->availability_time,
                 'remarks' => $complaint->remarks, // feedback from admin if any
                 'feedback' => $complaint->feedback ? [
@@ -115,13 +116,13 @@ class ComplaintApiController extends Controller
                     'stars' => $complaint->feedback->rating_score . ' Stars',
                     'comments' => $complaint->feedback->comments,
                     'status' => $complaint->feedback->overall_rating_display,
-                    'date' => $complaint->feedback->created_at->format('d M Y, h:i A')
+                    'date' => $complaint->feedback->created_at->timezone('Asia/Karachi')->format('d M Y, h:i A')
                 ] : null,
                 'logs' => $complaint->logs()->orderBy('created_at', 'desc')->get()->map(function($log) {
                     return [
                         'status' => $log->action,
                         'remarks' => $log->remarks,
-                        'created_at' => $log->created_at->format('d M Y, h:i A')
+                        'created_at' => $log->created_at->timezone('Asia/Karachi')->format('d M Y, h:i A')
                     ];
                 })
             ]
@@ -204,7 +205,8 @@ class ComplaintApiController extends Controller
                 'success' => true,
                 'message' => 'Complaint registered successfully',
                 'ticket_number' => $complaint->ticket_number,
-                'complaint_id' => $complaint->id
+                'complaint_id' => $complaint->id,
+                'availability_time' => $complaint->availability_time,
             ], 201);
 
         } catch (\Exception $e) {
@@ -221,17 +223,38 @@ class ComplaintApiController extends Controller
     /**
      * Get Complaint Categories
      */
-    public function categories()
-    {
-        // Fetch from the actual complaint_categories table
-        $categories = DB::table('complaint_categories')->pluck('name');
-        
-        return response()->json([
-            'success' => true,
-            'data' => $categories
-        ]);
-    }
+public function categories()
+{
+    $rows = DB::table('complaint_categories as c')
+        ->leftJoin('complaint_titles as t', 't.category', '=', 'c.name')
+        ->select(
+            'c.id as cat_id',
+            'c.name as cat_title',
+            't.id as subcat_id',
+            't.title as subcat_title'
+        )
+        ->orderBy('c.name')
+        ->orderBy('t.title')
+        ->get();
 
+    $data = $rows->groupBy('cat_id')->map(function ($items) {
+
+        return [
+            "cat_title" => $items->first()->cat_title,
+            "subcats" => $items->whereNotNull('subcat_id')->map(function ($row) {
+                return [
+                    "subcat_id" => $row->subcat_id,
+                    "subcat_title" => $row->subcat_title
+                ];
+            })->values()->toArray()
+        ];
+    })->toArray(); // ✅ important: values() NOT used so cat_id stays as key
+
+    return response()->json([
+        "success" => true,
+        "data" => $data
+    ]);
+}
     /**
      * Get Complaint Titles (Types)
      */
