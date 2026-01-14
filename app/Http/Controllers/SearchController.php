@@ -52,7 +52,9 @@ class SearchController extends Controller
             ->where(function($q) use ($query) {
                 $q->where('title', 'like', "%{$query}%")
                   ->orWhere('description', 'like', "%{$query}%")
-                  ->orWhere('category', 'like', "%{$query}%")
+                  ->orWhereHas('category', function($subQ) use ($query) {
+                      $subQ->where('name', 'like', "%{$query}%");
+                  })
                   ->orWhere('status', 'like', "%{$query}%")
                   ->orWhere('priority', 'like', "%{$query}%");
             })

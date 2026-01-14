@@ -12,10 +12,10 @@ class Spare extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'product_code',
-        'brand_name',
         'item_name',
-        'category',
+        'category_id',
+        'brand_name',
+        'product_code',
         'city_id',
         'sector_id',
         'unit_price',
@@ -60,6 +60,14 @@ class Spare extends Model
     public function approvalItems(): HasMany
     {
         return $this->hasMany(SpareApprovalItem::class, 'spare_id', 'id');
+    }
+
+    /**
+     * Get the category for the spare.
+     */
+    public function category()
+    {
+        return $this->belongsTo(ComplaintCategory::class, 'category_id', 'id');
     }
 
     /**
@@ -131,7 +139,7 @@ class Spare extends Model
      */
     public function getCategoryDisplayAttribute(): string
     {
-        return self::getCategories()[$this->category] ?? $this->category;
+        return $this->category ? $this->category->name : 'N/A';
     }
 
     /**

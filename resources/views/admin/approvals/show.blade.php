@@ -15,7 +15,7 @@
 @php
   $complaint = $approval->complaint ?? null;
   if ($complaint) {
-    $category = $complaint->category ?? 'N/A';
+    $category = $complaint->category->name ?? $complaint->category ?? 'N/A';
 
     // Map category for display - use original complaint category as-is
     // Only format basic categories, keep all other categories as they are
@@ -34,12 +34,13 @@
     $catDisplay = $categoryDisplay[strtolower($category)] ?? $category;
 
     // Use assigned employee designation like index
-    $designation = $complaint->assignedEmployee->designation ?? 'N/A';
+    $designation = $complaint->assignedEmployee->designation->name ?? $complaint->assignedEmployee->designation ?? 'N/A';
     $displayText = $catDisplay . ' - ' . $designation;
 
     $rawStatus = $complaint->status ?? 'new';
-    $complaintStatus = ($rawStatus == 'new') ? 'assigned' : $rawStatus;
+    $complaintStatus = ($rawStatus == 'new') ? 'unassigned' : $rawStatus;
     $statusLabels = [
+      'unassigned' => 'Unassigned',
       'assigned' => 'Assigned',
       'in_progress' => 'In Progress',
       'resolved' => 'Addressed',
@@ -54,6 +55,7 @@
     ];
     $statusDisplay = $statusLabels[$complaintStatus] ?? ucfirst(str_replace('_', ' ', $complaintStatus));
     $statusColors = [
+      'unassigned' => ['bg' => '#000000', 'text' => '#ffffff', 'border' => '#000000'],
       'in_progress' => ['bg' => '#dc2626', 'text' => '#ffffff', 'border' => '#b91c1c'],
       'resolved' => ['bg' => '#64748b', 'text' => '#ffffff', 'border' => '#475569'], // Grey (swapped from green)
       'work_performa' => ['bg' => '#60a5fa', 'text' => '#ffffff', 'border' => '#3b82f6'],

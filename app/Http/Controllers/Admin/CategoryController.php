@@ -31,6 +31,7 @@ class CategoryController extends Controller
         }
         $validated = $request->validate([
             'name' => 'required|string|max:100|unique:complaint_categories,name',
+            'app_name' => 'nullable|string|max:100',
             'description' => 'nullable|string',
         ]);
         ComplaintCategory::create($validated);
@@ -48,6 +49,7 @@ class CategoryController extends Controller
             
             $rules = [
                 'name' => 'required|string|max:100',
+                'app_name' => 'nullable|string|max:100',
                 'description' => 'nullable|string',
             ];
             

@@ -28,17 +28,17 @@
             <div class="row">
               <div class="col-md-6">
                 <div class="mb-3">
-                  <label for="complaint_type" class="form-label text-white">Complaint Category <span class="text-danger">*</span></label>
-                  <select class="form-select @error('complaint_type') is-invalid @enderror" 
-                          id="complaint_type" name="complaint_type" required>
+                  <label for="category_id" class="form-label text-white">Complaint Category <span class="text-danger">*</span></label>
+                  <select class="form-select @error('category_id') is-invalid @enderror" 
+                          id="category_id" name="category_id" required>
                     <option value="">Select Complaint Category</option>
-                    @foreach($complaintTypes as $key => $label)
-                    <option value="{{ $key }}" {{ old('complaint_type') == $key ? 'selected' : '' }}>
+                    @foreach($complaintTypes as $id => $label)
+                    <option value="{{ $id }}" {{ old('category_id') == $id ? 'selected' : '' }}>
                       {{ $label }}
                     </option>
                     @endforeach
                   </select>
-                  @error('complaint_type')
+                  @error('category_id')
                     <div class="invalid-feedback">{{ $message }}</div>
                   @enderror
                 </div>

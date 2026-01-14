@@ -40,8 +40,8 @@
 
   $currentStatusColor = $statusColors[$complaintStatus] ?? $statusColors['assigned'];
   
-  $category = $complaint->category ?? 'N/A';
-  $designation = $complaint->assignedEmployee->designation ?? 'N/A';
+  $category = $complaint->category->name ?? 'N/A';
+  $designation = $complaint->assignedEmployee->designation->name ?? 'N/A';
   $displayText = ucfirst($category) . ' - ' . $designation;
 @endphp
 <style>

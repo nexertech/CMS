@@ -52,8 +52,8 @@
   ];
   $currentStatusColor = $statusColors[$displayStatus] ?? $statusColors['assigned'];
   
-  $category = $complaint->category ?? 'N/A';
-  $designation = $complaint->assignedEmployee->designation ?? 'N/A';
+  $category = $complaint->category_id ?? 'N/A';
+  $designation = $complaint->assignedEmployee->designation->name ?? $complaint->assignedEmployee->designation ?? 'N/A';
   $catDisplay = $complaint->getCategoryDisplayAttribute();
   $displayText = $catDisplay . ' - ' . $designation;
 @endphp
@@ -239,7 +239,7 @@
           <i data-feather="user-check" class="me-3 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
           <div class="flex-grow-1">
             <div class="text-muted small mb-1" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Assigned Employee</div>
-            <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->assignedEmployee->name ?? 'N/A' }}@if($complaint->assignedEmployee && $complaint->assignedEmployee->designation) ({{ $complaint->assignedEmployee->designation }})@endif</div>
+            <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->assignedEmployee->name ?? 'N/A' }}@if($complaint->assignedEmployee && $complaint->assignedEmployee->designation) ({{ $complaint->assignedEmployee->designation->name ?? $complaint->assignedEmployee->designation }})@endif</div>
           </div>
         </div>
       </div>

@@ -130,6 +130,7 @@ class FeedbackController extends Controller
                 'complaint_id' => $complaint->id,
                 'client_id' => $complaint->client_id,
                 'entered_by' => Auth::id(),
+                'house_id' => $complaint->house_id, // Ensure house_id is saved
                 'overall_rating' => $request->overall_rating,
                 'rating_score' => $request->rating_score ?? $this->getRatingScore($request->overall_rating),
                 'service_quality' => $request->service_quality,

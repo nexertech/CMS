@@ -64,17 +64,17 @@
                 <div class="row">
                     <div class="col-md-4">
                         <div class="mb-3">
-                            <label for="category" class="form-label text-white">Category <span
+                            <label for="category_id" class="form-label text-white">Category <span
                                     class="text-danger">*</span></label>
-                            <select class="form-select @error('category') is-invalid @enderror" id="category" name="category" required>
-                                <option value="">Select Category</option>
+                            <select class="form-select @error('category_id') is-invalid @enderror" id="category_id" name="category_id" required>
+                                <option value="" disabled selected>Select Category</option>
                                 @if(isset($categories) && $categories->count() > 0)
-                                    @foreach ($categories as $cat)
-                                        <option value="{{ $cat }}" {{ old('category') == $cat ? 'selected' : '' }}>{{ $cat }}</option>
+                                    @foreach ($categories as $id => $name)
+                                        <option value="{{ $id }}" {{ old('category_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
                                     @endforeach
                                 @endif
                             </select>
-                            @error('category')
+                            @error('category_id')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>

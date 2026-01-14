@@ -13,8 +13,8 @@ class Employee extends Model
 
     protected $fillable = [
         'name',
-        'category',
-        'designation',
+        'category_id',
+        'designation_id',
         'phone',
         'date_of_hire',
         'address',
@@ -22,6 +22,22 @@ class Employee extends Model
         'sector_id',
         'status',
     ];
+
+    /**
+     * Get the category of the employee.
+     */
+    public function category()
+    {
+        return $this->belongsTo(ComplaintCategory::class, 'category_id');
+    }
+
+    /**
+     * Get the designation of the employee.
+     */
+    public function designation()
+    {
+        return $this->belongsTo(Designation::class, 'designation_id');
+    }
 
     protected $casts = [
         'date_of_hire' => 'date',

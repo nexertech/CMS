@@ -11,8 +11,23 @@ class ComplaintCategory extends Model
 
     protected $fillable = [
         'name',
+        'app_name',
         'description',
     ];
+
+    /**
+     * Get the SLA rule for the category.
+     */
+    public function slaRule()
+    {
+        return $this->hasOne(SlaRule::class, 'category_id', 'id');
+    }
+
+    /**
+     * Get the complaints for the category.
+     */
+    public function complaints()
+    {
+        return $this->hasMany(Complaint::class, 'category_id', 'id');
+    }
 }
-
-

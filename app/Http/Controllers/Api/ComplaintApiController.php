@@ -55,15 +55,19 @@ class ComplaintApiController extends Controller
         }
         
         $complaints = Complaint::where('house_id', $house->id)
-            ->with(['assignedEmployee:id,name']) // Load assigned employee
+            ->with(['assignedEmployee:id,name', 'category', 'complaintTitle']) // Load relations
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($complaint) {
                 return [
                     'id' => $complaint->id,
-                    'cmp' => $complaint->cmp,
-                    'category' => $complaint->category,
-                    'designation' => $complaint->designation,
+                    'cmp' => $complaint->cmp, // Verify if this accessor exists, otherwise ticket_number
+                    'ticket_number' => $complaint->ticket_number,
+                    'category' => $complaint->category ? $complaint->category->name : 'Unknown',
+                    'category_id' => $complaint->category_id,
+                    'title' => $complaint->title ?? ($complaint->complaintTitle ? $complaint->complaintTitle->title : 'Other'),
+                    'title_id' => $complaint->complaint_title_id,
+                    'designation' => $complaint->designation, // Verify attribute
                     'description' => $complaint->description,
                     'availability_time' => $complaint->availability_time,
                     'status' => $complaint->status,
@@ -92,6 +96,7 @@ class ComplaintApiController extends Controller
 
         $complaint = Complaint::where('id', $id)
             ->where('house_id', $house->id)
+            ->with(['category', 'complaintTitle'])
             ->first();
 
         if (!$complaint) {
@@ -103,8 +108,8 @@ class ComplaintApiController extends Controller
             'data' => [
                 'id' => $complaint->id,
                 'ticket_number' => $complaint->ticket_number,
-                'title' => $complaint->title,
-                'category' => $complaint->category,
+                'title' => $complaint->title ?? ($complaint->complaintTitle ? $complaint->complaintTitle->title : 'Unknown'),
+                'category' => $complaint->category ? $complaint->category->name : 'Unknown',
                 'status' => $complaint->status,
                 'priority' => $complaint->priority,
                 'description' => $complaint->description,
@@ -144,9 +149,10 @@ class ComplaintApiController extends Controller
             ], 401);
         }
 
+        // Validate: Accept ID OR Name for compatibility
         $validator = Validator::make($request->all(), [
-            'category' => 'required|exists:complaint_categories,name',
-            'title' => 'required|exists:complaint_titles,title',
+            'category' => 'required', // Relaxed to check manually
+            'title' => 'required',
             'description' => 'required|string',
             'availability_time' => 'nullable|string',
             'priority' => 'nullable|in:low,medium,high,urgent'
@@ -160,12 +166,51 @@ class ComplaintApiController extends Controller
             ], 422);
         }
 
+        // Resolve Category (ID or Name)
+        $categoryInput = $request->category;
+        $categoryId = null;
+        if (is_numeric($categoryInput)) {
+            $categoryId = $categoryInput;
+        } else {
+            $catObj = DB::table('complaint_categories')->where('name', $categoryInput)->first();
+            $categoryId = $catObj ? $catObj->id : null;
+        }
+
+        if (!$categoryId) {
+             return response()->json([
+                'success' => false,
+                'message' => 'Invalid Category',
+            ], 422);
+        }
+
+        // Resolve Title (ID or Name)
+        $titleInput = $request->title;
+        $titleId = null;
+        $customTitle = null;
+
+        if (is_numeric($titleInput)) {
+            $titleId = $titleInput;
+        } else {
+            // Try matching Name within the Category
+            $titleObj = DB::table('complaint_titles')
+                ->where('title', $titleInput)
+                ->where('category_id', $categoryId)
+                ->first();
+            
+            if ($titleObj) {
+                $titleId = $titleObj->id;
+            } else {
+                // Treated as Custom Title if not found? Or Error?
+                // Assuming "Other" or custom text.
+                $customTitle = $titleInput;
+            }
+        }
+
         DB::beginTransaction();
         try {
-            // Find or create Client (representing the house owner/resident)
-            // Ideally we link to the House directly, but if your system relies on Client ID:
+            // Find or create Client
             $client = Client::firstOrCreate(
-                ['email' => $house->username . '@cms.com'], // Dummy email or use house field if added
+                ['email' => $house->username . '@cms.com'], 
                 [
                     'client_name' => $house->house_no ?? $house->name ?? $house->username,
                     'contact_person' => $house->name ?? $house->username,
@@ -179,20 +224,20 @@ class ComplaintApiController extends Controller
 
             // Create Complaint
             $complaint = Complaint::create([
-                'uid' => uniqid('C-'), // Ensure you have this or let db handle it
-                'title' => $request->title,
+                // 'uid' removed if not in schema, assuming id is sufficient or ticket_number accessor
+                'complaint_title_id' => $titleId,
+                'title' => $customTitle,
                 'house_id' => $house->id,
                 'client_id' => $client->id,
                 'city_id' => $house->city_id,
                 'sector_id' => $house->sector_id,
-                'category' => $request->category,
+                'category_id' => $categoryId,
                 'priority' => $request->priority ?? 'medium',
                 'description' => $request->description,
                 'availability_time' => $request->availability_time,
-                'status' => 'new', // Using 'new' until 'unassigned' is added to database enum
+                'status' => 'new',
             ]);
 
-            // Log activity
             ComplaintLog::create([
                 'complaint_id' => $complaint->id,
                 'action' => 'created',
@@ -223,13 +268,14 @@ class ComplaintApiController extends Controller
     /**
      * Get Complaint Categories
      */
-public function categories()
+    public function categories()
 {
     $rows = DB::table('complaint_categories as c')
-        ->leftJoin('complaint_titles as t', 't.category', '=', 'c.name')
+        ->leftJoin('complaint_titles as t', 't.category_id', '=', 'c.id')
         ->select(
             'c.id as cat_id',
-            'c.name as cat_title',
+            'c.name as cat_name',
+            'c.app_name as cat_app_name',
             't.id as subcat_id',
             't.title as subcat_title'
         )
@@ -238,9 +284,12 @@ public function categories()
         ->get();
 
     $data = $rows->groupBy('cat_id')->map(function ($items) {
+        $firstItem = $items->first();
+        // Use app_name if available, otherwise fallback to name
+        $displayName = $firstItem->cat_app_name ?: $firstItem->cat_name;
 
         return [
-            "cat_title" => $items->first()->cat_title,
+            "cat_title" => $displayName,
             "subcats" => $items->whereNotNull('subcat_id')->map(function ($row) {
                 return [
                     "subcat_id" => $row->subcat_id,
@@ -260,13 +309,25 @@ public function categories()
      */
     public function titles(Request $request)
     {
-        $query = DB::table('complaint_titles');
+        $query = DB::table('complaint_titles')
+            ->join('complaint_categories', 'complaint_titles.category_id', '=', 'complaint_categories.id');
         
         if ($request->has('category')) {
-            $query->where('category', $request->category);
+            $categoryInput = $request->category;
+            if (is_numeric($categoryInput)) {
+                $query->where('complaint_titles.category_id', $categoryInput);
+            } else {
+                $query->where('complaint_categories.name', $categoryInput);
+            }
         }
 
-        $titles = $query->orderBy('title')->get(['id', 'title', 'category']);
+        $titles = $query->orderBy('complaint_titles.title')
+            ->get([
+                'complaint_titles.id', 
+                'complaint_titles.title', 
+                'complaint_categories.name as category',
+                'complaint_categories.id as category_id'
+            ]);
 
         return response()->json([
             'success' => true,
@@ -279,13 +340,24 @@ public function categories()
      */
     public function getTitlesByCategory($category)
     {
-        // Decode category name in case it has spaces/special characters
-        $categoryName = urldecode($category);
+        // Check if category is ID or Name
+        $query = DB::table('complaint_titles')
+            ->join('complaint_categories', 'complaint_titles.category_id', '=', 'complaint_categories.id');
 
-        $titles = DB::table('complaint_titles')
-            ->where('category', $categoryName)
-            ->orderBy('title')
-            ->get(['id', 'title', 'category']);
+        if (is_numeric($category)) {
+             $query->where('complaint_titles.category_id', $category);
+        } else {
+             $categoryName = urldecode($category);
+             $query->where('complaint_categories.name', $categoryName);
+        }
+
+        $titles = $query->orderBy('complaint_titles.title')
+            ->get([
+                'complaint_titles.id', 
+                'complaint_titles.title', 
+                'complaint_categories.name as category',
+                'complaint_categories.id as category_id'
+            ]);
 
         return response()->json([
             'success' => true,
@@ -331,6 +403,7 @@ public function categories()
         $feedback = ComplaintFeedback::create([
             'complaint_id' => $complaint->id,
             'client_id' => $complaint->client_id,
+            'house_id' => $house->id,
             'overall_rating' => $request->overall_rating,
             'rating_score' => $this->getRatingScore($request->overall_rating),
             'comments' => $request->comments,

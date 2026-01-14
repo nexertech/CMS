@@ -20,9 +20,9 @@ class DesignationController extends Controller
                 ->with('error', 'Run migrations to create designations table.');
         }
 
-        $designations = Designation::orderBy('id', 'asc')->paginate(15);
+        $designations = Designation::with('category')->orderBy('id', 'asc')->paginate(15);
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name')
+            ? ComplaintCategory::orderBy('name')->pluck('name', 'id')
             : collect();
         
         return view('admin.designation.index', compact('designations', 'categories'));
@@ -35,23 +35,15 @@ class DesignationController extends Controller
         }
         
         $rules = [
-            'category' => 'required|string|max:100',
+            'category_id' => 'required|exists:complaint_categories,id',
             'name' => [
                 'required',
                 'string',
                 'max:100',
                 function ($attribute, $value, $fail) use ($request) {
                     $query = Designation::where('name', $value)
-                        ->where('status', 'active');
-                    
-                    // Check category if column exists
-                    try {
-                        if (Schema::hasColumn('designations', 'category')) {
-                            $query->where('category', $request->category);
-                        }
-                    } catch (\Exception $e) {
-                        // If column check fails, just check name
-                    }
+                        ->where('status', 'active')
+                        ->where('category_id', $request->category_id);
                     
                     if ($query->exists()) {
                         $fail('The designation name has already been taken for this category.');
@@ -69,15 +61,6 @@ class DesignationController extends Controller
             }
         } catch (\Exception $e) {}
         
-        // Remove category if column doesn't exist
-        try {
-            if (!Schema::hasColumn('designations', 'category')) {
-                unset($validated['category']);
-            }
-        } catch (\Exception $e) {
-            // If check fails, assume column exists
-        }
-        
         Designation::create($validated);
         return back()->with('success', 'Designation created');
     }
@@ -92,7 +75,7 @@ class DesignationController extends Controller
             $designation = Designation::findOrFail($id);
             
             $rules = [
-                'category' => 'required|string|max:100',
+                'category_id' => 'required|exists:complaint_categories,id',
                 'name' => [
                     'required',
                     'string',
@@ -100,16 +83,8 @@ class DesignationController extends Controller
                     function ($attribute, $value, $fail) use ($request, $id) {
                         $query = Designation::where('name', $value)
                             ->where('status', 'active')
-                            ->where('id', '!=', $id);
-                        
-                        // Check category if column exists
-                        try {
-                            if (Schema::hasColumn('designations', 'category')) {
-                                $query->where('category', $request->category);
-                            }
-                        } catch (\Exception $e) {
-                            // If column check fails, just check name
-                        }
+                            ->where('id', '!=', $id)
+                            ->where('category_id', $request->category_id);
                         
                         if ($query->exists()) {
                             $fail('The designation name has already been taken for this category.');
@@ -127,15 +102,6 @@ class DesignationController extends Controller
                     $validated['department_id'] = 0; // placeholder
                 }
             } catch (\Exception $e) {}
-            
-            // Remove category if column doesn't exist
-            try {
-                if (!Schema::hasColumn('designations', 'category')) {
-                    unset($validated['category']);
-                }
-            } catch (\Exception $e) {
-                // If check fails, assume column exists
-            }
             
             $designation->update($validated);
             

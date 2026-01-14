@@ -29,8 +29,8 @@
         <label class="form-label small mb-1" style="font-size: 0.8rem; color: #000000 !important; font-weight: 500;">Category</label>
         <select class="form-select" name="category" id="categoryFilter" onchange="submitSparesFilters()" style="font-size: 0.9rem; width: 160px;">
           <option value="">All Categories</option>
-          @foreach($categories as $cat)
-          <option value="{{ $cat }}" {{ request('category') == $cat ? 'selected' : '' }}>{{ ucfirst($cat) }}</option>
+          @foreach($categories as $id => $name)
+          <option value="{{ $id }}" {{ request('category') == $id ? 'selected' : '' }}>{{ $name }}</option>
           @endforeach
         </select>
       </div>
@@ -59,7 +59,7 @@
     <table class="table table-dark table-sm" style="margin-bottom: 0;">
       <thead>
         <tr>
-          <th style="padding: 1px 3px; font-size: 0.68rem; white-space: nowrap;">SR</th>
+          <th style="padding: 1px 3px; font-size: 0.68rem; white-space: nowrap;">Sr</th>
           <th style="padding: 1px 3px; font-size: 0.68rem; white-space: nowrap;">Product</th>
           <th style="padding: 1px 3px; font-size: 0.68rem; white-space: nowrap;">Brand</th>
           <th style="padding: 1px 3px; font-size: 0.68rem; white-space: nowrap;">Code</th>
@@ -80,7 +80,7 @@
           <td style="padding: 1px 3px; font-size: 0.72rem;">{{ $spare->item_name }}</td>
           <td style="padding: 1px 3px; font-size: 0.72rem;">{{ $spare->brand_name ?? 'N/A' }}</td>
           <td style="padding: 1px 3px; font-size: 0.72rem;">{{ $spare->product_code ?? 'N/A' }}</td>
-          <td style="padding: 1px 3px; font-size: 0.72rem;">{{ ucfirst($spare->category ?? 'N/A') }}</td>
+          <td style="padding: 1px 3px; font-size: 0.72rem;">{{ $spare->category->name ?? 'N/A' }}</td>
           <td style="padding: 1px 3px; font-size: 0.72rem;"><span class="text-success">{{ number_format((float)($spare->total_received_quantity ?? 0), 0) }}</span></td>
           <td style="padding: 1px 3px; font-size: 0.72rem;"><span class="text-danger">{{ number_format((float)($spare->issued_quantity ?? 0), 0) }}</span></td>
           <td style="padding: 1px 3px; font-size: 0.72rem;">{{ number_format((float)($spare->stock_quantity ?? 0), 0) }}</td>

@@ -30,8 +30,8 @@
       <select class="form-select" name="category" onchange="submitEmployeesFilters()" style="font-size: 0.9rem; width: 140px;">
         <option value="" {{ request('category') ? '' : 'selected' }}>All</option>
         @if(isset($categories) && $categories->count() > 0)
-          @foreach($categories as $cat)
-            <option value="{{ $cat }}" {{ request('category') == $cat ? 'selected' : '' }}>{{ ucfirst($cat) }}</option>
+          @foreach($categories as $id => $cat)
+            <option value="{{ $id }}" {{ request('category') == $id ? 'selected' : '' }}>{{ ucfirst($cat) }}</option>
           @endforeach
         @endif
       </select>
@@ -87,8 +87,8 @@
               </div>
             </div>
           </td>
-          <td>{{ ucfirst($employee->category ?? 'N/A') }}</td>
-          <td>{{ $employee->designation ?? '' }}</td>
+          <td>{{ $employee->category ? ucfirst($employee->category->name) : 'N/A' }}</td>
+          <td>{{ $employee->designation ? ucfirst($employee->designation->name) : 'N/A' }}</td>
           <td>{{ $employee->city ? $employee->city->name : 'N/A' }}</td>
           <td>{{ $employee->sector ? $employee->sector->name : 'N/A' }}</td>
           <td>{{ $employee->phone ?: 'N/A' }}</td>

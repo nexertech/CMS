@@ -45,16 +45,16 @@
                     <div style="min-width: 200px; flex: 0 0 240px;">
                         <label class="form-label small mb-1"
                             style="color: #000000 !important; font-weight: 500;">Category</label>
-                        <select name="category" class="form-select @error('category') is-invalid @enderror" required>
+                        <select name="category_id" class="form-select @error('category_id') is-invalid @enderror" required>
                             <option value="">Select Category</option>
                             @if (isset($categories) && $categories->count() > 0)
-                                @foreach ($categories as $cat)
-                                    <option value="{{ $cat }}" {{ old('category') == $cat ? 'selected' : '' }}>
+                                @foreach ($categories as $id => $cat)
+                                    <option value="{{ $id }}" {{ old('category_id') == $id ? 'selected' : '' }}>
                                         {{ ucfirst($cat) }}</option>
                                 @endforeach
                             @endif
                         </select>
-                        @error('category')
+                        @error('category_id')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
@@ -104,7 +104,7 @@
                                 <tr>
                                     <td>{{ $designation->id }}</td>
                                     <td>{{ $designation->name }}</td>
-                                    <td>{{ ucfirst($designation->category ?? 'N/A') }}</td>
+                                    <td>{{ $designation->category ? ucfirst($designation->category->name) : 'N/A' }}</td>
                                     <td>
                                         <span
                                             class="badge {{ $designation->status === 'active' ? 'bg-success' : 'bg-danger' }}"
@@ -115,7 +115,7 @@
                                             <button type="button" class="btn btn-outline-primary btn-sm"
                                                 data-bs-toggle="modal" data-bs-target="#editDesignationModal"
                                                 data-id="{{ $designation->id }}"
-                                                data-category="{{ $designation->category }}"
+                                                data-category="{{ $designation->category_id }}"
                                                 data-name="{{ $designation->name }}"
                                                 data-status="{{ $designation->status }}" title="Edit" style="padding: 3px 8px;">
                                                 <i data-feather="edit" style="width: 16px; height: 16px;"></i>
@@ -170,11 +170,11 @@
                         <div class="modal-body">
                             <div class="mb-3">
                                 <label class="form-label">Category</label>
-                                <select name="category" id="editDesignationCategory" class="form-select" required>
+                                <select name="category_id" id="editDesignationCategory" class="form-select" required>
                                     <option value="">Select Category</option>
                                     @if (isset($categories) && $categories->count() > 0)
-                                        @foreach ($categories as $cat)
-                                            <option value="{{ $cat }}">{{ ucfirst($cat) }}</option>
+                                        @foreach ($categories as $id => $cat)
+                                            <option value="{{ $id }}">{{ ucfirst($cat) }}</option>
                                         @endforeach
                                     @endif
                                 </select>

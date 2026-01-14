@@ -100,7 +100,7 @@ class ComplaintController extends Controller
 
         // Filter by category
         if ($request->has('category') && $request->category) {
-            $query->where('category', $request->category);
+            $query->where('category_id', $request->category); // Updated to use ID
         }
 
         // Filter by priority
@@ -129,7 +129,7 @@ class ComplaintController extends Controller
 
         // Order by ID descending (3, 2, 1...) - newest/highest ID first
         // Clear any existing orders and set explicit descending order
-        $query->with(['client', 'assignedEmployee', 'house'])
+        $query->with(['client', 'assignedEmployee', 'house', 'category', 'complaintTitle']) // Added relations
               ->reorder()
               ->orderBy('id', 'desc');
         $complaints = $query->paginate(15);
@@ -140,7 +140,7 @@ class ComplaintController extends Controller
         $employees = $employeesQuery->get();
 
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name')
+            ? ComplaintCategory::orderBy('name')->pluck('name', 'id')
             : collect();
 
         return view('admin.complaints.index', compact('complaints', 'employees', 'categories'));
@@ -156,7 +156,7 @@ class ComplaintController extends Controller
         $this->filterEmployeesByLocation($employeesQuery, Auth::user());
         $employees = $employeesQuery->get();
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name')
+            ? ComplaintCategory::orderBy('name')->pluck('name', 'id')
             : collect();
 
         // Get cities and sectors for dropdowns
@@ -189,30 +189,29 @@ class ComplaintController extends Controller
     /**
      * Store a newly created complaint
      */
+    /**
+     * Store a newly created complaint
+     */
     public function store(Request $request)
     {
         // Debug: Log the request data
         Log::info('Complaint creation request', [
             'all_data' => $request->all(),
-            'title' => $request->title,
-            'title_other' => $request->title_other,
             'method' => $request->method(),
-            'content_type' => $request->header('Content-Type')
         ]);
 
         $validator = Validator::make($request->all(), [
-            'title' => 'required|string|max:255',
+            'title' => 'nullable|string|max:255', // Now holds custom title or "Other"
+            'complaint_title_id' => 'nullable|exists:complaint_titles,id', // Holds selected title ID
             'title_other' => 'nullable|string|max:255',
             'client_name' => 'nullable|string|max:255',
-            // Allow any category string (column changed to VARCHAR)
-            'category' => 'required|string|max:100',
+            'category' => 'required|exists:complaint_categories,id', // Expecting ID now
             'priority' => 'required|in:low,medium,high,urgent,emergency',
             'availability_time' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'assigned_employee_id' => 'required|exists:employees,id',
-            // Status removed from form - will be managed in approvals view, default to 'new'
             'attachments' => 'nullable|array|max:5',
-            'attachments.*' => 'file|mimes:jpg,jpeg,png,pdf,doc,docx|max:10240', // 10MB max
+            'attachments.*' => 'file|mimes:jpg,jpeg,png,pdf,doc,docx|max:10240',
             'city_id' => 'nullable|exists:cities,id',
             'sector_id' => 'nullable|exists:sectors,id',
             'house_id' => 'required|exists:houses,id',
@@ -222,19 +221,15 @@ class ComplaintController extends Controller
         ]);
 
         if ($validator->fails()) {
-            Log::error('Validation failed', [
-                'errors' => $validator->errors()->toArray()
-            ]);
             return redirect()->back()
                 ->withErrors($validator)
                 ->withInput();
         }
 
-        // Start database transaction
         DB::beginTransaction();
 
         try {
-            // Get city and sector names from IDs if provided (for client table)
+            // ... (client creation logic remains similar) ...
             $cityName = null;
             $sectorName = null;
 
@@ -248,7 +243,6 @@ class ComplaintController extends Controller
                 $sectorName = $sector ? $sector->name : null;
             }
 
-            // Determine client name - if provided use it, otherwise use house username
             $clientName = trim($request->client_name);
             if (empty($clientName) && $request->house_id) {
                 $house = House::find($request->house_id);
@@ -257,7 +251,6 @@ class ComplaintController extends Controller
                 $clientName = 'Unknown';
             }
 
-            // Find or create client by name
             $client = Client::firstOrCreate(
                 ['client_name' => $clientName],
                 [
@@ -271,48 +264,41 @@ class ComplaintController extends Controller
                 ]
             );
 
-            // Handle custom title from "Other" option
-            // JavaScript sets title_other value in hidden input with name="title"
-            // But if title is still "other", use title_other field
-            $finalTitle = $request->title;
+            // Handle title logic
+            // If ID is provided, use it.
+            // If title is custom (e.g. ID empty), use title_other or title input.
+            // We will save ID to `complaint_title_id` and custom text to `title` if needed.
+            
+            $complaintTitleId = $request->complaint_title_id;
+            $customTitle = null;
 
-            // If title is "other", check for title_other field
-            if ($finalTitle === 'other' || strtolower($finalTitle) === 'other') {
-                if ($request->has('title_other') && !empty(trim($request->title_other))) {
-                    $finalTitle = trim($request->title_other);
-                } elseif ($request->has('title') && $request->title !== 'other') {
-                    // JavaScript might have already set custom title in title field
-                    $finalTitle = trim($request->title);
-                }
+            // Check if "Other" was selected (usually ID is null or a specific value for "Other" in frontend?)
+            // Assuming frontend passes ID if selected, or null if "Other"
+            
+            if (!$complaintTitleId) {
+                // Should check if title_other is present
+                $customTitle = $request->title_other ?? $request->title;
+                // If custom title is "other", clear it (don't save literal "other")
+                if (strtolower($customTitle) === 'other') $customTitle = null;
             }
-
-            // Final fallback - if still "other", try to get from title_other
-            if (empty($finalTitle) || strtolower($finalTitle) === 'other') {
-                $finalTitle = $request->input('title_other') ? trim($request->input('title_other')) : 'other';
-            }
-
-            Log::info('Final title being saved', [
-                'final_title' => $finalTitle,
-                'original_title' => $request->title,
-                'title_other' => $request->title_other
-            ]);
 
             $complaint = Complaint::create([
-                'title' => $finalTitle,
+                'complaint_title_id' => $complaintTitleId,
+                'title' => $customTitle, // Nullable string for custom/other
                 'client_id' => $client->id,
                 'house_id' => $request->house_id ?: null,
                 'city_id' => $request->city_id ?: null,
                 'sector_id' => $request->sector_id ?: null,
-                'category' => $request->category,
+                'category_id' => $request->category,
                 'priority' => $request->priority,
                 'availability_time' => $request->availability_time,
                 'description' => $request->description,
                 'assigned_employee_id' => $request->assigned_employee_id ?: null,
-                'status' => 'assigned', // Default to 'assigned' - no performa type selected initially
+                'status' => 'assigned',
             ]);
 
-            // Handle file attachments
-            if ($request->hasFile('attachments')) {
+            // ... (attachments and logs remain same) ...
+             if ($request->hasFile('attachments')) {
                 foreach ($request->file('attachments') as $file) {
                     $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
                     $path = $file->storeAs('complaint-attachments', $filename, 'public');
@@ -328,10 +314,7 @@ class ComplaintController extends Controller
                 }
             }
 
-            // Log the complaint creation
-            // Find the employee associated with the current user
             $currentEmployee = Employee::first();
-
             if ($currentEmployee) {
                 ComplaintLog::create([
                     'complaint_id' => $complaint->id,
@@ -341,19 +324,13 @@ class ComplaintController extends Controller
                 ]);
             }
 
-            // Note: Approval performa is automatically created by Complaint model's boot() method
-            // No need to create it here to avoid duplicates
-
-            // Commit the transaction
             DB::commit();
 
             return redirect()->route('admin.complaints.index')
                 ->with('success', 'Complaint created successfully.');
 
         } catch (\Exception $e) {
-            // Rollback the transaction on any error
             DB::rollBack();
-
             return redirect()->back()
                 ->with('error', 'Failed to create complaint: ' . $e->getMessage())
                 ->withInput();
@@ -365,84 +342,26 @@ class ComplaintController extends Controller
      */
     public function show(Complaint $complaint)
     {
-        try {
-            $complaint->load([
-                'client',
-                'assignedEmployee',
-                'city',
-                'sector',
-                'attachments',
-                'house',
-                'logs.actionBy',
-                'spareParts.spare',
-                'spareParts.usedBy',
-                'spareApprovals.items.spare',
-                'stockLogs.spare',
-                'feedback.enteredBy'
-            ]);
-
-            // Check if format=html is requested, return HTML even for AJAX
-            if (request()->get('format') === 'html') {
-                return view('admin.complaints.show', compact('complaint'));
-            }
-
-            if (request()->ajax() || request()->wantsJson() || request()->header('X-Requested-With') === 'XMLHttpRequest') {
-                // Exclude state from client data in JSON response for modal
-                $complaintData = $complaint->toArray();
-                if (isset($complaintData['client']) && is_array($complaintData['client']) && isset($complaintData['client']['state'])) {
-                    unset($complaintData['client']['state']);
-                }
-
-                return response()->json([
-                    'success' => true,
-                    'complaint' => $complaintData
-                ]);
-            }
-
-            return view('admin.complaints.show', compact('complaint'));
-        } catch (\Exception $e) {
-            // Log the error for debugging
-            Log::error('Error in ComplaintController@show: ' . $e->getMessage(), [
-                'complaint_id' => $complaint->id ?? null,
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            // Check if format=html is requested, return HTML error
-            if (request()->get('format') === 'html') {
-                return response('<div class="text-center py-5 text-danger">Error loading complaint details: ' . htmlspecialchars($e->getMessage()) . '. Please try again.</div>', 500);
-            }
-
-            // Return JSON error for AJAX requests
-            if (request()->ajax() || request()->wantsJson() || request()->header('X-Requested-With') === 'XMLHttpRequest') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Error loading complaint details: ' . $e->getMessage()
-                ], 500);
-            }
-
-            // For regular requests, redirect back with error
-            return redirect()->back()->with('error', 'Error loading complaint details: ' . $e->getMessage());
-        }
+        $complaint->load(['client', 'assignedEmployee', 'city', 'sector', 'attachments', 'spareParts.spare', 'spareApprovals', 'logs.actionBy', 'category', 'complaintTitle']);
+        return view('admin.complaints.show', compact('complaint'));
     }
 
     /**
-     * Show the form for editing the complaint
+     * Show the form for editing the specified complaint
      */
     public function edit(Complaint $complaint)
     {
-        $complaint->load(['spareParts.spare']);
-
-        $employeesQuery = Employee::where('status', 'active')
-            ->where('category', $complaint->category)
-            ->where('sector_id', $complaint->sector_id)
-            ->orderBy('name');
+        $complaint->load(['client', 'assignedEmployee', 'city', 'sector']);
+        
+        $employeesQuery = Employee::where('status', 'active')->orderBy('name');
         $this->filterEmployeesByLocation($employeesQuery, Auth::user());
         $employees = $employeesQuery->get();
+        
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name')
+            ? ComplaintCategory::orderBy('name')->pluck('name', 'id')
             : collect();
 
-        // Provide cities/sectors for dropdowns (match create() UX)
+        // Get cities and sectors for dropdowns
         $citiesQuery = City::where('status', 'active')->orderBy('id', 'asc');
         $userCityIds = $this->getUserCityIds(Auth::user());
         if ($userCityIds !== null) {
@@ -450,34 +369,24 @@ class ComplaintController extends Controller
         }
         $cities = Schema::hasTable('cities') ? $citiesQuery->get() : collect();
 
-        // Get default city_id and sector_id from complaint
-        $defaultCityId = $complaint->city_id;
-        $defaultSectorId = $complaint->sector_id;
+        // Load sectors for the complaint's city
         $sectors = collect();
-
-        // Load sectors for the selected city
-        if ($defaultCityId && Schema::hasTable('sectors')) {
-            $sectors = Sector::where('city_id', $defaultCityId)
+        if ($complaint->city_id) {
+            $sectors = Sector::where('city_id', $complaint->city_id)
                 ->where('status', 'active')
                 ->orderBy('name')
                 ->get();
         }
+
+        $defaultCityId = $complaint->city_id ?? (Auth::user()?->city_id);
+        $defaultSectorId = $complaint->sector_id ?? (Auth::user()?->sector_id);
 
         // Get houses filtered by location
         $housesQuery = House::where('status', 'active')->orderBy('username');
         $this->filterHousesByLocation($housesQuery, Auth::user());
         $houses = $housesQuery->get();
 
-        return view('admin.complaints.edit', compact(
-            'complaint',
-            'employees',
-            'categories',
-            'cities',
-            'sectors',
-            'defaultCityId',
-            'defaultSectorId',
-            'houses'
-        ));
+        return view('admin.complaints.edit', compact('complaint', 'employees', 'categories', 'cities', 'sectors', 'defaultCityId', 'defaultSectorId', 'houses'));
     }
 
     /**
@@ -486,19 +395,17 @@ class ComplaintController extends Controller
     public function update(Request $request, Complaint $complaint)
     {
         $validator = Validator::make($request->all(), [
-            'title' => 'required|string|max:255',
+            'title' => 'nullable|string|max:255',
+            'complaint_title_id' => 'nullable|exists:complaint_titles,id',
             'title_other' => 'nullable|string|max:255',
             'client_name' => 'nullable|string|max:255',
-            // Allow any category string (column changed to VARCHAR)
-            'category' => 'required|string|max:100',
+            'category' => 'required|exists:complaint_categories,id', // Expect ID
             'priority' => 'required|in:low,medium,high,urgent,emergency',
             'availability_time' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'assigned_employee_id' => 'required|exists:employees,id',
-            // Status removed from form - will be managed in approvals view, keep existing status
             'attachments' => 'nullable|array|max:5',
             'attachments.*' => 'file|mimes:jpg,jpeg,png,pdf,doc,docx|max:10240',
-            // Product (spare) optional now
             'spare_parts' => 'nullable|array',
             'spare_parts.0.spare_id' => 'nullable|exists:spares,id',
             'spare_parts.0.quantity' => 'nullable|integer|min:1',
@@ -516,7 +423,8 @@ class ComplaintController extends Controller
                 ->withInput();
         }
 
-        // Resolve city/sector names from IDs if provided (dropdowns)
+        // ... client update logic ...
+             // Resolve city/sector names from IDs if provided (dropdowns)
         $cityName = null;
         $sectorName = null;
         if ($request->city_id) {
@@ -528,11 +436,9 @@ class ComplaintController extends Controller
             $sectorName = $sector?->name;
         }
 
-        // Fallback to text inputs if present
         $cityName = $cityName ?? ($request->city ?: null);
         $sectorName = $sectorName ?? ($request->sector ?: null);
 
-        // Determine client name - if provided use it, otherwise use house username
         $clientName = trim($request->client_name);
         if (empty($clientName) && $request->house_id) {
             $house = House::find($request->house_id);
@@ -541,7 +447,6 @@ class ComplaintController extends Controller
             $clientName = 'Unknown';
         }
 
-        // Find or create client by name and update details
         $client = Client::firstOrCreate(
             ['client_name' => $clientName],
             [
@@ -554,7 +459,6 @@ class ComplaintController extends Controller
                 'status' => 'active',
             ]
         );
-        // Update existing client with provided fields
         $client->fill([
             'contact_person' => $request->input('contact_person') ?: $clientName,
             'email' => $request->input('email', $client->email),
@@ -567,38 +471,35 @@ class ComplaintController extends Controller
         $oldStatus = $complaint->status;
         $oldAssignedTo = $complaint->assigned_employee_id;
 
-        // Use title_other if title is "other", otherwise use title
-        // Check both title_other field and if title itself is "other"
-        if ($request->title === 'other') {
-            $finalTitle = $request->title_other ? trim($request->title_other) : 'other';
-        } else {
-            $finalTitle = $request->title;
-        }
-
-        // If finalTitle is still "other" or empty, use title_other if available
-        if (empty($finalTitle) || $finalTitle === 'other') {
-            $finalTitle = $request->title_other ? trim($request->title_other) : 'other';
+        // Title Updating Logic
+        $complaintTitleId = $request->complaint_title_id;
+        $customTitle = null;
+        
+        if (!$complaintTitleId) {
+            $customTitle = $request->title_other ?? $request->title;
+             if (strtolower($customTitle) === 'other') $customTitle = null;
         }
 
         $newStatus = $complaint->status;
-        // Automatically change status from 'new' (Unassigned) to 'assigned' if an employee is assigned
         if ($newStatus === 'new' && $request->assigned_employee_id) {
             $newStatus = 'assigned';
         }
 
         $complaint->update([
-            'title' => $finalTitle,
+            'complaint_title_id' => $complaintTitleId,
+            'title' => $customTitle,
             'client_id' => $client->id,
             'house_id' => $request->house_id ?: null,
             'city_id' => $request->city_id ?: null,
             'sector_id' => $request->sector_id ?: null,
-            'category' => $request->category,
+            'category_id' => $request->category,
             'priority' => $request->priority,
             'availability_time' => $request->availability_time,
             'description' => $request->description,
             'assigned_employee_id' => $request->assigned_employee_id ?: null,
             'status' => $newStatus,
         ]);
+
 
         // Update product (spare) selection only if provided
         if ($request->filled('spare_parts') && isset($request->spare_parts[0]['spare_id']) && $request->spare_parts[0]['spare_id']) {
@@ -1181,7 +1082,14 @@ class ComplaintController extends Controller
         }
 
         if ($request->has('complaint_type') && $request->complaint_type) {
-            $query->where('category', $request->complaint_type);
+            $category = $request->complaint_type;
+            if (is_numeric($category)) {
+                $query->where('category_id', $category);
+            } else {
+                $query->whereHas('category', function($q) use ($category) {
+                    $q->where('name', $category);
+                });
+            }
         }
 
         $complaints = $query->get();

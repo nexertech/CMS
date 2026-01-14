@@ -8,6 +8,7 @@ use App\Models\ComplaintCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 class ComplaintTitleController extends Controller
 {
@@ -16,11 +17,11 @@ class ComplaintTitleController extends Controller
      */
     public function index(Request $request)
     {
-        $query = ComplaintTitle::query();
+        $query = ComplaintTitle::with('category');
 
         // Filter by category
         if ($request->has('category') && $request->category) {
-            $query->where('category', $request->category);
+            $query->where('category_id', $request->category);
         }
 
         // Search functionality
@@ -29,7 +30,9 @@ class ComplaintTitleController extends Controller
             $query->where(function($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
                   ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhere('category', 'like', "%{$search}%");
+                  ->orWhereHas('category', function($q2) use ($search) {
+                      $q2->where('name', 'like', "%{$search}%");
+                  });
             });
         }
 
@@ -39,9 +42,7 @@ class ComplaintTitleController extends Controller
             ->paginate(20);
 
         // Get categories for filter dropdown
-        $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name')
-            : ComplaintTitle::getCategories();
+        $categories = ComplaintCategory::orderBy('name')->get();
 
         return view('admin.complaint-titles.index', compact('complaintTitles', 'categories'));
     }
@@ -51,10 +52,7 @@ class ComplaintTitleController extends Controller
      */
     public function create()
     {
-        $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name')
-            : ComplaintTitle::getCategories();
-
+        $categories = ComplaintCategory::orderBy('name')->get();
         return view('admin.complaint-titles.create', compact('categories'));
     }
 
@@ -64,8 +62,8 @@ class ComplaintTitleController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'category' => 'required|string|max:100',
-            'title' => 'required|string|max:255|unique:complaint_titles,title,NULL,id,category,' . $request->category . ',deleted_at,NULL',
+            'category' => 'required|exists:complaint_categories,id', // Expects ID
+            'title' => 'required|string|max:255|unique:complaint_titles,title,NULL,id,category_id,' . $request->category . ',deleted_at,NULL',
             'questions' => 'nullable|string',
         ]);
 
@@ -76,7 +74,7 @@ class ComplaintTitleController extends Controller
         }
 
         ComplaintTitle::create([
-            'category' => $request->category,
+            'category_id' => $request->category,
             'title' => $request->title,
             'questions' => $request->questions,
         ]);
@@ -98,10 +96,7 @@ class ComplaintTitleController extends Controller
      */
     public function edit(ComplaintTitle $complaintTitle)
     {
-        $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name')
-            : ComplaintTitle::getCategories();
-
+        $categories = ComplaintCategory::orderBy('name')->get();
         return view('admin.complaint-titles.edit', compact('complaintTitle', 'categories'));
     }
 
@@ -111,8 +106,8 @@ class ComplaintTitleController extends Controller
     public function update(Request $request, ComplaintTitle $complaintTitle)
     {
         $validator = Validator::make($request->all(), [
-            'category' => 'required|string|max:100',
-            'title' => 'required|string|max:255|unique:complaint_titles,title,' . $complaintTitle->id . ',id,category,' . $request->category . ',deleted_at,NULL',
+            'category' => 'required|exists:complaint_categories,id',
+            'title' => 'required|string|max:255|unique:complaint_titles,title,' . $complaintTitle->id . ',id,category_id,' . $request->category . ',deleted_at,NULL',
             'questions' => 'nullable|string',
         ]);
 
@@ -123,7 +118,7 @@ class ComplaintTitleController extends Controller
         }
 
         $complaintTitle->update([
-            'category' => $request->category,
+            'category_id' => $request->category,
             'title' => $request->title,
             'questions' => $request->questions,
         ]);
@@ -155,16 +150,35 @@ class ComplaintTitleController extends Controller
      */
     public function getTitlesByCategory(Request $request)
     {
-        $category = $request->get('category');
+        $category = $request->input('category');
         
         if (!$category) {
             return response()->json([]);
         }
+        
+        $query = DB::table('complaint_titles');
 
-        $titles = ComplaintTitle::where('category', $category)
-            ->orderBy('title')
-            ->get(['id', 'title', 'questions']);
+        if (is_numeric($category)) {
+             // If ID provided
+             $query->where('category_id', $category);
+             $query->join('complaint_categories', 'complaint_titles.category_id', '=', 'complaint_categories.id');
+        } else {
+            // If Name provided (legacy or other usage)
+            $categoryName = $category;
+            $query->join('complaint_categories', 'complaint_titles.category_id', '=', 'complaint_categories.id')
+                  ->where('complaint_categories.name', $categoryName);
+        }
+
+        $titles = $query->orderBy('complaint_titles.title')
+            ->get([
+                'complaint_titles.id',
+                'complaint_titles.title',
+                'complaint_titles.questions',
+                'complaint_categories.name as category'
+            ]);
 
         return response()->json($titles);
     }
 }
+
+

@@ -32,14 +32,14 @@ class SlaController extends Controller
         // Search functionality
         if ($request->has('search') && $request->search) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('complaint_type', 'like', "%{$search}%");
+            $query->whereHas('category', function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%");
             });
         }
 
-        // Filter by complaint type
-        if ($request->has('complaint_type') && $request->complaint_type) {
-            $query->where('complaint_type', $request->complaint_type);
+        // Filter by complaint type (category_id)
+        if ($request->has('category_id') && $request->category_id) {
+            $query->where('category_id', $request->category_id);
         }
 
         // Filter by priority
@@ -98,7 +98,7 @@ class SlaController extends Controller
         
         // Fetch categories from database (ComplaintCategory table)
         $complaintTypes = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name', 'name')->toArray()
+            ? ComplaintCategory::orderBy('name')->pluck('name', 'id')->toArray()
             : [];
 
         return view('admin.sla.create', compact('users', 'complaintTypes'));
@@ -111,16 +111,16 @@ class SlaController extends Controller
     {
         // Get categories from database
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name')->toArray()
+            ? ComplaintCategory::orderBy('name')->pluck('id')->toArray()
             : [];
         
-        $categoryRule = 'required|string';
+        $categoryRule = 'required|integer';
         if (!empty($categories)) {
             $categoryRule .= '|in:' . implode(',', $categories);
         }
         
         $validator = Validator::make($request->all(), [
-            'complaint_type' => $categoryRule,
+            'category_id' => $categoryRule,
             'priority' => 'required|in:low,medium,high,urgent',
             'max_resolution_time' => 'required|integer|min:1',
             'description' => 'nullable|string|max:255',
@@ -152,7 +152,7 @@ class SlaController extends Controller
         $sla->load('notifyTo');
 
         // Get recent complaints for this SLA rule
-        $recentComplaints = Complaint::where('category', $sla->complaint_type)
+        $recentComplaints = Complaint::where('category_id', $sla->category_id)
             ->with(['client', 'assignedEmployee'])
             ->orderBy('created_at', 'desc')
             ->limit(10)
@@ -201,7 +201,7 @@ class SlaController extends Controller
         
         // Fetch categories from database (ComplaintCategory table)
         $complaintTypes = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name', 'name')->toArray()
+            ? ComplaintCategory::orderBy('name')->pluck('name', 'id')->toArray()
             : [];
 
         return view('admin.sla.edit', compact('sla', 'users', 'complaintTypes'));
@@ -214,16 +214,16 @@ class SlaController extends Controller
     {
         // Get categories from database
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name')->toArray()
+            ? ComplaintCategory::orderBy('name')->pluck('id')->toArray()
             : [];
         
-        $categoryRule = 'required|string';
+        $categoryRule = 'required|integer';
         if (!empty($categories)) {
             $categoryRule .= '|in:' . implode(',', $categories);
         }
         
         $validator = Validator::make($request->all(), [
-            'complaint_type' => $categoryRule,
+            'category_id' => $categoryRule,
             'priority' => 'required|in:low,medium,high,urgent',
             'max_resolution_time' => 'required|integer|min:1',
             'description' => 'nullable|string|max:255',
@@ -352,22 +352,22 @@ class SlaController extends Controller
         $performance = [];
         // Fetch categories from database
         $complaintTypes = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name', 'name')->toArray()
+            ? ComplaintCategory::orderBy('name')->pluck('name', 'id')->toArray()
             : [];
 
-        foreach ($complaintTypes as $type => $label) {
-            $total = Complaint::where('category', $type)
+        foreach ($complaintTypes as $categoryId => $label) {
+            $total = Complaint::where('category_id', $categoryId)
                 ->where('created_at', '>=', now()->subDays($period))
                 ->count();
 
-            $withinSla = Complaint::where('category', $type)
+            $withinSla = Complaint::where('category_id', $categoryId)
                 ->where('created_at', '>=', now()->subDays($period))
                 ->whereIn('status', ['resolved', 'closed'])
-                ->whereRaw('TIMESTAMPDIFF(HOUR, created_at, updated_at) <= COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE complaint_type = ? AND status = "active"), 999999)', [$type])
+                ->whereRaw('TIMESTAMPDIFF(HOUR, created_at, updated_at) <= COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE category_id = ? AND status = "active"), 999999)', [$categoryId])
                 ->count();
 
             $performance[] = [
-                'type' => $type,
+                'type' => $label,
                 'label' => $label,
                 'total' => $total,
                 'within_sla' => $withinSla,
@@ -492,13 +492,13 @@ class SlaController extends Controller
         // Apply same filters as index
         if ($request->has('search') && $request->search) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('complaint_type', 'like', "%{$search}%");
+            $query->whereHas('category', function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%");
             });
         }
 
-        if ($request->has('complaint_type') && $request->complaint_type) {
-            $query->where('complaint_type', $request->complaint_type);
+        if ($request->has('category_id') && $request->category_id) {
+            $query->where('category_id', $request->category_id);
         }
 
         if ($request->has('status') && $request->status) {
@@ -518,7 +518,7 @@ class SlaController extends Controller
     {
         return Complaint::where('created_at', '>=', now()->subDays($period))
             ->whereIn('status', ['resolved', 'closed'])
-            ->whereRaw('TIMESTAMPDIFF(HOUR, created_at, updated_at) <= COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE complaint_type = complaints.category AND status = "active"), 999999)')
+            ->whereRaw('TIMESTAMPDIFF(HOUR, created_at, updated_at) <= COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE category_id = complaints.category_id AND status = "active"), 999999)')
             ->count();
     }
 
@@ -529,7 +529,7 @@ class SlaController extends Controller
     {
         return Complaint::where('created_at', '>=', now()->subDays($period))
             ->whereIn('status', ['resolved', 'closed'])
-            ->whereRaw('TIMESTAMPDIFF(HOUR, created_at, updated_at) > COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE complaint_type = complaints.category AND status = "active"), 999999)')
+            ->whereRaw('TIMESTAMPDIFF(HOUR, created_at, updated_at) > COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE category_id = complaints.category_id AND status = "active"), 999999)')
             ->count();
     }
 }

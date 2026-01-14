@@ -12,12 +12,13 @@ return new class extends Migration {
     {
         Schema::create('complaints', function (Blueprint $table) {
             $table->id();
-            $table->string('title');
+            $table->string('title')->nullable();
+            $table->unsignedBigInteger('category_id')->nullable();
+            $table->unsignedBigInteger('complaint_title_id')->nullable();
             $table->unsignedBigInteger('client_id');
             $table->unsignedBigInteger('house_id')->nullable();
             $table->unsignedBigInteger('city_id')->nullable();
             $table->unsignedBigInteger('sector_id')->nullable();
-            $table->string('category', 100);
             $table->text('description')->nullable();
             $table->enum('status', ['new', 'assigned', 'in_progress', 'resolved', 'closed', 'work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa', 'product_na', 'un_authorized', 'pertains_to_ge_const_isld', 'barak_damages'])->default('new');
             $table->unsignedBigInteger('assigned_employee_id')->nullable();
@@ -37,7 +38,8 @@ return new class extends Migration {
             $table->index('city_id');
             $table->index('sector_id');
             $table->index('status');
-            $table->index('category');
+            $table->index('category_id');
+            $table->index('complaint_title_id');
             $table->index('created_at');
             $table->index('assigned_employee_id');
         });

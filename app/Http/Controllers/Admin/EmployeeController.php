@@ -44,14 +44,16 @@ class EmployeeController extends Controller
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('designation', 'like', "%{$search}%")
+                  ->orWhereHas('designation', function($q2) use ($search) {
+                      $q2->where('name', 'like', "%{$search}%");
+                  })
                   ->orWhere('phone', 'like', "%{$search}%");
             });
         }
 
         // Filter by category
         if ($request->has('category') && $request->category) {
-            $query->where('category', $request->category);
+            $query->where('category_id', $request->category);
         }
 
         // Filter by status
@@ -64,16 +66,10 @@ class EmployeeController extends Controller
         // Get categories for filter dropdown from ComplaintCategory table
         $categories = collect();
         if (Schema::hasTable('complaint_categories')) {
-            $categories = ComplaintCategory::orderBy('name')->pluck('name');
+            $categories = ComplaintCategory::orderBy('name')->pluck('name', 'id');
         } else {
-            // Fallback: Get from employees with location filtering
-            $categoriesQuery = Employee::select('category')
-                ->whereNotNull('category')
-                ->where('category', '!=', '');
-            $this->filterEmployeesByLocation($categoriesQuery, $user);
-            $categories = $categoriesQuery->distinct()
-                ->orderBy('category')
-                ->pluck('category');
+            // Fallback: Empty collection if table doesn't exist
+            $categories = collect();
         }
         
         return view('admin.employees.index', compact('employees', 'categories'));
@@ -90,7 +86,7 @@ class EmployeeController extends Controller
         $user = Auth::user();
 
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name')
+            ? ComplaintCategory::orderBy('name')->pluck('name', 'id')
             : collect();
         
         // Filter cities based on user permissions
@@ -133,16 +129,10 @@ class EmployeeController extends Controller
             'content_type' => $request->header('Content-Type'),
         ]);
 
-        $categoryRule = 'required|string|max:100';
-        
-        if (Schema::hasTable('complaint_categories')) {
-            $categoryRule .= '|exists:complaint_categories,name';
-        }
-
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:150',
-            'category' => $categoryRule,
-            'designation' => 'required|string|max:100',
+            'category_id' => 'required|exists:complaint_categories,id',
+            'designation_id' => 'required|exists:designations,id',
             'phone' => 'nullable|string|min:11|max:20',
             // 'emp_id' removed
             'date_of_hire' => 'nullable|date',
@@ -173,8 +163,8 @@ class EmployeeController extends Controller
             // Create employee record (no user creation)
             $employee = Employee::create([
                 'name' => $request->name,
-                'category' => $request->category,
-                'designation' => $request->designation,
+                'category_id' => $request->category_id,
+                'designation_id' => $request->designation_id,
                 'phone' => $request->phone,
                 // 'emp_id' removed
                 'date_of_hire' => $request->date_of_hire,
@@ -247,7 +237,7 @@ class EmployeeController extends Controller
         $user = Auth::user();
         
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name')
+            ? ComplaintCategory::orderBy('name')->pluck('name', 'id')
             : collect();
         
         // Filter cities based on user permissions
@@ -278,14 +268,14 @@ class EmployeeController extends Controller
             return response()->json(['designations' => []]);
         }
 
-        $category = $request->input('category');
+        $categoryId = $request->input('category_id') ?? $request->input('category');
         
-        if (!$category) {
+        if (!$categoryId) {
             return response()->json(['designations' => []]);
         }
 
         // Get active designations for this category
-        $designations = Designation::where('category', $category)
+        $designations = Designation::where('category_id', $categoryId)
             ->where('status', 'active')
             ->orderBy('name')
             ->get(['id', 'name']);
@@ -365,17 +355,11 @@ class EmployeeController extends Controller
      */
     public function update(Request $request, Employee $employee)
     {
-        $categoryRule = 'required|string|max:100';
-        
-        if (Schema::hasTable('complaint_categories')) {
-            $categoryRule .= '|exists:complaint_categories,name';
-        }
-
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:150',
             'phone' => 'nullable|string|min:11|max:20',
-            'category' => $categoryRule,
-            'designation' => 'required|string|max:100',
+            'category_id' => 'required|exists:complaint_categories,id',
+            'designation_id' => 'required|exists:designations,id',
             // 'emp_id' removed
             'date_of_hire' => 'nullable|date',
             'address' => 'nullable|string|max:500',
@@ -402,8 +386,8 @@ class EmployeeController extends Controller
             // Update employee
             $employee->update([
                 'name' => $request->name,
-                'category' => $request->category,
-                'designation' => $request->designation ?? $employee->designation,
+                'category_id' => $request->category_id,
+                'designation_id' => $request->designation_id ?? $employee->designation_id,
                 'phone' => $request->phone,
                 // 'emp_id' removed
                 'date_of_hire' => $request->date_of_hire,

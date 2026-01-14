@@ -15,7 +15,8 @@ return new class extends Migration {
             $table->unsignedBigInteger('complaint_id');
             $table->unsignedBigInteger('client_id');
             $table->unsignedBigInteger('entered_by')->nullable();
-            $table->string('submitted_by')->nullable()->comment('Name of the person submitting feedback');
+            $table->unsignedBigInteger('house_id')->nullable()->after('client_id');
+            //$table->foreign('house_id')->references('id')->on('houses')->onDelete('set null'); // Optional constraints
 
             // Overall rating
             $table->enum('overall_rating', ['excellent', 'good', 'average', 'poor'])->nullable();

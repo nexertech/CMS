@@ -46,7 +46,7 @@
         <select name="category" class="form-select @error('category') is-invalid @enderror" required>
           <option value="">Select Category</option>
           @foreach($categories as $cat)
-            <option value="{{ $cat }}" {{ old('category') == $cat ? 'selected' : '' }}>{{ ucfirst($cat) }}</option>
+            <option value="{{ $cat->id }}" {{ old('category') == $cat->id ? 'selected' : '' }}>{{ ucfirst($cat->name) }}</option>
           @endforeach
         </select>
         @error('category')<div class="invalid-feedback">{{ $message }}</div>@enderror
@@ -92,14 +92,14 @@
                         <td><strong>{{ $title->title }}</strong></td>
 
             <td>
-              {{ ucfirst($title->category) }}
+              {{ ucfirst($title->category->name ?? '-') }}
             </td>
             <td>{{ $title->questions ? Str::limit($title->questions, 50) : '-' }}</td>
             <td>
               <div class="btn-group" role="group">
                 <button class="btn btn-outline-primary btn-sm edit-title-btn" 
                     data-id="{{ $title->id }}"
-                    data-category="{{ $title->category }}"
+                    data-category="{{ $title->category_id }}"
                     data-title="{!! htmlspecialchars($title->title) !!}"
                     data-questions="{!! htmlspecialchars($title->questions ?? '') !!}"
                     title="Edit" style="padding: 3px 8px;">
@@ -158,7 +158,7 @@
             <select name="category" id="edit_category" class="form-select" required>
               <option value="">Select Category</option>
               @foreach($categories as $cat)
-                <option value="{{ $cat }}">{{ ucfirst($cat) }}</option>
+                <option value="{{ $cat->id }}">{{ ucfirst($cat->name) }}</option>
               @endforeach
             </select>
           </div>

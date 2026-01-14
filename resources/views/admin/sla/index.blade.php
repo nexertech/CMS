@@ -64,8 +64,8 @@
             <tr>
           <td >{{ $rule->id }}</td>
           <td>
-            <div class="fw-bold">{{ ucfirst($rule->complaint_type) }} Rule</div>
-            <div class="text-muted small">{{ $rule->complaint_type_display ?? ucfirst($rule->complaint_type) }}</div>
+            <div class="fw-bold">{{ ucfirst($rule->category->name ?? 'Unknown') }} Rule</div>
+            <div class="text-muted small">{{ $rule->complaint_type_display }}</div>
               </td>
               <td>
             @if(($rule->priority ?? 'medium') === 'urgent')

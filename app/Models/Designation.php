@@ -10,9 +10,14 @@ class Designation extends Model
     use HasFactory;
 
     protected $fillable = [
-        'category',
+        'category_id',
         'name',
         'status',
     ];
+
+    public function category()
+    {
+        return $this->belongsTo(ComplaintCategory::class, 'category_id');
+    }
 }
 

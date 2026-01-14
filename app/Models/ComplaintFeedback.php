@@ -21,6 +21,7 @@ class ComplaintFeedback extends Model
     protected $fillable = [
         'complaint_id',
         'client_id',
+        'house_id',
         'entered_by',
         'submitted_by',
         'overall_rating',
@@ -55,6 +56,14 @@ class ComplaintFeedback extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class, 'client_id', 'id');
+    }
+
+    /**
+     * Get the house that provided this feedback.
+     */
+    public function house(): BelongsTo
+    {
+        return $this->belongsTo(House::class, 'house_id', 'id');
     }
 
     /**

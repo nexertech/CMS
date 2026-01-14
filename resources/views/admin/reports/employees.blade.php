@@ -37,7 +37,7 @@
         <label for="category" class="form-label text-white">Category</label>
         <select class="form-select" id="category" name="category" onchange="submitEmployeesReportFilters()">
           <option value="">All Categories</option>
-          @foreach(\App\Models\Employee::distinct()->whereNotNull('category')->pluck('category') as $cat)
+          @foreach(\App\Models\ComplaintCategory::orderBy('name')->pluck('name') as $cat)
             <option value="{{ $cat }}" {{ request('category') == $cat ? 'selected' : '' }}>{{ ucfirst($cat) }}</option>
           @endforeach
         </select>
@@ -102,8 +102,8 @@
           <tr>
             <td style="text-align: left; padding: 0.4rem 0.3rem; border: 1px solid #dee2e6 !important;">{{ $loop->iteration }}</td>
             <td style="text-align: left; padding: 0.4rem 0.3rem; border: 1px solid #dee2e6 !important;">{{ $emp['employee']->name ?? 'N/A' }}</td>
-            <td style="text-align: left; padding: 0.4rem 0.3rem; border: 1px solid #dee2e6 !important;">{{ $emp['employee']->category ?? 'N/A' }}</td>
-            <td style="text-align: left; padding: 0.4rem 0.3rem; border: 1px solid #dee2e6 !important;">{{ $emp['employee']->designation ?? '' }}</td>
+            <td style="text-align: left; padding: 0.4rem 0.3rem; border: 1px solid #dee2e6 !important;">{{ $emp['employee']->category->name ?? $emp['employee']->category ?? 'N/A' }}</td>
+            <td style="text-align: left; padding: 0.4rem 0.3rem; border: 1px solid #dee2e6 !important;">{{ $emp['employee']->designation->name ?? $emp['employee']->designation ?? '' }}</td>
             <td style="text-align: left; padding: 0.4rem 0.3rem; border: 1px solid #dee2e6 !important;">{{ number_format($emp['total_complaints']) }}</td>
             <td style="text-align: left; padding: 0.4rem 0.3rem; border: 1px solid #dee2e6 !important;">{{ number_format($emp['resolved_complaints']) }}</td>
             <td style="text-align: left; padding: 0.4rem 0.3rem; border: 1px solid #dee2e6 !important;">{{ number_format($emp['resolution_rate'], 1) }}%</td>

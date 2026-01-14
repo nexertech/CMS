@@ -577,10 +577,9 @@
                                 <th class="px-3 py-2 text-left font-semibold text-gray-700">CMP-ID</th>
                                 <th class="px-3 py-2 text-left font-semibold text-gray-700">Registration</th>
                                 <th class="px-3 py-2 text-left font-semibold text-gray-700">Addressed</th>
-                                <th class="px-3 py-2 text-left font-semibold text-gray-700">Complainant</th>
                                 <th class="px-3 py-2 text-left font-semibold text-gray-700">House</th>
                                 <th class="px-3 py-2 text-left font-semibold text-gray-700">Address</th>
-                                <th class="px-3 py-2 text-left font-semibold text-gray-700">Type</th>
+                                <th class="px-3 py-2 text-left font-semibold text-gray-700">Category</th>
                                 <th class="px-3 py-2 text-left font-semibold text-gray-700 text-center">Status</th>
                                 <th class="px-3 py-2 text-left font-semibold text-gray-700 text-center">View</th>
                             </tr>
@@ -1202,6 +1201,7 @@
         const unauthorizedData = @json($unauthorizedData ?? []);
         const performaData = @json($performaData ?? []);
         let dashboardComplaints = @json($dashboardComplaints ?? []);
+        let overdueComplaintsData = @json($overdueComplaints ?? []);
         // Server-side summary stats (used to show accurate totals even when complaints dataset is a sample)
         let serverStats = @json($stats ?? []);
 
@@ -1222,7 +1222,7 @@
         const modalClose = document.getElementById('closeComplaintModal');
         let activeStatusKey = null;
         let currentPage = 1;
-        const pageSize = 12;
+        const pageSize = 15;
 
         const statusBadgeColors = {
             assigned: '#16a34a',
@@ -1262,7 +1262,7 @@
                 return dashboardComplaints.filter(c => ['resolved', 'closed'].includes(c.status));
             }
             if (statusKey === 'overdue') {
-                return dashboardComplaints.filter(c => c.overdue);
+                return overdueComplaintsData.length > 0 ? overdueComplaintsData : dashboardComplaints.filter(c => c.overdue);
             }
             return dashboardComplaints.filter(c => c.status === statusKey);
         }
@@ -1331,7 +1331,6 @@
                         <td class="px-3 py-2 font-semibold text-gray-700">CMP-${String(cmpValue ?? '').padStart(4, '0')}</td>
                         <td class="px-3 py-2 text-gray-700">${row.created_at ?? '-'}</td>
                         <td class="px-3 py-2 text-gray-700">${row.closed_at ?? '-'}</td>
-                        <td class="px-3 py-2 text-gray-700">${row.client_name ?? 'N/A'}</td>
                         <td class="px-3 py-2 text-gray-700">${row.house_no ?? 'N/A'}</td>
                         <td class="px-3 py-2 text-gray-700">${row.address ?? 'N/A'}</td>
                         <td class="px-3 py-2 text-gray-700">${typeLabel ?? 'N/A'}</td>

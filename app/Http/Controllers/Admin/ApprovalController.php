@@ -79,6 +79,7 @@ class ApprovalController extends Controller
             $query = SpareApprovalPerforma::query()
                 ->join('complaints', 'spare_approval_performa.complaint_id', '=', 'complaints.id')
                 ->join('clients', 'complaints.client_id', '=', 'clients.id')
+                ->leftJoin('complaint_categories', 'complaints.category_id', '=', 'complaint_categories.id')
                 ->select('spare_approval_performa.*')
                 ->distinct();
             
@@ -117,7 +118,7 @@ class ApprovalController extends Controller
 
             // Filter by Nature (category)
             if ($request->has('category') && $request->category) {
-                $query->where('complaints.category', $request->category);
+                $query->where('complaint_categories.name', $request->category);
             }
 
             // Filter by complaint status or performa_type (combined in status filter)
@@ -201,40 +202,8 @@ class ApprovalController extends Controller
                 // Get categories from ComplaintCategory table
                 $categories = ComplaintCategory::orderBy('name')->pluck('name');
             } else {
-                // Fallback: Get categories from complaints that have approvals with location filtering
-                $categoriesQuery = Complaint::join('spare_approval_performa', 'complaints.id', '=', 'spare_approval_performa.complaint_id')
-                    ->join('clients', 'complaints.client_id', '=', 'clients.id')
-                    ->select('complaints.category')
-                    ->distinct()
-                    ->whereNotNull('complaints.category');
-                
-                // Apply location filtering through client table
-                if (!$this->canViewAllData($user)) {
-                    $roleName = strtolower($user->role->role_name ?? '');
-                    if ($roleName === 'garrison_engineer' && $user->city_id && $user->city) {
-                        $categoriesQuery->where('clients.city', $user->city->name);
-                    } elseif (in_array($roleName, ['complaint_center', 'department_staff']) && $user->sector_id && $user->sector) {
-                        $categoriesQuery->where('clients.sector', $user->sector->name);
-                    }
-                }
-                
-                $categories = $categoriesQuery->pluck('category')
-                    ->unique()
-                    ->values();
-                
-                // If still empty, get from all complaints with location filtering
-                if ($categories->isEmpty()) {
-                    $categoriesQuery = Complaint::select('category')
-                        ->distinct()
-                        ->whereNotNull('category');
-                    
-                    // Apply location filtering
-                    $this->filterComplaintsByLocation($categoriesQuery, $user);
-                    
-                    $categories = $categoriesQuery->pluck('category')
-                        ->unique()
-                        ->values();
-                }
+                // Fallback: Table doesn't exist or migration pending
+                $categories = collect();
             }
 
             // Define all possible status labels - show all these in dropdown

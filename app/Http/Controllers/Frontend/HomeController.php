@@ -293,7 +293,13 @@ class HomeController extends Controller
         }
 
         if ($category && $category !== 'all') {
-            $complaintsQuery->where('complaints.category', $category);
+            if (is_numeric($category)) {
+                $complaintsQuery->where('complaints.category_id', $category);
+            } else {
+                $complaintsQuery->whereHas('category', function($q) use ($category) {
+                    $q->where('name', $category);
+                });
+            }
         }
 
         // Apply CMES filter (Inclusive: CME Cities OR CME Sectors) - Apply BEFORE cloning for graph base
@@ -548,13 +554,6 @@ class HomeController extends Controller
                 ->get();
         }
 
-        $overdueComplaintsQuery = Complaint::whereIn('status', ['new', 'assigned', 'in_progress'])
-            ->with(['client', 'assignedEmployee']);
-        $this->filterComplaintsByLocationForFrontend($overdueComplaintsQuery, $user, $locationScope);
-        $overdueComplaints = $overdueComplaintsQuery->orderBy('created_at', 'asc')
-            ->limit(10)
-            ->get();
-
         // Dataset for dashboard complaint table
         $performaStatuses = [
             'work_performa',
@@ -564,11 +563,61 @@ class HomeController extends Controller
             'product_na',
         ];
 
+        $overdueComplaintsQuery = Complaint::overdue()
+            ->with(['client', 'assignedEmployee']);
+        $this->filterComplaintsByLocationForFrontend($overdueComplaintsQuery, $user, $locationScope);
+        $overdueComplaints = $overdueComplaintsQuery->orderBy('created_at', 'asc')
+            ->get()
+            ->map(function ($complaint) use ($performaStatuses) {
+                // Reuse similar formatting logic
+                $statusKey = $complaint->status === 'new' ? 'assigned' : $complaint->status;
+                $statusKey = $statusKey === 'closed' ? 'resolved' : $statusKey;
+
+                $statusLabel = $statusKey === 'resolved'
+                    ? 'Addressed'
+                    : ucfirst(str_replace('_', ' ', $statusKey));
+
+                $performaType = in_array($complaint->status, $performaStatuses, true)
+                    ? $complaint->status
+                    : null;
+
+                $client = $complaint->client;
+ 
+                $createdAt = $complaint->created_at
+                    ? $complaint->created_at->timezone('Asia/Karachi')->format('M d, Y H:i')
+                    : null;
+                $closedAt = $complaint->closed_at
+                    ? $complaint->closed_at->timezone('Asia/Karachi')->format('M d, Y H:i')
+                    : null;
+
+                return [
+                    'id' => $complaint->id,
+                    'cmp' => $complaint->id,
+                    'status' => $statusKey,
+                    'status_label' => $statusLabel,
+                    'performa_type' => $performaType,
+                    'performa_label' => $performaType ? ucfirst(str_replace('_', ' ', $performaType)) : '-',
+                    'category' => $complaint->category_display ?? 'N/A',
+                    'designation' => $complaint->assignedEmployee->designation->name ?? 'N/A',
+                    'client_name' => $client->client_name ?? 'N/A',
+                    'house_no' => $complaint->house->house_no ?? 'N/A',
+                    'address' => $complaint->house->address
+                        ?? $client->address
+                        ?? 'N/A',
+                    'phone' => $client->phone ?? '-',
+                    'created_at' => $createdAt,
+                    'closed_at' => $closedAt,
+                    'overdue' => true,
+                    'view_url' => route('admin.complaints.show', $complaint->id),
+                ];
+            })
+            ->values();
+
         $dashboardComplaints = (clone $complaintsQuery)
             ->select([
                 'complaints.id',
                 'complaints.status',
-                'complaints.category',
+                'complaints.category_id',
                 'complaints.created_at',
                 'complaints.closed_at',
                 'complaints.client_id',
@@ -580,7 +629,7 @@ class HomeController extends Controller
                     complaints.status IN ('new', 'assigned', 'in_progress') AND 
                     EXISTS(
                         SELECT 1 FROM sla_rules 
-                        WHERE sla_rules.complaint_type = complaints.category 
+                        WHERE sla_rules.category_id = complaints.category_id
                         AND sla_rules.status = 'active'
                         AND sla_rules.deleted_at IS NULL
                         AND complaints.created_at < DATE_SUB(NOW(), INTERVAL sla_rules.max_resolution_time HOUR)
@@ -589,7 +638,7 @@ class HomeController extends Controller
             ")
             ->with([
                 'client:id,client_name,phone,address', 
-                'assignedEmployee:id,name,designation', 
+                'assignedEmployee:id,name', 
                 'house:id,house_no,address'
             ])
             ->orderBy('id', 'desc')
@@ -623,8 +672,8 @@ class HomeController extends Controller
                     'status_label' => $statusLabel,
                     'performa_type' => $performaType,
                     'performa_label' => $performaType ? ucfirst(str_replace('_', ' ', $performaType)) : '-',
-                    'category' => $complaint->category_display ?? ucfirst($complaint->category ?? 'N/A'),
-                    'designation' => $complaint->assignedEmployee->designation ?? 'N/A',
+                    'category' => $complaint->category_display ?? 'N/A',
+                    'designation' => $complaint->assignedEmployee->designation->name ?? 'N/A',
                     'client_name' => $client->client_name ?? 'N/A',
                     'house_no' => $complaint->house->house_no ?? 'N/A',
                     'address' => $complaint->house->address
@@ -709,7 +758,13 @@ class HomeController extends Controller
 
             // Global Metadata Filters
             if ($category && $category !== 'all') {
-                $q->where($categoryCol, $category);
+                if (is_numeric($category)) {
+                    $q->where($tablePrefix ? $tablePrefix . '.category_id' : 'category_id', $category);
+                } else {
+                    $q->whereHas('category', function($subQ) use ($category) {
+                        $subQ->where('name', $category);
+                    });
+                }
             }
             if ($status && $status !== 'all') {
                 $q->where($statusCol, $status);
@@ -1206,6 +1261,7 @@ class HomeController extends Controller
                 'cmeGraphData' => $cmeGraphData,
                 'cmeResolvedData' => $cmeResolvedData,
                 'dashboardComplaints' => $dashboardComplaints,
+                'overdueComplaints' => $overdueComplaints,
                 'categoryLabels' => $categoryLabels,
                 'categoryUsageValues' => $categoryUsageValues,
                 'categoryTotalReceivedValues' => $categoryTotalReceivedValues,
@@ -1258,7 +1314,8 @@ class HomeController extends Controller
             'stockConsumptionData',
             'categoryLabels',
             'categoryUsageValues',
-            'categoryTotalReceivedValues'
+            'categoryTotalReceivedValues',
+            'overdueComplaints'
         ));
     }
 

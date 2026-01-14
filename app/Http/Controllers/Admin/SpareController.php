@@ -45,13 +45,15 @@ class SpareController extends Controller
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('item_name', 'like', "%{$search}%")
-                  ->orWhere('category', 'like', "%{$search}%");
+                  ->orWhereHas('category', function($cq) use ($search) {
+                      $cq->where('name', 'like', "%{$search}%");
+                  });
             });
         }
 
-        // Filter by category
+        // Filter by category (category_id)
         if ($request->has('category') && $request->category) {
-            $query->where('category', $request->category);
+            $query->where('category_id', $request->category);
         }
 
         // Filter by stock status
@@ -78,27 +80,10 @@ class SpareController extends Controller
             $query->where('unit_price', '<=', $request->price_to);
         }
 
-        $spares = $query->with(['stockLogs', 'city', 'sector'])->orderBy('id', 'asc')->paginate(15);
+        $spares = $query->with(['stockLogs', 'city', 'sector', 'category'])->orderBy('id', 'asc')->paginate(15);
         
-        // Get categories from complaint_categories table
-        $dbCategories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name')->toArray()
-            : [];
-        
-        // Get unique categories from spares table (with location filtering)
-        $spareCategoriesQuery = Spare::whereNotNull('category')
-            ->where('category', '!=', '');
-        $this->filterSparesByLocation($spareCategoriesQuery, $user);
-        $spareCategories = $spareCategoriesQuery->distinct()
-            ->orderBy('category')
-            ->pluck('category')
-            ->toArray();
-        
-        // Merge and get unique categories
-        $allCategories = array_unique(array_merge($dbCategories, $spareCategories));
-        sort($allCategories);
-        
-        $categories = collect($allCategories);
+        // Get categories from complaint_categories table for the filter dropdown
+        $categories = ComplaintCategory::orderBy('name')->pluck('name', 'id');
 
         return view('admin.spares.index', compact('spares', 'categories'));
     }
@@ -110,7 +95,7 @@ class SpareController extends Controller
     {
         $user = Auth::user();
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name')
+            ? ComplaintCategory::orderBy('name')->pluck('name', 'id')
             : collect();
         
         // Get cities based on user role/location
@@ -143,20 +128,11 @@ class SpareController extends Controller
      */
     public function store(Request $request)
     {
-        // Get categories from ComplaintCategory table
-        $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name')->toArray()
-            : [];
-        $categoryKeys = implode(',', array_keys(Spare::getCategories()));
-        $dbCategories = implode(',', Spare::getCanonicalCategories());
-        $allowedCategories = implode(',', array_merge($categories, array_keys(Spare::getCategories()), Spare::getCanonicalCategories()));
-        
         $validator = Validator::make($request->all(), [
             'item_name' => 'required|string|max:150',
             'product_code' => 'nullable|string|max:50',
             'brand_name' => 'nullable|string|max:100',
-            // Accept categories from ComplaintCategory table and legacy categories
-            'category' => 'required|string',
+            'category_id' => 'required|exists:complaint_categories,id',
             'city_id' => 'nullable|exists:cities,id',
             'sector_id' => 'nullable|exists:sectors,id',
             'unit_price' => 'nullable|numeric|min:0',
@@ -181,16 +157,7 @@ class SpareController extends Controller
                 ->withInput();
         }
 
-        // Validate category is from allowed list
-        if (!in_array($request->category, array_merge($categories, array_keys(Spare::getCategories()), Spare::getCanonicalCategories()))) {
-            return redirect()->back()
-                ->withErrors(['category' => 'The selected category is invalid.'])
-                ->withInput();
-        }
-
-        // Use category as is (from ComplaintCategory table)
-        // Since category is now a string column, we can save any value directly
-        $normalizedCategory = $request->category;
+        $normalizedCategory = $request->category_id;
 
         // Check if same product (item_name) exists (any brand)
         // If exists, update it; if brand different, update brand and track old brand
@@ -246,7 +213,7 @@ class SpareController extends Controller
             $updateData = [
                 'product_code' => $request->product_code ?? $existingSpare->product_code,
                 'brand_name' => $newBrandName ?? $existingSpare->brand_name, // Update brand if changed
-                'category' => $request->category,
+                'category_id' => $request->category_id,
                 'city_id' => $request->city_id ?? $existingSpare->city_id,
                 'sector_id' => $request->sector_id ?? $existingSpare->sector_id,
                 'unit_price' => $request->unit_price ?? $existingSpare->unit_price,
@@ -284,7 +251,7 @@ class SpareController extends Controller
                 'item_name' => $request->item_name,
                 'product_code' => $request->product_code,
                 'brand_name' => $request->brand_name,
-                'category' => $request->category,
+                'category_id' => $request->category_id,
                 'city_id' => $request->city_id,
                 'sector_id' => $request->sector_id,
                 'unit_price' => $request->unit_price,
@@ -376,7 +343,7 @@ class SpareController extends Controller
     {
         $user = Auth::user();
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name')
+            ? ComplaintCategory::orderBy('name')->pluck('name', 'id')
             : collect();
         
         // Get cities based on user role/location
@@ -432,19 +399,11 @@ class SpareController extends Controller
      */
     public function update(Request $request, Spare $spare)
     {
-        // Get categories from ComplaintCategory table
-        $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name')->toArray()
-            : [];
-        $categoryKeys = implode(',', array_keys(Spare::getCategories()));
-        $dbCategories = implode(',', Spare::getCanonicalCategories());
-        
         $validator = Validator::make($request->all(), [
             'item_name' => 'required|string|max:150',
             'product_code' => 'nullable|string|max:50',
             'brand_name' => 'nullable|string|max:100',
-            // Accept categories from ComplaintCategory table and legacy categories
-            'category' => 'required|string',
+            'category_id' => 'required|exists:complaint_categories,id',
             'city_id' => 'nullable|exists:cities,id',
             'sector_id' => 'nullable|exists:sectors,id',
             'unit_price' => 'nullable|numeric|min:0',
@@ -469,18 +428,6 @@ class SpareController extends Controller
                 ->withInput();
         }
 
-        // Validate category is from allowed list
-        $allAllowedCategories = array_merge($categories, array_keys(Spare::getCategories()), Spare::getCanonicalCategories());
-        if (!in_array($request->category, $allAllowedCategories)) {
-            return redirect()->back()
-                ->withErrors(['category' => 'The selected category is invalid.'])
-                ->withInput();
-        }
-
-        // Use category as is (from ComplaintCategory table)
-        // Since category is now a string column, we can save any value directly
-        $normalizedCategory = $request->category;
-
         // Compute safe values
         $newTotalReceived = $request->has('total_received_quantity')
             ? (int) $request->total_received_quantity
@@ -501,7 +448,7 @@ class SpareController extends Controller
             'item_name' => $request->item_name,
             'product_code' => $request->product_code,
             'brand_name' => $request->brand_name,
-            'category' => $normalizedCategory,
+            'category_id' => $request->category_id,
             'city_id' => $request->city_id,
             'sector_id' => $request->sector_id,
             'unit_price' => $request->unit_price,
@@ -1050,8 +997,14 @@ class SpareController extends Controller
                     return redirect()->back()->withErrors($validator);
                 }
                 
-                Spare::whereIn('id', $spareIds)->update(['category' => $request->category]);
-                $message = 'Category changed for selected spare parts successfully.';
+                // Find category ID
+                $category = ComplaintCategory::where('name', $request->category)->first();
+                if ($category) {
+                    Spare::whereIn('id', $spareIds)->update(['category_id' => $category->id]);
+                    $message = 'Category changed for selected spare parts successfully.';
+                } else {
+                    return redirect()->back()->withErrors(['category' => 'Selected category not found in database.']);
+                }
                 break;
 
             case 'change_threshold':
@@ -1126,22 +1079,14 @@ class SpareController extends Controller
     {
         try {
             // Get categories from ComplaintCategory table
+            // Get categories from ComplaintCategory table
             $dbCategories = [];
             if (\Schema::hasTable('complaint_categories')) {
                 $dbCategories = \App\Models\ComplaintCategory::orderBy('name')->pluck('name')->toArray();
             }
             
-            // Get unique categories from spares table
-            $spareCategories = Spare::whereNotNull('category')
-                ->where('category', '!=', '')
-                ->distinct()
-                ->orderBy('category')
-                ->pluck('category')
-                ->toArray();
-            
-            // Merge and get unique categories
-            $allCategories = array_unique(array_merge($dbCategories, $spareCategories));
-            sort($allCategories);
+            // Only use DB categories, Spares table no longer has distinct 'category' string column
+            $allCategories = $dbCategories;
             
             return response()->json([
                 'success' => true,
@@ -1165,75 +1110,105 @@ class SpareController extends Controller
     public function getProductsByCategory(Request $request)
     {
         try {
-            $category = $request->get('category');
-            $sectorName = $request->get('sector');
-            $cityName = $request->get('city');
+            $categoryName = $request->get('category');
+            $sectorInput = $request->get('sector');
+            $cityInput = $request->get('city');
             $user = Auth::user();
             
             $query = Spare::query();
             
             // First apply user-based location filtering (this is the primary filter)
+            // This ensures users only see products within their allowed scope
             $this->filterSparesByLocation($query, $user);
             
-            // Only apply additional location filtering from request if user is Director/Admin
-            // For other roles, user-based filtering is already applied and should not be overridden
+            // Apply additional location filtering from request
+            // This allows ANY user to further refine the list within their allowed scope
             if ($user && $user->role) {
-                $roleName = strtolower($user->role->role_name ?? '');
-                
-                // Only Director/Admin can override location filtering with request parameters
-                if (in_array($roleName, ['director', 'admin'])) {
-                    // Then apply additional location filtering based on request parameters (if provided)
-                    if ($sectorName) {
-                        // Find sector by name (handle both string name and object)
-                        $sectorNameStr = is_string($sectorName) ? $sectorName : (is_object($sectorName) ? ($sectorName->name ?? null) : null);
-                        
-                        if ($sectorNameStr) {
-                            $sector = \App\Models\Sector::where('name', $sectorNameStr)->first();
-                            if ($sector && $sector->id) {
-                                $query->where('sector_id', $sector->id);
-                            } else {
-                                // If sector not found, try to find by ID if it's numeric
-                                if (is_numeric($sectorName)) {
-                                    $query->where('sector_id', $sectorName);
-                                }
-                            }
+                // Apply sector filter if provided
+                if ($sectorInput) {
+                    $sectorId = null;
+                    
+                    if (is_numeric($sectorInput)) {
+                        $sectorId = $sectorInput;
+                    } elseif (is_string($sectorInput)) {
+                        // Try to find by name
+                        $sector = \App\Models\Sector::where('name', $sectorInput)->first();
+                        if ($sector) {
+                            $sectorId = $sector->id;
                         }
-                    } elseif ($cityName) {
-                        // If only city is provided, filter by city_id
-                        // Handle both string name and object
-                        $cityNameStr = is_string($cityName) ? $cityName : (is_object($cityName) ? ($cityName->name ?? null) : null);
+                    } elseif (is_object($sectorInput) || is_array($sectorInput)) {
+                        // Handle object or array (e.g., from frontend passing object)
+                        $sectorId = is_array($sectorInput) ? ($sectorInput['id'] ?? null) : ($sectorInput->id ?? null);
                         
-                        if ($cityNameStr) {
-                            $city = \App\Models\City::where('name', $cityNameStr)->first();
-                            if ($city && $city->id) {
-                                $query->where('city_id', $city->id);
-                            } else {
-                                // If city not found, try to find by ID if it's numeric
-                                if (is_numeric($cityName)) {
-                                    $query->where('city_id', $cityName);
-                                }
+                        // If no ID, try name
+                        if (!$sectorId) {
+                            $sName = is_array($sectorInput) ? ($sectorInput['name'] ?? null) : ($sectorInput->name ?? null);
+                            if ($sName) {
+                                $sector = \App\Models\Sector::where('name', $sName)->first();
+                                if ($sector) $sectorId = $sector->id;
                             }
                         }
                     }
+                    
+                    if ($sectorId) {
+                        $query->where('sector_id', $sectorId);
+                    }
+                } elseif ($cityInput) {
+                     // Only apply city filter if sector not provided (hierarchy)
+                    $cityId = null;
+                    
+                    if (is_numeric($cityInput)) {
+                        $cityId = $cityInput;
+                    } elseif (is_string($cityInput)) {
+                        $city = \App\Models\City::where('name', $cityInput)->first();
+                        if ($city) $cityId = $city->id;
+                    } elseif (is_object($cityInput) || is_array($cityInput)) {
+                        $cityId = is_array($cityInput) ? ($cityInput['id'] ?? null) : ($cityInput->id ?? null);
+                        if (!$cityId) {
+                            $cName = is_array($cityInput) ? ($cityInput['name'] ?? null) : ($cityInput->name ?? null);
+                            if ($cName) {
+                                $city = \App\Models\City::where('name', $cName)->first();
+                                if ($city) $cityId = $city->id;
+                            }
+                        }
+                    }
+                    
+                    if ($cityId) {
+                        $query->where('city_id', $cityId);
+                    }
                 }
-                // For other roles (complaint_center, department_staff, garrison_engineer), 
-                // user-based filtering is already applied and request parameters are ignored
             }
             
             // Apply category filter
-            if ($category && $category !== '') {
-                $query->where(function($q) use ($category) {
-                    $q->where('category', $category);
-                    // Also include products with null or empty category if searching for "Uncategorized"
-                    if (strtolower($category) === 'uncategorized' || $category === '') {
-                        $q->orWhereNull('category')
-                          ->orWhere('category', '');
+            if ($categoryName && $categoryName !== '') {
+                // Handle "Uncategorized" case
+                if (strtolower($categoryName) === 'uncategorized') {
+                    $query->whereNull('category_id');
+                } else {
+                    // Look up category ID by name
+                    $category = \App\Models\ComplaintCategory::where('name', $categoryName)->first();
+                    
+                    if ($category) {
+                        $query->where('category_id', $category->id);
+                    } else {
+                        // If category name provided but not found, maybe strict filtering?
+                        // Or try to match ambiguous names or just return empty for safety
+                        // For now, if exact name match fails, let's try strict match or assume invalid
+                         $query->where('category_id', -1); // Return nothing if category not found
                     }
-                });
+                }
             }
             
             $products = $query->orderBy('item_name')
-                ->get(['id', 'item_name', 'stock_quantity', 'category', 'unit_price']);
+                // Eager load category to get the name for frontend
+                ->with('category:id,name')
+                ->get(['id', 'item_name', 'stock_quantity', 'category_id', 'unit_price']);
+            
+            // Transform to include category name in response as 'category' string for frontend compatibility
+            $products->transform(function ($item) {
+                $item->category = $item->category ? $item->category->name : null;
+                return $item;
+            });
             
             return response()->json([
                 'success' => true,

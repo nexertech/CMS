@@ -63,7 +63,7 @@
                             <option value="" {{ request('assigned_employee_id') ? '' : 'selected' }}>All</option>
                             @foreach($employees as $employee)
                             <option value="{{ $employee->id }}" {{ request('assigned_employee_id') == $employee->id ? 'selected' : '' }}>
-                                {{ $employee->name }}@if($employee->designation) ({{ $employee->designation }})@endif
+                                {{ $employee->name }}@if($employee->designation) ({{ $employee->designation->name ?? $employee->designation }})@endif
                             </option>
                             @endforeach
                         </select>
@@ -126,7 +126,7 @@
                         <th style="width: 100px;">House No.</th>
                         <th style="width: 120px;">Complainant Name</th>
                         <th style="width: 150px;">Address</th>
-                        <th style="width: 250px;">Complaint Nature & Type</th>
+                        <th style="width: 250px;">Nature & Type</th>
                         <th style="width: 100px;">Priority</th>
                         <th style="width: 80px;">Actions</th>
                     </tr>
@@ -144,13 +144,12 @@
                             <td style="white-space: nowrap;">{{ $complaint->house->house_no ?? 'N/A' }}</td>
                             <td style="white-space: nowrap;">{{ $complaint->client->client_name ?? 'N/A' }}</td>
                             <td>{{ $complaint->client->address ?? 'N/A' }}</td>
-                            <td>
+                            <td style="white-space: nowrap;">
                                 @php
-                                    $designation = $complaint->assignedEmployee->designation ?? 'N/A';
-                                    $catDisplay = $complaint->getCategoryDisplayAttribute();
-                                    $displayText = $catDisplay . ' - ' . $designation;
+                                    $catName = $complaint->category->name ?? $complaint->category ?? 'Uncategorized';
+                                    $desigName = $complaint->assignedEmployee->designation->name ?? $complaint->assignedEmployee->designation ?? 'N/A';
                                 @endphp
-                                <div class="text-white" style="font-weight: normal;">{{ $displayText }}</div>
+                                {{ ucfirst($catName) . ' - ' . $desigName }}
                             </td>
                             <td>
                                 @php

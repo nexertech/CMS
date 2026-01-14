@@ -123,8 +123,8 @@
         <thead>
           <tr style="font-size: 0.7rem; text-transform: uppercase;">
             <th style="text-align: left; white-space: nowrap; padding: 2px 4px; width: 1%;">CMP-ID</th>
-            <th style="white-space: nowrap; padding: 2px 4px; width: 1%;">Reg Date</th>
             <th style="white-space: nowrap; padding: 2px 4px; width: 1%;">House No.</th>
+            <th style="white-space: nowrap; padding: 2px 4px; width: 1%;">Reg Date</th>
             <th style="text-align: left; white-space: nowrap; padding: 2px 4px; width: 1%;">Addressed Date</th>
             <th style="white-space: nowrap; padding: 2px 4px; width: 1%;">Address</th>
             <th style="padding: 2px 4px; width: auto;">Nature & Type</th>
@@ -141,10 +141,24 @@
             @endphp
             @if($complaint)
               @php
-                $category = $complaint->category ?? 'N/A';
-                $designation = $complaint->assignedEmployee->designation ?? 'N/A';
-                $catDisplay = ucfirst($category);
-                $displayText = $catDisplay . ' - ' . $designation;
+                // Fixed: Handle category relationship object
+                $categoryObj = $complaint->category;
+                $categoryName = 'N/A';
+                if ($categoryObj) {
+                    // Check if it's a string (legacy) or object (relationship)
+                    $categoryName = is_string($categoryObj) ? $categoryObj : ($categoryObj->name ?? 'N/A');
+                }
+                // Assign categoryName to category for backward compatibility
+                $category = $categoryName;
+                // Fixed: Handle designation relationship object (refactored from string)
+                $designationObj = $complaint->assignedEmployee->designation ?? null;
+                $designationName = 'N/A';
+                if ($designationObj) {
+                    $designationName = is_string($designationObj) ? $designationObj : ($designationObj->name ?? 'N/A');
+                }
+                
+                $catDisplay = ucfirst($categoryName);
+                $displayText = $catDisplay . ' - ' . $designationName;
 
                 // Logic: If performa_type is set, use it as status, otherwise use complaint status
                 $rawStatus = $complaint->status ?? 'new';
@@ -211,11 +225,11 @@
                     {{ (int) ($complaint->complaint_id ?? $complaint->id) }}
                   </a>
                 </td>
-                <td class="px-1" style="font-size: 0.8rem;">
-                  {{ $complaint->created_at ? $complaint->created_at->timezone('Asia/Karachi')->format('M d, y H:i') : 'N/A' }}
-                </td>
                 <td class="px-1" style="font-size: 0.8rem; color: #fbbf24; font-weight: 500;">
                   {{ $complaint->house->house_no ?? 'N/A' }}
+                </td>
+                <td class="px-1" style="font-size: 0.8rem;">
+                  {{ $complaint->created_at ? $complaint->created_at->timezone('Asia/Karachi')->format('M d, y H:i') : 'N/A' }}
                 </td>
                 <td class="px-1" style="text-align: left; font-size: 0.75rem;">
                   @if($complaint->closed_at)
@@ -2945,7 +2959,7 @@
 
     // Setup manual form event listeners
     function setupManualFormListeners() {
-      const categorySelect = document.getElementById('manualCategory');
+      console.log('setupManualFormListeners initializing...');
       const productSelect = document.getElementById('manualProduct');
       const availableStockInput = document.getElementById('manualAvailableStock');
       const requestQtyInput = document.getElementById('manualRequestQty');
@@ -2953,162 +2967,127 @@
       const authorityNo = document.getElementById('authorityNo');
       const authorityNoCol = document.getElementById('authorityNoCol');
       const authorityNumber = document.getElementById('authorityNumber');
-      const authoritySimple = document.getElementById('authorityNumberSimple');
+      const issueStockYes = document.getElementById('issueStockYes');
+      const issueStockNo = document.getElementById('issueStockNo');
+      const productIssueFields = document.getElementById('productIssueFields');
 
-      // Do not require categorySelect since it may be removed; only require the fields we use
-      if (!productSelect || !availableStockInput || !requestQtyInput) return;
-
-      // Category change (only if category is not disabled)
-      if (categorySelect && !categorySelect.disabled) {
-        categorySelect.addEventListener('change', function () {
-          const category = this.value;
-          loadProductsByCategory(category);
-          availableStockInput.value = '';
-          requestQtyInput.value = '';
-        });
-      }
-
-      // Product change
-      productSelect.addEventListener('change', function () {
-        const selectedOption = this.options[this.selectedIndex];
-        const stock = parseInt(selectedOption?.getAttribute('data-stock')) || 0;
-        availableStockInput.value = stock;
-
-        // Check if authority is required first
-        const isAuthorityRequired = authorityYes && authorityYes.checked;
-        const hasAuthNo = isAuthorityRequired && authorityNumber && authorityNumber.value && authorityNumber.value.trim().length > 0;
-
-        // If authority required and no authority number, lock the field
-        if (isAuthorityRequired && !hasAuthNo) {
-          requestQtyInput.disabled = true;
-          requestQtyInput.readOnly = true;
-          requestQtyInput.value = '';
-          requestQtyInput.placeholder = 'Enter Authority No.';
-          updateSubmitButtonState();
-          return; // Don't set default value or enable field
-        }
-
-        // If not locked, set default value and enable field
-        requestQtyInput.disabled = false;
-        requestQtyInput.readOnly = false;
-        requestQtyInput.placeholder = 'Enter quantity';
-
-        // Default request quantity to 1 when a product is selected and stock is available
-        if (stock > 0) {
-          if (!requestQtyInput.value || parseInt(requestQtyInput.value) < 1) {
-            requestQtyInput.value = 1;
-          }
-          requestQtyInput.min = 1;
-          requestQtyInput.max = stock;
-        } else {
-          requestQtyInput.value = '';
-        }
-
-        updateSubmitButtonState();
-      });
-
-      // Authority number (simple) change - enable submit when provided
-      if (authoritySimple) {
-        authoritySimple.addEventListener('input', function () {
-          updateSubmitButtonState();
-        });
-      }
-      if (authorityNumber) {
-        authorityNumber.addEventListener('input', function () {
-          updateSubmitButtonState();
-        });
-      }
-
-      // Request quantity input - enable submit button when valid
-      requestQtyInput.addEventListener('input', function () {
-        updateSubmitButtonState();
-      });
-
-      requestQtyInput.addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          if (!requestQtyInput.disabled && productSelect.value && requestQtyInput.value) {
-            const submitBtn = document.getElementById('submitAddStockBtn');
-            if (submitBtn && !submitBtn.disabled) {
-              window.submitIssueStock();
-            }
-          }
-        }
-      });
-
-      // Function to update submit button state
+      // Helper function to update submit button state
       function updateSubmitButtonState() {
         const submitBtn = document.getElementById('submitAddStockBtn');
         if (!submitBtn) return;
-
-        // Always keep submit enabled (authority-only submissions are allowed)
-        submitBtn.disabled = false;
+        submitBtn.disabled = false; // Always enabled for flexibility
       }
 
-      // Authority No. Required toggle handlers - Authority No. is optional
+      // 1. Authority No. Required toggle handlers - Independent of other fields
       if (authorityYes && authorityNo && authorityNoCol) {
+        console.log('Attaching authority toggle listeners');
         const updateAuthorityVisibility = () => {
           const required = authorityYes.checked;
-          authorityNoCol.classList.toggle('d-none', !required);
-
-          if (authorityNumber) authorityNumber.required = false;
-
-          if (requestQtyInput) {
-            requestQtyInput.disabled = false;
-            requestQtyInput.readOnly = false;
-            requestQtyInput.placeholder = 'Enter quantity';
-
-            const stock = parseInt(availableStockInput.value) || 0;
-            if (stock > 0 && (!requestQtyInput.value || parseInt(requestQtyInput.value) < 1)) {
-              requestQtyInput.value = 1;
-              requestQtyInput.min = 1;
-              requestQtyInput.max = stock;
-            }
+          console.log('Authority visibility update - required:', required);
+          
+          // Use explicit classList methods for better compatibility and clarity
+          if (required) {
+            authorityNoCol.classList.remove('d-none');
+          } else {
+            authorityNoCol.classList.add('d-none');
           }
 
-          // If "Yes" selected but no authority entered yet, keep fields visible and let user type
-          // If "No" selected, clear both authority fields and hide legacy input
-          if (!required) {
-            if (authorityNumber) authorityNumber.value = '';
-            if (authoritySimple) authoritySimple.value = '';
-            window.currentAuthorityNumber = '';
+          if (authorityNumber) {
+            authorityNumber.required = false;
+            if (!required) authorityNumber.value = '';
           }
 
           updateSubmitButtonState();
         };
         authorityYes.addEventListener('change', updateAuthorityVisibility);
         authorityNo.addEventListener('change', updateAuthorityVisibility);
-        updateAuthorityVisibility();
+        updateAuthorityVisibility(); // Initial state
       }
 
-      // Issue Stock toggle handlers - Show/hide product fields
-      const issueStockYes = document.getElementById('issueStockYes');
-      const issueStockNo = document.getElementById('issueStockNo');
-      const productIssueFields = document.getElementById('productIssueFields');
-
+      // 2. Issue Stock toggle handlers - Independent of other fields
       if (issueStockYes && issueStockNo && productIssueFields) {
+        console.log('Attaching stock visibility listeners');
         const updateIssueStockVisibility = () => {
-          const showFields = issueStockYes.checked;
-          productIssueFields.classList.toggle('d-none', !showFields);
-
-          // Clear fields when hiding
-          if (!showFields) {
-            if (productSelect) productSelect.value = '';
+          const issuing = issueStockYes.checked;
+          console.log('Stock visibility update - issuing:', issuing);
+          
+          if (issuing) {
+            productIssueFields.classList.remove('d-none');
+            if (productSelect) productSelect.disabled = false;
+            if (requestQtyInput) requestQtyInput.disabled = false;
+          } else {
+            productIssueFields.classList.add('d-none');
+            // If not issuing stock, clear product fields
+            if (productSelect) {
+                productSelect.value = '';
+                productSelect.disabled = true;
+            }
             if (availableStockInput) availableStockInput.value = '';
-            if (requestQtyInput) requestQtyInput.value = '';
+            if (requestQtyInput) {
+              requestQtyInput.value = '';
+              requestQtyInput.disabled = true;
+            }
           }
-
           updateSubmitButtonState();
         };
         issueStockYes.addEventListener('change', updateIssueStockVisibility);
         issueStockNo.addEventListener('change', updateIssueStockVisibility);
-        updateIssueStockVisibility();
+        updateIssueStockVisibility(); // Initial state
       }
 
+      // 3. Product Fields listeners - Only if elements exist
+      if (productSelect && availableStockInput && requestQtyInput) {
+        console.log('Attaching product field listeners');
+        
+        // Product change
+        productSelect.addEventListener('change', function () {
+          const selectedOption = this.options[this.selectedIndex];
+          if (!selectedOption) return;
+          
+          const stock = parseInt(selectedOption.getAttribute('data-stock')) || 0;
+          availableStockInput.value = stock;
+
+          requestQtyInput.disabled = false;
+          requestQtyInput.readOnly = false;
+          requestQtyInput.placeholder = 'Enter quantity';
+
+          if (stock > 0) {
+            if (!requestQtyInput.value || parseInt(requestQtyInput.value) < 1) {
+              requestQtyInput.value = 1;
+            }
+            requestQtyInput.min = 1;
+            requestQtyInput.max = stock;
+          } else {
+            requestQtyInput.value = '';
+          }
+
+          updateSubmitButtonState();
+        });
+
+        // Request quantity input
+        requestQtyInput.addEventListener('input', updateSubmitButtonState);
+
+        requestQtyInput.addEventListener('keypress', function (e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            if (!requestQtyInput.disabled && productSelect.value && requestQtyInput.value) {
+              const submitBtn = document.getElementById('submitAddStockBtn');
+              if (submitBtn && !submitBtn.disabled) {
+                window.submitIssueStock();
+              }
+            }
+          }
+        });
+      }
+
+      // 4. Authority Input listeners
+      if (authorityNumber) {
+        authorityNumber.addEventListener('input', updateSubmitButtonState);
+      }
     }
 
     // Forward declaration for Add Stock Modal function (defined later)
-    window.openAddStockModal = function (approvalId, category = null) {
+    function openAddStockModal(approvalId, category = null) {
       console.log('openAddStockModal called with ID:', approvalId, 'Category:', category);
 
       // Store approvalId globally for submitIssueStock
@@ -3280,38 +3259,88 @@
             const items = data.approval.items || [];
             const issuedStock = data.approval.issued_stock || [];
 
-            console.log('✅ Creating table with 5 columns:');
-            console.log('   1. Product Name (25% width)');
-            console.log('   2. Category (20% width)');
-            console.log('   3. Request Quantity (15% width)');
-            console.log('   4. Available Stock (15% width)');
-            console.log('   5. Issue Quantity (25% width)');
-            console.log('Items to display:', items.length);
-            console.log('Items data:', items);
-            console.log('Issued stock:', issuedStock);
+            if (items.length > 0) {
+              itemsHtml += `
+                <div class="table-responsive mb-3">
+                  <table class="table table-sm table-bordered" style="font-size: 0.85rem;">
+                    <thead class="table-light">
+                      <tr>
+                        <th style="width: 25%;">Product Name</th>
+                        <th style="width: 20%;">Category</th>
+                        <th style="width: 15%; text-align: center;">Req Qty</th>
+                        <th style="width: 15%; text-align: center;">Avail Stock</th>
+                        <th style="width: 25%; text-align: center;">Issue Qty</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+              `;
 
-            if (items.length === 0) {
-              console.info('ℹ️ No items found in approval ID:', approvalId, '- This approval may not have any items yet or items may have been removed.');
-              console.info('ℹ️ You can manually add items using the form below.');
-            } else {
-              console.log('✅ Items found:', items.length);
-              console.log('✅ Displaying items in table with 5 columns');
+              items.forEach((item, index) => {
+                const availStock = item.product?.stock ?? 0;
+                itemsHtml += `
+                  <tr>
+                    <td>${item.product_name}</td>
+                    <td>${item.category || 'N/A'}</td>
+                    <td class="text-center">${item.quantity}</td>
+                    <td class="text-center">${availStock}</td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm issue-qty-input" 
+                        data-item-id="${item.id}" data-spare-id="${item.spare_id}"
+                        max="${availStock}" min="0" value="0" style="text-align: center;">
+                    </td>
+                  </tr>
+                `;
+              });
+
+              itemsHtml += `
+                    </tbody>
+                  </table>
+                </div>
+              `;
             }
 
-            // Initialize manual items array
-            if (!window.manualItems) {
-              window.manualItems = [];
-            }
-
-            // Store items globally for submission (existing + manual)
-            window.currentApprovalItems = items;
-            window.lastIssuedStock = issuedStock.length > 0 ? issuedStock[0] : null; // Store last issued stock
-            console.log('Approval items loaded:', items.length, 'items');
-            console.log('Current approval_id:', window.currentApprovalId);
-            console.log('Last issued stock:', window.lastIssuedStock);
-
-            // Build form with manual add section
+            // Build full form with existing items table and manual add section
             let itemsHtml = '<form id="addStockForm">';
+
+            if (items.length > 0) {
+              itemsHtml += `
+                <div class="table-responsive mb-3">
+                  <table class="table table-sm table-bordered" style="font-size: 0.85rem;">
+                    <thead class="table-light">
+                      <tr>
+                        <th style="width: 25%;">Product Name</th>
+                        <th style="width: 20%;">Category</th>
+                        <th style="width: 15%; text-align: center;">Req Qty</th>
+                        <th style="width: 15%; text-align: center;">Avail Stock</th>
+                        <th style="width: 25%; text-align: center;">Issue Qty</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+              `;
+
+              items.forEach((item, index) => {
+                const availStock = item.product?.stock ?? 0;
+                itemsHtml += `
+                  <tr>
+                    <td>${item.product_name}</td>
+                    <td>${item.category || 'N/A'}</td>
+                    <td class="text-center">${item.quantity}</td>
+                    <td class="text-center">${availStock}</td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm issue-qty-input" 
+                        data-item-id="${item.id}" data-spare-id="${item.spare_id}"
+                        max="${availStock}" min="0" value="0" style="text-align: center;">
+                    </td>
+                  </tr>
+                `;
+              });
+
+              itemsHtml += `
+                    </tbody>
+                  </table>
+                </div>
+              `;
+            }
 
             // Check if stock has already been issued - if yes, disable the form
             const hasIssuedStock = issuedStock.length > 0;
@@ -3320,6 +3349,7 @@
             itemsHtml += `
                   <div class="card mb-3" style="border: 1px solid #dee2e6; border-radius: 8px;">
                     <div class="card-header bg-primary text-white" style="padding: 12px 16px; font-weight: 600; font-size: 14px;">
+                      Authority / Stock Management
                     </div>
                     <div class="card-body" style="padding: 16px;">
                       <!-- Authority No. Req and Issue Stock Row - Combined -->
@@ -3381,25 +3411,38 @@
             modalBody.innerHTML = itemsHtml;
 
             // Get complaint category and location from stored global variable or approval response
-            const complaintCategory = window.currentComplaintCategory || data.approval?.complaint?.category || null;
-            const complaintSector = data.approval?.complaint?.sector || null;
-            const complaintCity = data.approval?.complaint?.city || null;
-            console.log('Complaint category:', complaintCategory, 'From stored:', window.currentComplaintCategory, 'From response:', data.approval?.complaint?.category);
-            console.log('Complaint sector:', complaintSector, 'Complaint city:', complaintCity);
+            let complaintCategory = window.currentComplaintCategory || data.approval?.complaint?.category || null;
+            let complaintSector = data.approval?.complaint?.sector || null;
+            let complaintCity = data.approval?.complaint?.city || null;
+            
+            // Helper to safe extract name or value from object/string
+            const extractSafeValue = (val) => {
+                if (!val) return null;
+                if (typeof val === 'object') {
+                    return val.name || val.id || null;
+                }
+                return val;
+            };
+
+            complaintCategory = extractSafeValue(complaintCategory);
+            complaintSector = extractSafeValue(complaintSector);
+            complaintCity = extractSafeValue(complaintCity);
+            
+            console.log('Processed Complaint info:', { category: complaintCategory, sector: complaintSector, city: complaintCity });
 
             // Wait for DOM to be ready before initializing
             setTimeout(() => {
-              // Load products for complaint category and sector only (no category dropdown needed)
-              if (complaintCategory && complaintCategory.trim() !== '' && complaintCategory !== 'N/A') {
-                console.log('Loading products for category:', complaintCategory, 'sector:', complaintSector);
-                // Ensure category is passed correctly, along with sector for location filtering
-                loadProductsByCategory(complaintCategory.trim(), complaintSector, complaintCity);
+              // Safe category string check
+              const catStr = String(complaintCategory || '').trim();
+              
+              if (catStr && catStr !== '' && catStr !== 'N/A' && catStr !== 'null') {
+                console.log('Loading products for safe category:', catStr);
+                loadProductsByCategory(catStr, complaintSector, complaintCity);
               } else {
-                console.warn('No complaint category found');
-                // Don't load all products if category is missing - show empty
+                console.warn('No valid complaint category found for product filtering');
                 const productSelect = document.getElementById('manualProduct');
                 if (productSelect) {
-                  productSelect.innerHTML = '<option value="">No category found - Please select a product manually</option>';
+                  productSelect.innerHTML = '<option value="">Category missing - Select manually</option>';
                   productSelect.disabled = false;
                 }
               }
@@ -3485,7 +3528,7 @@
 
     // Forward declaration for Submit Add Stock function (defined later)
     // Issue Stock Function (early definition)
-    window.submitIssueStock = function () {
+    function submitIssueStock() {
       console.log('submitIssueStock called');
 
       // Get form values directly
@@ -3531,113 +3574,125 @@
         }
       }
 
-      // If only authority number provided (no product), save authority and exit
-      if (!productId && authNo && isAuthorityRequired) {
-        // Get CSRF token
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
-        // Disable submit button while saving
-        const submitBtn = document.getElementById('submitAddStockBtn');
-        if (submitBtn) {
-          submitBtn.disabled = true;
-          submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving Authority...';
+      // 1. Collect data from both manual form and table
+      const stockData = [];
+      
+      // Manual form entry
+      if (productId && issueQty > 0) {
+        if (issueQty > availableStock) {
+            alert(`Manual entry: Request quantity (${issueQty}) cannot exceed available stock (${availableStock})`);
+            requestQtyInput.focus();
+            return;
         }
+        stockData.push({
+          spare_id: parseInt(productId),
+          item_id: null,
+          issue_quantity: issueQty,
+          product_name: productName,
+          available_stock: availableStock
+        });
+      }
 
-        // Build authority info string
-        const typeLabel = perfVal === 'work_performa' ? 'Work Performa' : (perfVal === 'maint_performa' ? 'Maintenance Performa' : 'General');
-        const authorityInfo = `Authority No. Req: ${typeLabel}, Authority No: ${authNo}`;
+      // Items table entries
+      const tableInputs = document.querySelectorAll('.issue-qty-input');
+      let tableValidationError = false;
+      tableInputs.forEach(input => {
+        const qty = parseInt(input.value) || 0;
+        if (qty > 0) {
+          const sparId = input.getAttribute('data-spare-id');
+          const itId = input.getAttribute('data-item-id');
+          const row = input.closest('tr');
+          const prodName = row ? row.cells[0].textContent.trim() : 'Unknown Product';
+          const availStock = parseInt(input.getAttribute('max')) || 0;
 
-        // Save authority number only (no stock)
-        fetch(`/admin/approvals/${window.currentApprovalId}/save-performa`, {
-          method: 'POST',
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': csrfToken
-          },
-          body: JSON.stringify({
-            performa_type: perfVal || null,
-            remarks: authorityInfo
-          }),
-          credentials: 'same-origin'
-        })
-          .then(response => response.json())
-          .then(data => {
-            if (submitBtn) {
-              submitBtn.disabled = false;
-              submitBtn.innerHTML = '<i data-feather="check-circle"></i> Submit';
-            }
+          if (qty > availStock) {
+              alert(`Table item "${prodName}": Quantity (${qty}) cannot exceed available stock (${availStock})`);
+              input.focus();
+              tableValidationError = true;
+              return;
+          }
 
-            if (data.success) {
-              alert('Authority number saved successfully!');
-              // Close modal and reload page
-              const modalInstance = bootstrap.Modal.getInstance(document.getElementById('addStockModal'));
-              if (modalInstance) modalInstance.hide();
-              window.location.reload();
-            } else {
-              alert('Error saving authority number: ' + (data.message || 'Unknown error'));
-            }
-          })
-          .catch(error => {
-            console.error('Error saving authority:', error);
-            if (submitBtn) {
-              submitBtn.disabled = false;
-              submitBtn.innerHTML = '<i data-feather="check-circle"></i> Submit';
-            }
-            alert('Error saving authority number: ' + error.message);
+          stockData.push({
+            spare_id: parseInt(sparId),
+            item_id: itId ? parseInt(itId) : null,
+            issue_quantity: qty,
+            product_name: prodName,
+            available_stock: availStock
           });
+        }
+      });
 
-        return;
+      if (tableValidationError) return;
+
+      // Get CSRF token
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+      const submitBtn = document.getElementById('submitAddStockBtn');
+
+      // If no stock is being issued, check if it's an authority-only update
+      if (stockData.length === 0) {
+          if (authNo && isAuthorityRequired) {
+             console.log('Authority-only update triggered');
+             if (submitBtn) {
+               submitBtn.disabled = true;
+               submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving Authority...';
+             }
+
+             const typeLabel = perfVal === 'work_performa' ? 'Work Performa' : (perfVal === 'maint_performa' ? 'Maintenance Performa' : 'General');
+             const authorityInfo = `Authority No. Req: ${typeLabel}, Authority No: ${authNo}`;
+
+             fetch(`/admin/approvals/${window.currentApprovalId}/save-performa`, {
+               method: 'POST',
+               headers: {
+                 'X-Requested-With': 'XMLHttpRequest',
+                 'Accept': 'application/json',
+                 'Content-Type': 'application/json',
+                 'X-CSRF-TOKEN': csrfToken
+               },
+               body: JSON.stringify({
+                 performa_type: perfVal || null,
+                 remarks: authorityInfo
+               }),
+               credentials: 'same-origin'
+             })
+             .then(response => response.json())
+             .then(data => {
+               if (data.success) {
+                 alert('Authority number saved successfully!');
+                 window.location.reload();
+               } else {
+                 alert('Error saving authority: ' + (data.message || 'Unknown error'));
+                 if (submitBtn) {
+                   submitBtn.disabled = false;
+                   submitBtn.innerHTML = '<i data-feather="check-circle"></i> Submit';
+                 }
+               }
+             })
+             .catch(error => {
+               console.error('Error:', error);
+               alert('Error saving authority: ' + error.message);
+               if (submitBtn) {
+                 submitBtn.disabled = false;
+                 submitBtn.innerHTML = '<i data-feather="check-circle"></i> Submit';
+               }
+             });
+             return;
+          } else {
+             alert('Please select a product and enter quantity or provide an authority number.');
+             return;
+          }
       }
 
-      // Validate form when product is required
-      if (!productId) {
-        alert('Please select a product');
-        productSelect.focus();
-        return;
-      }
-
-      if (issueQty <= 0) {
-        alert('Please enter a valid request quantity');
-        requestQtyInput.focus();
-        return;
-      }
-
-      if (issueQty > availableStock) {
-        alert(`Request quantity (${issueQty}) cannot exceed available stock (${availableStock})`);
-        requestQtyInput.focus();
-        return;
-      }
-
-      // If "No" is selected, don't save any authority info - just proceed with stock issue
-      // If "Yes" is selected, authority number is optional - proceed with or without it
-      // Authority number is always optional, so proceed with stock issue regardless
-
-      // Prepare stock data
-      const stockData = [{
-        spare_id: parseInt(productId),
-        item_id: null,
-        issue_quantity: issueQty,
-        product_name: productName,
-        available_stock: availableStock
-      }];
-
-      // Confirm before submitting
-      const confirmMessage = `Are you sure you want to ISSUE stock for the following items?\n\n` +
-        stockData.map(item => `${item.product_name}: ${item.issue_quantity} units (Available: ${item.available_stock})`).join('\n');
+      // Proceed with confirmation and stock issue
+      const confirmMessage = `Are you sure you want to ISSUE stock for ${stockData.length} item(s)?\n\n` +
+        stockData.map(item => `- ${item.product_name}: ${item.issue_quantity} units`).join('\n') +
+        (authNo ? `\n\nAuthority No: ${authNo}` : '');
 
       if (!confirm(confirmMessage)) {
         return;
       }
 
-      // Get CSRF token
-      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
-      // Keep submit button enabled
-      const submitBtn = document.getElementById('submitAddStockBtn');
       if (submitBtn) {
-        submitBtn.disabled = false;
+        submitBtn.disabled = true;
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Issuing Stock...';
       }
 
@@ -5434,351 +5489,7 @@
       });
     }
 
-    // Open Add Stock Modal
-    function openAddStockModal(approvalId, category = null) {
-      const modalBody = document.getElementById('addStockModalBody');
-      if (!modalBody) {
-        alert('Modal not found');
-        return;
-      }
-
-      // Show loading
-      modalBody.innerHTML = '<div class="text-center py-4"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
-
-      // Get CSRF token
-      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
-      // Store category globally for use in fetch response
-      window.currentComplaintCategory = category;
-
-      // Fetch approval details
-      fetch(`/admin/approvals/${approvalId}`, {
-        method: 'GET',
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrfToken
-        },
-        credentials: 'same-origin'
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success && data.approval && data.approval.items !== undefined) {
-            const items = data.approval.items || [];
-
-            let itemsHtml = '<form id="addStockForm">';
-            itemsHtml += `
-                  <div class="row g-3 mb-3">
-                    <div class="col-md-6">
-                      <label class="form-label small mb-1" style="font-size: 0.85rem; font-weight: 600; color: #000000 !important;">Authority No.</label>
-                      <input type="text" class="form-control form-control-sm" id="authorityNumberSimple" placeholder="Enter Authority No. (optional)" style="font-size: 0.9rem;">
-                    </div>
-                  </div>
-                  <div class="table-responsive">
-                    <table class="table table-striped">
-                      <thead><tr><th>Category</th><th>Product</th><th>Total Stock</th><th>Request Stock</th></tr></thead>
-                      <tbody>
-                `;
-
-            // Store items globally for submission
-            window.currentApprovalItems = items;
-            // Only keep actual performa_type (allowed values) – do not fall back to status to avoid validation errors
-            window.currentPerformaType = data.approval?.performa_type || null;
-            window.currentPerformaType = data.approval?.performa_type || '';
-
-            if (items.length === 0) {
-              itemsHtml += `
-                    <tr>
-                      <td colspan="4" class="text-center">No products found</td>
-                    </tr>
-                  `;
-            } else {
-              items.forEach((item, index) => {
-                const productName = item.spare_name || 'N/A';
-                const category = item.category || 'N/A';
-                const availableStock = item.available_stock || 0;
-                const requestedQty = item.quantity_requested || 0;
-                const spareId = item.spare_id || 0;
-
-                // Format category display
-                const categoryDisplay = {
-                  'electric': 'Electric',
-                  'technical': 'Technical',
-                  'service': 'Service',
-                  'billing': 'Billing',
-                  'water': 'Water Supply',
-                  'sanitary': 'Sanitary',
-                  'plumbing': 'Plumbing',
-                  'kitchen': 'Kitchen',
-                  'other': 'Other',
-                };
-                const catDisplay = categoryDisplay[category.toLowerCase()] || category.charAt(0).toUpperCase() + category.slice(1);
-
-                itemsHtml += `
-                      <tr>
-                        <td>${catDisplay}</td>
-                        <td>${productName}</td>
-                        <td>
-                          <span class="badge ${availableStock > 0 ? 'bg-success' : 'bg-danger'}" style="font-size: 12px;">
-                            ${availableStock}
-                          </span>
-                        </td>
-                        <td>
-                          <span class="badge bg-info" style="font-size: 12px;">
-                            ${requestedQty}
-                          </span>
-                        </td>
-                      </tr>
-                    `;
-              });
-            }
-
-            itemsHtml += '</tbody></table></div></form>';
-            modalBody.innerHTML = itemsHtml;
-
-            // Show Submit button
-            const submitBtn = document.getElementById('submitAddStockBtn');
-            if (submitBtn) {
-              submitBtn.style.display = 'inline-block';
-              submitBtn.disabled = false; // Keep submit enabled
-            }
-
-            // Pre-fill authority number if present in approval remarks or local storage
-            const authorityInput = document.getElementById('authorityNumberSimple');
-            const authorityLegacy = document.getElementById('authorityNumber');
-            const authorityYes = document.getElementById('authorityYes');
-            const authorityNo = document.getElementById('authorityNo');
-            const authorityNoCol = document.getElementById('authorityNoCol');
-            if (authorityInput) {
-              let existingAuthority = '';
-              const remarks = data.approval?.remarks || '';
-              const match = remarks.match(/Authority\s*No[:\s]+([A-Za-z0-9\-]+)/i);
-              if (match && match[1]) {
-                existingAuthority = match[1];
-              } else if (data.approval?.authority_number) {
-                existingAuthority = data.approval.authority_number;
-              } else if (window.currentApprovalId) {
-                existingAuthority = localStorage.getItem(`authority_no_${window.currentApprovalId}`) || '';
-              }
-              if (existingAuthority) {
-                authorityInput.value = existingAuthority;
-                if (authorityLegacy) authorityLegacy.value = existingAuthority;
-                window.currentAuthorityNumber = existingAuthority;
-                if (authorityYes && authorityNo) {
-                  authorityYes.checked = true;
-                  authorityNo.checked = false;
-                  if (authorityNoCol) {
-                    authorityNoCol.classList.remove('d-none');
-                  }
-                }
-              } else if (authorityYes && authorityNo) {
-                authorityYes.checked = false;
-                authorityNo.checked = true;
-                if (authorityNoCol) authorityNoCol.classList.add('d-none');
-              }
-            }
-
-            // Replace feather icons
-            feather.replace();
-
-            // Show modal
-            new bootstrap.Modal(document.getElementById('addStockModal')).show();
-          } else {
-            modalBody.innerHTML = '<div class="alert alert-danger">Error loading approval items.</div>';
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          modalBody.innerHTML = '<div class="alert alert-danger">Error loading approval details: ' + error.message + '</div>';
-        });
-    }
-
-    // Submit Issue Stock Form
-    function submitIssueStock() {
-      // Use approval items from window.currentApprovalItems (loaded in modal)
-      // Allow authority-only submissions even when there are no items
-      const hasItems = !!(window.currentApprovalItems && window.currentApprovalItems.length > 0);
-
-      console.log('submitIssueStock - currentApprovalId:', window.currentApprovalId);
-      console.log('submitIssueStock - currentApprovalItems:', window.currentApprovalItems);
-
-      const authorityInput = document.getElementById('authorityNumberSimple') || document.getElementById('authorityNumber');
-      const authorityNumber = authorityInput ? authorityInput.value.trim() : '';
-      const authorityInfo = authorityNumber ? ` | Authority No: ${authorityNumber}` : '';
-
-      // Validate and collect data from approval items
-      const stockData = [];
-      let hasError = false;
-      let errorMessage = '';
-
-      if (hasItems) {
-        window.currentApprovalItems.forEach(item => {
-          const spareId = item.spare_id || 0;
-          const productName = item.spare_name || 'N/A';
-          const availableStock = item.available_stock || 0;
-          const requestedQty = item.quantity_requested || 0;
-          const itemId = item.id || null;
-
-          if (spareId === 0) {
-            hasError = true;
-            errorMessage = `Invalid product: ${productName}`;
-            return;
-          }
-
-          if (requestedQty <= 0) {
-            // Skip items with 0 or negative quantity
-            return;
-          }
-
-          if (requestedQty > availableStock) {
-            hasError = true;
-            errorMessage = `Requested quantity (${requestedQty}) cannot exceed available stock (${availableStock}) for ${productName}`;
-            return;
-          }
-
-          stockData.push({
-            spare_id: spareId,
-            item_id: itemId,
-            approval_id: window.currentApprovalId || null,
-            issue_quantity: requestedQty,
-            product_name: productName,
-            available_stock: availableStock
-          });
-        });
-      }
-
-      if (hasError) {
-        alert(errorMessage);
-        return;
-      }
-
-      if (stockData.length === 0) {
-        if (authorityNumber) {
-          const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-          const approvalId = window.currentApprovalId || null;
-          const performaType = window.currentPerformaType || null;
-          if (approvalId) {
-            fetch(`/admin/approvals/${approvalId}/save-performa`, {
-              method: 'POST',
-              headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
-              },
-              body: JSON.stringify({
-                performa_type: performaType,
-                remarks: `Authority No: ${authorityNumber}`
-              }),
-              credentials: 'same-origin'
-            })
-              .then(r => r.json())
-              .then(resp => {
-                if (resp.success) {
-                  // Cache locally for instant prefill on reopen
-                  localStorage.setItem(`authority_no_${approvalId}`, authorityNumber);
-                  window.currentAuthorityNumber = authorityNumber;
-                  alert('Authority saved.');
-                  const modalInstance = bootstrap.Modal.getInstance(document.getElementById('addStockModal'));
-                  if (modalInstance) modalInstance.hide();
-                  window.location.reload();
-                } else {
-                  console.error('save-performa failed', resp);
-                  alert(resp.message || 'Failed to save authority number.');
-                }
-              })
-              .catch(err => {
-                console.error('Error saving authority:', err);
-                alert('Error saving authority number. Please try again.');
-              });
-          } else {
-            alert('Authority recorded. No stock items selected.');
-            const modalInstance = bootstrap.Modal.getInstance(document.getElementById('addStockModal'));
-            if (modalInstance) modalInstance.hide();
-          }
-          return;
-        }
-        alert('Please add items with valid quantity or enter Authority No.');
-        return;
-      }
-
-      // Confirm before submitting
-      const confirmMessage = `Are you sure you want to ISSUE stock for the following items?\n\n` +
-        stockData.map(item => `${item.product_name}: ${item.issue_quantity} units (Available: ${item.available_stock})`).join('\n');
-
-      if (!confirm(confirmMessage)) {
-        return;
-      }
-
-      // Get CSRF token
-      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
-      // Keep submit button enabled
-      const submitBtn = document.getElementById('submitAddStockBtn');
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Issuing Stock...';
-      }
-
-      // Log approval_id before sending
-      console.log('Issuing stock with approval_id:', window.currentApprovalId);
-      console.log('Stock data to send:', stockData);
-
-      // Send requests for each item to ISSUE stock (decrease inventory)
-      const promises = stockData.map(item => {
-        const requestBody = {
-          quantity: item.issue_quantity,
-          item_id: item.item_id,
-          approval_id: window.currentApprovalId || null,
-          reason: `Stock issued from approval - Product: ${item.product_name}${authorityInfo}`
-        };
-
-        console.log('Sending request for item:', item.product_name, 'with approval_id:', requestBody.approval_id);
-
-        return fetch(`/admin/spares/${item.spare_id}/issue-stock`, {
-          method: 'POST',
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': csrfToken
-          },
-          body: JSON.stringify(requestBody),
-          credentials: 'same-origin'
-        });
-      });
-
-      // Process all requests
-      Promise.all(promises)
-        .then(responses => Promise.all(responses.map(r => r.json())))
-        .then(results => {
-          const successCount = results.filter(r => r.success).length;
-          const failedCount = results.length - successCount;
-
-          if (failedCount === 0) {
-            alert(`Successfully issued stock for all ${successCount} item(s)!`);
-            bootstrap.Modal.getInstance(document.getElementById('addStockModal')).hide();
-            // Optionally reload the page to refresh stock quantities
-            // window.location.reload();
-          } else {
-            alert(`Issued stock for ${successCount} item(s), but ${failedCount} item(s) failed.`);
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          alert('Error issuing stock: ' + error.message);
-        })
-        .finally(() => {
-          // Re-enable submit button
-          if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i data-feather="check-circle"></i> Submit';
-            feather.replace();
-          }
-        });
-    }
-
-    // Make functions globally accessible
+    // Make functions globally accessible - using the more comprehensive versions defined above
     window.openAddStockModal = openAddStockModal;
     window.submitIssueStock = submitIssueStock;
     window.submitAddStock = submitIssueStock; // alias for legacy handlers
@@ -5799,6 +5510,7 @@
             hasFunction: !!window.openAddStockModal
           });
         }
+        return;
       }
 
       // Event delegation for Submit button in Add Stock Modal
@@ -5816,55 +5528,47 @@
       }
     });
 
-    // Initialize rows on page load
+    // Initialize logic on page load
     document.addEventListener('DOMContentLoaded', function () {
-      initPerformaBadges();
+      // 1. Initialize performa badges and status selects
+      if (typeof initPerformaBadges === 'function') {
+        initPerformaBadges();
+      }
+      
       // Run initStatusSelects after initPerformaBadges to ensure colors are set correctly
       setTimeout(function () {
-        initStatusSelects();
+        if (typeof initStatusSelects === 'function') {
+          initStatusSelects();
+        }
 
         // Additional safety check: Force red color for all in_progress status selects
         document.querySelectorAll('.status-select[data-status-color="in_progress"]').forEach(function (sel) {
           const redColor = statusColors['in_progress'];
-          sel.style.setProperty('background-color', redColor.bg, 'important');
-          sel.style.setProperty('color', redColor.text, 'important');
-          sel.style.setProperty('border-color', redColor.border, 'important');
+          if (redColor) {
+            sel.style.setProperty('background-color', redColor.bg, 'important');
+            sel.style.setProperty('color', redColor.text, 'important');
+            sel.style.setProperty('border-color', redColor.border, 'important');
+          }
         });
       }, 100);
 
-      // Run again after a longer delay to catch any late-loading elements
-      setTimeout(function () {
-        initStatusSelects();
-
-        // Force red color one more time
-        document.querySelectorAll('.status-select[data-status-color="in_progress"]').forEach(function (sel) {
-          const redColor = statusColors['in_progress'];
-          sel.style.setProperty('background-color', redColor.bg, 'important');
-          sel.style.setProperty('color', redColor.text, 'important');
-          sel.style.setProperty('border-color', redColor.border, 'important');
-        });
-      }, 500);
-    });
-
-    // Store initial status on page load
-    document.addEventListener('DOMContentLoaded', function () {
+      // 2. Store initial status and replace icons
       document.querySelectorAll('.status-select').forEach(select => {
         select.dataset.oldStatus = select.value;
       });
 
-      // Replace feather icons
-      feather.replace();
+      if (typeof feather !== 'undefined') {
+        feather.replace();
+      }
 
-      // Check for view_complaint query parameter and open complaint modal automatically
+      // 3. Handle view_complaint query parameter
       const urlParams = new URLSearchParams(window.location.search);
       const viewComplaintId = urlParams.get('view_complaint');
       if (viewComplaintId) {
-        // Remove the parameter from URL to clean it up
         urlParams.delete('view_complaint');
         const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
         window.history.replaceState({}, '', newUrl);
 
-        // Open complaint modal after a short delay to ensure page is fully loaded
         setTimeout(() => {
           if (typeof viewComplaint === 'function') {
             viewComplaint(viewComplaintId);

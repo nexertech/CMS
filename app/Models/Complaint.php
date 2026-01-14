@@ -13,12 +13,13 @@ class Complaint extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'complaint_title_id',
         'title',
         'client_id',
         'house_id',
         'city_id',
         'sector_id',
-        'category',
+        'category_id',
         'priority',
         'description',
         'assigned_employee_id',
@@ -37,6 +38,22 @@ class Complaint extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class, 'client_id', 'id')->withTrashed();
+    }
+
+    /**
+     * Get the complaint category.
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(ComplaintCategory::class, 'category_id', 'id');
+    }
+
+    /**
+     * Get the complaint title (type).
+     */
+    public function complaintTitle(): BelongsTo
+    {
+        return $this->belongsTo(ComplaintTitle::class, 'complaint_title_id', 'id');
     }
 
     /**
@@ -181,7 +198,7 @@ class Complaint extends Model
      */
     public function getCategoryDisplayAttribute(): string
     {
-        return self::getCategories()[$this->category] ?? $this->category;
+        return $this->category ? $this->category->name : ($this->category_id ? 'Unknown Category' : 'Uncategorized');
     }
 
     /**
@@ -287,16 +304,12 @@ class Complaint extends Model
             return false;
         }
 
-        // Find matching SLA rule
-        $slaRule = \App\Models\SlaRule::where('complaint_type', $this->category)
-            ->where('status', 'active')
-            ->first();
+        $slaRule = $this->slaRule;
 
-        if ($slaRule) {
-            return $this->created_at->addHours($slaRule->max_resolution_time)->isPast();
+        if ($slaRule && $slaRule->status === 'active') {
+             return $this->created_at->addHours($slaRule->max_resolution_time)->isPast();
         }
 
-        // If no SLA rule, it's not overdue
         return false;
     }
 
@@ -321,11 +334,9 @@ class Complaint extends Model
      */
     public function isSlaBreached(): bool
     {
-        $slaRule = SlaRule::where('complaint_type', $this->category)
-            ->where('status', 'active')
-            ->first();
+        $slaRule = $this->slaRule;
 
-        if (!$slaRule) {
+        if (!$slaRule || $slaRule->status !== 'active') {
             return false;
         }
 
@@ -337,11 +348,9 @@ class Complaint extends Model
      */
     public function getHoursOverdue(): int
     {
-        $slaRule = SlaRule::where('complaint_type', $this->category)
-            ->where('status', 'active')
-            ->first();
+        $slaRule = $this->slaRule;
 
-        if (!$slaRule) {
+        if (!$slaRule || $slaRule->status !== 'active') {
             return 0;
         }
 
@@ -351,10 +360,14 @@ class Complaint extends Model
 
     /**
      * Get SLA rule for this complaint
+     * @deprecated Use category->slaRule instead
+     */
+    /**
+     * Get SLA rule for this complaint via category
      */
     public function slaRule()
     {
-        return $this->belongsTo(SlaRule::class, 'category', 'complaint_type');
+        return $this->hasOne(SlaRule::class, 'category_id', 'category_id');
     }
 
     /**
@@ -541,17 +554,22 @@ class Complaint extends Model
     /**
      * Scope for complaints by category
      */
-    public function scopeByCategory($query, $category)
+    /**
+     * Scope for complaints by category
+     */
+    public function scopeByCategory($query, $categoryId)
     {
-        return $query->where('category', $category);
+        // If passed name, try to find ID or use join (safer to assume ID if int, if string need logic)
+        // Controller passed ID now.
+        return $query->where('category_id', $categoryId);
     }
 
     /**
      * Scope for complaints by type (legacy method)
      */
-    public function scopeByType($query, $type)
+    public function scopeByType($query, $typeId)
     {
-        return $query->where('category', $type);
+        return $query->where('complaint_title_id', $typeId);
     }
 
     /**
@@ -585,8 +603,7 @@ class Complaint extends Model
     {
         return $query->whereIn('complaints.status', ['new', 'assigned', 'in_progress'])
             ->join('sla_rules', function ($join) {
-                // Changing leftJoin to join enforces that an SLA rule MUST exist
-                $join->on('complaints.category', '=', 'sla_rules.complaint_type')
+                $join->on('complaints.category_id', '=', 'sla_rules.category_id')
                     ->where('sla_rules.status', '=', 'active')
                     ->whereNull('sla_rules.deleted_at');
             })

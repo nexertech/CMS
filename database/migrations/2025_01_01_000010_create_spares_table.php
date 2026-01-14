@@ -18,7 +18,8 @@ return new class extends Migration
             $table->string('brand_name', 100)->nullable();
             $table->string('item_name', 150);
             // Category from complaint_categories table
-            $table->string('category', 100);
+            $table->unsignedBigInteger('category_id')->nullable();
+            $table->foreign('category_id')->references('id')->on('complaint_categories')->onDelete('set null');
             // Location columns for city/sector-based filtering
             $table->unsignedBigInteger('city_id')->nullable();
             $table->unsignedBigInteger('sector_id')->nullable();

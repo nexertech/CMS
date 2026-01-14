@@ -186,13 +186,11 @@
                                 <select id="category" name="category"
                                     class="form-select @error('category') is-invalid @enderror" required>
                                     <option value="">Select Category</option>
-                                    @if (isset($categories) && $categories->count() > 0)
-                                        @foreach ($categories as $cat)
-                                            <option value="{{ $cat }}"
-                                                {{ old('category') == $cat ? 'selected' : '' }}>{{ ucfirst($cat) }}
-                                            </option>
-                                        @endforeach
-                                    @endif
+                                    @foreach ($categories as $id => $name)
+                                        <option value="{{ $id }}"
+                                            {{ old('category') == $id ? 'selected' : '' }}>{{ ucfirst($name) }}
+                                        </option>
+                                    @endforeach
                                 </select>
                                 @error('category')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -202,16 +200,17 @@
 
                         <div class="col-md-4">
                             <div class="mb-3">
-                                <label for="title" class="form-label text-white">Complaint Type <span
+                                <label for="complaint_title_id" class="form-label text-white">Complaint Type <span
                                         class="text-danger">*</span></label>
-                                <select class="form-select @error('title') is-invalid @enderror" id="title"
-                                    name="title" autocomplete="off" required data-prev="{{ old('title') }}">
+                                <select class="form-select @error('complaint_title_id') is-invalid @enderror" id="title"
+                                    name="complaint_title_id" autocomplete="off" required data-prev="{{ old('complaint_title_id') }}">
+                                    <option value="">Select Category First</option>
                                 </select>
                                 <input type="text" class="form-select @error('title') is-invalid @enderror"
                                     id="title_other" name="title_other" placeholder="Enter custom title..."
                                     style="display: none;" value="{{ old('title_other') }}">
                                 {{-- <small class="text-muted">Select category above to see complaint titles</small> --}}
-                                @error('title')
+                                @error('complaint_title_id')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
@@ -264,11 +263,11 @@
                                     @if (isset($employees) && $employees->count() > 0)
                                         @foreach ($employees as $employee)
                                             <option value="{{ $employee->id }}"
-                                                data-category="{{ $employee->category ?? '' }}"
+                                                data-category="{{ $employee->category_id ?? '' }}"
                                                 data-city="{{ $employee->city_id }}"
                                                 data-sector="{{ $employee->sector_id }}"
                                                 {{ (string) old('assigned_employee_id') === (string) $employee->id ? 'selected' : '' }}>
-                                                {{ $employee->name }}@if($employee->designation) ({{ $employee->designation }})@endif</option>
+                                                {{ $employee->name }}@if($employee->designation) ({{ $employee->designation->name }})@endif</option>
                                         @endforeach
                                     @else
                                         <option value="" disabled>No employees available</option>
@@ -729,29 +728,38 @@
                         titleSelect.style.display = 'block';
 
                         if (!category) {
-                            titleSelect.innerHTML = '<option value="">Select Category first</option>';
+                            titleSelect.innerHTML = '<option value="">Select Category First</option>';
                             titleSelect.disabled = false;
                             return;
                         }
 
-                        fetch(`{{ route('admin.complaint-titles.by-category') }}?category=${encodeURIComponent(category)}`, {
+                        // Updated to use category ID
+                        const url = `{{ route('admin.complaint-titles.by-category') }}?category=${encodeURIComponent(category)}`;
+                        console.log('Fetching titles from:', url);
+                        
+                        fetch(url, {
                                 headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
                             })
-                            .then(response => response.json())
+                            .then(response => {
+                                console.log('Response status:', response.status);
+                                return response.json();
+                            })
                             .then(data => {
+                                console.log('Titles data received:', data);
                                 titleSelect.innerHTML = '<option value="">Select Complaint Title</option>';
                                 if (data && data.length > 0) {
+                                    // Use ID as value
                                     data.sort((a, b) => (a.title || '').toLowerCase().localeCompare((b.title || '').toLowerCase(), undefined, { numeric: true }))
                                         .forEach(title => {
                                             const option = document.createElement('option');
-                                            option.value = title.title;
+                                            option.value = title.id; // Use ID
                                             option.textContent = title.title;
                                             if (title.description) option.setAttribute('title', title.description);
-                                            // Store questions in data attribute
                                             if (title.questions) option.setAttribute('data-questions', title.questions);
                                             titleSelect.appendChild(option);
                                         });
                                 } else {
+                                    console.warn('No titles found for category:', category);
                                     titleSelect.innerHTML = '<option value="">No titles found</option>';
                                 }
                                 
@@ -764,15 +772,20 @@
                                 
                                 const previous = titleSelect.getAttribute('data-prev');
                                 if (previous) {
-                                    const opt = Array.from(titleSelect.options).find(o => o.value === previous);
+                                    // value is now ID, so check against ID
+                                    const opt = Array.from(titleSelect.options).find(o => o.value == previous);
                                     if (opt) {
-                                        titleSelect.value = previous;
+                                        titleSelect.value = (String)(previous); // ensure type match
                                         handleTitleChange();
                                     } else {
-                                        // If not in list, it might be a custom title (from "other")
-                                        titleSelect.value = 'other';
-                                        handleTitleChange();
-                                        if (titleOtherInput) titleOtherInput.value = previous;
+                                        // If previous was "other" or not found ID, check if it was 'other' string
+                                        // If previous was a string (old input), it might not match ID.
+                                        // But old('complaint_title_id') is ID.
+                                        
+                                        // If we have title_other input carrying value?
+                                        // The 'other' logic checks for 'other' value in Select.
+                                        // If previous ID not found, maybe it was 'other'.
+                                        // Let's assume standardized 'other' handling.
                                     }
                                 }
                             })

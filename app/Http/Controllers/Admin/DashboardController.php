@@ -320,7 +320,7 @@ class DashboardController extends Controller
             $complaintsByTypeQuery = Complaint::query();
             $this->filterComplaintsByLocation($complaintsByTypeQuery, $user);
             $this->applyFilters($complaintsByTypeQuery, $cityId, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId);
-            $count = $complaintsByTypeQuery->where('category', $cat->name)->count();
+            $count = $complaintsByTypeQuery->where('category_id', $cat->id)->count();
 
             if ($count > 0) {
                 $complaintsByType[$cat->name] = $count;
@@ -565,7 +565,13 @@ class DashboardController extends Controller
 
         // Filter by category
         if ($category) {
-            $query->where('category', $category);
+            if (is_numeric($category)) {
+                $query->where('category_id', $category);
+            } else {
+                $query->whereHas('category', function($q) use ($category) {
+                    $q->where('name', $category);
+                });
+            }
         }
 
         // Filter by approval status (through spareApprovals relationship)
@@ -696,7 +702,13 @@ class DashboardController extends Controller
         // Filter employees by selected filters based on their assigned complaints
         if ($category) {
             $employeesQuery->whereHas('assignedComplaints', function ($q) use ($category) {
-                $q->where('category', $category);
+                if (is_numeric($category)) {
+                    $q->where('category_id', $category);
+                } else {
+                    $q->whereHas('category', function($subQ) use ($category) {
+                        $subQ->where('name', $category);
+                    });
+                }
             });
         }
         if ($cityId) {
@@ -792,7 +804,7 @@ class DashboardController extends Controller
 
             $withinSla = Complaint::where('created_at', '>=', now()->subDays(30))
                 ->whereIn('status', ['resolved', 'closed'])
-                ->whereRaw("{$timeDiff} <= COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE complaint_type = complaints.category AND status = 'active'), 999999)")
+                ->whereRaw("{$timeDiff} <= COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE category_id = complaints.category_id AND status = 'active'), 999999)")
                 ->count();
 
             $breached = $totalComplaints - $withinSla;
@@ -850,7 +862,7 @@ class DashboardController extends Controller
         $timeDiff = $this->getTimeDiffFromNow('created_at');
 
         return Complaint::whereIn('status', ['assigned', 'in_progress'])
-            ->whereRaw("{$timeDiff} > COALESCE((SELECT MIN(max_response_time) FROM sla_rules WHERE complaint_type = complaints.category AND status = 'active'), 999999)")
+            ->whereRaw("{$timeDiff} > COALESCE((SELECT MIN(max_response_time) FROM sla_rules WHERE category_id = complaints.category_id AND status = 'active'), 999999)")
             ->count();
     }
 
@@ -929,8 +941,8 @@ class DashboardController extends Controller
         $data = Complaint::where('created_at', '>=', now()->subDays($period))
             ->selectRaw("category, 
                 COUNT(*) as total,
-                SUM(CASE WHEN {$timeDiff} <= COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE complaint_type = complaints.category AND status = 'active'), 999999) THEN 1 ELSE 0 END) as within_sla,
-                SUM(CASE WHEN {$timeDiff} > COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE complaint_type = complaints.category AND status = 'active'), 999999) THEN 1 ELSE 0 END) as breached")
+                SUM(CASE WHEN {$timeDiff} <= COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE category_id = complaints.category_id AND status = 'active'), 999999) THEN 1 ELSE 0 END) as within_sla,
+                SUM(CASE WHEN {$timeDiff} > COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE category_id = complaints.category_id AND status = 'active'), 999999) THEN 1 ELSE 0 END) as breached")
             ->groupBy('category')
             ->get();
 

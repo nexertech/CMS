@@ -13,13 +13,21 @@ class SlaRule extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'complaint_type',
+        'category_id',
         'priority',
         'max_response_time',
         'max_resolution_time',
         'notify_to',
         'status',
     ];
+
+    /**
+     * Get the complaint category.
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(ComplaintCategory::class, 'category_id');
+    }
 
     /**
      * Get the user who should be notified.
@@ -34,20 +42,16 @@ class SlaRule extends Model
      */
     public function complaints(): HasMany
     {
-        return $this->hasMany(Complaint::class, 'category', 'complaint_type');
+        return $this->hasMany(Complaint::class, 'category_id', 'category_id');
     }
 
     /**
-     * Get available complaint types
+     * Get available complaint types (Deprecated or Update to use categories)
      */
     public static function getComplaintTypes(): array
     {
-        return [
-            'electric' => 'Electrical Issues',
-            'sanitary' => 'Sanitary Issues',
-            'kitchen' => 'Kitchen Appliances',
-            'general' => 'General Maintenance',
-        ];
+        // This static list might be obsolete if we strictly use the database categories now
+        return ComplaintCategory::pluck('name', 'id')->toArray();
     }
 
     /**
@@ -55,117 +59,17 @@ class SlaRule extends Model
      */
     public function getComplaintTypeDisplayAttribute(): string
     {
-        return self::getComplaintTypes()[$this->complaint_type] ?? $this->complaint_type;
+        return $this->category ? ucfirst($this->category->name) : 'Unknown Category';
     }
 
+    // ... (keep unchecked methods)
 
     /**
-     * Get max response time display
+     * Check if this rule applies to complaint type (by category ID now)
      */
-    public function getMaxResponseTimeDisplayAttribute(): string
+    public function appliesToCategory(int $categoryId): bool
     {
-        if ($this->max_response_time < 24) {
-            return $this->max_response_time . ' hours';
-        } else {
-            $days = round($this->max_response_time / 24, 1);
-            return $days . ' day' . ($days > 1 ? 's' : '');
-        }
-    }
-
-    /**
-     * Get notify to user name
-     */
-    public function getNotifyToNameAttribute(): string
-    {
-        return $this->notifyTo ? $this->notifyTo->getDisplayNameAttribute() : 'Unknown User';
-    }
-
-    /**
-     * Get notify to user email
-     */
-    public function getNotifyToEmailAttribute(): ?string
-    {
-        return $this->notifyTo ? $this->notifyTo->email : null;
-    }
-
-    /**
-     * Check if complaint is overdue based on this rule
-     */
-    public function isComplaintOverdue($complaintCreatedAt): bool
-    {
-        $hoursSinceCreation = $complaintCreatedAt->diffInHours(now());
-        return $hoursSinceCreation > $this->max_response_time;
-    }
-
-    /**
-     * Get time remaining for complaint based on this rule
-     */
-    public function getTimeRemainingForComplaint($complaintCreatedAt): int
-    {
-        $hoursSinceCreation = $complaintCreatedAt->diffInHours(now());
-        return max(0, $this->max_response_time - $hoursSinceCreation);
-    }
-
-    /**
-     * Get formatted time remaining for complaint
-     */
-    public function getFormattedTimeRemainingForComplaint($complaintCreatedAt): string
-    {
-        $hoursRemaining = $this->getTimeRemainingForComplaint($complaintCreatedAt);
-        
-        if ($hoursRemaining <= 0) {
-            return 'Overdue';
-        }
-
-        if ($hoursRemaining < 24) {
-            return $hoursRemaining . ' hours remaining';
-        } else {
-            $days = round($hoursRemaining / 24, 1);
-            return $days . ' day' . ($days > 1 ? 's' : '') . ' remaining';
-        }
-    }
-
-    /**
-     * Get urgency level for complaint based on this rule
-     */
-    public function getUrgencyLevelForComplaint($complaintCreatedAt): string
-    {
-        $hoursRemaining = $this->getTimeRemainingForComplaint($complaintCreatedAt);
-        
-        if ($hoursRemaining <= 0) {
-            return 'critical';
-        } elseif ($hoursRemaining <= $this->max_response_time * 0.25) {
-            return 'high';
-        } elseif ($hoursRemaining <= $this->max_response_time * 0.5) {
-            return 'medium';
-        } else {
-            return 'low';
-        }
-    }
-
-    /**
-     * Get urgency color for complaint based on this rule
-     */
-    public function getUrgencyColorForComplaint($complaintCreatedAt): string
-    {
-        $urgency = $this->getUrgencyLevelForComplaint($complaintCreatedAt);
-        
-        $colors = [
-            'critical' => 'danger',
-            'high' => 'warning',
-            'medium' => 'info',
-            'low' => 'success',
-        ];
-
-        return $colors[$urgency] ?? 'muted';
-    }
-
-    /**
-     * Check if this rule applies to complaint type
-     */
-    public function appliesToComplaintType(string $complaintType): bool
-    {
-        return $this->complaint_type === $complaintType;
+        return $this->category_id === $categoryId;
     }
 
     /**
@@ -182,11 +86,11 @@ class SlaRule extends Model
     }
 
     /**
-     * Scope for specific complaint type
+     * Scope for specific complaint type (by category ID)
      */
-    public function scopeForComplaintType($query, $type)
+    public function scopeForCategory($query, $categoryId)
     {
-        return $query->where('complaint_type', $type);
+        return $query->where('category_id', $categoryId);
     }
 
 

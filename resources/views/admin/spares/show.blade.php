@@ -69,7 +69,7 @@
                 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Category</div>
               <div>
                 <span class="badge bg-info" style="font-size: 0.85rem; padding: 6px 12px;">
-                  {{ ucfirst($spare->category ?? 'N/A') }}
+                  {{ $spare->category->name ?? 'N/A' }}
                 </span>
               </div>
             </div>

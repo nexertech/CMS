@@ -48,16 +48,16 @@
       <div class="col-md-6">
         <div class="mb-3">
           <label for="category" class="form-label text-white">Category <span class="text-danger">*</span></label>
-          <select class="form-select @error('category') is-invalid @enderror" 
-                  id="category" name="category" required>
+          <select class="form-select @error('category_id') is-invalid @enderror" 
+                  id="category" name="category_id" required>
             <option value="">Select Category</option>
             @if(isset($categories) && $categories->count() > 0)
-              @foreach ($categories as $cat)
-                <option value="{{ $cat }}" {{ old('category') == $cat ? 'selected' : '' }}>{{ ucfirst($cat) }}</option>
+              @foreach ($categories as $id => $cat)
+                <option value="{{ $id }}" {{ old('category_id') == $id ? 'selected' : '' }}>{{ ucfirst($cat) }}</option>
               @endforeach
             @endif
           </select>
-          @error('category')
+          @error('category_id')
             <div class="invalid-feedback">{{ $message }}</div>
           @enderror
         </div>
@@ -65,11 +65,11 @@
       <div class="col-md-6">
         <div class="mb-3">
           <label for="designation" class="form-label text-white">Designation <span class="text-danger">*</span></label>
-          <select class="form-select @error('designation') is-invalid @enderror" 
-                  id="designation" name="designation" disabled required>
+          <select class="form-select @error('designation_id') is-invalid @enderror" 
+                  id="designation" name="designation_id" disabled required>
             <option value="">Select Category First</option>
           </select>
-          @error('designation')
+          @error('designation_id')
             <div class="invalid-feedback">{{ $message }}</div>
           @enderror
         </div>
@@ -209,7 +209,7 @@
         designationSelectEl.disabled = true;
         
         if (category) {
-          fetch(`{{ route('admin.employees.designations') }}?category=${encodeURIComponent(category)}`, {
+          fetch(`{{ route('admin.employees.designations') }}?category_id=${encodeURIComponent(category)}`, {
             method: 'GET',
             headers: {
               'X-Requested-With': 'XMLHttpRequest',
@@ -229,7 +229,7 @@
             if (data.designations && data.designations.length > 0) {
               data.designations.forEach(function(designation) {
                 const option = document.createElement('option');
-                option.value = designation.name;
+                option.value = designation.id;
                 option.textContent = designation.name;
                 designationSelectEl.appendChild(option);
               });

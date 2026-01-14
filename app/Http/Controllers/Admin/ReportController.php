@@ -317,7 +317,7 @@ class ReportController extends Controller
         $this->filterComplaintsByLocation($compliantComplaintsQuery, $user);
 
         $compliantComplaints = (clone $compliantComplaintsQuery)->where('status', 'resolved')
-            ->whereHas('slaRule', function ($query) {
+            ->whereHas('category.slaRule', function ($query) {
                 $query->whereRaw('TIMESTAMPDIFF(HOUR, complaints.created_at, complaints.updated_at) <= sla_rules.max_resolution_time');
             })->count();
 
@@ -534,7 +534,9 @@ class ReportController extends Controller
             $categoryTotals[$catKey] = 0;
 
             // Query for this specific category
-            $catQuery = (clone $baseQuery)->where('category', $catName);
+            $catQuery = (clone $baseQuery)->whereHas('category', function($q) use ($catName) {
+                $q->where('name', $catName);
+            });
 
             // Eager load relationships safely
             try {
@@ -1125,96 +1127,7 @@ class ReportController extends Controller
         }
     }
 
-    /**
-     * Generate SLA reports
-     */
-    public function sla(Request $request)
-    {
-        // Make date parameters optional with defaults
-        $dateFrom = $request->date_from ?? now()->subMonth()->format('Y-m-d');
-        $dateTo = $request->date_to ?? now()->format('Y-m-d');
-        $format = $request->format ?? 'html';
 
-        // Get SLA rules
-        $slaRules = \App\Models\SlaRule::all()->keyBy('complaint_type');
-
-        $user = Auth::user();
-
-        // Get complaints with SLA analysis
-        $complaintsQuery = Complaint::whereBetween('created_at', [$dateFrom, $dateTo]);
-
-        // Apply location-based filtering
-        $this->filterComplaintsByLocation($complaintsQuery, $user);
-
-        $complaints = $complaintsQuery->with(['client', 'assignedEmployee'])
-            ->get()
-            ->map(function ($complaint) use ($slaRules) {
-                $ageInHours = $complaint->created_at->diffInHours(now());
-
-                // Get SLA rule for this complaint type
-                $slaRule = $slaRules->get($complaint->category);
-                $maxResponseTime = $slaRule ? $slaRule->max_response_time : 24; // Default 24 hours
-    
-                $isOverdue = $ageInHours > $maxResponseTime;
-                $timeRemaining = max(0, $maxResponseTime - $ageInHours);
-
-                // Calculate urgency level
-                $urgencyLevel = 'low';
-                if ($isOverdue) {
-                    $urgencyLevel = 'critical';
-                } elseif ($timeRemaining <= $maxResponseTime * 0.25) {
-                    $urgencyLevel = 'high';
-                } elseif ($timeRemaining <= $maxResponseTime * 0.5) {
-                    $urgencyLevel = 'medium';
-                }
-
-                return [
-                    'complaint' => $complaint,
-                    'age_hours' => $ageInHours,
-                    'max_response_time' => $maxResponseTime,
-                    'time_remaining' => $timeRemaining,
-                    'is_overdue' => $isOverdue,
-                    'sla_status' => $isOverdue ? 'breached' : 'within_sla',
-                    'urgency_level' => $urgencyLevel,
-                    'sla_rule' => $slaRule,
-                ];
-            });
-
-        // Calculate summary statistics
-        $summary = [
-            'total_complaints' => $complaints->count(),
-            'within_sla' => $complaints->where('sla_status', 'within_sla')->count(),
-            'breached_sla' => $complaints->where('sla_status', 'breached')->count(),
-            'sla_compliance_rate' => $complaints->count() > 0 ?
-                round(($complaints->where('sla_status', 'within_sla')->count() / $complaints->count()) * 100, 2) : 0,
-            'critical_urgent' => $complaints->where('urgency_level', 'critical')->count(),
-            'high_priority' => $complaints->where('urgency_level', 'high')->count(),
-            'average_resolution_time' => $complaints->filter(function ($complaintData) {
-                return $complaintData['complaint']->status === 'resolved';
-            })->avg('age_hours') ?? 0,
-        ];
-
-        // Get SLA rules summary
-        $slaRulesSummary = $slaRules->map(function ($rule) use ($complaints) {
-            $ruleComplaints = $complaints->filter(function ($complaintData) use ($rule) {
-                return $complaintData['complaint']->category === $rule->complaint_type;
-            });
-            return [
-                'rule' => $rule,
-                'total_complaints' => $ruleComplaints->count(),
-                'within_sla' => $ruleComplaints->where('sla_status', 'within_sla')->count(),
-                'breached_sla' => $ruleComplaints->where('sla_status', 'breached')->count(),
-                'compliance_rate' => $ruleComplaints->count() > 0 ?
-                    round(($ruleComplaints->where('sla_status', 'within_sla')->count() / $ruleComplaints->count()) * 100, 2) : 0,
-            ];
-        });
-
-        if ($format === 'html') {
-            return view('admin.reports.sla', compact('complaints', 'summary', 'slaRulesSummary', 'dateFrom', 'dateTo'));
-        } else {
-            return $this->exportReport('sla', $complaints, $summary, $format);
-        }
-    }
 
     /**
      * Get dashboard statistics
@@ -1541,7 +1454,11 @@ class ReportController extends Controller
                 $data = (clone $baseQuery)->selectRaw('status, COUNT(*) as count')->groupBy('status')->get();
                 break;
             case 'type':
-                $data = (clone $baseQuery)->selectRaw('category, COUNT(*) as count')->groupBy('category')->get();
+                $data = (clone $baseQuery)
+                    ->join('complaint_categories', 'complaints.category_id', '=', 'complaint_categories.id')
+                    ->selectRaw('complaint_categories.name as category, COUNT(*) as count')
+                    ->groupBy('complaint_categories.name')
+                    ->get();
                 break;
             case 'priority':
                 $data = (clone $baseQuery)->selectRaw('priority, COUNT(*) as count')->groupBy('priority')->get();
@@ -1759,5 +1676,117 @@ class ReportController extends Controller
             'data' => $report->data_json,
             'summary' => $report->getSummaryAttribute()
         ]);
+    }
+
+    /**
+     * Generate SLA COMPLIANCE report
+     */
+    public function sla(Request $request)
+    {
+        // Set default values if not provided
+        $dateFrom = $request->date_from ?? now()->subMonth()->format('Y-m-d');
+        $dateTo = $request->date_to ?? now()->format('Y-m-d');
+
+        // Ensure dates are properly formatted and include time for full day coverage
+        $dateFromStart = \Carbon\Carbon::parse($dateFrom)->startOfDay();
+        $dateToEnd = \Carbon\Carbon::parse($dateTo)->endOfDay();
+
+        // Get user for location filtering
+        $user = Auth::user();
+
+        // Get actual categories from ComplaintCategory table
+        $actualCategories = \App\Models\ComplaintCategory::orderBy('name')
+            ->pluck('name')
+            ->toArray();
+
+        $allCategories = $actualCategories;
+        sort($allCategories);
+
+        // Map categories for report
+        $categories = [];
+        foreach ($allCategories as $cat) {
+            $key = strtolower(str_replace([' ', '&', '-', '(', ')'], ['_', '', '_', '', ''], $cat));
+            $categories[$key] = $cat;
+        }
+
+        // Base query for resolved complaints in date range
+        $baseQuery = Complaint::whereBetween('created_at', [$dateFromStart, $dateToEnd]);
+        
+        // Apply location-based filtering
+        $this->filterComplaintsByLocation($baseQuery, $user);
+
+        // Initialize report data structure
+        $slaData = [];
+        $categoryTotals = [];
+        $timeBuckets = ['lt_24h' => '< 24 Hours', '24_48h' => '24-48 Hours', 'gt_48h' => '> 48 Hours'];
+        
+        $grandTotal = 0;
+        $totalResolved = 0;
+        $totalCompliant = 0;
+        $globalTotalHours = 0;
+        $globalResolvedCount = 0;
+
+        foreach ($categories as $catKey => $catName) {
+            // Query for this category
+            $catQuery = (clone $baseQuery)->whereHas('category', function($q) use ($catName) {
+                $q->where('name', $catName);
+            });
+
+            $complaints = $catQuery->get();
+            $total = $complaints->count();
+            
+            // Stats for this category
+            $resolvedCount = 0;
+            $lt24 = 0;
+            $bw2448 = 0;
+            $gt48 = 0;
+            $toalHours = 0;
+
+            foreach ($complaints as $complaint) {
+                if ($complaint->status === 'resolved' && $complaint->updated_at) {
+                    $resolvedCount++;
+                    $hours = $complaint->created_at->diffInHours($complaint->updated_at);
+                    $toalHours += $hours;
+
+                    if ($hours < 24) {
+                        $lt24++;
+                    } elseif ($hours >= 24 && $hours <= 48) {
+                        $bw2448++;
+                    } else {
+                        $gt48++;
+                    }
+                }
+            }
+
+            $avgTime = $resolvedCount > 0 ? round($toalHours / $resolvedCount, 1) : 0;
+            $slaMet = $lt24 + $bw2448; // Assuming 48h is the max acceptable SLA for generic reporting
+
+            $slaData[$catKey] = [
+                'name' => $catName,
+                'total' => $total,
+                'resolved' => $resolvedCount,
+                'lt_24h' => $lt24,
+                '24_48h' => $bw2448,
+                'gt_48h' => $gt48,
+                'avg_time' => $avgTime,
+                'compliance_rate' => $resolvedCount > 0 ? round(($slaMet / $resolvedCount) * 100, 1) : 0
+            ];
+
+            $grandTotal += $total;
+            $totalResolved += $resolvedCount;
+            $totalCompliant += $slaMet;
+            $globalTotalHours += $toalHours;
+            $globalResolvedCount += $resolvedCount;
+        }
+
+        // Summary Statistics
+        $summary = [
+            'total_complaints' => $grandTotal,
+            'avg_resolution_time' => $globalResolvedCount > 0 ? round($globalTotalHours / $globalResolvedCount, 1) : 0,
+            'compliance_rate' => $globalResolvedCount > 0 ? round(($totalCompliant / $globalResolvedCount) * 100, 1) : 0,
+            'breached_count' => $globalResolvedCount - $totalCompliant
+        ];
+
+        return view('admin.reports.sla', compact('slaData', 'summary', 'dateFrom', 'dateTo'));
     }
 }
