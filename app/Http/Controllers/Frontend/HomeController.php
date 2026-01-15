@@ -503,12 +503,21 @@ class HomeController extends Controller
             'maint_priced_performa' => $statsDataAggregation->maint_priced_performa ?? 0,
         ];
 
-        // Status-wise counts for the pie chart - Restore previous dynamic grouping for correctness
-        $complaintsByStatus = (clone $complaintsQuery)
+        // Status-wise counts for the pie chart - Group closed with resolved for consistency
+        $statusCounts = (clone $complaintsQuery)
             ->selectRaw('complaints.status, COUNT(*) as count')
             ->groupBy('complaints.status')
             ->pluck('count', 'complaints.status')
             ->toArray();
+
+        $complaintsByStatus = $statusCounts;
+        if (isset($complaintsByStatus['closed'])) {
+            $complaintsByStatus['resolved'] = ($complaintsByStatus['resolved'] ?? 0) + $complaintsByStatus['closed'];
+            // Keep 'closed' as well for chart specificity, but 'resolved' is now the aggregate 'Addressed'
+        }
+        if (isset($complaintsByStatus['new'])) {
+             $complaintsByStatus['assigned'] = ($complaintsByStatus['assigned'] ?? 0) + $complaintsByStatus['new'];
+        }
 
         // Resolution rate & average time
         $totalComplaints = $stats['total_complaints'];
@@ -642,7 +651,6 @@ class HomeController extends Controller
                 'house:id,house_no,address'
             ])
             ->orderBy('id', 'desc')
-            ->limit(500) // Safety limit for dashboard view performance
             ->get()
             ->map(function ($complaint) use ($performaStatuses) {
                 $statusKey = $complaint->status === 'new' ? 'assigned' : $complaint->status;

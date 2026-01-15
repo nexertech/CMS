@@ -2165,10 +2165,10 @@
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
 
-                // Helper function for formatting numbers (1k, 1.5k, etc.)
+                // Helper function for formatting numbers (1k, 1.55k, etc.)
                 const formatNumber = (num) => {
                     if (num >= 1000) {
-                        return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+                        return (num / 1000).toFixed(2) + 'k';
                     }
                     return num;
                 };

@@ -285,7 +285,7 @@ class ComplaintApiController extends Controller
 
     $data = $rows->groupBy('cat_id')->map(function ($items) {
         $firstItem = $items->first();
-        // Use app_name if available, otherwise fallback to name
+        // Use app_name as the primary title, fallback to internal name
         $displayName = $firstItem->cat_app_name ?: $firstItem->cat_name;
 
         return [
@@ -297,7 +297,7 @@ class ComplaintApiController extends Controller
                 ];
             })->values()->toArray()
         ];
-    })->toArray(); // ✅ important: values() NOT used so cat_id stays as key
+    })->toArray(); // important: cat_id stays as key for JSON structure
 
     return response()->json([
         "success" => true,
