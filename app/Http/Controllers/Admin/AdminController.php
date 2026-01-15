@@ -34,7 +34,7 @@ class AdminController extends Controller
         
         // Get recent complaints
         $recentComplaints = Complaint::with(['client', 'assignedEmployee'])
-            ->orderBy('created_at', 'desc')
+            ->orderBy('complaints.created_at', 'desc')
             ->limit(10)
             ->get();
 
@@ -54,25 +54,25 @@ class AdminController extends Controller
         // Get overdue complaints
         $overdueComplaints = Complaint::overdue()
             ->with(['client', 'assignedEmployee'])
-            ->orderBy('created_at', 'asc')
+            ->orderBy('complaints.created_at', 'asc')
             ->limit(10)
             ->get();
 
         // Get complaints by status
         $complaintsByStatus = Complaint::selectRaw('status, COUNT(*) as count')
-            ->groupBy('status')
+            ->groupBy('complaints.status')
             ->pluck('count', 'status')
             ->toArray();
 
         // Get complaints by type
         $complaintsByType = Complaint::selectRaw('complaint_type, COUNT(*) as count')
-            ->groupBy('complaint_type')
+            ->groupBy('complaints.complaint_type')
             ->pluck('count', 'complaint_type')
             ->toArray();
 
         // Get monthly complaint trends
-        $monthlyTrends = Complaint::selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, COUNT(*) as count')
-            ->where('created_at', '>=', now()->subMonths(12))
+        $monthlyTrends = Complaint::selectRaw('DATE_FORMAT(complaints.created_at, "%Y-%m") as month, COUNT(*) as count')
+            ->where('complaints.created_at', '>=', now()->subMonths(12))
             ->groupBy('month')
             ->orderBy('month')
             ->get();

@@ -70,9 +70,9 @@ class ComplaintController extends Controller
                 if (is_numeric($search)) {
                     $numericSearch = (int) $search;
                     // Search by actual ID
-                    $q->orWhere('id', $numericSearch);
+                    $q->orWhere('complaints.id', $numericSearch);
                     // Search by ID modulo 10000 (for formatted complaint_id like 0123)
-                    $q->orWhereRaw('(id % 10000) = ?', [$numericSearch]);
+                    $q->orWhereRaw('(complaints.id % 10000) = ?', [$numericSearch]);
                 }
             });
         }
@@ -87,51 +87,51 @@ class ComplaintController extends Controller
             $statusValue = $request->status;
 
             // Handle work_priced_performa and maint_priced_performa filters
-            // waiting_for_authority removed - only check direct status match
+            // Prefix with complaints. to avoid ambiguity
             if ($statusValue === 'work_priced_performa') {
-                $query->where('status', 'work_priced_performa');
+                $query->where('complaints.status', 'work_priced_performa');
             } elseif ($statusValue === 'maint_priced_performa') {
-                $query->where('status', 'maint_priced_performa');
+                $query->where('complaints.status', 'maint_priced_performa');
             } else {
                 // For other statuses, use direct filter
-                $query->where('status', $statusValue);
+                $query->where('complaints.status', $statusValue);
             }
         }
 
         // Filter by category
         if ($request->has('category') && $request->category) {
-            $query->where('category_id', $request->category); // Updated to use ID
+            $query->where('complaints.category_id', $request->category); // Updated to use ID
         }
 
         // Filter by priority
         if ($request->has('priority') && $request->priority) {
-            $query->where('priority', $request->priority);
+            $query->where('complaints.priority', $request->priority);
         }
 
         // Filter by assigned employee
         if ($request->has('assigned_employee_id') && $request->assigned_employee_id) {
-            $query->where('assigned_employee_id', $request->assigned_employee_id);
+            $query->where('complaints.assigned_employee_id', $request->assigned_employee_id);
         }
 
         // Filter by client (apply location filter)
         if ($request->has('client_id') && $request->client_id) {
-            $query->where('client_id', $request->client_id);
+            $query->where('complaints.client_id', $request->client_id);
         }
 
         // Filter by date range
         if ($request->has('date_from') && $request->date_from) {
-            $query->whereDate('created_at', '>=', $request->date_from);
+            $query->whereDate('complaints.created_at', '>=', $request->date_from);
         }
 
         if ($request->has('date_to') && $request->date_to) {
-            $query->whereDate('created_at', '<=', $request->date_to);
+            $query->whereDate('complaints.created_at', '<=', $request->date_to);
         }
 
         // Order by ID descending (3, 2, 1...) - newest/highest ID first
         // Clear any existing orders and set explicit descending order
         $query->with(['client', 'assignedEmployee', 'house', 'category', 'complaintTitle']) // Added relations
               ->reorder()
-              ->orderBy('id', 'desc');
+              ->orderBy('complaints.id', 'desc');
         $complaints = $query->paginate(12)->withQueryString();
 
         // Filter employees by location

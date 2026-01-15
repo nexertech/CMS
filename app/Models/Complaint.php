@@ -500,7 +500,7 @@ class Complaint extends Model
      */
     public function scopeNew($query)
     {
-        return $query->where('status', 'new');
+        return $query->where('complaints.status', 'new');
     }
 
     /**
@@ -508,7 +508,7 @@ class Complaint extends Model
      */
     public function scopeAssigned($query)
     {
-        return $query->where('status', 'assigned');
+        return $query->where('complaints.status', 'assigned');
     }
 
     /**
@@ -516,7 +516,7 @@ class Complaint extends Model
      */
     public function scopeInProgress($query)
     {
-        return $query->where('status', 'in_progress');
+        return $query->where('complaints.status', 'in_progress');
     }
 
     /**
@@ -524,7 +524,7 @@ class Complaint extends Model
      */
     public function scopeResolved($query)
     {
-        return $query->where('status', 'resolved');
+        return $query->where('complaints.status', 'resolved');
     }
 
     /**
@@ -532,7 +532,7 @@ class Complaint extends Model
      */
     public function scopeClosed($query)
     {
-        return $query->where('status', 'closed');
+        return $query->where('complaints.status', 'closed');
     }
 
     /**
@@ -540,7 +540,7 @@ class Complaint extends Model
      */
     public function scopePending($query)
     {
-        return $query->whereIn('status', ['new', 'assigned', 'in_progress']);
+        return $query->whereIn('complaints.status', ['new', 'assigned', 'in_progress']);
     }
 
     /**
@@ -548,7 +548,7 @@ class Complaint extends Model
      */
     public function scopeCompleted($query)
     {
-        return $query->whereIn('status', ['resolved', 'closed']);
+        return $query->whereIn('complaints.status', ['resolved', 'closed']);
     }
 
     /**
@@ -561,7 +561,7 @@ class Complaint extends Model
     {
         // If passed name, try to find ID or use join (safer to assume ID if int, if string need logic)
         // Controller passed ID now.
-        return $query->where('category_id', $categoryId);
+        return $query->where('complaints.category_id', $categoryId);
     }
 
     /**
@@ -569,7 +569,7 @@ class Complaint extends Model
      */
     public function scopeByType($query, $typeId)
     {
-        return $query->where('complaint_title_id', $typeId);
+        return $query->where('complaints.complaint_title_id', $typeId);
     }
 
     /**
@@ -577,7 +577,7 @@ class Complaint extends Model
      */
     public function scopeByPriority($query, $priority)
     {
-        return $query->where('priority', $priority);
+        return $query->where('complaints.priority', $priority);
     }
 
     /**
@@ -585,7 +585,7 @@ class Complaint extends Model
      */
     public function scopeByAssignedEmployee($query, $employeeId)
     {
-        return $query->where('assigned_employee_id', $employeeId);
+        return $query->where('complaints.assigned_employee_id', $employeeId);
     }
 
     /**
@@ -593,7 +593,7 @@ class Complaint extends Model
      */
     public function scopeByClient($query, $clientId)
     {
-        return $query->where('client_id', $clientId);
+        return $query->where('complaints.client_id', $clientId);
     }
 
     /**

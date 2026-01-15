@@ -513,10 +513,11 @@ class HomeController extends Controller
         $complaintsByStatus = $statusCounts;
         if (isset($complaintsByStatus['closed'])) {
             $complaintsByStatus['resolved'] = ($complaintsByStatus['resolved'] ?? 0) + $complaintsByStatus['closed'];
-            // Keep 'closed' as well for chart specificity, but 'resolved' is now the aggregate 'Addressed'
+            unset($complaintsByStatus['closed']);
         }
         if (isset($complaintsByStatus['new'])) {
              $complaintsByStatus['assigned'] = ($complaintsByStatus['assigned'] ?? 0) + $complaintsByStatus['new'];
+             unset($complaintsByStatus['new']);
         }
 
         // Resolution rate & average time

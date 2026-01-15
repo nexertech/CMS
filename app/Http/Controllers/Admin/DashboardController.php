@@ -399,7 +399,7 @@ class DashboardController extends Controller
                     $totalComplaintsQuery = Complaint::query();
                     $totalComplaintsQuery->where(function ($q) use ($geGroup) {
                         // First try to match by complaint's city_id
-                        $q->where('city_id', $geGroup->id)
+                        $q->where('complaints.city_id', $geGroup->id)
                             // Or match by client's city name
                             ->orWhereHas('client', function ($clientQ) use ($geGroup) {
                                 $clientQ->where('city', $geGroup->name);
@@ -413,7 +413,7 @@ class DashboardController extends Controller
                         // User has no city_id and no sector_id - show all data (no filter)
                     } elseif ($user->city_id && !$user->sector_id) {
                         // User has city_id but no sector_id - show only their city's data
-                        $totalComplaintsQuery->where('city_id', $user->city_id);
+                        $totalComplaintsQuery->where('complaints.city_id', $user->city_id);
                     }
                     // If user has sector_id, they shouldn't see GE Feedback Overview (handled by canSeeAllData check)
 
@@ -429,13 +429,13 @@ class DashboardController extends Controller
                     $resolvedComplaintsQuery = Complaint::query();
                     $resolvedComplaintsQuery->where(function ($q) use ($geGroup) {
                         // First try to match by complaint's city_id
-                        $q->where('city_id', $geGroup->id)
+                        $q->where('complaints.city_id', $geGroup->id)
                             // Or match by client's city name
                             ->orWhereHas('client', function ($clientQ) use ($geGroup) {
                                 $clientQ->where('city', $geGroup->name);
                             });
                     })
-                        ->whereIn('status', ['resolved', 'closed'])
+                        ->whereIn('complaints.status', ['resolved', 'closed'])
                         ->with('feedback'); // Load feedback relationship
 
                     // Apply location filtering based on logged-in user's city_id and sector_id
@@ -445,7 +445,7 @@ class DashboardController extends Controller
                         // User has no city_id and no sector_id - show all data (no filter)
                     } elseif ($user->city_id && !$user->sector_id) {
                         // User has city_id but no sector_id - show only their city's data
-                        $resolvedComplaintsQuery->where('city_id', $user->city_id);
+                        $resolvedComplaintsQuery->where('complaints.city_id', $user->city_id);
                     }
                     // If user has sector_id, they shouldn't see GE Feedback Overview (handled by canSeeAllData check)
 
@@ -584,12 +584,16 @@ class DashboardController extends Controller
         // Filter by complaint status
         if ($complaintStatus) {
             // Handle special performa statuses - work_performa and maint_performa
-            if ($complaintStatus === 'work_performa') {
+            if ($complaintStatus === 'work_priced_performa') {
+                $query->where('complaints.status', 'work_priced_performa');
+            } elseif ($complaintStatus === 'maint_priced_performa') {
+                $query->where('complaints.status', 'maint_priced_performa');
+            } elseif ($complaintStatus === 'work_performa') {
                 // Match complaints with work_performa status OR in_progress with work_performa performa_type
                 $query->where(function ($q) {
-                    $q->where('status', 'work_performa')
+                    $q->where('complaints.status', 'work_performa')
                         ->orWhere(function ($subQ) {
-                            $subQ->where('status', 'in_progress')
+                            $subQ->where('complaints.status', 'in_progress')
                                 ->whereHas('spareApprovals', function ($approvalQ) {
                                     $approvalQ->where('performa_type', 'work_performa');
                                 });
@@ -598,26 +602,20 @@ class DashboardController extends Controller
             } elseif ($complaintStatus === 'maint_performa') {
                 // Match complaints with maint_performa status OR in_progress with maint_performa performa_type
                 $query->where(function ($q) {
-                    $q->where('status', 'maint_performa')
+                    $q->where('complaints.status', 'maint_performa')
                         ->orWhere(function ($subQ) {
-                            $subQ->where('status', 'in_progress')
+                            $subQ->where('complaints.status', 'in_progress')
                                 ->whereHas('spareApprovals', function ($approvalQ) {
                                     $approvalQ->where('performa_type', 'maint_performa');
                                 });
                         });
                 });
-            } elseif ($complaintStatus === 'work_priced_performa') {
-                // waiting_for_authority removed - only check direct status match
-                $query->where('status', 'work_priced_performa');
-            } elseif ($complaintStatus === 'maint_priced_performa') {
-                // waiting_for_authority removed - only check direct status match
-                $query->where('status', 'maint_priced_performa');
             } elseif ($complaintStatus === 'product_na') {
                 // Match product_na status OR in_progress with product_na performa_type
                 $query->where(function ($q) {
-                    $q->where('status', 'product_na')
+                    $q->where('complaints.status', 'product_na')
                         ->orWhere(function ($subQ) {
-                            $subQ->where('status', 'in_progress')
+                            $subQ->where('complaints.status', 'in_progress')
                                 ->whereHas('spareApprovals', function ($approvalQ) {
                                     $approvalQ->where('performa_type', 'product_na');
                                 });
@@ -625,7 +623,7 @@ class DashboardController extends Controller
                 });
             } else {
                 // For other statuses, filter by actual status
-                $query->where('status', $complaintStatus);
+                $query->where('complaints.status', $complaintStatus);
             }
         }
 
@@ -634,27 +632,27 @@ class DashboardController extends Controller
             $now = now();
             switch ($dateRange) {
                 case 'yesterday':
-                    $query->whereDate('created_at', $now->copy()->subDay()->toDateString());
+                    $query->whereDate('complaints.created_at', $now->copy()->subDay()->toDateString());
                     break;
                 case 'today':
-                    $query->whereDate('created_at', $now->toDateString());
+                    $query->whereDate('complaints.created_at', $now->toDateString());
                     break;
                 case 'this_week':
-                    $query->whereBetween('created_at', [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()]);
+                    $query->whereBetween('complaints.created_at', [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()]);
                     break;
                 case 'last_week':
-                    $query->whereBetween('created_at', [$now->copy()->subWeek()->startOfWeek(), $now->copy()->subWeek()->endOfWeek()]);
+                    $query->whereBetween('complaints.created_at', [$now->copy()->subWeek()->startOfWeek(), $now->copy()->subWeek()->endOfWeek()]);
                     break;
                 case 'this_month':
-                    $query->whereMonth('created_at', $now->month)
-                        ->whereYear('created_at', $now->year);
+                    $query->whereMonth('complaints.created_at', $now->month)
+                        ->whereYear('complaints.created_at', $now->year);
                     break;
                 case 'last_month':
-                    $query->whereMonth('created_at', $now->copy()->subMonth()->month)
-                        ->whereYear('created_at', $now->copy()->subMonth()->year);
+                    $query->whereMonth('complaints.created_at', $now->copy()->subMonth()->month)
+                        ->whereYear('complaints.created_at', $now->copy()->subMonth()->year);
                     break;
                 case 'last_6_months':
-                    $query->where('created_at', '>=', $now->copy()->subMonths(6)->startOfDay());
+                    $query->where('complaints.created_at', '>=', $now->copy()->subMonths(6)->startOfDay());
                     break;
             }
         }
@@ -727,13 +725,13 @@ class DashboardController extends Controller
         return [
             // Complaint statistics with location filtering
             'total_complaints' => (clone $complaintsQuery)->count(),
-            'pending_complaints' => (clone $complaintsQuery)->whereIn('status', ['assigned', 'in_progress'])->count(),
-            'in_progress_complaints' => (clone $complaintsQuery)->where('status', 'in_progress')->count(),
-            'addressed_complaints' => (clone $complaintsQuery)->where('status', 'resolved')->count(),
+            'pending_complaints' => (clone $complaintsQuery)->whereIn('complaints.status', ['assigned', 'in_progress'])->count(),
+            'in_progress_complaints' => (clone $complaintsQuery)->where('complaints.status', 'in_progress')->count(),
+            'addressed_complaints' => (clone $complaintsQuery)->where('complaints.status', 'resolved')->count(),
             'overdue_complaints' => (clone $complaintsQuery)->overdue()->count(),
-            'complaints_today' => (clone $complaintsQuery)->whereDate('created_at', $today)->count(),
-            'complaints_this_month' => (clone $complaintsQuery)->where('created_at', '>=', $thisMonth)->count(),
-            'complaints_last_month' => (clone $complaintsQuery)->whereBetween('created_at', [$lastMonth, $thisMonth])->count(),
+            'complaints_today' => (clone $complaintsQuery)->whereDate('complaints.created_at', $today)->count(),
+            'complaints_this_month' => (clone $complaintsQuery)->where('complaints.created_at', '>=', $thisMonth)->count(),
+            'complaints_last_month' => (clone $complaintsQuery)->whereBetween('complaints.created_at', [$lastMonth, $thisMonth])->count(),
 
             // Complaint status statistics - include both direct status and performa_type from approvals
             'work_performa' => (clone $complaintsQuery)->where(function ($q) {

@@ -35,16 +35,16 @@ trait LocationFilterTrait
             case 'admin':
                 // Admin sees all ONLY if no specific location is assigned
                 if ($user->sector_id) {
-                    $query->where('sector_id', $user->sector_id);
+                    $query->where('complaints.sector_id', $user->sector_id);
                 } elseif ($user->city_id) {
-                    $query->where('city_id', $user->city_id);
+                    $query->where('complaints.city_id', $user->city_id);
                 }
                 break;
 
             case 'garrison_engineer':
                 // GE can see only their city's complaints
                 if ($user->city_id) {
-                    $query->where('city_id', $user->city_id);
+                    $query->where('complaints.city_id', $user->city_id);
                 } else {
                     // If no city assigned, show nothing
                     $query->whereRaw('1 = 0');
@@ -56,7 +56,7 @@ trait LocationFilterTrait
             case 'staff':
                 // Complaint Center and Staff can see only their sector's complaints
                 if ($user->sector_id) {
-                    $query->where('sector_id', $user->sector_id);
+                    $query->where('complaints.sector_id', $user->sector_id);
                 } else {
                     // If no sector assigned, show nothing
                     $query->whereRaw('1 = 0');
@@ -68,11 +68,11 @@ trait LocationFilterTrait
                 // If they have sector_id, filter by sector
                 // Else if they have city_id, filter by city
                 if ($user->sector_id) {
-                    $query->where('sector_id', $user->sector_id);
+                    $query->where('complaints.sector_id', $user->sector_id);
                 } elseif ($user->city_id) {
-                    $query->where('city_id', $user->city_id);
+                    $query->where('complaints.city_id', $user->city_id);
                 } else {
-                    // If restricted user has no location assigned, show nothing
+                    // If no location assigned, show nothing
                     $query->whereRaw('1 = 0');
                 }
                 break;

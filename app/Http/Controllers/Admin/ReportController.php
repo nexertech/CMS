@@ -83,10 +83,10 @@ class ReportController extends Controller
         return [
             'complaints' => [
                 'total' => (clone $complaintsQuery)->count(),
-                'resolved' => (clone $complaintsQuery)->where('status', 'resolved')
-                    ->whereBetween('updated_at', [$startOfMonth, $now])
+                'resolved' => (clone $complaintsQuery)->where('complaints.status', 'resolved')
+                    ->whereBetween('complaints.updated_at', [$startOfMonth, $now])
                     ->count(),
-                'pending' => (clone $complaintsQuery)->where('status', '!=', 'resolved')->count(),
+                'pending' => (clone $complaintsQuery)->where('complaints.status', '!=', 'resolved')->count(),
                 'avg_resolution_time' => $this->getAverageResolutionTime($user)
             ],
             'employees' => [
@@ -114,8 +114,8 @@ class ReportController extends Controller
      */
     private function getAverageResolutionTime($user = null)
     {
-        $query = \App\Models\Complaint::where('status', 'resolved')
-            ->whereNotNull('updated_at');
+        $query = \App\Models\Complaint::where('complaints.status', 'resolved')
+            ->whereNotNull('complaints.updated_at');
         $this->filterComplaintsByLocation($query, $user);
         $resolvedComplaints = $query->get();
 
@@ -140,7 +140,7 @@ class ReportController extends Controller
 
         $employees = $employeesQuery->with([
             'assignedComplaints' => function ($complaintsQuery) use ($user) {
-                $complaintsQuery->where('status', 'resolved');
+                $complaintsQuery->where('complaints.status', 'resolved');
                 // Apply location filter to complaints - using whereHas on the relation
                 if ($user && !$this->canViewAllData($user)) {
                     if ($user->city_id && $user->city) {
