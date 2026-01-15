@@ -849,10 +849,15 @@ class ReportController extends Controller
             ]);
         }
 
+        // Ensure dates are properly formatted and include time for full day coverage
+        $dateFromStart = \Carbon\Carbon::parse($dateFrom)->startOfDay();
+        $dateToEnd = \Carbon\Carbon::parse($dateTo)->endOfDay();
+        $category = $request->category;
+
         $user = Auth::user();
         $query = Employee::with([
-            'assignedComplaints' => function ($q) use ($dateFrom, $dateTo, $user) {
-                $q->whereBetween('created_at', [$dateFrom, $dateTo]);
+            'assignedComplaints' => function ($q) use ($dateFromStart, $dateToEnd, $user) {
+                $q->whereBetween('created_at', [$dateFromStart, $dateToEnd]);
                 // Apply location filter to complaints - get the underlying query builder
                 if ($user && !$this->canViewAllData($user)) {
                     if ($user->city_id && $user->city) {
@@ -868,6 +873,13 @@ class ReportController extends Controller
                 }
             }
         ]);
+
+        // Filter by category if provided
+        if ($category) {
+            $query->whereHas('category', function($q) use ($category) {
+                $q->where('name', $category);
+            });
+        }
 
         // Apply location-based filtering to employees
         $this->filterEmployeesByLocation($query, $user);
@@ -940,6 +952,10 @@ class ReportController extends Controller
             ]);
         }
 
+        // Ensure dates are properly formatted and include time for full day coverage
+        $dateFromStart = \Carbon\Carbon::parse($dateFrom)->startOfDay();
+        $dateToEnd = \Carbon\Carbon::parse($dateTo)->endOfDay();
+
         $user = Auth::user();
         $query = Spare::query();
 
@@ -947,20 +963,22 @@ class ReportController extends Controller
         $this->filterSparesByLocation($query, $user);
 
         if ($category) {
-            $query->where('category', $category);
+            $query->whereHas('category', function($q) use ($category) {
+                $q->where('name', $category);
+            });
         }
 
         // Eager load complaint spares and stock logs safely
         try {
             $spares = $query->with([
-                'complaintSpares' => function ($q) use ($dateFrom, $dateTo) {
-                    $q->whereBetween('used_at', [$dateFrom, $dateTo]);
+                'complaintSpares' => function ($q) use ($dateFromStart, $dateToEnd) {
+                    $q->whereBetween('used_at', [$dateFromStart, $dateToEnd]);
                 },
-                'stockLogs' => function ($q) use ($dateFrom, $dateTo) {
+                'stockLogs' => function ($q) use ($dateFromStart, $dateToEnd) {
                     $q->where('change_type', 'out')
-                        ->whereBetween('created_at', [$dateFrom, $dateTo]);
+                        ->whereBetween('created_at', [$dateFromStart, $dateToEnd]);
                 }
-            ])->get()->map(function ($spare) use ($dateFrom, $dateTo) {
+            ])->get()->map(function ($spare) use ($dateFromStart, $dateToEnd) {
                 // Calculate usage from complaint_spares (for cost/usage count if needed)
                 $usage = $spare->complaintSpares ?? collect();
                 $complaintUsed = $usage->sum('quantity') ?? 0;
@@ -1039,6 +1057,10 @@ class ReportController extends Controller
             ]);
         }
 
+        // Ensure dates are properly formatted and include time for full day coverage
+        $dateFromStart = \Carbon\Carbon::parse($dateFrom)->startOfDay();
+        $dateToEnd = \Carbon\Carbon::parse($dateTo)->endOfDay();
+
         $user = Auth::user();
 
         // Build spare costs query with location filtering
@@ -1046,7 +1068,7 @@ class ReportController extends Controller
             ->join('spares', 'complaint_spares.spare_id', '=', 'spares.id')
             ->join('complaints', 'complaint_spares.complaint_id', '=', 'complaints.id')
             ->join('clients', 'complaints.client_id', '=', 'clients.id')
-            ->whereBetween('complaint_spares.used_at', [$dateFrom, $dateTo]);
+            ->whereBetween('complaint_spares.used_at', [$dateFromStart, $dateToEnd]);
 
         // Apply location filtering
         if ($user && !$this->canViewAllData($user)) {
@@ -1058,12 +1080,14 @@ class ReportController extends Controller
             }
         }
 
-        $spareCosts = $spareCostsQuery->selectRaw('spares.category, SUM(complaint_spares.quantity * spares.unit_price) as total_cost')
-            ->groupBy('spares.category')
+        $spareCosts = $spareCostsQuery
+            ->join('complaint_categories', 'spares.category_id', '=', 'complaint_categories.id')
+            ->selectRaw('complaint_categories.name as category, SUM(complaint_spares.quantity * spares.unit_price) as total_cost')
+            ->groupBy('complaint_categories.name')
             ->get();
 
         // Approval costs - simplified approach (with location filtering if needed)
-        $approvalQuery = SpareApprovalPerforma::whereBetween('created_at', [$dateFrom, $dateTo])
+        $approvalQuery = SpareApprovalPerforma::whereBetween('created_at', [$dateFromStart, $dateToEnd])
             ->where('status', 'approved');
 
         // Note: Approvals might not have direct location, filter if they're related to complaints
@@ -1090,8 +1114,8 @@ class ReportController extends Controller
             });
 
         // Calculate totals with location filtering
-        $totalApprovalsQuery = SpareApprovalPerforma::whereBetween('created_at', [$dateFrom, $dateTo]);
-        $approvedApprovalsQuery = SpareApprovalPerforma::whereBetween('created_at', [$dateFrom, $dateTo])
+        $totalApprovalsQuery = SpareApprovalPerforma::whereBetween('created_at', [$dateFromStart, $dateToEnd]);
+        $approvedApprovalsQuery = SpareApprovalPerforma::whereBetween('created_at', [$dateFromStart, $dateToEnd])
             ->where('status', 'approved');
 
         // Apply location filtering to approval counts if needed
@@ -1496,11 +1520,15 @@ class ReportController extends Controller
     {
         $dateFrom = $request->get('date_from', now()->subMonth()->format('Y-m-d'));
         $dateTo = $request->get('date_to', now()->format('Y-m-d'));
+        $dateFromStart = \Carbon\Carbon::parse($dateFrom)->startOfDay();
+        $dateToEnd = \Carbon\Carbon::parse($dateTo)->endOfDay();
+        $category = $request->get('category');
+
         $user = Auth::user();
         $query = Employee::with([
             'user',
-            'assignedComplaints' => function ($q) use ($dateFrom, $dateTo, $user) {
-                $q->whereBetween('created_at', [$dateFrom, $dateTo]);
+            'assignedComplaints' => function ($q) use ($dateFromStart, $dateToEnd, $user) {
+                $q->whereBetween('created_at', [$dateFromStart, $dateToEnd]);
                 // Apply location filter to complaints - using whereHas on the relation
                 if ($user && !$this->canViewAllData($user)) {
                     if ($user->city_id && $user->city) {
@@ -1521,8 +1549,10 @@ class ReportController extends Controller
         $this->filterEmployeesByLocation($query, $user);
 
         // Filter by category if provided
-        if ($request->has('category') && $request->category) {
-            $query->where('category', $request->category);
+        if ($category) {
+            $query->whereHas('category', function($q) use ($category) {
+                $q->where('name', $category);
+            });
         }
 
         $employees = $query->get()->map(function ($employee) {
@@ -1552,6 +1582,8 @@ class ReportController extends Controller
     {
         $dateFrom = $request->get('date_from', now()->subMonth()->format('Y-m-d'));
         $dateTo = $request->get('date_to', now()->format('Y-m-d'));
+        $dateFromStart = \Carbon\Carbon::parse($dateFrom)->startOfDay();
+        $dateToEnd = \Carbon\Carbon::parse($dateTo)->endOfDay();
         $category = $request->get('category');
 
         $user = Auth::user();
@@ -1561,16 +1593,18 @@ class ReportController extends Controller
         $this->filterSparesByLocation($query, $user);
 
         if ($category) {
-            $query->where('category', $category);
+            $query->whereHas('category', function($q) use ($category) {
+                $q->where('name', $category);
+            });
         }
 
         $spares = $query->with([
-            'complaintSpares' => function ($q) use ($dateFrom, $dateTo) {
-                $q->whereBetween('used_at', [$dateFrom, $dateTo]);
+            'complaintSpares' => function ($q) use ($dateFromStart, $dateToEnd) {
+                $q->whereBetween('used_at', [$dateFromStart, $dateToEnd]);
             },
-            'stockLogs' => function ($q) use ($dateFrom, $dateTo) {
+            'stockLogs' => function ($q) use ($dateFromStart, $dateToEnd) {
                 $q->where('change_type', 'out')
-                    ->whereBetween('created_at', [$dateFrom, $dateTo]);
+                    ->whereBetween('created_at', [$dateFromStart, $dateToEnd]);
             }
         ])->get()->map(function ($spare) {
             $usage = $spare->complaintSpares;
@@ -1607,12 +1641,15 @@ class ReportController extends Controller
         $user = Auth::user();
         $dateFrom = $request->get('date_from', now()->subMonth()->format('Y-m-d'));
         $dateTo = $request->get('date_to', now()->format('Y-m-d'));
+        
+        $dateFromStart = \Carbon\Carbon::parse($dateFrom)->startOfDay();
+        $dateToEnd = \Carbon\Carbon::parse($dateTo)->endOfDay();
 
         $spareCostsQuery = DB::table('complaint_spares')
             ->join('spares', 'complaint_spares.spare_id', '=', 'spares.id')
             ->join('complaints', 'complaint_spares.complaint_id', '=', 'complaints.id')
             ->join('clients', 'complaints.client_id', '=', 'clients.id')
-            ->whereBetween('complaint_spares.used_at', [$dateFrom, $dateTo]);
+            ->whereBetween('complaint_spares.used_at', [$dateFromStart, $dateToEnd]);
 
         // Apply location filtering
         if ($user && !$this->canViewAllData($user)) {
@@ -1624,19 +1661,24 @@ class ReportController extends Controller
             }
         }
 
-        $spareCosts = $spareCostsQuery->selectRaw('spares.category, SUM(complaint_spares.quantity * spares.unit_price) as total_cost')
-            ->groupBy('spares.category')->get();
-        $approvalCosts = SpareApprovalPerforma::whereBetween('created_at', [$dateFrom, $dateTo])
+        $spareCosts = $spareCostsQuery
+            ->join('complaint_categories', 'spares.category_id', '=', 'complaint_categories.id')
+            ->selectRaw('complaint_categories.name as category, SUM(complaint_spares.quantity * spares.unit_price) as total_cost')
+            ->groupBy('complaint_categories.name')
+            ->get();
+            
+        $approvalCosts = SpareApprovalPerforma::whereBetween('created_at', [$dateFromStart, $dateToEnd])
             ->where('status', 'approved')->get()->groupBy(function ($a) {
                 return $a->created_at->format('Y-m');
             })
             ->map(function ($list) {
                 return $list->count();
             });
+            
         $summary = [
             'total_spare_costs' => $spareCosts->sum('total_cost'),
-            'total_approvals' => SpareApprovalPerforma::whereBetween('created_at', [$dateFrom, $dateTo])->count(),
-            'approved_approvals' => SpareApprovalPerforma::whereBetween('created_at', [$dateFrom, $dateTo])->where('status', 'approved')->count(),
+            'total_approvals' => SpareApprovalPerforma::whereBetween('created_at', [$dateFromStart, $dateToEnd])->count(),
+            'approved_approvals' => SpareApprovalPerforma::whereBetween('created_at', [$dateFromStart, $dateToEnd])->where('status', 'approved')->count(),
             'category_breakdown' => $spareCosts,
             'monthly_approvals' => $approvalCosts,
         ];

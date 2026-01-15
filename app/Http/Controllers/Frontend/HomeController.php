@@ -1257,7 +1257,14 @@ class HomeController extends Controller
         }
 
         // Prepare Stock Consumption Data - Monthly with Inventory Details
-        $stockConsumptionData = $this->getStockConsumptionData($user, $locationScope);
+        $filters = [
+            'cmes_id' => $cmesId,
+            'city_id' => $cityId,
+            'sector_id' => $sectorId,
+            'category' => $category,
+            'date_range' => $dateRange,
+        ];
+        $stockConsumptionData = $this->getStockConsumptionData($user, $locationScope, 'all_time', $filters);
 
 
 
@@ -1285,6 +1292,7 @@ class HomeController extends Controller
                 'empLeastGraphLabels' => $empLeastGraphLabels,
                 'empLeastGraphTotal' => $empLeastGraphTotal,
                 'empLeastGraphResolved' => $empLeastGraphResolved,
+                'stockConsumptionData' => $stockConsumptionData,
                 'serverStats' => $stats
             ]);
         }
@@ -1536,8 +1544,14 @@ class HomeController extends Controller
         ];
         
         $monthLabels = [];
-        for ($m = 1; $m <= 12; $m++) {
-            $monthLabels[] = date('M', mktime(0, 0, 0, $m, 1));
+        if ($selectedYear === 'all_time') {
+            for ($i = 11; $i >= 0; $i--) {
+                $monthLabels[] = now()->startOfMonth()->subMonths($i)->format('M');
+            }
+        } else {
+            for ($m = 1; $m <= 12; $m++) {
+                $monthLabels[] = date('M', mktime(0, 0, 0, $m, 1));
+            }
         }
 
         $stockConsumptionData = $this->getStockConsumptionData($user, $locationScope, $selectedYear, $filters);
@@ -1550,36 +1564,49 @@ class HomeController extends Controller
 
     protected function getStockConsumptionData($user, $locationScope, $year = null, $dashboardFilters = [])
     {
-        $year = $year ?: date('Y');
+        $year = $year ?: 'all_time';
         $hasUnrestrictedAccess = empty($locationScope['restricted']);
         $stockConsumptionData = [];
-        $sparesListQuery = \App\Models\Spare::orderBy('issued_quantity', 'desc');
+        $sparesListQuery = \App\Models\Spare::selectRaw('
+                item_name,
+                SUM(total_received_quantity) as total_received_quantity,
+                SUM(issued_quantity) as issued_quantity,
+                SUM(stock_quantity) as stock_quantity
+            ')
+            ->whereNotNull('item_name')
+            ->groupBy('item_name')
+            ->orderByRaw('SUM(issued_quantity) desc');
 
         $this->applyFrontendLocationScope($sparesListQuery, $locationScope, 'city_id', 'sector_id');
 
-        // Apply dashboard filters to spares list
+        // Filter by category if provided
+        if (!empty($dashboardFilters['category']) && $dashboardFilters['category'] !== 'all') {
+            $cat = $dashboardFilters['category'];
+            $sparesListQuery->whereHas('category', function($q) use ($cat) {
+                if (is_numeric($cat)) {
+                    $q->where('id', $cat);
+                } else {
+                    $q->where('name', $cat);
+                }
+            });
+        }
+
+        // Apply dashboard filters to spares list - Matching Graph Logic from dashboard() method
         if (!empty($dashboardFilters['city_id'])) {
             $sparesListQuery->where('city_id', $dashboardFilters['city_id']);
         } elseif (!empty($dashboardFilters['sector_id'])) {
             $sparesListQuery->where('sector_id', $dashboardFilters['sector_id']);
         } elseif (!empty($dashboardFilters['cmes_id'])) {
             $cmesId = $dashboardFilters['cmes_id'];
-            $cityIds = \App\Models\City::where('cme_id', $cmesId)->pluck('id')->toArray();
-            $sectorIds = \App\Models\Sector::where(function($sq) use ($cmesId, $cityIds) {
-                $sq->where('cme_id', $cmesId);
-                if (!empty($cityIds)) $sq->orWhereIn('city_id', $cityIds);
-            })->pluck('id')->toArray();
-
-            $sparesListQuery->where(function($q) use ($cityIds, $sectorIds) {
-                if (!empty($cityIds)) $q->whereIn('city_id', $cityIds);
-                if (!empty($sectorIds)) $q->orWhereIn('sector_id', $sectorIds);
-            });
+            $cityIdsStats = \App\Models\City::where('cme_id', $cmesId)->pluck('id')->toArray();
+            $sparesListQuery->whereIn('city_id', $cityIdsStats);
         }
 
         $sparesList = $sparesListQuery->get();
 
         $stockQuery = \App\Models\SpareStockLog::selectRaw('
-                spare_stock_logs.spare_id,
+                spares.item_name,
+                YEAR(spare_stock_logs.created_at) as year,
                 MONTH(spare_stock_logs.created_at) as month,
                 SUM(spare_stock_logs.quantity) as total_qty
             ')
@@ -1633,13 +1660,14 @@ class HomeController extends Controller
             }
         }
 
-        $stockResults = $stockQuery->groupBy('spare_stock_logs.spare_id', 'month')->get();
+        $stockResults = $stockQuery->groupBy('spares.item_name', 'year', 'month')->get();
         $stockResultsIndex = $stockResults->keyBy(function ($row) {
-            return $row->spare_id . '_' . $row->month;
+            return $row->item_name . '_' . $row->year . '_' . $row->month;
         });
 
         $stockReceivedQuery = \App\Models\SpareStockLog::selectRaw('
-                spare_stock_logs.spare_id,
+                spares.item_name,
+                YEAR(spare_stock_logs.created_at) as year,
                 MONTH(spare_stock_logs.created_at) as month,
                 SUM(spare_stock_logs.quantity) as total_qty
             ')
@@ -1693,46 +1721,74 @@ class HomeController extends Controller
             }
         }
 
-        $stockReceivedQuery->groupBy('spare_stock_logs.spare_id', 'month');
+        $stockReceivedQuery->groupBy('spares.item_name', 'year', 'month');
         $stockReceivedResults = $stockReceivedQuery->get();
+        $stockReceivedIndex = $stockReceivedResults->keyBy(function ($row) {
+            return $row->item_name . '_' . $row->year . '_' . $row->month;
+        });
+
+        // Define the time window for the report (rolling 12 months for 'all_time', Jan-Dec for specific year)
+        $reportMonths = [];
+        if ($year === 'all_time') {
+            for ($i = 11; $i >= 0; $i--) {
+                $d = now()->startOfMonth()->subMonths($i);
+                $reportMonths[] = [
+                    'label' => $d->format('M'),
+                    'year' => (int)$d->year,
+                    'month' => (int)$d->month
+                ];
+            }
+        } else {
+            for ($m = 1; $m <= 12; $m++) {
+                $reportMonths[] = [
+                    'label' => date('M', mktime(0, 0, 0, $m, 1)),
+                    'year' => (int)$year,
+                    'month' => $m
+                ];
+            }
+        }
 
         foreach ($sparesList as $spare) {
             $monthlyData = [];
             $monthlyReceivedData = [];
-            $yearTotalIssued = 0;
-            $yearTotalReceived = 0;
+            $windowTotalIssued = 0;
+            $windowTotalReceived = 0;
 
-            for ($m = 1; $m <= 12; $m++) {
-                $mName = date('M', mktime(0, 0, 0, $m, 1));
-                $key = $spare->id . '_' . $m;
+            foreach ($reportMonths as $monthInfo) {
+                $mName = $monthInfo['label'];
+                $mNum = $monthInfo['month'];
+                $yNum = $monthInfo['year'];
+                $key = $spare->item_name . '_' . $yNum . '_' . $mNum;
+
+                // Issued quantity
                 $stat = $stockResultsIndex->get($key);
                 $qtyIssued = $stat ? $stat->total_qty : 0;
                 $monthlyData[$mName] = $qtyIssued;
-                $yearTotalIssued += $qtyIssued;
+                $windowTotalIssued += $qtyIssued;
 
-                // Sum up received stock for this spare and month from the query results
-                $receivedQty = $stockReceivedResults->where('spare_id', $spare->id)->where('month', $m)->sum('total_qty');
+                // Received quantity
+                $statReceived = $stockReceivedIndex->get($key);
+                $receivedQty = $statReceived ? $statReceived->total_qty : 0;
                 $monthlyReceivedData[$mName] = $receivedQty;
-                $yearTotalReceived += $receivedQty;
+                $windowTotalReceived += $receivedQty;
             }
 
             // If All Time is selected, use the master counters from the Spare model
             // This ensures matches with Dashboard and avoids issues with missing log history
             if ($year === 'all_time') {
                 $stockConsumptionData[$spare->item_name] = [
-                    'total_received' => $spare->total_received_quantity,
-                    'total_used' => $spare->issued_quantity,
-                    'current_stock' => $spare->stock_quantity,
+                    'total_received' => (int)$spare->total_received_quantity,
+                    'total_used' => (int)$spare->issued_quantity,
+                    'current_stock' => (int)$spare->stock_quantity,
                     'monthly_data' => $monthlyData,
                     'monthly_received_data' => $monthlyReceivedData
                 ];
             } else {
-                // For specific year, use the calculated flow values for Received/Used
-                // BUT always show the actual Current Stock Balance from the DB
+                // For specific year, use the calculated window values for Received/Used
                 $stockConsumptionData[$spare->item_name] = [
-                    'total_received' => $yearTotalReceived,
-                    'total_used' => $yearTotalIssued,
-                    'current_stock' => $spare->stock_quantity, 
+                    'total_received' => $windowTotalReceived,
+                    'total_used' => $windowTotalIssued,
+                    'current_stock' => (int)$spare->stock_quantity, 
                     'monthly_data' => $monthlyData,
                     'monthly_received_data' => $monthlyReceivedData
                 ];

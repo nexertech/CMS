@@ -2617,12 +2617,118 @@
                         
                         viewAllProductsLink.href = '{{ route("frontend.stock.all") }}?' + linkParams.toString();
                     }
+
+                    // Update Stock Consumption Table
+                    if (data.stockConsumptionData && data.monthLabels) {
+                        renderStockTable(data.stockConsumptionData, data.monthLabels);
+                    }
                 }
             })
             .catch(error => {
                 console.error('Error fetching data:', error);
                 // Don't auto-reload on error, just log it
             });
+        }
+
+        function renderStockTable(stockData, monthLabels) {
+            const tableBody = document.querySelector('#stockConsumptionTable tbody');
+            const tableFoot = document.querySelector('#stockConsumptionTable tfoot');
+            if (!tableBody || !tableFoot) return;
+
+            let html = '';
+            let rowIndex = 0;
+            
+            const stockMonthTotalsReceived = {};
+            const stockMonthTotalsReceivedTop10 = {};
+            monthLabels.forEach(m => {
+                stockMonthTotalsReceived[m] = 0;
+                stockMonthTotalsReceivedTop10[m] = 0;
+            });
+
+            let grandTotalReceived = 0;
+            let top10TotalReceived = 0;
+            let grandTotalUsed = 0;
+            let top10TotalUsed = 0;
+            let grandBalance = 0;
+            let top10Balance = 0;
+
+            for (const [itemName, data] of Object.entries(stockData)) {
+                rowIndex++;
+                grandTotalReceived += Number(data.total_received || 0);
+                grandTotalUsed += Number(data.total_used || 0);
+                grandBalance += Number(data.current_stock || 0);
+
+                if (rowIndex <= 10) {
+                    top10TotalReceived += Number(data.total_received || 0);
+                    top10TotalUsed += Number(data.total_used || 0);
+                    top10Balance += Number(data.current_stock || 0);
+                }
+
+                const rowClass = rowIndex > 10 ? 'no-print-row' : '';
+                
+                html += `<tr class="hover:bg-blue-50 ${rowClass}">
+                    <td class="px-2 py-1 whitespace-nowrap text-sm font-medium text-gray-900 border-r border-gray-200 sticky left-0 bg-white z-10">
+                        ${itemName}
+                    </td>`;
+
+                monthLabels.forEach(month => {
+                    const receivedQty = Number(data.monthly_received_data[month] || 0);
+                    stockMonthTotalsReceived[month] += receivedQty;
+                    if (rowIndex <= 10) {
+                        stockMonthTotalsReceivedTop10[month] += receivedQty;
+                    }
+                    html += `<td class="px-4 py-1 whitespace-nowrap text-sm text-center text-blue-600 font-semibold border-r border-gray-200" style="background-color: #eff6ff;">
+                        ${receivedQty > 0 ? receivedQty : '-'}
+                    </td>`;
+                });
+
+                html += `<td class="px-4 py-1 whitespace-nowrap text-sm text-center font-bold text-gray-700 border-r border-gray-200">
+                        ${data.total_received}
+                    </td>
+                    <td class="px-4 py-1 whitespace-nowrap text-sm text-center font-bold text-red-600 border-r border-gray-200">
+                        ${data.total_used}
+                    </td>
+                    <td class="px-4 py-1 whitespace-nowrap text-sm text-center font-bold text-green-600">
+                        ${data.current_stock}
+                    </td>
+                </tr>`;
+            }
+
+            tableBody.innerHTML = html;
+
+            // Update footer
+            let footHtml = `<tr class="border-t-2 border-gray-400 no-print">
+                <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 sticky left-0 bg-gray-100 z-10">
+                    Total (Top 10)
+                </td>`;
+            
+            monthLabels.forEach(month => {
+                footHtml += `<td class="px-4 py-4 whitespace-nowrap text-sm text-center text-blue-600 border-r border-gray-200">
+                    ${stockMonthTotalsReceivedTop10[month]}
+                </td>`;
+            });
+
+            footHtml += `<td class="px-4 py-4 whitespace-nowrap text-sm text-center text-gray-900 border-r border-gray-200">${top10TotalReceived}</td>
+                <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-red-600 border-r border-gray-200">${top10TotalUsed}</td>
+                <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-green-600">${top10Balance}</td>
+            </tr>
+            <tr class="border-t-2 border-gray-400 no-print-row">
+                <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 sticky left-0 bg-gray-100 z-10">
+                    Grand Total
+                </td>`;
+
+            monthLabels.forEach(month => {
+                footHtml += `<td class="px-4 py-4 whitespace-nowrap text-sm text-center text-blue-600 border-r border-gray-200">
+                    ${stockMonthTotalsReceived[month]}
+                </td>`;
+            });
+
+            footHtml += `<td class="px-4 py-4 whitespace-nowrap text-sm text-center text-gray-900 border-r border-gray-200">${grandTotalReceived}</td>
+                <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-red-600 border-r border-gray-200">${grandTotalUsed}</td>
+                <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-green-600">${grandBalance}</td>
+            </tr>`;
+
+            tableFoot.innerHTML = footHtml;
         }
 
         function updateStats(stats) {
