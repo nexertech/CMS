@@ -468,8 +468,8 @@
                         <td class="value" style="font-size: 16px;">#{{ $complaint->id }}</td>
                     </tr>
                     <tr>
-                        <td class="label">Type:</td>
-                        <td class="value">{{ ucfirst($complaint->category) }}</td>
+                        <td class="label">Nature & Type:</td>
+                        <td class="value">{{ ucfirst($complaint->getCategoryDisplayAttribute()) . ' - ' . ($complaint->assignedEmployee->designation->name ?? $complaint->assignedEmployee->designation ?? 'N/A') }}</td>
                     </tr>
                     <tr>
                         <td class="label">Priority:</td>
@@ -510,7 +510,7 @@
                     {{ $complaint->assignedEmployee->name ?? 'Unassigned' }}
                     @if($complaint->assignedEmployee && $complaint->assignedEmployee->designation)
                         <span style="font-weight: 400; color: var(--secondary-color);"> -
-                            {{ $complaint->assignedEmployee->designation }}</span>
+                            {{ $complaint->assignedEmployee->designation->name ?? $complaint->assignedEmployee->designation ?? 'N/A' }}</span>
                     @endif
                 </div>
             </div>

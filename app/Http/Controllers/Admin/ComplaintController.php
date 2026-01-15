@@ -132,7 +132,7 @@ class ComplaintController extends Controller
         $query->with(['client', 'assignedEmployee', 'house', 'category', 'complaintTitle']) // Added relations
               ->reorder()
               ->orderBy('id', 'desc');
-        $complaints = $query->paginate(15);
+        $complaints = $query->paginate(12)->withQueryString();
 
         // Filter employees by location
         $employeesQuery = Employee::where('status', 'active');
@@ -878,7 +878,7 @@ class ComplaintController extends Controller
      */
     public function printSlip(Complaint $complaint)
     {
-        $complaint->load(['client', 'assignedEmployee', 'attachments', 'house']);
+        $complaint->load(['client', 'assignedEmployee.designation', 'attachments', 'house', 'category', 'city', 'sector']);
 
         return view('admin.complaints.print-slip', compact('complaint'));
     }

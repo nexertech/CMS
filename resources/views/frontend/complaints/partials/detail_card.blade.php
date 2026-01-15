@@ -40,9 +40,10 @@
 
   $currentStatusColor = $statusColors[$complaintStatus] ?? $statusColors['assigned'];
   
-  $category = $complaint->category->name ?? 'N/A';
-  $designation = $complaint->assignedEmployee->designation->name ?? 'N/A';
-  $displayText = ucfirst($category) . ' - ' . $designation;
+  $category = $complaint->category_id ?? 'N/A';
+  $designation = $complaint->assignedEmployee->designation->name ?? $complaint->assignedEmployee->designation ?? 'N/A';
+  $catDisplay = $complaint->getCategoryDisplayAttribute();
+  $displayText = $catDisplay . ' - ' . $designation;
 @endphp
 <style>
   /* Navy Theme Colors & Card Styles */
@@ -273,7 +274,7 @@
                         <i data-feather="user-check" class="me-3 text-muted"></i>
                          <div class="w-100 d-flex justify-content-between">
                             <span class="text-muted small text-uppercase">Assigned To:</span>
-                            <span class="fw-medium text-dark text-end">{{ $complaint->assignedEmployee->name ?? 'Unassigned' }}</span>
+                            <span class="fw-medium text-dark text-end">{{ $complaint->assignedEmployee->name ?? 'Unassigned' }} @if($complaint->assignedEmployee && $designation !== 'N/A') <span class="text-muted small">({{ $designation }})</span> @endif</span>
                         </div>
                     </div>
                 </div>

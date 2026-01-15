@@ -48,20 +48,9 @@
   ];
   $currentStatusColor = $statusColors[$complaintStatus] ?? $statusColors['assigned'];
   
-  $category = $complaint->category ?? 'N/A';
-  $designation = $complaint->assignedEmployee->designation ?? 'N/A';
-  $categoryDisplay = [
-    'electric' => 'Electric',
-    'technical' => 'Technical',
-    'service' => 'Service',
-    'billing' => 'Billing',
-    'water' => 'Water Supply',
-    'sanitary' => 'Sanitary',
-    'plumbing' => 'Plumbing',
-    'kitchen' => 'Kitchen',
-    'other' => 'Other',
-  ];
-  $catDisplay = $categoryDisplay[strtolower($category)] ?? ucfirst($category);
+  $category = $complaint->category_id ?? 'N/A';
+  $designation = $complaint->assignedEmployee->designation->name ?? $complaint->assignedEmployee->designation ?? 'N/A';
+  $catDisplay = $complaint->getCategoryDisplayAttribute();
   $displayText = $catDisplay . ' - ' . $designation;
 @endphp
 
@@ -203,7 +192,7 @@
                             <div class="fw-medium text-dark">
                                 {{ $complaint->assignedEmployee->name ?? 'Unassigned' }}
                                 @if($complaint->assignedEmployee && $complaint->assignedEmployee->designation) 
-                                    <span class="text-muted small">({{ $complaint->assignedEmployee->designation }})</span>
+                                    <span class="text-muted small">({{ $designation }})</span>
                                 @endif
                             </div>
                         </div>

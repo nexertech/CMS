@@ -124,7 +124,9 @@
                         <th style="width: 130px;">Registration Date/Time</th>
                         <th style="width: 130px; text-align: left;">Addressed Time</th>
                         <th style="width: 100px;">House No.</th>
+                        @if(!request('modal'))
                         <th style="width: 120px;">Complainant Name</th>
+                        @endif
                         <th style="width: 150px;">Address</th>
                         <th style="width: 250px;">Nature & Type</th>
                         <th style="width: 100px;">Priority</th>
@@ -142,7 +144,9 @@
                             <td style="white-space: nowrap;">{{ $complaint->created_at ? $complaint->created_at->timezone('Asia/Karachi')->format('M d, Y H:i:s') : '' }}</td>
                             <td style="white-space: nowrap; text-align: {{ $complaint->closed_at ? 'left' : 'center' }};">{{ $complaint->closed_at ? $complaint->closed_at->timezone('Asia/Karachi')->format('M d, Y H:i:s') : '-' }}</td>
                             <td style="white-space: nowrap;">{{ $complaint->house->house_no ?? 'N/A' }}</td>
+                            @if(!request('modal'))
                             <td style="white-space: nowrap;">{{ $complaint->client->client_name ?? 'N/A' }}</td>
+                            @endif
                             <td>{{ $complaint->client->address ?? 'N/A' }}</td>
                             <td style="white-space: nowrap;">
                                 @php

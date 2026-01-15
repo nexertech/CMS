@@ -1211,6 +1211,17 @@ class HomeController extends Controller
             ->groupBy('city_id', 'sector_id', 'month')
             ->get();
 
+            // PRE-CALCULATE MAPPINGS FOR ACCURATE ATTRIBUTION
+            $cityCmeMap = [];
+            $sectorCmeMap = [];
+            $sectorCityMap = [];
+
+            if ($entityType === 'cme') {
+                $cityCmeMap = \App\Models\City::whereIn('id', $allStats->pluck('city_id')->filter()->unique())->pluck('cme_id', 'id')->toArray();
+                $sectorCmeMap = \App\Models\Sector::whereIn('id', $allStats->pluck('sector_id')->filter()->unique())->pluck('cme_id', 'id')->toArray();
+                $sectorCityMap = \App\Models\Sector::whereIn('id', $allStats->pluck('sector_id')->filter()->unique())->pluck('city_id', 'id')->toArray();
+            }
+
             // Mapping results in memory for performance
             foreach ($months as $mNum => $mName) {
                 foreach ($tableEntities as $entity) {
@@ -1221,14 +1232,17 @@ class HomeController extends Controller
                         
                         $match = false;
                         if ($entityType === 'cme') {
-                            // Needs more complex check but for dashboard summary, this is usually enough
-                            // Ideally we'd have a mapping of city/sector to CME but let's approximate or fetch mapping
-                            // For millisecond goal, we use a cached mapping if possible
-                            // For now, assume city/sector belongs to CME if they match the query criteria
-                            $match = true; // Placeholder for simpler logic since we filtered the query already
+                            // Match Graph Logic: city_id in CME cities OR sector_id in CME sectors (direct)
+                            if ($stat->city_id && isset($cityCmeMap[$stat->city_id]) && $cityCmeMap[$stat->city_id] == $entity->id) {
+                                $match = true;
+                            } elseif ($stat->sector_id && isset($sectorCmeMap[$stat->sector_id]) && $sectorCmeMap[$stat->sector_id] == $entity->id) {
+                                $match = true;
+                            }
                         } elseif ($entityType === 'city') {
+                            // Match Graph Logic (isCmeUser): only check city_id
                             if ($stat->city_id == $entity->id) $match = true;
                         } else {
+                            // Match Graph Logic (isGeUser/isNodeUser): only check sector_id
                             if ($stat->sector_id == $entity->id) $match = true;
                         }
 
@@ -1390,7 +1404,7 @@ class HomeController extends Controller
      */
     public function feedback($id)
     {
-        $complaint = Complaint::findOrFail($id);
+        $complaint = Complaint::with(['category', 'assignedEmployee.designation', 'client'])->findOrFail($id);
 
         // If feedback already exists, show success message
         if (\App\Models\ComplaintFeedback::where('complaint_id', $id)->exists()) {
@@ -1465,7 +1479,8 @@ class HomeController extends Controller
             'client',
             'city',
             'sector',
-            'assignedEmployee',
+            'category',
+            'assignedEmployee.designation',
             'attachments',
             'spareApprovals',
             'feedback.enteredBy'

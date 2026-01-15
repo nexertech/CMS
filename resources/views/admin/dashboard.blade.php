@@ -880,13 +880,12 @@
                     <table class="table table-dark table-sm table-compact mb-0" style="width: 100%; border-collapse: collapse;">
                         <thead>
                             <tr>
-                                <th style="width: 8%;">CMP-ID</th>
+                                <th style="width: 10%;">CMP-ID</th>
                                 <th style="width: 12%;">Reg. Date</th>
                                 <th style="width: 12%; text-align: left;">Addr. Time</th>
-                                <th style="width: 8%;">House</th>
-                                <th style="width: 12%;">Complainant</th>
-                                <th style="width: 15%;">Address</th>
-                                <th style="width: 18%;">Nature & Type</th>
+                                <th style="width: 10%;">House</th>
+                                <th style="width: 20%;">Address</th>
+                                <th style="width: 21%;">Nature & Type</th>
                                 <th style="width: 8%;">Priority</th>
                                 <th style="width: 7%;">Act</th>
                             </tr>
@@ -1963,7 +1962,7 @@
         const tbody = document.getElementById('modalComplaintsTableBody');
         const paginationContainer = document.getElementById('modalPaginationContainer');
 
-        let url = "{{ route('admin.complaints.index') }}";
+        let url = "{{ route('admin.complaints.index') }}?modal=1";
         let title = 'Complaints';
 
         // Map params to titles and query params
@@ -1971,14 +1970,14 @@
             title = 'Total Complaints';
         } else if (param === 'overdue') {
             title = 'Overdue Complaints';
-            url += '?filter=overdue';
+            url += '&filter=overdue';
         } else {
             title = formatTitle(param) + ' Complaints';
-            url += '?status=' + param;
+            url += '&status=' + param;
         }
 
         titleEl.innerHTML = `<i data-feather="list" class="me-2"></i>${title}`;
-        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
         paginationContainer.innerHTML = '';
         
         // Add blur effect
@@ -2013,7 +2012,7 @@
                 // Initialize icons
                 feather.replace();
             } else {
-                tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4">No complaints found.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">No complaints found.</td></tr>';
             }
 
             if (newPagination) {
@@ -2026,7 +2025,7 @@
                         e.preventDefault();
                         const href = this.getAttribute('href');
                         if (href) {
-                            tbody.innerHTML = '<tr><td colspan="9" class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
+                            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
                             fetch(href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                                 .then(res => res.text())
                                 .then(pageHtml => {
@@ -2044,7 +2043,7 @@
         })
         .catch(err => {
             console.error(err);
-            tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-danger">Error loading data.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-danger">Error loading data.</td></tr>';
         });
     }
 

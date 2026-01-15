@@ -48,8 +48,8 @@
                 <div class="mb-6 bg-blue-50 p-4 rounded-lg">
                     <h3 class="font-semibold text-blue-900 mb-2">Complaint Details</h3>
                     <p class="text-sm text-blue-800"><span class="font-medium">Title:</span> {{ $complaint->title }}</p>
-                    <p class="text-sm text-blue-800"><span class="font-medium">Category:</span>
-                        {{ ucfirst($complaint->category) }}</p>
+                    <p class="text-sm text-blue-800"><span class="font-medium">Nature & Type:</span>
+                        {{ ucfirst($complaint->getCategoryDisplayAttribute()) . ' - ' . ($complaint->assignedEmployee->designation->name ?? $complaint->assignedEmployee->designation ?? 'N/A') }}</p>
                     <p class="text-sm text-blue-800"><span class="font-medium">Assigned To:</span>
                         {{ $complaint->assignedEmployee->name ?? 'Unassigned' }}</p>
                 </div>
