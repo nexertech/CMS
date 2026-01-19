@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\House;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
+use App\Models\LoginHistory;
 
 class HouseAuthController extends Controller
 {
@@ -37,6 +39,15 @@ class HouseAuthController extends Controller
         // $house->tokens()->delete();
 
         $token = $house->createToken('house-app-token')->plainTextToken;
+
+        LoginHistory::create([
+            'user_id' => $house->id,
+            'user_type' => get_class($house),
+            'username' => $house->username,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'source' => 'app',
+        ]);
 
         return response()->json([
             'success' => true,

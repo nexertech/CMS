@@ -33,6 +33,16 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // Log the login
+        \App\Models\LoginHistory::create([
+            'user_id' => Auth::id(),
+            'user_type' => get_class(Auth::user()),
+            'username' => Auth::user()->username ?? Auth::user()->email,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'source' => 'admin',
+        ]);
+
         // Always direct backend (web guard) logins to the admin dashboard
         return redirect()->route('admin.dashboard');
     }

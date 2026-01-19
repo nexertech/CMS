@@ -33,8 +33,8 @@
             padding: 0;
             color: var(--primary-color);
             background: white;
-            line-height: 1.4;
-            font-size: 11px;
+            line-height: 1.3;
+            font-size: 10.5px;
         }
 
         .container {
@@ -42,7 +42,7 @@
             /* A4 width approx */
             margin: 0 auto;
             background: white;
-            padding: 25px;
+            padding: 10px 20px;
         }
 
         /* Header */
@@ -50,14 +50,14 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            padding-bottom: 12px;
+            padding-bottom: 8px;
             border-bottom: 2px solid var(--primary-color);
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
 
         .brand-section h1 {
             margin: 0;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 700;
             letter-spacing: -0.5px;
             text-transform: uppercase;
@@ -91,8 +91,8 @@
         .grid-2 {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 25px;
-            margin-bottom: 20px;
+            gap: 20px;
+            margin-bottom: 12px;
         }
 
         .section-title {
@@ -100,9 +100,9 @@
             font-weight: 700;
             text-transform: uppercase;
             color: var(--secondary-color);
-            margin-bottom: 10px;
+            margin-bottom: 6px;
             border-bottom: 1px solid var(--border-color);
-            padding-bottom: 5px;
+            padding-bottom: 3px;
             letter-spacing: 0.5px;
         }
 
@@ -190,8 +190,8 @@
             background: var(--bg-light);
             border: 1px solid var(--border-color);
             border-radius: 4px;
-            padding: 12px;
-            margin-bottom: 18px;
+            padding: 10px;
+            margin-bottom: 10px;
         }
 
         .description-box p {
@@ -230,8 +230,8 @@
         .feedback-container {
             border: 2px dashed var(--border-color);
             border-radius: 5px;
-            padding: 12px;
-            margin-top: 15px;
+            padding: 10px;
+            margin-top: 10px;
             page-break-inside: avoid;
         }
 
@@ -267,7 +267,7 @@
         .rating-options {
             display: flex;
             justify-content: space-around;
-            margin-bottom: 15px;
+            margin-bottom: 8px;
         }
 
         .rating-box {
@@ -305,8 +305,8 @@
 
         /* Signature Line */
         .signature-area {
-            margin-top: 12px;
-            padding-top: 12px;
+            margin-top: 8px;
+            padding-top: 8px;
             border-top: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
@@ -314,7 +314,7 @@
         }
 
         .sign-line {
-            width: 180px;
+            width: 150px;
             border-bottom: 1px dashed #333;
             text-align: center;
             font-size: 10px;
@@ -354,12 +354,12 @@
 
         /* Footer */
         .footer {
-            margin-top: 40px;
+            margin-top: 20px;
             text-align: center;
             font-size: 10px;
             color: var(--secondary-color);
             border-top: 1px solid var(--border-color);
-            padding-top: 15px;
+            padding-top: 10px;
         }
 
         @media print {
@@ -503,7 +503,7 @@
 
         <!-- Assignment Info -->
         <div
-            style="margin-bottom: 30px; border: 1px solid var(--border-color); padding: 15px; border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
+            style="margin-bottom: 15px; border: 1px solid var(--border-color); padding: 10px; border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
             <div>
                 <div class="label" style="width: auto; margin-bottom: 2px;">Assigned Technician:</div>
                 <div class="value" style="font-size: 15px;">
@@ -530,10 +530,10 @@
 
         <!-- Technician Remarks -->
         <div class="section-title">Technician Remarks / Work Done</div>
-        <div class="description-box" style="min-height: 100px; border: 1px dashed var(--secondary-color);">
-            <div style="border-bottom: 1px dotted var(--border-color); margin-top: 20px;"></div>
-            <div style="border-bottom: 1px dotted var(--border-color); margin-top: 20px;"></div>
-            <div style="border-bottom: 1px dotted var(--border-color); margin-top: 20px;"></div>
+        <div class="description-box" style="min-height: 60px; border: 1px dashed var(--secondary-color);">
+            <div style="border-bottom: 1px dotted var(--border-color); margin-top: 15px;"></div>
+            <div style="border-bottom: 1px dotted var(--border-color); margin-top: 15px;"></div>
+            <div style="border-bottom: 1px dotted var(--border-color); margin-top: 15px;"></div>
         </div>
 
         <!-- Feedback & Closing Section -->

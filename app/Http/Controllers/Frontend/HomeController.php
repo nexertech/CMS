@@ -501,6 +501,7 @@ class HomeController extends Controller
             'barak_damages' => $statsDataAggregation->barak_damages ?? 0,
             'work_priced_performa' => $statsDataAggregation->work_priced_performa ?? 0,
             'maint_priced_performa' => $statsDataAggregation->maint_priced_performa ?? 0,
+            'product' => $statsDataAggregation->product_na ?? 0,
         ];
 
         // Status-wise counts for the pie chart - Group closed with resolved for consistency

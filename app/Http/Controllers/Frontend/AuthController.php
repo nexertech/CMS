@@ -50,7 +50,29 @@ class AuthController extends Controller
         ]);
 
         if (Auth::guard('frontend')->attempt($credentials, false)) {
+            // Check if user is active
+            $user = Auth::guard('frontend')->user();
+            
+            if ($user->status !== 'active') {
+                Auth::guard('frontend')->logout();
+                
+                return back()->withErrors([
+                    'username' => 'Your account has been deactivated. Please contact the administrator.',
+                ])->onlyInput('username');
+            }
+            
             $request->session()->regenerate();
+
+            // Log the login
+            \App\Models\LoginHistory::create([
+                'user_id' => $user->id,
+                'user_type' => get_class($user),
+                'username' => $user->username,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'source' => 'web',
+            ]);
+
             return redirect()->route('frontend.dashboard');
         }
 
