@@ -1569,6 +1569,8 @@
 @endpush
 
 @push('scripts')
+@include('admin.complaints.partials.form_scripts')
+
   <script>
     feather.replace();
 
@@ -1906,21 +1908,22 @@
         // Extract content section
         let contentSection = doc.querySelector('section.content') || doc.querySelector('.content') || doc.body;
         
-        // Remove scripts we don't need in modal
+        // Remove scripts we don't need in modal (since we have them globally now)
         contentSection.querySelectorAll('script').forEach(s => s.remove());
 
         modalBody.innerHTML = contentSection.innerHTML;
 
-        // Initialize any Select2 or other required JS for the loaded content
+        // Initialize using the shared global function
         setTimeout(() => {
-          feather.replace();
-          // If the edit form uses Select2 and it's available, initialize it
-          if (typeof $ !== 'undefined' && $.fn.select2) {
-             $(modalBody).find('.select2').select2({
-               dropdownParent: $(modalElement)
-             });
+          if (typeof window.initializeComplaintForm === 'function') {
+            console.log('Initializing complaint form in modal using shared logic');
+            window.initializeComplaintForm(modalBody);
+          } else {
+            console.error('initializeComplaintForm function not found!');
+            // Fallback: Re-init feather at least
+            feather.replace();
           }
-        }, 100);
+        }, 150);
       })
       .catch(error => {
         console.error('Error loading edit form:', error);

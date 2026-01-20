@@ -30,4 +30,12 @@ class ComplaintCategory extends Model
     {
         return $this->hasMany(Complaint::class, 'category_id', 'id');
     }
+
+    /**
+     * Get the complaint titles for the category.
+     */
+    public function titles()
+    {
+        return $this->hasMany(ComplaintTitle::class, 'category_id', 'id');
+    }
 }

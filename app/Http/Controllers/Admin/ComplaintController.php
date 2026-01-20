@@ -355,16 +355,6 @@ class ComplaintController extends Controller
         
         $employeesQuery = Employee::where('status', 'active')->orderBy('name');
 
-        // Filter by Complaint's Category
-        if ($complaint->category_id) {
-            $employeesQuery->where('category_id', $complaint->category_id);
-        }
-
-        // Filter by Complaint's Sector
-        if ($complaint->sector_id) {
-            $employeesQuery->where('sector_id', $complaint->sector_id);
-        }
-
         $this->filterEmployeesByLocation($employeesQuery, Auth::user());
         $employees = $employeesQuery->get();
         
