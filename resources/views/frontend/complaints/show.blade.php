@@ -17,8 +17,9 @@
 
 @php
   $rawStatus = $complaint->status ?? 'new';
-  $complaintStatus = ($rawStatus == 'new') ? 'assigned' : $rawStatus;
+  $complaintStatus = ($rawStatus == 'new') ? 'unassigned' : $rawStatus;
   $statusLabels = [
+    'unassigned' => 'Unassigned',
     'assigned' => 'Assigned',
     'in_progress' => 'In Progress',
     'resolved' => 'Addressed',
@@ -34,6 +35,7 @@
   ];
   $statusDisplay = $statusLabels[$complaintStatus] ?? ucfirst(str_replace('_', ' ', $complaintStatus));
   $statusColors = [
+    'unassigned' => ['bg' => '#000000', 'text' => '#ffffff', 'border' => '#000000'],
     'in_progress' => ['bg' => '#dc2626', 'text' => '#ffffff', 'border' => '#b91c1c'],
     'resolved' => ['bg' => '#64748b', 'text' => '#ffffff', 'border' => '#475569'], // Grey (swapped from green)
     'work_performa' => ['bg' => '#60a5fa', 'text' => '#ffffff', 'border' => '#3b82f6'],
@@ -46,7 +48,7 @@
     'barak_damages' => ['bg' => '#808000', 'text' => '#ffffff', 'border' => '#666600'],
     'assigned' => ['bg' => '#16a34a', 'text' => '#ffffff', 'border' => '#15803d'], // Green (swapped from grey)
   ];
-  $currentStatusColor = $statusColors[$complaintStatus] ?? $statusColors['assigned'];
+  $currentStatusColor = $statusColors[$complaintStatus] ?? $statusColors['unassigned'];
   
   $category = $complaint->category_id ?? 'N/A';
   $designation = $complaint->assignedEmployee->designation->name ?? $complaint->assignedEmployee->designation ?? 'N/A';

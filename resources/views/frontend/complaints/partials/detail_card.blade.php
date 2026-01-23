@@ -1,9 +1,10 @@
 @php
   // Status Logic
   $rawStatus = $complaint->status ?? 'new';
-  $complaintStatus = ($rawStatus == 'new') ? 'assigned' : $rawStatus;
+  $complaintStatus = ($rawStatus == 'new') ? 'unassigned' : $rawStatus;
   
   $statusLabels = [
+    'unassigned' => 'Unassigned',
     'assigned' => 'Assigned',
     'in_progress' => 'In Progress',
     'resolved' => 'Addressed',
@@ -22,6 +23,7 @@
   $statusDisplay = $statusLabels[$complaintStatus] ?? ucfirst(str_replace('_', ' ', $complaintStatus));
 
   $statusColors = [
+      'unassigned' => ['bg' => '#000000', 'text' => '#ffffff'],  // Black
       'in_progress' => ['bg' => '#dc2626', 'text' => '#ffffff'],
       'resolved' => ['bg' => '#64748b', 'text' => '#ffffff'],   // Slate/Grey
       'closed' => ['bg' => '#64748b', 'text' => '#ffffff'],      // Slate/Grey
@@ -34,11 +36,11 @@
       'pertains_to_ge_const_isld' => ['bg' => '#06b6d4', 'text' => '#ffffff'],
       'barak_damages' => ['bg' => '#808000', 'text' => '#ffffff'],
       'assigned' => ['bg' => '#16a34a', 'text' => '#ffffff'],    // Green
-      'new' => ['bg' => '#16a34a', 'text' => '#ffffff'],         // Green
+      'new' => ['bg' => '#000000', 'text' => '#ffffff'],         // Black
       'pending' => ['bg' => '#f59e0b', 'text' => '#000000'],     // Orange
   ];
 
-  $currentStatusColor = $statusColors[$complaintStatus] ?? $statusColors['assigned'];
+  $currentStatusColor = $statusColors[$complaintStatus] ?? $statusColors['unassigned'];
   
   $category = $complaint->category_id ?? 'N/A';
   $designation = $complaint->assignedEmployee->designation->name ?? $complaint->assignedEmployee->designation ?? 'N/A';

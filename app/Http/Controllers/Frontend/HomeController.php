@@ -517,7 +517,7 @@ class HomeController extends Controller
             unset($complaintsByStatus['closed']);
         }
         if (isset($complaintsByStatus['new'])) {
-             $complaintsByStatus['assigned'] = ($complaintsByStatus['assigned'] ?? 0) + $complaintsByStatus['new'];
+             $complaintsByStatus['unassigned'] = ($complaintsByStatus['unassigned'] ?? 0) + $complaintsByStatus['new'];
              unset($complaintsByStatus['new']);
         }
 
@@ -581,7 +581,7 @@ class HomeController extends Controller
             ->get()
             ->map(function ($complaint) use ($performaStatuses) {
                 // Reuse similar formatting logic
-                $statusKey = $complaint->status === 'new' ? 'assigned' : $complaint->status;
+                $statusKey = $complaint->status === 'new' ? 'unassigned' : $complaint->status;
                 $statusKey = $statusKey === 'closed' ? 'resolved' : $statusKey;
 
                 $statusLabel = $statusKey === 'resolved'
@@ -655,7 +655,7 @@ class HomeController extends Controller
             ->orderBy('id', 'desc')
             ->get()
             ->map(function ($complaint) use ($performaStatuses) {
-                $statusKey = $complaint->status === 'new' ? 'assigned' : $complaint->status;
+                $statusKey = $complaint->status === 'new' ? 'unassigned' : $complaint->status;
                 $statusKey = $statusKey === 'closed' ? 'resolved' : $statusKey;
 
                 $statusLabel = $statusKey === 'resolved'

@@ -1225,6 +1225,7 @@
         const pageSize = 15;
 
         const statusBadgeColors = {
+            unassigned: '#000000',             // Black for unassigned
             assigned: '#16a34a',
             in_progress: '#ec5454',
             resolved: '#64748b',
@@ -1240,6 +1241,7 @@
 
         // Short labels to match admin badges
         const statusLabelOverrides = {
+            unassigned: 'Unassigned',
             pertains_to_ge_const_isld: 'Pertains to GE',
             work_performa: 'Work Performa',
             maint_performa: 'Maint Performa',
@@ -2128,7 +2130,8 @@
             'pertains_to_ge_const_isld': { label: 'Pertains to GE(N)', color: '#06b6d4' }, // Aqua/Cyan
             'barak_damages': { label: 'Barak Damages', color: '#808000' }, // Olive
             'closed': { label: 'Closed', color: '#6b7280' }, // Grey
-            'new': { label: 'New', color: '#3b82f6' } // Blue
+            'unassigned': { label: 'Unassigned', color: '#000000' }, // Black
+            'new': { label: 'Unassigned', color: '#000000' } // Black
         };
 
         const statusKeys = Object.keys(complaintsByStatus);

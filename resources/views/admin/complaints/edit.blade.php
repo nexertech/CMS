@@ -4,14 +4,14 @@
 
 @section('content')
 <!-- PAGE HEADER -->
-<div class="mb-4">
+<!-- <div class="mb-4">
     <div class="d-flex justify-content-between align-items-center">
         <div>
             <h2 class="text-white mb-2">Edit Complaint</h2>
             <p class="text-light">Modify complaint details</p>
         </div>
     </div>
-</div>
+</div> -->
 
 <!-- COMPLAINT FORM -->
 <div class="card-glass">
