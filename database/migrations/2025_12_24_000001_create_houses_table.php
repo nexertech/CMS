@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('username', 150)->unique();
             $table->string('house_no', 150)->nullable();
             $table->string('password');
+            $table->string('fcm_token', 255)->nullable();
             $table->string('name')->nullable();
             $table->string('phone')->nullable();
             $table->unsignedBigInteger('city_id');

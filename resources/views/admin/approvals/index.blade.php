@@ -611,6 +611,10 @@
                       onclick="viewApproval({{ $approval->id }})" style="padding: 1px 3px;">
                       <i data-feather="eye" style="width: 12px; height: 12px;"></i>
                     </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm" title="Edit Complaint"
+                      onclick="editComplaintModal({{ $complaint->id }})" style="padding: 1px 3px;">
+                      <i data-feather="edit" style="width: 12px; height: 12px;"></i>
+                    </button>
                     @if($complaintStatus == 'resolved' || $complaintStatus == 'closed')
                       <button type="button" class="btn btn-outline-secondary btn-sm add-stock-btn"
                         title="Stock cannot be issued" data-approval-id="{{ $approval->id }}"
@@ -4385,6 +4389,15 @@
           return v;
         };
         newStatus = normalize(newStatus);
+
+        // Prevent status change if unassigned (unless selecting assigned)
+        const currentActualStatus = select.getAttribute('data-actual-status');
+        if (currentActualStatus === 'new' && newStatus !== 'assigned') {
+            alert('First assigned the complaint');
+            select.value = 'unassigned';
+            updateStatusSelectColor(select, 'unassigned');
+            return;
+        }
 
         // Store original status before any modifications for special options
         let originalStatusForSpecialOption = null;

@@ -11,7 +11,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 class House extends Model
 {
-    use HasApiTokens, HasFactory, SoftDeletes;
+    use HasApiTokens, HasFactory, SoftDeletes, \Illuminate\Notifications\Notifiable;
 
     protected $fillable = [
         'username',
@@ -23,6 +23,7 @@ class House extends Model
         'sector_id',
         'address',
         'status',
+        'fcm_token',
     ];
 
     protected $hidden = [
@@ -66,5 +67,16 @@ class House extends Model
     public function complaints()
     {
         return $this->hasMany(Complaint::class, 'house_id');
+    }
+    /**
+     * Route notifications for the FCM channel.
+     *
+     * @return string|null
+     */
+    public function routeNotificationForFcm($notification)
+    {
+        // Return the user's FCM token from the database
+        // You will need to add an 'fcm_token' column to your houses table
+        return $this->fcm_token;
     }
 }

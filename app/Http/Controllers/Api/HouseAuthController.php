@@ -17,6 +17,7 @@ class HouseAuthController extends Controller
         $request->validate([
             'username' => 'required',
             'password' => 'required',
+            'fcm_token' => 'nullable|string|max:255',
         ]);
 
         $house = House::where('username', $request->username)->first();
@@ -37,6 +38,12 @@ class HouseAuthController extends Controller
 
         // Delete existing tokens if you want single session, or keep them
         // $house->tokens()->delete();
+
+        // Update FCM token if provided
+        if ($request->filled('fcm_token')) {
+            $house->fcm_token = $request->fcm_token;
+            $house->save();
+        }
 
         $token = $house->createToken('house-app-token')->plainTextToken;
 
@@ -71,6 +78,55 @@ class HouseAuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Logged out successfully'
+        ]);
+    }
+
+    /**
+     * Change password for authenticated house
+     */
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required',
+            'new_password' => 'required|min:8',
+            'confirm_password' => 'required|same:new_password',
+        ]);
+
+        $house = $request->user();
+
+        // Manual token check if middleware doesn't auto-resolve
+        if (!$house) {
+            $token = $request->bearerToken();
+            if ($token) {
+                $personalAccessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
+                if ($personalAccessToken && $personalAccessToken->tokenable_type === House::class) {
+                    $house = $personalAccessToken->tokenable;
+                }
+            }
+        }
+
+        if (!$house) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 401);
+        }
+
+        // Verify current password
+        if (!Hash::check($request->current_password, $house->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Current password is incorrect'
+            ], 422);
+        }
+
+        // Update password
+        $house->password = $request->new_password;
+        $house->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password changed successfully'
         ]);
     }
 }

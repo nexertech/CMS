@@ -200,7 +200,12 @@ class ComplaintController extends Controller
             'method' => $request->method(),
         ]);
 
-        $validator = Validator::make($request->all(), [
+        $data = $request->all();
+        if (isset($data['complaint_title_id']) && $data['complaint_title_id'] === 'other') {
+            $data['complaint_title_id'] = null;
+        }
+
+        $validator = Validator::make($data, [
             'title' => 'nullable|string|max:255', // Now holds custom title or "Other"
             'complaint_title_id' => 'nullable|exists:complaint_titles,id', // Holds selected title ID
             'title_other' => 'nullable|string|max:255',
@@ -395,7 +400,12 @@ class ComplaintController extends Controller
      */
     public function update(Request $request, Complaint $complaint)
     {
-        $validator = Validator::make($request->all(), [
+        $data = $request->all();
+        if (isset($data['complaint_title_id']) && $data['complaint_title_id'] === 'other') {
+            $data['complaint_title_id'] = null;
+        }
+
+        $validator = Validator::make($data, [
             'title' => 'nullable|string|max:255',
             'complaint_title_id' => 'nullable|exists:complaint_titles,id',
             'title_other' => 'nullable|string|max:255',
@@ -725,6 +735,18 @@ class ComplaintController extends Controller
                 'action' => 'status_changed',
                 'remarks' => $logRemarks,
             ]);
+        }
+
+        // Send Notification to the House (User)
+        // Ensure we load the house relationship
+        $house = $complaint->house;
+        if ($house) {
+            try {
+                $house->notify(new \App\Notifications\ComplaintStatusUpdated($complaint, $request->status));
+            } catch (\Exception $e) {
+                // Log error but don't fail the written request
+                \Illuminate\Support\Facades\Log::error('Notification Failed: ' . $e->getMessage());
+            }
         }
 
         // Return JSON for AJAX requests

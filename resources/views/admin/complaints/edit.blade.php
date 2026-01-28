@@ -208,7 +208,9 @@
             </div>
 
             <div class="d-flex justify-content-end gap-2">
-                <a href="{{ route('admin.complaints.index') }}" class="btn btn-outline-secondary">Cancel</a>
+                <a href="{{ request('redirect_to', route('admin.complaints.index')) }}" 
+                   class="btn btn-outline-secondary"
+                   onclick="if(typeof closeComplaintModal === 'function') { event.preventDefault(); closeComplaintModal(); }">Cancel</a>
                 <button type="submit" class="btn btn-primary">Update Complaint</button>
             </div>
         </form>

@@ -43,7 +43,12 @@ window.initializeComplaintForm = function(root = document) {
             
             const matchCategory = !category || String(optCategory) === String(category);
             const matchCity = !cityId || String(optCity) === String(cityId);
-            const matchSector = !sectorId || String(optSector) === String(sectorId);
+            
+            // STRICT sector matching: if sector is selected, employee MUST have that exact sector
+            let matchSector = true;
+            if (sectorId) {
+                matchSector = String(optSector) === String(sectorId);
+            }
             
             const show = matchCategory && matchCity && matchSector;
             
@@ -134,6 +139,9 @@ window.initializeComplaintForm = function(root = document) {
         }
     }
 
+    // Store pending sector value for auto-population
+    let pendingSectorValue = null;
+
     if (citySelect) {
         citySelect.addEventListener('change', function() {
             filterEmployees();
@@ -164,7 +172,16 @@ window.initializeComplaintForm = function(root = document) {
                         sectorSelect.appendChild(option);
                     });
                     sectorSelect.disabled = false;
-                    if (prevVal) sectorSelect.value = prevVal;
+                    
+                    // Apply pending sector value if set, otherwise preserve previous value
+                    if (pendingSectorValue) {
+                        sectorSelect.value = pendingSectorValue;
+                        pendingSectorValue = null; // Clear after use
+                        sectorSelect.dispatchEvent(new Event('change'));
+                    } else if (prevVal) {
+                        sectorSelect.value = prevVal;
+                    }
+                    
                     filterEmployees();
                 });
             }
@@ -185,8 +202,28 @@ window.initializeComplaintForm = function(root = document) {
                 const phoneInput = root.querySelector('#client_phone');
                 if (nameInput) nameInput.value = option.getAttribute('data-name') || '';
                 if (phoneInput) phoneInput.value = option.getAttribute('data-phone') || '';
+                
+                // Auto-populate city and sector from house data
+                const houseCity = option.getAttribute('data-city');
+                const houseSector = option.getAttribute('data-sector');
+                
+                if (houseCity && citySelect) {
+                    // Store the sector value to be applied after AJAX loads sectors
+                    if (houseSector) {
+                        pendingSectorValue = houseSector;
+                    }
+                    
+                    citySelect.value = houseCity;
+                    // Trigger change event to load sectors
+                    citySelect.dispatchEvent(new Event('change'));
+                }
             }
         });
+        
+        // Trigger on page load if house is already selected (for edit mode)
+        if (houseSelect.value) {
+            houseSelect.dispatchEvent(new Event('change'));
+        }
     }
 
     filterEmployees();
