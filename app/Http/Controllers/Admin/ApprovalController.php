@@ -757,6 +757,15 @@ class ApprovalController extends Controller
                 if (!in_array($complaint->status, ['resolved', 'closed'])) {
                     $complaint->status = $newStatus;
                     $complaint->save();
+
+                    // Send Notification to the House (User)
+                    if ($complaint->house) {
+                        try {
+                            $complaint->house->notify(new \App\Notifications\ComplaintStatusUpdated($complaint, $newStatus));
+                        } catch (\Exception $e) {
+                            \Log::error('Notification Failed in saveWithPerforma(): ' . $e->getMessage());
+                        }
+                    }
                 }
             }
             // If performa_type is null, don't change complaint status - it's managed by status dropdown
@@ -821,6 +830,15 @@ class ApprovalController extends Controller
                 if (!in_array($complaint->status, ['resolved', 'closed'])) {
                     $complaint->status = $newStatus;
                     $complaint->save();
+
+                    // Send Notification to the House (User)
+                    if ($complaint->house) {
+                        try {
+                            $complaint->house->notify(new \App\Notifications\ComplaintStatusUpdated($complaint, $newStatus));
+                        } catch (\Exception $e) {
+                            \Log::error('Notification Failed in updatePerformaType(): ' . $e->getMessage());
+                        }
+                    }
                 }
             }
             // If performa_type is null, don't change complaint status - it's managed by status dropdown
@@ -1343,6 +1361,15 @@ class ApprovalController extends Controller
                 'action' => 'status_changed',
                 'remarks' => $logRemarks,
             ]);
+        }
+
+        // Send Notification to the House (User)
+        if ($complaint->house) {
+            try {
+                $complaint->house->notify(new \App\Notifications\ComplaintStatusUpdated($complaint, $statusToUse));
+            } catch (\Exception $e) {
+                \Log::error('Notification Failed in updateComplaintStatus(): ' . $e->getMessage());
+            }
         }
 
         // Return JSON for AJAX requests

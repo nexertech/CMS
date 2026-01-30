@@ -21,8 +21,10 @@ class NotificationApiController extends Controller
             $token = $request->bearerToken();
             if ($token) {
                 $personalAccessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
-                if ($personalAccessToken && $personalAccessToken->tokenable_type === \App\Models\House::class) {
-                    $house = $personalAccessToken->tokenable;
+                if ($personalAccessToken) {
+                     if ($personalAccessToken->tokenable_type === \App\Models\House::class || $personalAccessToken->tokenable_type === 'App\Models\House') {
+                        $house = $personalAccessToken->tokenable;
+                     }
                 }
             }
         }
@@ -64,8 +66,10 @@ class NotificationApiController extends Controller
             $token = $request->bearerToken();
             if ($token) {
                 $pat = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
-                if ($pat && $pat->tokenable_type === \App\Models\House::class) {
-                    $house = $pat->tokenable;
+                if ($pat) {
+                     if ($pat->tokenable_type === \App\Models\House::class || $pat->tokenable_type === 'App\Models\House') {
+                        $house = $pat->tokenable;
+                     }
                 }
             }
         }
@@ -82,5 +86,37 @@ class NotificationApiController extends Controller
         }
 
         return response()->json(['success' => false, 'message' => 'Notification not found'], 404);
+    }
+
+    /**
+     * Mark all notifications as read
+     */
+    public function markAllAsRead(Request $request)
+    {
+        $house = $request->user();
+
+        // Auth check fallback
+        if (!$house) {
+            $token = $request->bearerToken();
+            if ($token) {
+                $pat = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
+                if ($pat) {
+                     if ($pat->tokenable_type === \App\Models\House::class || $pat->tokenable_type === 'App\Models\House') {
+                        $house = $pat->tokenable;
+                     }
+                }
+            }
+        }
+
+        if (!$house) {
+             return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        $house->unreadNotifications->markAsRead();
+
+        return response()->json([
+            'success' => true, 
+            'message' => 'All notifications marked as read'
+        ]);
     }
 }

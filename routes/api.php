@@ -39,5 +39,6 @@ Route::get('/app/check-update', [AppVersionController::class, 'checkUpdate']);
 
     // Notifications
     Route::get('/notifications', [NotificationApiController::class, 'index']);
+    Route::post('/notifications/read-all', [NotificationApiController::class, 'markAllAsRead']);
     Route::post('/notifications/{id}/read', [NotificationApiController::class, 'markAsRead']);
 // });

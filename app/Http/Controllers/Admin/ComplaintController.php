@@ -581,6 +581,15 @@ class ComplaintController extends Controller
                     'remarks' => "Status changed from {$oldStatus} to {$request->status}",
                 ]);
             }
+
+            // Send Notification to the House (User) for status change
+            if ($complaint->house) {
+                try {
+                    $complaint->house->notify(new \App\Notifications\ComplaintStatusUpdated($complaint, $request->status));
+                } catch (\Exception $e) {
+                    Log::error('Notification Failed in update(): ' . $e->getMessage());
+                }
+            }
         }
 
         // Log assignment changes
@@ -598,6 +607,16 @@ class ComplaintController extends Controller
                     'action' => 'assignment_changed',
                     'remarks' => $assignmentNote,
                 ]);
+            }
+
+            // Send Notification to the House (User) for assignment
+            if ($complaint->house) {
+                try {
+                    $status = $request->assigned_employee_id ? 'assigned' : 'unassigned';
+                    $complaint->house->notify(new \App\Notifications\ComplaintStatusUpdated($complaint, $status));
+                } catch (\Exception $e) {
+                    Log::error('Notification Failed in update() assignment: ' . $e->getMessage());
+                }
             }
         }
 
@@ -659,6 +678,15 @@ class ComplaintController extends Controller
                 'action' => 'assigned',
                 'remarks' => "Assigned to {$employee->name}. " . ($request->notes ?? ''),
             ]);
+        }
+
+        // Send Notification to the House (User)
+        if ($complaint->house) {
+            try {
+                $complaint->house->notify(new \App\Notifications\ComplaintStatusUpdated($complaint, 'assigned'));
+            } catch (\Exception $e) {
+                Log::error('Notification Failed in assign(): ' . $e->getMessage());
+            }
         }
 
         return redirect()->back()

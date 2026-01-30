@@ -61,7 +61,7 @@ class ComplaintStatusUpdated extends Notification
             'sound' => 'default',
             'data' => [
                 'complaint_id' => (string)$this->complaint->id,
-                'status' => $this->status,
+                'status' => (string)$this->status,
                 'type' => 'status_update'
             ]
         ];
