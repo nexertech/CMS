@@ -157,7 +157,16 @@ Route::middleware(['auth', 'verified', AdminAccessMiddleware::class])
         Route::get('houses/sectors', [App\Http\Controllers\Admin\HouseController::class, 'getSectorsByCity'])->name('houses.sectors');
         
         // Resource routes
+        // Resource routes
         Route::resource('houses', App\Http\Controllers\Admin\HouseController::class);
+    });
+
+    // ===============================
+    // 📱 Registered Devices Management
+    // ===============================
+    Route::middleware(['permission:employees.view'])->group(function () {
+        Route::get('registered-devices/houses', [App\Http\Controllers\Admin\RegisteredDeviceController::class, 'getHousesBySector'])->name('registered-devices.houses');
+        Route::resource('registered-devices', App\Http\Controllers\Admin\RegisteredDeviceController::class);
     });
 
 

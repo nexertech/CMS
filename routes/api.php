@@ -20,6 +20,11 @@ use App\Http\Controllers\Api\AppVersionController;
 // Public Authentication Routes
 Route::post('/house/login', [HouseAuthController::class, 'login']);
 
+// Device Management Routes
+Route::post('/check-device', [App\Http\Controllers\Api\DeviceController::class, 'checkDevice']);
+Route::post('/register-device', [App\Http\Controllers\Api\DeviceController::class, 'registerDevice']);
+Route::post('/get-device', [App\Http\Controllers\Api\DeviceController::class, 'getDevice']);
+
 // Public Metadata Routes (No authentication required)
 Route::get('/categories', [ComplaintApiController::class, 'categories']);
 Route::get('/categories/{category}/titles', [ComplaintApiController::class, 'getTitlesByCategory']);
