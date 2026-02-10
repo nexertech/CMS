@@ -6,20 +6,18 @@ use App\Http\Controllers\Frontend\AuthController as FrontendAuthController;
 
 Route::get('/', [FrontendHomeController::class, 'index'])->name('frontend.home');
 Route::get('/features', [FrontendHomeController::class, 'features'])->name('frontend.features');
-Route::get('/dashboard', [FrontendHomeController::class, 'dashboard'])->middleware('auth:frontend')->name('frontend.dashboard');
-Route::get('/user-profile', [FrontendHomeController::class, 'profile'])->middleware('auth:frontend')->name('frontend.profile');
 Route::get('/login', function () {
     return redirect()->route('frontend.home');
 })->name('frontend.login');
-// Route::get('/register', [FrontendAuthController::class, 'showRegister'])->name('frontend.register');
 Route::post('/login', [FrontendAuthController::class, 'login'])->name('frontend.login.post');
 Route::post('/logout', [FrontendAuthController::class, 'logout'])->name('frontend.logout');
 Route::post('/register', [FrontendAuthController::class, 'register'])->name('frontend.register.post');
 Route::get('/forgot-password', [FrontendAuthController::class, 'showForgotPassword'])->name('frontend.forgot-password');
 
-Route::middleware('auth:frontend')->group(function () {
+Route::middleware(['auth:frontend', 'password.renewal'])->group(function () {
+    Route::get('/dashboard', [FrontendHomeController::class, 'dashboard'])->name('frontend.dashboard');
+    Route::get('/user-profile', [FrontendHomeController::class, 'profile'])->name('frontend.profile');
     Route::post('/user-profile', [FrontendHomeController::class, 'updateProfile'])->name('frontend.profile.update');
-    Route::get('/change-password', [FrontendHomeController::class, 'changePassword'])->name('frontend.password');
     Route::post('/change-password', [FrontendHomeController::class, 'updatePassword'])->name('frontend.password.update');
     Route::get('/complaint/{id}', [FrontendHomeController::class, 'show'])->name('frontend.complaint.show');
     Route::get('/stock', [FrontendHomeController::class, 'stockAll'])->name('frontend.stock.all');

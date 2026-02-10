@@ -1372,27 +1372,18 @@ class HomeController extends Controller
         $request->validate([
             'username' => 'required|string|max:255|unique:frontend_users,username,' . $user->id,
             'name' => 'required|string|max:255',
-            'status' => 'required|in:active,inactive',
             'phone' => 'nullable|string|max:20',
         ]);
 
         $user->update([
             'username' => $request->username,
             'name' => $request->name,
-            'status' => $request->status,
             'phone' => $request->phone,
         ]);
 
         return redirect()->route('frontend.profile')->with('success', 'Profile updated successfully.');
     }
 
-    /**
-     * Show the change password form.
-     */
-    public function changePassword()
-    {
-        return view('frontend.change-password');
-    }
 
     /**
      * Update the user password.
@@ -1412,9 +1403,10 @@ class HomeController extends Controller
 
         $user->update([
             'password' => \Hash::make($request->password),
+            'password_updated_at' => now(),
         ]);
 
-        return redirect()->route('frontend.password')->with('success', 'Password updated successfully.');
+        return redirect()->route('frontend.profile')->with('success', 'Password updated successfully.');
     }
 
     /**

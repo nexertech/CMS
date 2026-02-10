@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Hash;
-
 use Laravel\Sanctum\HasApiTokens;
 
 class House extends Model
@@ -24,6 +23,7 @@ class House extends Model
         'address',
         'status',
         'fcm_token',
+        'password_updated_at',
     ];
 
     protected $hidden = [
@@ -33,6 +33,7 @@ class House extends Model
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'password_updated_at' => 'datetime',
     ];
 
     /**
@@ -68,6 +69,7 @@ class House extends Model
     {
         return $this->hasMany(Complaint::class, 'house_id');
     }
+    
     /**
      * Route notifications for the FCM channel.
      *
@@ -75,8 +77,6 @@ class House extends Model
      */
     public function routeNotificationForFcm($notification)
     {
-        // Return the user's FCM token from the database
-        // You will need to add an 'fcm_token' column to your houses table
         return $this->fcm_token;
     }
 }

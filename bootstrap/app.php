@@ -23,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'permission' => \App\Http\Middleware\PermissionMiddleware::class,
             'admin.access' => \App\Http\Middleware\AdminAccessMiddleware::class,
+            'password.renewal' => \App\Http\Middleware\CheckPasswordRenewal::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

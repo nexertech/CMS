@@ -32,7 +32,7 @@ Route::get('/titles', [ComplaintApiController::class, 'titles']);
 Route::get('/app/check-update', [AppVersionController::class, 'checkUpdate']);
 
 // Protected Routes (Require Token)
-// Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'password.renewal'])->group(function () {
     Route::post('/house/logout', [HouseAuthController::class, 'logout']);
     Route::post('/house/change-password', [HouseAuthController::class, 'changePassword']);
 
@@ -46,4 +46,4 @@ Route::get('/app/check-update', [AppVersionController::class, 'checkUpdate']);
     Route::get('/notifications', [NotificationApiController::class, 'index']);
     Route::post('/notifications/read-all', [NotificationApiController::class, 'markAllAsRead']);
     Route::post('/notifications/{id}/read', [NotificationApiController::class, 'markAsRead']);
-// });
+});

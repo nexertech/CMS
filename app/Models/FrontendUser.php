@@ -24,6 +24,7 @@ class FrontendUser extends Authenticatable
         'cme_ids',
         'group_ids',
         'node_ids',
+        'password_updated_at',
     ];
 
     protected $hidden = [
@@ -44,6 +45,7 @@ class FrontendUser extends Authenticatable
             'cme_ids' => 'array',
             'group_ids' => 'array',
             'node_ids' => 'array',
+            'password_updated_at' => 'datetime',
         ];
     }
 
@@ -54,8 +56,6 @@ class FrontendUser extends Authenticatable
     {
         return $this->password;
     }
-
-
 
     /**
      * Check if user is active
@@ -72,6 +72,4 @@ class FrontendUser extends Authenticatable
     {
         return $this->username;
     }
-
-
 }

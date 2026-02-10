@@ -56,6 +56,10 @@ class HouseAuthController extends Controller
             'source' => 'app',
         ]);
 
+
+        $renewalDays = config('auth.password_renewal_days');
+        $daysOld = $house->password_updated_at ? $house->password_updated_at->diffInDays(now()) : 0;
+
         return response()->json([
             'success' => true,
             'message' => 'Login successful',
@@ -67,6 +71,10 @@ class HouseAuthController extends Controller
                 'name' => $house->name,
                 'city_id' => $house->city_id,
                 'sector_id' => $house->sector_id,
+                'password_age' => $daysOld,
+                'unit' => 'days',
+                'password_renewal_required' => $daysOld >= $renewalDays,
+                'password_hard_locked' => $daysOld >= ($renewalDays + 5),
             ]
         ]);
     }
@@ -122,6 +130,7 @@ class HouseAuthController extends Controller
 
         // Update password
         $house->password = $request->new_password;
+        $house->password_updated_at = now();
         $house->save();
 
         return response()->json([
