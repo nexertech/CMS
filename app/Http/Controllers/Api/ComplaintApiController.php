@@ -20,24 +20,24 @@ class ComplaintApiController extends Controller
 {
     /**
      * Helper to get authenticated house from token or request
+     * CRITICAL FIX: Never use $request->user() as it triggers session middleware
      */
     private function getAuthenticatedHouse(Request $request)
     {
-        // Try getting from Sanctum (if middleware is active)
-        $house = $request->user();
-        
-        if (!$house) {
-            // Manual token check for cases where middleware might be bypassed
-            $token = $request->bearerToken();
-            if ($token) {
-                $personalAccessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
-                if ($personalAccessToken && $personalAccessToken->tokenable_type === \App\Models\House::class) {
-                    $house = $personalAccessToken->tokenable;
-                }
-            }
+        // CRITICAL: Always use manual token lookup to avoid session middleware
+        $token = $request->bearerToken();
+        if (!$token) {
+            return null;
         }
         
-        return $house;
+        $personalAccessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
+        if (!$personalAccessToken || $personalAccessToken->tokenable_type !== \App\Models\House::class) {
+            return null;
+        }
+        
+        // Load House directly with only required columns to prevent memory leak
+        return \App\Models\House::select('id', 'username', 'house_no', 'name', 'phone', 'city_id', 'sector_id', 'address', 'status', 'password_updated_at')
+            ->find($personalAccessToken->tokenable_id);
     }
 
     /**
@@ -45,7 +45,8 @@ class ComplaintApiController extends Controller
      */
     public function index(Request $request)
     {
-        $house = $this->getAuthenticatedHouse($request);
+        // Get house from manual.auth middleware
+        $house = $request->input('authenticated_house') ?: $request->user();
         
         if (!$house) {
             return response()->json([
@@ -89,7 +90,7 @@ class ComplaintApiController extends Controller
      */
     public function show(Request $request, $id)
     {
-        $house = $this->getAuthenticatedHouse($request);
+        $house = $request->input('authenticated_house') ?: $request->user();
         if (!$house) {
             return response()->json(['success' => false, 'message' => 'Unauthorized. Please login again.'], 401);
         }
@@ -139,7 +140,8 @@ class ComplaintApiController extends Controller
      */
     public function register(Request $request)
     {
-        $house = $this->getAuthenticatedHouse($request);
+        // Get house from custom middleware (manual.auth)
+        $house = $request->input('authenticated_house');
         
         // Check if house exists
         if (!$house) {
@@ -202,65 +204,74 @@ class ComplaintApiController extends Controller
             } else {
                 // Treated as Custom Title if not found? Or Error?
                 // Assuming "Other" or custom text.
-                $customTitle = $titleInput;
+                $customTitle = (string) $titleInput;
             }
         }
 
         DB::beginTransaction();
         try {
-            // Find or create Client
+            // Find or create lightweight client record for this house
+            $clientEmail = ($house->username ?: 'house_'.$house->id) . '@cms.com';
+            $clientName  = $house->house_no ?? $house->name ?? $house->username ?? ('House '.$house->id);
+
             $client = Client::firstOrCreate(
-                ['email' => $house->username . '@cms.com'], 
+                ['email' => $clientEmail],
                 [
-                    'client_name' => $house->house_no ?? $house->name ?? $house->username,
-                    'contact_person' => $house->name ?? $house->username,
-                    'phone' => $house->phone ?? '',
-                    'status' => 'active',
-                    'city' => $house->city ? $house->city->name : '',
-                    'sector' => $house->sector ? $house->sector->name : '',
-                    'address' => $house->address,
+                    'client_name'    => $clientName,
+                    'contact_person' => $house->name ?? $house->username ?? 'Resident',
+                    'phone'          => $house->phone ?? '',
+                    'status'         => 'active',
+                    // Use scalar fields only to keep the model light
+                    'city'           => optional($house->city)->name ?? '',
+                    'sector'         => optional($house->sector)->name ?? '',
+                    'address'        => $house->address ?? '',
                 ]
             );
 
-            // Create Complaint
-            $complaint = Complaint::create([
-                // 'uid' removed if not in schema, assuming id is sufficient or ticket_number accessor
-                'complaint_title_id' => $titleId,
-                'title' => $customTitle,
-                'house_id' => $house->id,
-                'client_id' => $client->id,
-                'city_id' => $house->city_id,
-                'sector_id' => $house->sector_id,
-                'category_id' => $categoryId,
-                'priority' => $request->priority ?? 'medium',
-                'description' => $request->description,
-                'availability_time' => $request->availability_time,
-                'status' => 'new',
-            ]);
+            // Create complaint without firing model events to avoid heavy listeners
+            $complaint = Complaint::withoutEvents(function () use ($titleId, $customTitle, $house, $client, $categoryId, $request) {
+                return Complaint::create([
+                    'complaint_title_id' => $titleId,
+                    'title'              => $customTitle,
+                    'house_id'           => $house->id,
+                    'client_id'          => $client->id,
+                    'city_id'            => $house->city_id,
+                    'sector_id'          => $house->sector_id,
+                    'category_id'        => $categoryId,
+                    'priority'           => $request->priority ?? 'medium',
+                    'description'        => $request->description,
+                    'availability_time'  => $request->availability_time,
+                    'status'             => 'new',
+                ]);
+            });
 
             ComplaintLog::create([
                 'complaint_id' => $complaint->id,
-                'action' => 'created',
-                'remarks' => 'Complaint registered via App by ' . ($house->house_no ?? $house->name ?? $house->username),
+                'action'       => 'created',
+                'remarks'      => 'Complaint registered via App by ' . ($house->house_no ?? $house->name ?? $house->username),
             ]);
 
             DB::commit();
 
+            // Return only scalar values to keep the JSON payload small
             return response()->json([
-                'success' => true,
-                'message' => 'Complaint registered successfully',
-                'ticket_number' => $complaint->ticket_number,
-                'complaint_id' => $complaint->id,
-                'availability_time' => $complaint->availability_time,
+                'success'          => true,
+                'message'          => 'Complaint registered successfully',
+                'ticket_number'    => $complaint->ticket_number,
+                'complaint_id'     => $complaint->id,
+                'availability_time'=> $complaint->availability_time,
             ], 201);
-
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('API Complaint Registration Error: ' . $e->getMessage());
+
+            Log::error('API Complaint Registration Error', [
+                'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to register complaint.',
-                'error' => $e->getMessage()
             ], 500);
         }
     }

@@ -12,22 +12,7 @@ class NotificationApiController extends Controller
      */
     public function index(Request $request)
     {
-        $house = $request->user();
-
-        /* If middleware doesn't auto-resolve, try manual check (same helper logic as ComplaintApiController if needed) 
-           but assuming auth:sanctum is working or custom auth logic is applied */
-        if (!$house) {
-             // Fallback if not resolved by middleware
-            $token = $request->bearerToken();
-            if ($token) {
-                $personalAccessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
-                if ($personalAccessToken) {
-                     if ($personalAccessToken->tokenable_type === \App\Models\House::class || $personalAccessToken->tokenable_type === 'App\Models\House') {
-                        $house = $personalAccessToken->tokenable;
-                     }
-                }
-            }
-        }
+        $house = $request->input('authenticated_house') ?: $request->user();
 
         if (!$house) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
@@ -59,20 +44,7 @@ class NotificationApiController extends Controller
      */
     public function markAsRead(Request $request, $id)
     {
-        $house = $request->user();
-
-        // Auth check fallback
-        if (!$house) {
-            $token = $request->bearerToken();
-            if ($token) {
-                $pat = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
-                if ($pat) {
-                     if ($pat->tokenable_type === \App\Models\House::class || $pat->tokenable_type === 'App\Models\House') {
-                        $house = $pat->tokenable;
-                     }
-                }
-            }
-        }
+        $house = $request->input('authenticated_house') ?: $request->user();
 
         if (!$house) {
              return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
@@ -93,20 +65,7 @@ class NotificationApiController extends Controller
      */
     public function markAllAsRead(Request $request)
     {
-        $house = $request->user();
-
-        // Auth check fallback
-        if (!$house) {
-            $token = $request->bearerToken();
-            if ($token) {
-                $pat = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
-                if ($pat) {
-                     if ($pat->tokenable_type === \App\Models\House::class || $pat->tokenable_type === 'App\Models\House') {
-                        $house = $pat->tokenable;
-                     }
-                }
-            }
-        }
+        $house = $request->input('authenticated_house') ?: $request->user();
 
         if (!$house) {
              return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);

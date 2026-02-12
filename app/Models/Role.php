@@ -41,6 +41,7 @@ class Role extends Model
                     'approvals',
                     'reports',
                     'sla',
+                    'registered-devices',
                 ];
 
                 // Get existing permissions

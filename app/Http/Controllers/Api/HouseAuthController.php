@@ -81,7 +81,12 @@ class HouseAuthController extends Controller
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        // Use injected house if available, otherwise fallback
+        $user = $request->input('authenticated_house') ?: $request->user();
+
+        if ($user) {
+            $user->currentAccessToken()->delete();
+        }
 
         return response()->json([
             'success' => true,
@@ -100,18 +105,7 @@ class HouseAuthController extends Controller
             'confirm_password' => 'required|same:new_password',
         ]);
 
-        $house = $request->user();
-
-        // Manual token check if middleware doesn't auto-resolve
-        if (!$house) {
-            $token = $request->bearerToken();
-            if ($token) {
-                $personalAccessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($token);
-                if ($personalAccessToken && $personalAccessToken->tokenable_type === House::class) {
-                    $house = $personalAccessToken->tokenable;
-                }
-            }
-        }
+        $house = $request->input('authenticated_house') ?: $request->user();
 
         if (!$house) {
             return response()->json([

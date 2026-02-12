@@ -24,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \App\Http\Middleware\PermissionMiddleware::class,
             'admin.access' => \App\Http\Middleware\AdminAccessMiddleware::class,
             'password.renewal' => \App\Http\Middleware\CheckPasswordRenewal::class,
+            'manual.auth' => \App\Http\Middleware\ManualTokenAuth::class, // Custom auth bypass
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

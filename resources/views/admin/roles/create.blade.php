@@ -67,6 +67,7 @@
                   'spares' => ['label' => 'Stock Products', 'icon' => 'package', 'sublinks' => []],
                   'reports' => ['label' => 'Reports', 'icon' => 'bar-chart-2', 'sublinks' => []],
                   'sla' => ['label' => 'SLA Rules', 'icon' => 'clock', 'sublinks' => []],
+                  'registered-devices' => ['label' => 'Registered Devices', 'icon' => 'smartphone', 'sublinks' => []],
                 ];
                 @endphp
                 

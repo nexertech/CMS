@@ -3,12 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\HasApiTokens;
 
-class House extends Model
+class House extends Authenticatable
 {
     use HasApiTokens, HasFactory, SoftDeletes, \Illuminate\Notifications\Notifiable;
 
@@ -29,6 +29,9 @@ class House extends Model
     protected $hidden = [
         'password',
     ];
+
+    // Prevent eager loading of relationships during authentication
+    protected $with = [];
 
     protected $casts = [
         'created_at' => 'datetime',
@@ -78,5 +81,21 @@ class House extends Model
     public function routeNotificationForFcm($notification)
     {
         return $this->fcm_token;
+    }
+
+    /**
+     * Override toArray to prevent loading all relationships
+     * This prevents memory exhaustion during authentication
+     */
+    public function toArray()
+    {
+        $array = parent::toArray();
+        
+        // Remove relationships that shouldn't be loaded during auth
+        unset($array['complaints']);
+        unset($array['notifications']);
+        unset($array['tokens']);
+        
+        return $array;
     }
 }

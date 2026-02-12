@@ -127,7 +127,7 @@
       <i data-feather="home" class="me-2"></i> Houses
     </a>
     @endif
-    @if($user && ($user->hasPermission('employees')))
+    @if($user && ($user->hasPermission('registered-devices')))
     <a href="{{ route('admin.registered-devices.index') }}" class="nav-link d-block py-2 px-3 mb-1 {{ request()->routeIs('admin.registered-devices.*') ? 'active' : '' }}">
       <i data-feather="smartphone" class="me-2"></i> Devices
     </a>

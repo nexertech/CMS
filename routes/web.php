@@ -164,7 +164,7 @@ Route::middleware(['auth', 'verified', AdminAccessMiddleware::class])
     // ===============================
     // 📱 Registered Devices Management
     // ===============================
-    Route::middleware(['permission:employees.view'])->group(function () {
+    Route::middleware(['permission:registered-devices'])->group(function () {
         Route::get('registered-devices/houses', [App\Http\Controllers\Admin\RegisteredDeviceController::class, 'getHousesBySector'])->name('registered-devices.houses');
         Route::resource('registered-devices', App\Http\Controllers\Admin\RegisteredDeviceController::class);
     });
