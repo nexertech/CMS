@@ -174,9 +174,16 @@ class Complaint extends Model
         return [
             'unassigned' => 'Unassigned',
             'assigned' => 'Assigned',
-            'in_progress' => 'In Process',
-            'resolved' => 'Resolved',
+            'in_progress' => 'In Progress',
+            'resolved' => 'Addressed',
             'closed' => 'Closed',
+            'work_performa' => 'Work Performa',
+            'maint_performa' => 'Maintenance Performa',
+            'work_priced_performa' => 'Work Performa Priced',
+            'maint_priced_performa' => 'Maintenance Performa Priced',
+            'product_na' => 'Product N/A',
+            'un_authorized' => 'Un-Authorized',
+            'pertains_to_ge_const_isld' => 'GE Const Isld',
             'barak_damages' => 'Barak Damages',
         ];
     }
@@ -206,9 +213,35 @@ class Complaint extends Model
      */
     public function getStatusDisplayAttribute(): string
     {
-        // Map 'new' status to 'unassigned' for display purposes
+        // Internal status 'new' maps to 'unassigned' display label "Unassigned"
         $status = $this->status === 'new' ? 'unassigned' : $this->status;
-        return self::getStatuses()[$status] ?? $status;
+        
+        // Performa types and 'in_progress' should display as "In Progress"
+        if (in_array($status, ['in_progress', 'work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa', 'product_na'])) {
+            return 'In Progress';
+        }
+        
+        // 'resolved' maps to 'Addressed'
+        if ($status === 'resolved') {
+            return 'Addressed';
+        }
+        
+        return self::getStatuses()[$status] ?? ucfirst(str_replace('_', ' ', $status));
+    }
+
+    /**
+     * Get the mapped status code for mobile app compatibility
+     * Groups all performa types into 'in_progress'
+     */
+    public function getMappedStatusAttribute(): string
+    {
+        $status = $this->status === 'new' ? 'unassigned' : $this->status;
+        
+        if (in_array($status, ['work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa', 'product_na'])) {
+            return 'in_progress';
+        }
+        
+        return $status;
     }
 
     /**

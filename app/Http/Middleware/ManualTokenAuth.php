@@ -34,8 +34,8 @@ class ManualTokenAuth
             ], 401);
         }
         
-        // Load house with only required columns
-        $house = House::select('id', 'username', 'house_no', 'name', 'phone', 'city_id', 'sector_id', 'address', 'status', 'password_updated_at')
+        // Load house with only required columns (including password for verification)
+        $house = House::select('id', 'username', 'password', 'house_no', 'name', 'phone', 'city_id', 'sector_id', 'address', 'status', 'password_updated_at')
             ->find($personalAccessToken->tokenable_id);
         
         if (!$house) {
