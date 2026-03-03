@@ -26,7 +26,7 @@
                 @csrf
 
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-3">
                         <div class="mb-3">
                             <label for="item_name" class="form-label text-white">Item Name <span
                                     class="text-danger">*</span></label>
@@ -51,19 +51,6 @@
 
                     <div class="col-md-3">
                         <div class="mb-3">
-                            <label for="brand_name" class="form-label text-white">Brand Name</label>
-                            <input type="text" class="form-control @error('brand_name') is-invalid @enderror"
-                                id="brand_name" name="brand_name" value="{{ old('brand_name') }}">
-                            @error('brand_name')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="mb-3">
                             <label for="category_id" class="form-label text-white">Category <span
                                     class="text-danger">*</span></label>
                             <select class="form-select @error('category_id') is-invalid @enderror" id="category_id" name="category_id" required>
@@ -79,8 +66,22 @@
                             @enderror
                         </div>
                     </div>
-                    
-                    <div class="col-md-4">
+
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label for="brand_id" class="form-label text-white">Brand Name</label>
+                            <select class="form-select @error('brand_id') is-invalid @enderror" id="brand_id" name="brand_id">
+                                <option value="">Select Category First</option>
+                            </select>
+                            @error('brand_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3">
                         <div class="mb-3">
                             <label for="city_id" class="form-label text-white">GE Groups</label>
                             <select class="form-select @error('city_id') is-invalid @enderror" 
@@ -100,7 +101,7 @@
                         </div>
                     </div>
                     
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="mb-3">
                             <label for="sector_id" class="form-label text-white">GE Nodes</label>
                             <select class="form-select @error('sector_id') is-invalid @enderror" 
@@ -112,9 +113,7 @@
                             @enderror
                         </div>
                     </div>
-                </div>
 
-                <div class="row">
                     <div class="col-md-3">
                         <div class="mb-3">
                             <label for="stock_quantity" class="form-label text-white">Stock Quantity <span
@@ -126,6 +125,7 @@
                             @enderror
                         </div>
                     </div>
+
                     <div class="col-md-3">
                         <div class="mb-3">
                             <label for="threshold_level" class="form-label text-white">Threshold Level <span
@@ -138,9 +138,12 @@
                             @enderror
                         </div>
                     </div>
+                </div>
+
+                <div class="row">
                     <div class="col-md-3">
                         <div class="mb-3">
-                            <label for="supplier" class="form-label text-white">Supplier</label>
+                            <label for="supplier" class="form-label text-white">Vendor</label>
                             <input type="text" class="form-control @error('supplier') is-invalid @enderror"
                                 id="supplier" name="supplier" value="{{ old('supplier') }}">
                             @error('supplier')
@@ -285,6 +288,60 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(() => {
                 sectorSelect.innerHTML = '<option value="">Error Loading GE Nodes</option>';
             });
+        }
+    }
+
+    // Handle Category change to filter Brands
+    const categorySelect = document.getElementById('category_id');
+    const brandSelect = document.getElementById('brand_id');
+
+    if (categorySelect && brandSelect) {
+        categorySelect.addEventListener('change', function() {
+            const categoryId = this.value;
+            
+            brandSelect.innerHTML = '<option value="">Loading...</option>';
+            brandSelect.disabled = true;
+
+            if (categoryId) {
+                const url = `{{ url('admin/brands/by-category') }}/${categoryId}`;
+                
+                fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    brandSelect.innerHTML = '<option value="">Select Brand</option>';
+                    if (data && data.length > 0) {
+                        data.forEach(function(brand) {
+                            const option = document.createElement('option');
+                            option.value = brand.id;
+                            option.textContent = brand.name;
+                            brandSelect.appendChild(option);
+                        });
+                        brandSelect.disabled = false;
+                    } else {
+                        brandSelect.innerHTML = '<option value="">No Brands Available</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching brands:', error);
+                    brandSelect.innerHTML = '<option value="">Error Loading Brands</option>';
+                });
+            } else {
+                brandSelect.innerHTML = '<option value="">Select Category First</option>';
+            }
+        });
+
+        // Load brands if category is already selected (for validation errors)
+        const oldCategoryId = '{{ old('category_id') }}';
+        const oldBrandId = '{{ old('brand_id') }}';
+        if (oldCategoryId) {
+            categorySelect.dispatchEvent(new Event('change'));
+            // We might need a small delay or a promise to set the old brand id
         }
     }
 });

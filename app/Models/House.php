@@ -22,6 +22,7 @@ class House extends Authenticatable
         'sector_id',
         'address',
         'status',
+        'type',
         'fcm_token',
         'password_updated_at',
     ];

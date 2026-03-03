@@ -32,6 +32,7 @@ class HouseController extends Controller
             $query->where(function($q) use ($search) {
                 $q->where('username', 'like', "%{$search}%")
                   ->orWhere('house_no', 'like', "%{$search}%")
+                  ->orWhere('type', 'like', "%{$search}%")
                   ->orWhere('address', 'like', "%{$search}%");
             });
         }
@@ -110,6 +111,7 @@ class HouseController extends Controller
             'sector_id' => 'required|exists:sectors,id',
             'address' => 'nullable|string|max:500',
             'status' => 'nullable|in:active,inactive',
+            'type' => 'nullable|string|max:100',
         ]);
 
         if ($validator->fails()) {
@@ -137,6 +139,7 @@ class HouseController extends Controller
                 'sector_id' => $request->sector_id,
                 'address' => $request->address,
                 'status' => $request->status ?? 'active',
+                'type' => $request->type,
             ]);
 
             DB::commit();
@@ -231,6 +234,7 @@ class HouseController extends Controller
             'sector_id' => 'required|exists:sectors,id',
             'address' => 'nullable|string|max:500',
             'status' => 'required|in:active,inactive',
+            'type' => 'nullable|string|max:100',
         ]);
 
         if ($validator->fails()) {
@@ -257,6 +261,7 @@ class HouseController extends Controller
                 'sector_id' => $request->sector_id,
                 'address' => $request->address,
                 'status' => $request->status,
+                'type' => $request->type,
             ];
 
             // Only update password if provided

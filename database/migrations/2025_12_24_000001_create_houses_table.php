@@ -24,6 +24,7 @@ return new class extends Migration
             $table->unsignedBigInteger('sector_id');
             $table->text('address')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->string('type', 100)->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

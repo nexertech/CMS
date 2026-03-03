@@ -45,6 +45,9 @@ class SpareController extends Controller
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('item_name', 'like', "%{$search}%")
+                  ->orWhereHas('brand', function($bq) use ($search) {
+                      $bq->where('name', 'like', "%{$search}%");
+                  })
                   ->orWhereHas('category', function($cq) use ($search) {
                       $cq->where('name', 'like', "%{$search}%");
                   });
@@ -131,7 +134,7 @@ class SpareController extends Controller
         $validator = Validator::make($request->all(), [
             'item_name' => 'required|string|max:150',
             'product_code' => 'nullable|string|max:50',
-            'brand_name' => 'nullable|string|max:100',
+            'brand_id' => 'nullable|exists:brands,id',
             'category_id' => 'required|exists:complaint_categories,id',
             'city_id' => 'nullable|exists:cities,id',
             'sector_id' => 'nullable|exists:sectors,id',
@@ -172,47 +175,29 @@ class SpareController extends Controller
         if ($existingSpare) {
             // Same product exists, update it (even if brand is different)
             $newStockQty = (int)($request->stock_quantity ?? 0);
-            $oldBrandName = $existingSpare->brand_name;
-            $newBrandName = $request->brand_name;
-            $brandChanged = !empty($oldBrandName) && !empty($newBrandName) && $oldBrandName !== $newBrandName;
+            $oldBrandId = $existingSpare->brand_id;
+            $newBrandId = $request->brand_id;
+            $brandChanged = !empty($oldBrandId) && !empty($newBrandId) && $oldBrandId != $newBrandId;
             
-            // If brand changed, log the old brand summary before updating
+            // If brand replaced, log the replacement info
             if ($brandChanged) {
-                // Get old brand history summary
-                $oldBrandInLogs = $existingSpare->stockLogs()
-                    ->where('change_type', 'in')
-                    ->where('brand_name', $oldBrandName)
-                    ->orderBy('created_at', 'asc')
-                    ->get();
-                
-                $oldBrandTotalReceived = $oldBrandInLogs->sum('quantity');
-                $oldBrandStartDate = $oldBrandInLogs->first() ? $oldBrandInLogs->first()->created_at : $existingSpare->created_at;
-                $oldBrandEndDate = $oldBrandInLogs->last() ? $oldBrandInLogs->last()->created_at : now();
-                
-                // Calculate used quantity during old brand period
-                $oldBrandOutLogs = $existingSpare->stockLogs()
-                    ->where('change_type', 'out')
-                    ->whereBetween('created_at', [$oldBrandStartDate, $oldBrandEndDate])
-                    ->get();
-                $oldBrandUsed = $oldBrandOutLogs->sum('quantity');
-                
-                // Get supplier
-                $oldSupplier = $existingSpare->supplier ?? 'N/A';
-                
-                // Log brand change with old brand summary
+                $oldBrand = \App\Models\Brand::find($oldBrandId);
+                $newBrand = \App\Models\Brand::find($newBrandId);
+                $oldBrandName = $oldBrand->name ?? 'Unknown';
+                $newBrandName = $newBrand->name ?? 'Unknown';
+
                 SpareStockLog::create([
                     'spare_id' => $existingSpare->id,
                     'change_type' => 'in',
-                    'quantity' => 0, // No quantity change, just brand change
-                    'brand_name' => $oldBrandName,
-                    'remarks' => "Brand Changed: Old Brand '{$oldBrandName}' Summary - Total Received: {$oldBrandTotalReceived}, Used: {$oldBrandUsed}, Start: {$oldBrandStartDate->format('d M Y, h:i A')}, End: {$oldBrandEndDate->format('d M Y, h:i A')}, Supplier: {$oldSupplier}",
+                    'quantity' => 0,
+                    'brand_id' => $oldBrandId,
+                    'remarks' => "Brand Changed: Old Brand '{$oldBrandName}' switched to '{$newBrandName}'",
                 ]);
             }
             
-            // If brand changed, reset issued_quantity to 0 for new brand
             $updateData = [
                 'product_code' => $request->product_code ?? $existingSpare->product_code,
-                'brand_name' => $newBrandName ?? $existingSpare->brand_name, // Update brand if changed
+                'brand_id' => $newBrandId ?? $existingSpare->brand_id,
                 'category_id' => $request->category_id,
                 'city_id' => $request->city_id ?? $existingSpare->city_id,
                 'sector_id' => $request->sector_id ?? $existingSpare->sector_id,
@@ -225,21 +210,19 @@ class SpareController extends Controller
                 'last_stock_in_at' => now(),
             ];
             
-            // Reset issued_quantity to 0 when brand changes
             if ($brandChanged) {
                 $updateData['issued_quantity'] = 0;
             }
             
             $existingSpare->update($updateData);
 
-            // Log the stock addition with new brand
             if ($newStockQty > 0) {
                 SpareStockLog::create([
                     'spare_id' => $existingSpare->id,
                     'change_type' => 'in',
                     'quantity' => $newStockQty,
-                    'brand_name' => $newBrandName ?? $existingSpare->brand_name,
-                    'remarks' => $brandChanged ? "New brand '{$newBrandName}' stock added" : 'Stock added to existing product',
+                    'brand_id' => $newBrandId ?? $existingSpare->brand_id,
+                    'remarks' => $brandChanged ? "New brand stock added" : 'Stock added to existing product',
                 ]);
             }
 
@@ -250,7 +233,7 @@ class SpareController extends Controller
             $spare = Spare::create([
                 'item_name' => $request->item_name,
                 'product_code' => $request->product_code,
-                'brand_name' => $request->brand_name,
+                'brand_id' => $request->brand_id,
                 'category_id' => $request->category_id,
                 'city_id' => $request->city_id,
                 'sector_id' => $request->sector_id,
@@ -264,13 +247,13 @@ class SpareController extends Controller
                 'last_stock_in_at' => $request->last_stock_in_at,
             ]);
 
-            // Log initial stock with brand name
+            // Log initial stock with brand_id
             if ($request->stock_quantity > 0) {
                 SpareStockLog::create([
                     'spare_id' => $spare->id,
                     'change_type' => 'in',
                     'quantity' => $request->stock_quantity,
-                    'brand_name' => $request->brand_name ?? $spare->brand_name,
+                    'brand_id' => $spare->brand_id,
                     'remarks' => 'Initial stock',
                 ]);
             }
@@ -305,7 +288,8 @@ class SpareController extends Controller
             'id' => $spare->id,
             'name' => $spare->item_name,
             'product_code' => $spare->product_code,
-            'brand_name' => $spare->brand_name,
+            'brand_id' => $spare->brand_id,
+            'brand_name' => $spare->brand->name ?? 'N/A',
             'category' => $spare->category,
             'price' => $spare->unit_price,
             'total_received_quantity' => $spare->total_received_quantity,
@@ -365,8 +349,10 @@ class SpareController extends Controller
                     ->get()
                 : collect();
         }
+
+        $currentBrands = \App\Models\Brand::where('category_id', $spare->category_id)->orderBy('name')->pluck('name', 'id');
         
-        return view('admin.spares.edit', compact('spare', 'categories', 'cities', 'sectors'));
+        return view('admin.spares.edit', compact('spare', 'categories', 'cities', 'sectors', 'currentBrands'));
     }
 
     /**
@@ -378,7 +364,7 @@ class SpareController extends Controller
             'id' => $spare->id,
             'name' => $spare->item_name,
             'product_code' => $spare->product_code,
-            'brand_name' => $spare->brand_name,
+            'brand_id' => $spare->brand_id,
             'category' => $spare->category,
             'city_id' => $spare->city_id,
             'sector_id' => $spare->sector_id,
@@ -402,7 +388,7 @@ class SpareController extends Controller
         $validator = Validator::make($request->all(), [
             'item_name' => 'required|string|max:150',
             'product_code' => 'nullable|string|max:50',
-            'brand_name' => 'nullable|string|max:100',
+            'brand_id' => 'nullable|exists:brands,id',
             'category_id' => 'required|exists:complaint_categories,id',
             'city_id' => 'nullable|exists:cities,id',
             'sector_id' => 'nullable|exists:sectors,id',
@@ -447,7 +433,7 @@ class SpareController extends Controller
         $spare->update([
             'item_name' => $request->item_name,
             'product_code' => $request->product_code,
-            'brand_name' => $request->brand_name,
+            'brand_id' => $request->brand_id,
             'category_id' => $request->category_id,
             'city_id' => $request->city_id,
             'sector_id' => $request->sector_id,
@@ -1245,11 +1231,10 @@ class SpareController extends Controller
             $allHistory = [];
 
             foreach ($stockLogs as $log) {
-                // Use log's brand_name if available, otherwise use spare's current brand_name, or 'N/A'
-                $brandName = $log->brand_name;
-                if (empty($brandName)) {
-                    $brandName = $spare->brand_name ?? 'N/A';
-                }
+                // Use log's brand_id, otherwise spare's brand_id
+                $brandId = $log->brand_id ?? $spare->brand_id;
+                $brand = $brandId ? \App\Models\Brand::find($brandId) : null;
+                $brandName = $brand ? $brand->name : 'N/A';
                 $date = $log->created_at->format('Y-m-d H:i:s');
                 $quantity = $log->quantity;
                 $remarks = $log->remarks ?? '';
@@ -1265,8 +1250,9 @@ class SpareController extends Controller
                 ];
 
                 // Group by brand
-                if (!isset($historyByBrand[$brandName])) {
-                    $historyByBrand[$brandName] = [
+                if (!isset($historyByBrand[$brandId])) {
+                    $historyByBrand[$brandId] = [
+                        'brand_id' => $brandId,
                         'brand_name' => $brandName,
                         'total_quantity' => 0,
                         'entries' => [],
@@ -1275,8 +1261,8 @@ class SpareController extends Controller
                     ];
                 }
 
-                $historyByBrand[$brandName]['total_quantity'] += $quantity;
-                $historyByBrand[$brandName]['entries'][] = [
+                $historyByBrand[$brandId]['total_quantity'] += $quantity;
+                $historyByBrand[$brandId]['entries'][] = [
                     'id' => $log->id,
                     'quantity' => $quantity,
                     'date' => $date,
@@ -1285,11 +1271,11 @@ class SpareController extends Controller
                 ];
 
                 // Update dates
-                if ($date < $historyByBrand[$brandName]['first_entry_date']) {
-                    $historyByBrand[$brandName]['first_entry_date'] = $date;
+                if ($date < $historyByBrand[$brandId]['first_entry_date']) {
+                    $historyByBrand[$brandId]['first_entry_date'] = $date;
                 }
-                if ($date > $historyByBrand[$brandName]['last_entry_date']) {
-                    $historyByBrand[$brandName]['last_entry_date'] = $date;
+                if ($date > $historyByBrand[$brandId]['last_entry_date']) {
+                    $historyByBrand[$brandId]['last_entry_date'] = $date;
                 }
             }
 
@@ -1301,36 +1287,31 @@ class SpareController extends Controller
 
             // Get old brand summaries (brands that are no longer current)
             $oldBrandSummaries = [];
-            $currentBrand = $spare->brand_name ?? '';
+            $currentBrandId = $spare->brand_id;
             
-            // Get all unique brands from stock logs
-            $allBrandsInLogs = $spare->stockLogs()
+            // Get all unique brand_ids from stock logs
+            $allBrandIdsInLogs = $spare->stockLogs()
                 ->where('change_type', 'in')
-                ->whereNotNull('brand_name')
-                ->where('brand_name', '!=', '')
+                ->whereNotNull('brand_id')
                 ->distinct()
-                ->pluck('brand_name')
+                ->pluck('brand_id')
                 ->toArray();
             
-            foreach ($allBrandsInLogs as $oldBrandName) {
+            foreach ($allBrandIdsInLogs as $oldBrandId) {
                 // Skip if this is the current brand
-                if (!empty($currentBrand) && $oldBrandName === $currentBrand) {
+                if ($currentBrandId && $oldBrandId == $currentBrandId) {
                     continue;
                 }
                 
                 // Skip if already processed in historyByBrand
-                $alreadyInHistory = false;
-                foreach ($historyByBrand as $brandData) {
-                    if ($brandData['brand_name'] === $oldBrandName) {
-                        $alreadyInHistory = true;
-                        break;
-                    }
+                if (isset($historyByBrand[$oldBrandId])) {
+                    continue;
                 }
                 
                 // Get all logs for this old brand
                 $oldBrandInLogs = $spare->stockLogs()
                     ->where('change_type', 'in')
-                    ->where('brand_name', $oldBrandName)
+                    ->where('brand_id', $oldBrandId)
                     ->orderBy('created_at', 'asc')
                     ->get();
                 
@@ -1345,7 +1326,7 @@ class SpareController extends Controller
                 // Get out logs between start and end date (approximate - all out logs during this period)
                 $oldBrandOutLogs = $spare->stockLogs()
                     ->where('change_type', 'out')
-                    ->whereBetween('created_at', [$oldBrandStartDate, $oldBrandEndDate])
+                    ->where('brand_id', $oldBrandId)
                     ->get();
                 
                 $totalReceived = $oldBrandInLogs->sum('quantity');
@@ -1364,7 +1345,11 @@ class SpareController extends Controller
                     }
                 }
                 
+                $oldBrand = \App\Models\Brand::find($oldBrandId);
+                $oldBrandName = $oldBrand ? $oldBrand->name : 'Unknown';
+                
                 $oldBrandSummaries[] = [
+                    'brand_id' => $oldBrandId,
                     'brand_name' => $oldBrandName,
                     'total_quantity_received' => $totalReceived,
                     'total_quantity_used' => $totalUsed,
@@ -1389,7 +1374,8 @@ class SpareController extends Controller
                     'id' => $spare->id,
                     'item_name' => $spare->item_name,
                     'product_code' => $spare->product_code,
-                    'current_brand' => $spare->brand_name,
+                    'brand_id' => $spare->brand_id,
+                    'current_brand' => $spare->brand->name ?? 'N/A',
                     'category' => $spare->category,
                 ],
                 'history_by_brand' => $historyByBrand,
@@ -1398,7 +1384,8 @@ class SpareController extends Controller
                 'related_brands' => $relatedSpares->map(function($relatedSpare) {
                     return [
                         'id' => $relatedSpare->id,
-                        'brand_name' => $relatedSpare->brand_name,
+                        'brand_id' => $relatedSpare->brand_id,
+                        'brand_name' => $relatedSpare->brand->name ?? 'N/A',
                         'product_code' => $relatedSpare->product_code,
                         'stock_quantity' => $relatedSpare->stock_quantity,
                         'total_received_quantity' => $relatedSpare->total_received_quantity,
@@ -1440,11 +1427,15 @@ class SpareController extends Controller
             // Apply location filtering
             $this->filterSparesByLocation($query, $user);
             
-            $brands = $query->whereNotNull('brand_name')
-                ->where('brand_name', '!=', '')
+            $brands = $query->whereNotNull('brand_id')
                 ->distinct()
-                ->orderBy('brand_name')
-                ->pluck('brand_name')
+                ->get()
+                ->map(function($spare) {
+                    return $spare->brand->name ?? 'N/A';
+                })
+                ->unique()
+                ->sort()
+                ->values()
                 ->toArray();
 
             // Get all spares with same item_name but different brands
@@ -1457,7 +1448,8 @@ class SpareController extends Controller
                     return [
                         'id' => $spare->id,
                         'item_name' => $spare->item_name,
-                        'brand_name' => $spare->brand_name,
+                        'brand_id' => $spare->brand_id,
+                        'brand_name' => $spare->brand->name ?? 'N/A',
                         'product_code' => $spare->product_code,
                         'stock_quantity' => $spare->stock_quantity,
                         'total_received_quantity' => $spare->total_received_quantity,
@@ -1481,7 +1473,7 @@ class SpareController extends Controller
     /**
      * Show old brand history page
      */
-    public function showOldBrandHistory(Request $request, $itemName, $brandName)
+    public function showOldBrandHistory(Request $request, $itemName, $brandId)
     {
         try {
             $user = Auth::user();
@@ -1490,10 +1482,10 @@ class SpareController extends Controller
             $query = Spare::where('item_name', $itemName);
             $this->filterSparesByLocation($query, $user);
             
-            $allSpares = $query->get();
+            $allSpares = $query->with('brand')->get();
             
             // Get the specific brand's spare
-            $spare = $allSpares->where('brand_name', $brandName)->first();
+            $spare = $allSpares->where('brand_id', $brandId)->first();
             
             if (!$spare) {
                 return redirect()->route('admin.spares.index')
@@ -1501,7 +1493,7 @@ class SpareController extends Controller
             }
 
             // Get all related brands (same item_name, different brands)
-            $relatedSpares = $allSpares->where('brand_name', '!=', $brandName)->values();
+            $relatedSpares = $allSpares->where('brand_id', '!=', $brandId)->values();
 
             // Get stock history for this brand
             $stockLogs = $spare->stockLogs()
@@ -1512,7 +1504,8 @@ class SpareController extends Controller
             // Group by brand
             $historyByBrand = [];
             foreach ($stockLogs as $log) {
-                $logBrandName = $log->brand_name ?? $spare->brand_name ?? 'N/A';
+                $logBrandId = $log->brand_id ?? $spare->brand_id;
+                $logBrandName = \App\Models\Brand::find($logBrandId)->name ?? 'N/A';
                 
                 if (!isset($historyByBrand[$logBrandName])) {
                     $historyByBrand[$logBrandName] = [
@@ -1537,7 +1530,7 @@ class SpareController extends Controller
                 'relatedSpares',
                 'historyByBrand',
                 'itemName',
-                'brandName'
+                'brandId'
             ));
         } catch (\Exception $e) {
             \Log::error('Error showing old brand history', [

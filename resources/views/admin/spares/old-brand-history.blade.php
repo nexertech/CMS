@@ -8,7 +8,7 @@
   <div class="d-flex justify-content-between align-items-center">
     <div>
       <h2 class="text-white mb-2">Brand History: {{ $itemName }}</h2>
-      <p class="text-light">Complete history for brand: <strong>{{ $brandName }}</strong></p>
+      <p class="text-light">Complete history for brand: <strong>{{ $spare->brand->name ?? 'N/A' }}</strong></p>
     </div>
     <a href="{{ route('admin.spares.index') }}" class="btn btn-outline-secondary">
       <i data-feather="arrow-left" class="me-2"></i>Back to Products
@@ -22,7 +22,7 @@
     <div class="card-glass">
       <div class="d-flex align-items-center mb-4" style="border-bottom: 2px solid rgba(59, 130, 246, 0.2); padding-bottom: 12px;">
         <i data-feather="tag" class="me-2 text-primary" style="width: 20px; height: 20px;"></i>
-        <h5 class="text-white mb-0" style="font-size: 1.1rem; font-weight: 600;">Brand: {{ $brandName }}</h5>
+        <h5 class="text-white mb-0" style="font-size: 1.1rem; font-weight: 600;">Brand: {{ $spare->brand->name ?? 'N/A' }}</h5>
       </div>
       
       <div class="row">
@@ -84,7 +84,7 @@
             @foreach($relatedSpares as $relatedSpare)
             <tr>
               <td style="padding: 0.5rem; border-right: 1px solid rgba(201, 160, 160, 0.3) !important;">
-                <strong class="text-info">{{ $relatedSpare->brand_name }}</strong>
+                <strong class="text-info">{{ $relatedSpare->brand->name ?? 'N/A' }}</strong>
               </td>
               <td style="padding: 0.5rem; border-right: 1px solid rgba(201, 160, 160, 0.3) !important;">{{ $relatedSpare->product_code ?? 'N/A' }}</td>
               <td style="padding: 0.5rem; border-right: 1px solid rgba(201, 160, 160, 0.3) !important;">
@@ -94,7 +94,7 @@
               </td>
               <td style="padding: 0.5rem; border-right: 1px solid rgba(201, 160, 160, 0.3) !important;">{{ number_format($relatedSpare->total_received_quantity ?? 0, 0) }}</td>
               <td style="padding: 0.5rem;">
-                <a href="{{ route('admin.spares.old-brand-history', ['itemName' => urlencode($itemName), 'brandName' => urlencode($relatedSpare->brand_name)]) }}" class="btn btn-outline-info btn-sm">
+                <a href="{{ route('admin.spares.old-brand-history', ['itemName' => urlencode($itemName), 'brandName' => $relatedSpare->brand_id]) }}" class="btn btn-outline-info btn-sm">
                   <i data-feather="clock" style="width: 14px; height: 14px;"></i> View History
                 </a>
               </td>

@@ -199,9 +199,23 @@
     </div>
     @endif
     @if($user && ($user->hasPermission('spares')))
-    <a href="{{ route('admin.spares.index') }}" class="nav-link d-block py-2 px-3 mb-1 {{ request()->routeIs('admin.spares.*') ? 'active' : '' }}">
-      <i data-feather="package" class="me-2"></i> Stock Products
-    </a>
+    <div class="nav-item-parent mb-1">
+      <div class="nav-link d-flex align-items-center justify-content-between py-2 px-3 {{ request()->routeIs('admin.spares.*') || request()->routeIs('admin.brands.*') ? 'active' : '' }}" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#stockMgmtSubmenu" aria-expanded="{{ request()->routeIs('admin.spares.*') || request()->routeIs('admin.brands.*') ? 'true' : 'false' }}">
+        <div class="d-flex align-items-center flex-grow-1">
+          <i data-feather="package" class="me-2"></i> 
+          <span>Stock Mgmt</span>
+        </div>
+        <i data-feather="chevron-down" class="nav-arrow ms-2" style="font-size: 14px; transition: transform 0.3s;"></i>
+      </div>
+      <div class="collapse {{ request()->routeIs('admin.spares.*') || request()->routeIs('admin.brands.*') ? 'show' : '' }}" id="stockMgmtSubmenu">
+        <a href="{{ route('admin.spares.index') }}" class="nav-link d-block py-2 px-3 mb-2 mt-2 {{ request()->routeIs('admin.spares.*') ? 'active' : '' }}" style="background: rgba(59, 130, 246, 0.08); margin-left: 20px; margin-right: 8px; border-left: 3px solid rgba(59, 130, 246, 0.4); border-radius: 6px;">
+          <i data-feather="box" class="me-2" style="width: 18px; height: 18px;"></i> Stock Products
+        </a>
+        <a href="{{ route('admin.brands.index') }}" class="nav-link d-block py-2 px-3 mb-2 {{ request()->routeIs('admin.brands.*') ? 'active' : '' }}" style="background: rgba(59, 130, 246, 0.08); margin-left: 20px; margin-right: 8px; border-left: 3px solid rgba(59, 130, 246, 0.4); border-radius: 6px;">
+          <i data-feather="tag" class="me-2" style="width: 18px; height: 18px;"></i> Brands
+        </a>
+      </div>
+    </div>
     @endif
     @if($user && ($user->hasPermission('reports')))
     <a href="{{ route('admin.reports.index') }}" class="nav-link d-block py-2 px-3 mb-1 {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
@@ -557,7 +571,7 @@
       }
 
       // Handle submenu collapse/expand with arrow rotation and icon initialization
-      const submenus = ['employeesSubmenu', 'complaintsManagementSubmenu'];
+      const submenus = ['employeesSubmenu', 'complaintsManagementSubmenu', 'stockMgmtSubmenu'];
       
       submenus.forEach(submenuId => {
         const submenu = document.getElementById(submenuId);

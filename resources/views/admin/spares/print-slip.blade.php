@@ -86,7 +86,7 @@
         
         <div class="info-row">
             <div class="info-label">Brand Name:</div>
-            <div class="info-value">{{ $spare->brand_name ?? 'N/A' }}</div>
+            <div class="info-value">{{ $spare->brand->name ?? 'N/A' }}</div>
         </div>
         
         <div class="info-row">
@@ -96,7 +96,7 @@
         
         <div class="info-row">
             <div class="info-label">Category:</div>
-            <div class="info-value">{{ ucfirst($spare->category ?? 'N/A') }}</div>
+            <div class="info-value">{{ $spare->category->name ?? 'N/A' }}</div>
         </div>
         
         <div class="info-row">

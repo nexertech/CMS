@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\CityController as AdminCityController;
 use App\Http\Controllers\Admin\CmeController as AdminCmeController;
 use App\Http\Controllers\Admin\DesignationController as AdminDesignationController;
 use App\Http\Controllers\Admin\FeedbackController as AdminFeedbackController;
+use App\Http\Controllers\Admin\BrandController as AdminBrandController;
 use App\Http\Middleware\AdminAccessMiddleware;
 use App\Http\Controllers\SearchController;
 // Frontend routes are defined in routes/frontend.php and loaded here
@@ -252,6 +253,8 @@ Route::middleware(['auth', 'verified', AdminAccessMiddleware::class])
     
     // Resource routes and routes with parameters
     Route::resource('spares', AdminSpareController::class)->middleware(['permission:spares.view']);
+    Route::resource('brands', AdminBrandController::class)->middleware(['permission:spares.view']);
+    Route::get('brands/by-category/{category}', [AdminBrandController::class, 'getByCategory'])->name('brands.by-category');
     Route::get('spares/{spare}/edit-data', [AdminSpareController::class, 'editData'])->name('spares.edit-data');
     Route::get('spares/{spare}/print-slip', [AdminSpareController::class, 'printSlip'])->middleware(['permission:spares.view'])->name('spares.print-slip');
     Route::get('spares/{spare}/history', [AdminSpareController::class, 'getProductHistory'])->middleware(['permission:spares.view'])->name('spares.history');

@@ -73,6 +73,7 @@
         <tr>
           <th>ID</th>
           <th>House No</th>
+          <th>Type</th>
           <th>GE Group</th>
           <th>GE Node</th>
           <th>Address</th>
@@ -86,6 +87,7 @@
         <tr>
           <td>{{ $house->id }}</td>
           <td class="px-4 py-2 whitespace-nowrap">{{ $house->house_no }}</td>
+          <td>{{ $house->type ?: 'N/A' }}</td>
           <td>{{ $house->city ? $house->city->name : 'N/A' }}</td>
           <td>{{ $house->sector ? $house->sector->name : 'N/A' }}</td>
           <td>{{ Str::limit($house->address, 30) ?: 'N/A' }}</td>
@@ -111,7 +113,7 @@
         </tr>
         @empty
         <tr>
-          <td colspan="8" class="text-center text-muted py-4">
+          <td colspan="9" class="text-center text-muted py-4">
             <i data-feather="home" class="feather-lg mb-2"></i>
             <div>No houses found</div>
           </td>

@@ -20,6 +20,10 @@
             <td>{{ $house->username }}</td>
           </tr>
           <tr>
+            <th>Type</th>
+            <td>{{ $house->type ?: 'N/A' }}</td>
+          </tr>
+          <tr>
             <th>Password</th>
             <td>••••••••</td>
           </tr>

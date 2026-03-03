@@ -19,7 +19,7 @@
     @csrf
     
     <div class="row">
-      <div class="col-md-4">
+      <div class="col-md-3">
         <div class="mb-3">
           <label for="house_no" class="form-label text-white">House Number <span class="text-danger">*</span></label>
           <input type="text" class="form-control @error('house_no') is-invalid @enderror" id="house_no" name="house_no" value="{{ old('house_no') }}" placeholder="e.g., H-101" required>
@@ -28,7 +28,7 @@
           @enderror
         </div>
       </div>
-      <div class="col-md-4">
+      <div class="col-md-3">
         <div class="mb-3">
           <label for="username" class="form-label text-white">Username <span class="text-danger">*</span></label>
           <input type="text" class="form-control @error('username') is-invalid @enderror" 
@@ -38,7 +38,30 @@
           @enderror
         </div>
       </div>
-      <div class="col-md-4">
+      <div class="col-md-3">
+        <div class="mb-3">
+          <label for="type" class="form-label text-white">Type</label>
+          <div id="typeDropdownContainer">
+            <select class="form-select @error('type') is-invalid @enderror" id="typeSelect" onchange="checkType(this.value)">
+              <option value="">Select Type</option>
+              <option value="House" {{ old('type') == 'House' ? 'selected' : '' }}>House</option>
+              <option value="Building" {{ old('type') == 'Building' ? 'selected' : '' }}>Building</option>
+              <option value="Office" {{ old('type') == 'Office' ? 'selected' : '' }}>Office</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div id="typeInputContainer" style="display: none; position: relative;">
+            <input type="text" class="form-control @error('type') is-invalid @enderror" id="typeInput" name="type" value="{{ old('type') }}" placeholder="Type custom type...">
+            <button type="button" class="btn btn-sm btn-link text-white position-absolute end-0 top-0 mt-1 me-1" onclick="showTypeDropdown()" title="Back to dropdown">
+                <i data-feather="corner-up-left" style="width: 14px; height: 14px;"></i>
+            </button>
+          </div>
+          @error('type')
+            <div class="invalid-feedback d-block">{{ $message }}</div>
+          @enderror
+        </div>
+      </div>
+      <div class="col-md-3">
         <div class="mb-3">
           <label for="password" class="form-label text-white">Password <span class="text-danger">*</span></label>
           <input type="password" class="form-control @error('password') is-invalid @enderror" 
@@ -148,6 +171,45 @@
         const citySelect = document.getElementById('city_id');
         const sectorSelect = document.getElementById('sector_id');
         const addressInput = document.getElementById('address');
+        const typeSelect = document.getElementById('typeSelect');
+        const typeInput = document.getElementById('typeInput');
+        const typeDropdownContainer = document.getElementById('typeDropdownContainer');
+        const typeInputContainer = document.getElementById('typeInputContainer');
+
+        window.checkType = function(value) {
+            if (value === 'Other') {
+                typeDropdownContainer.style.display = 'none';
+                typeInputContainer.style.display = 'block';
+                typeSelect.name = '';
+                typeInput.name = 'type';
+                typeInput.value = '';
+                typeInput.focus();
+                feather.replace();
+            } else {
+                typeSelect.name = 'type';
+                typeInput.name = '';
+            }
+        };
+
+        window.showTypeDropdown = function() {
+            typeDropdownContainer.style.display = 'block';
+            typeInputContainer.style.display = 'none';
+            typeSelect.name = 'type';
+            typeInput.name = '';
+            typeSelect.value = '';
+        };
+
+        // Handle old values and initial state
+        const oldType = '{{ old('type') }}';
+        if (oldType && !['House', 'Building', 'Office', ''].includes(oldType)) {
+            typeDropdownContainer.style.display = 'none';
+            typeInputContainer.style.display = 'block';
+            typeSelect.name = '';
+            typeInput.name = 'type';
+        } else {
+            typeSelect.name = 'type';
+            typeInput.name = '';
+        }
         
         function loadSectors(cityId, targetSectorId = null) {
             if (!sectorSelect) return;
