@@ -249,7 +249,6 @@ Route::middleware(['auth', 'verified', AdminAccessMiddleware::class])
     Route::get('spares/get-categories', [AdminSpareController::class, 'getCategories'])->middleware(['permission:spares.view'])->name('spares.get-categories');
     Route::get('spares/get-products-by-category', [AdminSpareController::class, 'getProductsByCategory'])->middleware(['permission:spares.view'])->name('spares.get-products-by-category');
     Route::get('spares/get-product-brands', [AdminSpareController::class, 'getProductBrands'])->middleware(['permission:spares.view'])->name('spares.get-product-brands');
-    Route::get('spares/old-brand-history/{itemName}/{brandName}', [AdminSpareController::class, 'showOldBrandHistory'])->middleware(['permission:spares.view'])->name('spares.old-brand-history');
     
     // Resource routes and routes with parameters
     Route::resource('spares', AdminSpareController::class)->middleware(['permission:spares.view']);
