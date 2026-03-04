@@ -64,6 +64,24 @@
     padding-right: 15px !important;
   }
 
+  /* Override global footer background for home page */
+  footer, footer *, footer::before, footer::after {
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  footer p {
+    color: #ffffff !important;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 0, 0, 0.5);
+    font-weight: 700 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
   footer .text-center {
     text-align: center !important;
     width: 100% !important;
@@ -111,10 +129,10 @@
   }
 
   .container {
-    width: 85%;
+    width: 90%;
     max-width: 850px;
     margin: 10px auto;
-    margin-top:85px;
+    margin-top: 100px; 
     padding: 0;
     display: flex;
     background: rgba(255, 255, 255, 0.95);
@@ -174,11 +192,20 @@
     margin-top: -10px;
   }
 
-  .logo img {
-    width: 80px;
+ .logo img {
+    width: 100px;
     height: auto;
     display: block;
     margin: 0 auto;
+
+    /* White PNG ko Navy Blue (#000080) me convert karne ke liye */
+    filter: brightness(0) saturate(100%) invert(7%) sepia(95%) saturate(5000%) hue-rotate(235deg) brightness(70%) contrast(120%);
+
+    transition: transform 0.3s ease;
+}
+
+  .logo img:hover {
+    transform: scale(1.05);
   }
 
   .logo svg {

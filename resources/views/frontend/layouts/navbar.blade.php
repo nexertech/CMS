@@ -147,7 +147,7 @@
     background-repeat: no-repeat !important;
     border-bottom: none !important;
     position: absolute !important;
-    top: 10px;
+    top: 2px;
     left: 0;
     right: 0;
     width: 100%;

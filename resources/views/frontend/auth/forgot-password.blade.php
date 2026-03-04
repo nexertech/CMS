@@ -17,16 +17,32 @@
     height: 100%;
     margin: 0;
     padding: 0;
+    overflow: hidden; /* Prevent scroll */
   }
 
   body {
-    background: linear-gradient(135deg, #001f3f 0%, #003366 50%, #004d99 100%) !important;
+    background: url('{{ asset('assests/Background.jpg') }}') no-repeat center center/cover !important;
+    background-attachment: fixed !important;
     font-family: 'Inter', sans-serif;
     margin: 0;
     padding: 0;
-    min-height: 100%;
+    height: 100vh; /* Lock height to viewport */
     display: flex;
     flex-direction: column;
+    overflow: hidden; /* Prevent scroll */
+    position: relative;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(0, 31, 63, 0.4) 0%, rgba(0, 51, 102, 0.45) 50%, rgba(0, 77, 153, 0.4) 100%);
+    z-index: 1;
+    pointer-events: none;
   }
 
   main {
@@ -46,6 +62,24 @@
     z-index: 999 !important;
   }
 
+  /* Aggressive footer override for forgot password page */
+  footer, footer *, footer::before, footer::after {
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  footer p {
+    color: #ffffff !important;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 0, 0, 0.5);
+    font-weight: 700 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
   /* Override navbar to be visible */
   .navbar {
     background-image: url('https://img.freepik.com/premium-photo/dark-blue-ocean-surface-seen-from-underwater_629685-6504.jpg') !important;
@@ -55,15 +89,16 @@
 
   /* Forgot Password Page */
   .navy-forgot-page {
-    min-height: auto;
+    min-height: calc(100vh - 120px);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0.5rem 1rem 0.5rem 1rem;
-    margin-top: 90px;
-    margin-bottom: 0;
+    padding: 0.5rem 1rem;
+    margin-top: 60px; /* Reduced from 80px */
+    margin-bottom: 40px; /* Reduced to pull it up away from footer */
     background: transparent;
     position: relative;
+    z-index: 2; /* Sit above body overlay */
     overflow: hidden;
   }
 
@@ -84,13 +119,13 @@
     position: relative;
     z-index: 1;
     width: 100%;
-    max-width: 500px;
+    max-width: 650px; /* Increased from 500px */
   }
 
   .navy-forgot-card {
     background: #ffffff;
     border-radius: 20px;
-    padding: 1.5rem;
+    padding: 1.5rem 2.5rem; /* Increased horizontal padding */
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
     border: 1px solid rgba(0, 51, 102, 0.1);
     position: relative;
@@ -108,9 +143,9 @@
   }
 
   .navy-forgot-icon-wrapper {
-    width: 70px;
-    height: 70px;
-    margin: 0 auto 1rem;
+    width: 50px; /* Further reduced from 60px */
+    height: 50px; /* Further reduced from 60px */
+    margin: 0 auto 0.5rem;
     background: linear-gradient(135deg, var(--navy-primary), var(--navy-light));
     border-radius: 50%;
     display: flex;
@@ -137,7 +172,7 @@
   }
 
   .navy-forgot-title {
-    font-size: 1.4rem;
+    font-size: 1.35rem; /* Slightly smaller */
     font-weight: 700;
     color: var(--navy-primary);
     text-align: center;
@@ -148,8 +183,8 @@
     background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
     border-left: 4px solid var(--navy-accent);
     border-radius: 12px;
-    padding: 1.25rem;
-    margin: 1rem 0;
+    padding: 0.75rem 1.25rem; /* Further reduced padding */
+    margin: 0.5rem 0; /* Further reduced margin */
     box-shadow: 0 5px 15px rgba(0, 102, 204, 0.1);
   }
 
@@ -179,8 +214,8 @@
   .navy-forgot-contact-box {
     background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy-primary) 100%);
     border-radius: 12px;
-    padding: 1rem;
-    margin-top: 1rem;
+    padding: 0.6rem 1rem; /* Further reduced padding */
+    margin-top: 0.5rem; /* Further reduced margin */
     text-align: center;
     color: white;
   }
@@ -226,8 +261,8 @@
     text-align: center;
     color: #6c757d;
     font-size: 0.8rem;
-    margin-top: 1rem;
-    padding-top: 1rem;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
     border-top: 1px solid #e5e7eb;
   }
 
