@@ -370,10 +370,6 @@ class FrontendUserController extends Controller
     public function assignLocations(Request $request, FrontendUser $frontend_user)
     {
         $validator = Validator::make($request->all(), [
-            'city_ids' => 'nullable|array',
-            'city_ids.*' => 'exists:cities,id',
-            'sector_ids' => 'nullable|array',
-            'sector_ids.*' => 'exists:sectors,id',
             'privilege_cme_ids' => 'nullable|array',
             'privilege_cme_ids.*' => 'exists:cmes,id',
             'privilege_city_ids' => 'nullable|array',

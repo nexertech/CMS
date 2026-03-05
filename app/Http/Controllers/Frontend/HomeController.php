@@ -1096,48 +1096,72 @@ class HomeController extends Controller
             }
         }
 
-        // Get Top 15 Products by Issued Quantity
-        // REVERT: Use Spare model directly as ComplaintSpare might be empty or unpopulated
-        $categoryUsageQuery = \App\Models\Spare::selectRaw('
-                item_name,
-                SUM(issued_quantity) as total_used,
-                SUM(total_received_quantity) as total_received
+        // Get Top 10 Products by Issued Quantity from SpareStockLog for accurate time filtering
+        $categoryUsageQuery = \App\Models\SpareStockLog::join('spares', 'spare_stock_logs.spare_id', '=', 'spares.id')
+            ->selectRaw('
+                spares.item_name,
+                SUM(CASE WHEN spare_stock_logs.change_type = "out" THEN spare_stock_logs.quantity ELSE 0 END) as total_used,
+                SUM(CASE WHEN spare_stock_logs.change_type = "in" THEN spare_stock_logs.quantity ELSE 0 END) as total_received
             ')
-            ->whereNotNull('item_name')
-            ->groupBy('item_name')
+            ->whereNotNull('spares.item_name')
+            ->groupBy('spares.item_name')
             ->orderByDesc('total_used')
             ->limit(10);
 
-        // Apply Global Location Scoping
-        $this->applyFrontendLocationScope($categoryUsageQuery, $locationScope, 'city_id', 'sector_id');
+        // Apply Global Location Scoping (on joined spares table)
+        $this->applyFrontendLocationScope($categoryUsageQuery, $locationScope, 'spares.city_id', 'spares.sector_id');
 
         // Apply dynamic dashboard filters to Products list
         if ($cityId) {
-            $categoryUsageQuery->where('city_id', $cityId);
+            $categoryUsageQuery->where('spares.city_id', $cityId);
         } elseif ($sectorId) {
-            $categoryUsageQuery->where('sector_id', $sectorId);
+            $categoryUsageQuery->where('spares.sector_id', $sectorId);
         } elseif ($cmesId) {
             $cityIdsForProducts = City::where('cme_id', $cmesId)->pluck('id')->toArray();
-            $categoryUsageQuery->whereIn('city_id', $cityIdsForProducts);
+            $categoryUsageQuery->whereIn('spares.city_id', $cityIdsForProducts);
         }
 
-        // If specific category date range is provided (Note: used_at/updated_at on Spare might be different)
-        $categoryDateRange = $request->get('category_date_range');
-        if ($categoryDateRange) {
+        // Apply date filter to SpareStockLog created_at column
+        $categoryDateRange = $request->get('category_date_range', $dateRange); // Fallback to global dateRange
+        if ($categoryDateRange && $categoryDateRange !== 'all_time') {
             $now = now();
             switch ($categoryDateRange) {
+                case 'yesterday':
+                    $categoryUsageQuery->whereDate('spare_stock_logs.created_at', $now->copy()->subDay()->toDateString());
+                    break;
+                case 'today':
+                    $categoryUsageQuery->whereDate('spare_stock_logs.created_at', $now->toDateString());
+                    break;
+                case 'this_week':
+                    $categoryUsageQuery->whereBetween('spare_stock_logs.created_at', [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()]);
+                    break;
+                case 'last_week':
+                    $categoryUsageQuery->whereBetween('spare_stock_logs.created_at', [$now->copy()->subWeek()->startOfWeek(), $now->copy()->subWeek()->endOfWeek()]);
+                    break;
                 case 'this_month':
-                    $categoryUsageQuery->whereMonth('updated_at', $now->month)
-                        ->whereYear('updated_at', $now->year);
+                    $categoryUsageQuery->whereMonth('spare_stock_logs.created_at', $now->month)
+                        ->whereYear('spare_stock_logs.created_at', $now->year);
+                    break;
+                case 'last_month':
+                    $categoryUsageQuery->whereMonth('spare_stock_logs.created_at', $now->copy()->subMonth()->month)
+                        ->whereYear('spare_stock_logs.created_at', $now->copy()->subMonth()->year);
                     break;
                 case 'last_6_months':
-                    $categoryUsageQuery->where('updated_at', '>=', $now->copy()->subMonths(6)->startOfDay());
+                    $categoryUsageQuery->where('spare_stock_logs.created_at', '>=', $now->copy()->subMonths(6)->startOfDay());
                     break;
                 case 'this_year':
-                    $categoryUsageQuery->whereYear('updated_at', $now->year);
+                    $categoryUsageQuery->whereYear('spare_stock_logs.created_at', $now->year);
                     break;
                 case 'last_year':
-                    $categoryUsageQuery->whereYear('updated_at', $now->copy()->subYear()->year);
+                    $categoryUsageQuery->whereYear('spare_stock_logs.created_at', $now->copy()->subYear()->year);
+                    break;
+                case 'custom':
+                    if ($request->has('start_date') && $request->has('end_date')) {
+                        $categoryUsageQuery->whereBetween('spare_stock_logs.created_at', [
+                            \Carbon\Carbon::parse($request->start_date)->startOfDay(),
+                            \Carbon\Carbon::parse($request->end_date)->endOfDay()
+                        ]);
+                    }
                     break;
             }
         }
@@ -1775,9 +1799,11 @@ class HomeController extends Controller
                 $windowTotalReceived += $receivedQty;
             }
 
-            // If All Time is selected, use the master counters from the Spare model
+            // If All Time is selected AND no specific dashboard time filter is applied, use the master counters from the Spare model
             // This ensures matches with Dashboard and avoids issues with missing log history
-            if ($year === 'all_time') {
+            $hasTimeFilter = !empty($dashboardFilters['date_range']) && $dashboardFilters['date_range'] !== 'all_time';
+            
+            if ($year === 'all_time' && !$hasTimeFilter) {
                 $stockConsumptionData[$spare->item_name] = [
                     'total_received' => (int)$spare->total_received_quantity,
                     'total_used' => (int)$spare->issued_quantity,
@@ -1786,7 +1812,8 @@ class HomeController extends Controller
                     'monthly_received_data' => $monthlyReceivedData
                 ];
             } else {
-                // For specific year, use the calculated window values for Received/Used
+                // For specific year OR when a dashboard time filter is applied,
+                // use the calculated window values for Received/Used to ensure consistency with graphs
                 $stockConsumptionData[$spare->item_name] = [
                     'total_received' => $windowTotalReceived,
                     'total_used' => $windowTotalIssued,

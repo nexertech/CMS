@@ -233,7 +233,7 @@
 @endpush
 
 @push('scripts')
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js" integrity="sha384-1PH7loFe9aVDAyHgsXQly6QE1ATOEHvmQt4vAuu6ppdeL5lm9vqAczXV0R6sbJkJ" crossorigin="anonymous"></script>
 <script>
     function exportTableToExcel(tableID, filename = ''){
         var table = document.getElementById(tableID);

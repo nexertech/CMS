@@ -1,5 +1,9 @@
 <?php
 
+// Forcefully remove X-Powered-By header to prevent technology disclosure
+header_remove('X-Powered-By');
+@header('X-Powered-By: ');
+
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 

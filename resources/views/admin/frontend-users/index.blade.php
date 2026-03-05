@@ -1055,19 +1055,25 @@
         allCmeCbs.forEach(cb => {
           cb.checked = true;
           const cmeId = parseInt(cb.dataset.cmeId);
-          privilegeCmeIds.push(cmeId);
+          if (!isNaN(cmeId)) {
+            privilegeCmeIds.push(cmeId);
+          }
         });
 
         allCityCbs.forEach(cb => {
           cb.checked = true;
           const cityId = parseInt(cb.dataset.cityId);
-          privilegeCityIds.push(cityId);
+          if (!isNaN(cityId)) {
+            privilegeCityIds.push(cityId);
+          }
         });
 
         allSectorCbs.forEach(cb => {
           cb.checked = true;
           const sectorId = parseInt(cb.dataset.sectorId);
-          assignedSectorIds.push(sectorId);
+          if (!isNaN(sectorId)) {
+            assignedSectorIds.push(sectorId);
+          }
         });
       } else {
         allCmeCbs.forEach(cb => {
@@ -1134,11 +1140,11 @@
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-          body: JSON.stringify({
-            privilege_cme_ids: privilegeCmeIds,
-            privilege_city_ids: privilegeCityIds,
-            sector_ids: assignedSectorIds
-          }),
+        body: JSON.stringify({
+          privilege_cme_ids: privilegeCmeIds.map(id => parseInt(id)).filter(id => !isNaN(id)),
+          privilege_city_ids: privilegeCityIds.map(id => parseInt(id)).filter(id => !isNaN(id)),
+          sector_ids: assignedSectorIds.map(id => parseInt(id)).filter(id => !isNaN(id))
+        }),
         credentials: 'same-origin'
       })
         .then(response => response.json())

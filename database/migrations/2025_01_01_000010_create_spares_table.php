@@ -16,7 +16,6 @@ return new class extends Migration
             // Product metadata
             $table->string('product_code', 50)->nullable();
             $table->unsignedBigInteger('brand_id')->nullable();
-            $table->foreign('brand_id')->references('id')->on('brands')->onDelete('set null');
             $table->string('item_name', 150);
             // Category from complaint_categories table
             $table->unsignedBigInteger('category_id')->nullable();
@@ -41,7 +40,6 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('spare_id');
             $table->unsignedBigInteger('brand_id')->nullable();
-            $table->foreign('brand_id')->references('id')->on('brands')->onDelete('set null');
             $table->enum('change_type', ['in', 'out']);
             $table->integer('quantity');
             $table->integer('reference_id')->nullable(); // complaint_id or purchase_id
