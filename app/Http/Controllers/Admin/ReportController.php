@@ -503,13 +503,19 @@ class ReportController extends Controller
         // Row categories/statuses - based on complaint statuses from Complaint model
         $rows = \App\Models\Complaint::getStatuses();
 
-        // Remove new and closed statuses from report
-        unset($rows['new']);
+        // Remove closed status from report (but keep new for unassigned)
         unset($rows['closed']);
+        
+        // Add 'unassigned' manually to represent the 'new' status mapping, then remove 'new' from rows to avoid duplicate display
+        if (isset($rows['new'])) {
+            $rows['unassigned'] = 'Unassigned';
+            unset($rows['new']);
+        } else {
+            // Fallback in case 'new' isn't explicitly returned by getStatuses()
+            $rows['unassigned'] = 'Unassigned';
+        }
 
-        // Add performa-related statuses grouped by type
-        $rows['work'] = 'Work';
-        $rows['maintenance'] = 'Maintenance';
+        // Add performa-related statuses grouped by type (omitting work and maintenance so they go to work_performa and maint_performa)
         $rows['work_priced_performa'] = 'Work Performa Priced';
         $rows['maint_priced_performa'] = 'Maintenance Performa Priced';
         $rows['product_na'] = 'Product N/A';
@@ -559,8 +565,10 @@ class ReportController extends Controller
 
                 $count = 0;
 
-                // Row mapping logic - based on complaint status (new and closed removed)
-                if ($rowKey === 'assigned') {
+                // Row mapping logic - based on complaint status (closed removed)
+                if ($rowKey === 'unassigned') {
+                    $count = $catComplaints->where('status', 'new')->count();
+                } elseif ($rowKey === 'assigned') {
                     $count = $catComplaints->where('status', 'assigned')->count();
                 } elseif ($rowKey === 'in_progress') {
                     // Count complaints with in_progress status that do NOT have any performa type
@@ -591,7 +599,7 @@ class ReportController extends Controller
                     })->count();
                 } elseif ($rowKey === 'resolved') {
                     $count = $catComplaints->where('status', 'resolved')->count();
-                } elseif ($rowKey === 'work') {
+                } elseif ($rowKey === 'work_performa') {
                     // Count complaints that have work_performa performa_type in spareApprovals
                     // Logic: If performa_type is set, use it; otherwise use complaint status
                     $count = $catComplaints->filter(function ($complaint) {
@@ -623,7 +631,7 @@ class ReportController extends Controller
 
                         return false;
                     })->count();
-                } elseif ($rowKey === 'maintenance') {
+                } elseif ($rowKey === 'maint_performa') {
                     // Count complaints that have maint_performa performa_type in spareApprovals
                     // Logic: If performa_type is set, use it; otherwise use complaint status
                     $count = $catComplaints->filter(function ($complaint) {
@@ -697,6 +705,10 @@ class ReportController extends Controller
                     // Count complaints with pertains_to_ge_const_isld status
                     $count = $catComplaints->filter(function ($complaint) {
                         return $complaint->status === 'pertains_to_ge_const_isld';
+                    })->count();
+                } elseif ($rowKey === 'barak_damages') {
+                    $count = $catComplaints->filter(function ($complaint) {
+                        return $complaint->status === 'barak_damages';
                     })->count();
                 }
 

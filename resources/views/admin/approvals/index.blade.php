@@ -4390,9 +4390,10 @@
         };
         newStatus = normalize(newStatus);
 
-        // Prevent status change if unassigned (unless selecting assigned)
+        // Prevent status change if unassigned (unless selecting assigned or the 3 special statuses)
         const currentActualStatus = select.getAttribute('data-actual-status');
-        if (currentActualStatus === 'new' && newStatus !== 'assigned') {
+        const statusesAllowedWithoutAssignment = ['assigned', 'un_authorized', 'pertains_to_ge_const_isld', 'barak_damages'];
+        if (currentActualStatus === 'new' && !statusesAllowedWithoutAssignment.includes(newStatus)) {
             alert('First assigned the complaint');
             select.value = 'unassigned';
             updateStatusSelectColor(select, 'unassigned');

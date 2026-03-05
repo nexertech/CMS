@@ -13,7 +13,7 @@
   <link href="{{ asset('css/admin.css') }}" rel="stylesheet">
   
   <script src="https://cdn.jsdelivr.net/npm/feather-icons@4.29.2/dist/feather.min.js" integrity="sha384-qEqAs1VsN9WH2myXDbiP2wGGIttL9bMRZBKCl54ZnzpDlVqbYANP9vMaoT/wvQcf" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/apexcharts" integrity="sha384-wN6wdVN2OhtKBqRf9FdlUC/ZSg1EaUOsfgN/OgUqi6drQZ+TkPHClgOfuIMu2Ec9" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
   
   <!-- Error handling for missing scripts -->
   <script>
