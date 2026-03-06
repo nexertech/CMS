@@ -104,14 +104,14 @@
         </div>
         <h4 class="text-white mb-3">Search the System</h4>
         <p class="text-light mb-4">
-          Use the search bar in the top navigation to find complaints, users, clients, employees, spare parts, and more.
+          Use the search bar in the top navigation to find complaints, users, houses, employees, spare parts, and more.
         </p>
         <div class="row">
           <div class="col-md-3 mb-3">
             <div class="card-glass text-center p-3">
               <i data-feather="alert-circle" class="text-primary mb-2"></i>
               <h6 class="text-white">Complaints</h6>
-              <p class="text-muted small">Search by ticket number, description, or client</p>
+              <p class="text-muted small">Search by ticket number, description, or house</p>
             </div>
           </div>
           <div class="col-md-3 mb-3">
@@ -123,9 +123,8 @@
           </div>
           <div class="col-md-3 mb-3">
             <div class="card-glass text-center p-3">
-              <i data-feather="briefcase" class="text-info mb-2"></i>
-              <h6 class="text-white">Clients</h6>
-              <p class="text-muted small">Search by company name or contact person</p>
+              <h6 class="text-white">Houses</h6>
+              <p class="text-muted small">Search by house number or username</p>
             </div>
           </div>
           <div class="col-md-3 mb-3">

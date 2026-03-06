@@ -203,187 +203,90 @@
   function handleHousesSearchInput() {
     if (housesSearchTimeout) clearTimeout(housesSearchTimeout);
     housesSearchTimeout = setTimeout(() => {
-      document.getElementById('housesFiltersForm').submit();
+      loadHouses();
     }, 500);
   }
 
   function submitHousesFilters() {
-    document.getElementById('housesFiltersForm').submit();
+    loadHouses();
   }
 
   function resetHousesFilters() {
+    document.getElementById('housesFiltersForm').reset();
     window.location.href = '{{ route('admin.houses.index') }}';
   }
 
-  function viewHouse(houseId) {
-    if (!houseId) return;
-    
-    const modalElement = document.getElementById('viewHouseModal');
-    const modalBody = document.getElementById('viewHouseModalBody');
-    
-    // Show loading state
-    modalBody.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
-    
-    // Show modal
-    const modal = new bootstrap.Modal(modalElement, {
-      backdrop: true,
-      keyboard: true,
-      focus: true
-    });
-    modal.show();
-    
-    // Add blur effect to background
-    document.body.classList.add('modal-open-blur');
-    
-    // Load house details via AJAX
-    fetch(`/admin/houses/${houseId}`, {
-      method: 'GET',
+  function loadHouses(url = null) {
+    const form = document.getElementById('housesFiltersForm');
+    const formData = new FormData(form);
+    const params = new URLSearchParams();
+
+    if (url) {
+      const urlObj = new URL(url, window.location.origin);
+      urlObj.searchParams.forEach((value, key) => {
+        params.append(key, value);
+      });
+    } else {
+      for (const [key, value] of formData.entries()) {
+        if (value) params.append(key, value);
+      }
+    }
+
+    const tbody = document.getElementById('housesTableBody');
+    const paginationContainer = document.getElementById('housesPagination');
+    const footer = document.getElementById('housesTableFooter');
+
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4"><div class="spinner-border text-light" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
+    }
+
+    fetch(`{{ route('admin.houses.index') }}?${params.toString()}`, {
       headers: {
         'X-Requested-With': 'XMLHttpRequest',
-        'Accept': 'text/html',
-      }
-    })
-    .then(response => {
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      return response.text();
-    })
-    .then(html => {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      
-      // Try to find the card-glass content
-      let content = doc.querySelector('.card-glass');
-      if (!content) {
-        // Fallback to body content if card-glass not found
-        content = doc.body;
-      }
-      
-      modalBody.innerHTML = content.innerHTML;
-      
-      // Function to apply table column borders
-      const applyTableBorders = () => {
-        const modalTables = modalBody.querySelectorAll('table');
-        modalTables.forEach((table) => {
-          const ths = table.querySelectorAll('th');
-          const tds = table.querySelectorAll('td');
-          
-          ths.forEach((th) => {
-            const row = th.parentElement;
-            const cellsInRow = Array.from(row.querySelectorAll('th'));
-            const cellIndex = cellsInRow.indexOf(th);
-            const isLast = cellIndex === cellsInRow.length - 1;
-            
-            if (!isLast) {
-              th.setAttribute('style', (th.getAttribute('style') || '') + ' border-right: 1px solid rgba(201, 160, 160, 0.3) !important;');
-              th.style.borderRight = '1px solid rgba(201, 160, 160, 0.3)';
-              th.style.setProperty('border-right', '1px solid rgba(201, 160, 160, 0.3)', 'important');
-            } else {
-              th.setAttribute('style', (th.getAttribute('style') || '') + ' border-right: none !important;');
-              th.style.borderRight = 'none';
-              th.style.setProperty('border-right', 'none', 'important');
-            }
-          });
-          
-          tds.forEach((td) => {
-            const row = td.parentElement;
-            const cellsInRow = Array.from(row.querySelectorAll('td'));
-            const cellIndex = cellsInRow.indexOf(td);
-            const isLast = cellIndex === cellsInRow.length - 1;
-            
-            if (!isLast) {
-              td.setAttribute('style', (td.getAttribute('style') || '') + ' border-right: 1px solid rgba(201, 160, 160, 0.3) !important;');
-              td.style.borderRight = '1px solid rgba(201, 160, 160, 0.3)';
-              td.style.setProperty('border-right', '1px solid rgba(201, 160, 160, 0.3)', 'important');
-            } else {
-              td.setAttribute('style', (td.getAttribute('style') || '') + ' border-right: none !important;');
-              td.style.borderRight = 'none';
-              td.style.setProperty('border-right', 'none', 'important');
-            }
-          });
-        });
-      };
-      
-      // Initialize icons and apply borders in the newly loaded content
-      setTimeout(() => {
-        feather.replace();
-        applyTableBorders();
-      }, 50);
-    })
-    .catch(error => {
-      console.error('Error loading house details:', error);
-      modalBody.innerHTML = '<div class="text-center py-5 text-danger">Error loading house details. Please try again.</div>';
-    });
-    
-    // Remove blur when modal is hidden
-    modalElement.addEventListener('hidden.bs.modal', function() {
-      document.body.classList.remove('modal-open-blur');
-    }, { once: true });
-  }
-
-  let currentDeleteHouseId = null;
-  
-  function deleteHouse(houseId) {
-    const row = document.querySelector(`button[data-house-id="${houseId}"]`)?.closest('tr');
-    if (!row) return;
-    
-    const houseIdCell = row.cells[0].textContent.trim();
-    const houseUsernameCell = row.cells[1].textContent.trim() || 'Unknown';
-    
-    document.getElementById('houseIdModal').textContent = houseIdCell;
-    document.getElementById('houseUsernameModal').textContent = houseUsernameCell;
-    
-    currentDeleteHouseId = houseId;
-    
-    const modal = new bootstrap.Modal(document.getElementById('deleteHouseModal'));
-    modal.show();
-    
-    // Add blur effect to background
-    document.body.classList.add('modal-open-blur');
-    
-    // Remove blur when modal is hidden
-    document.getElementById('deleteHouseModal').addEventListener('hidden.bs.modal', function() {
-      document.body.classList.remove('modal-open-blur');
-    }, { once: true });
-  }
-  
-  document.getElementById('confirmDeleteBtn')?.addEventListener('click', function() {
-    if (!currentDeleteHouseId) return;
-    
-    const houseId = currentDeleteHouseId;
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    
-    const btn = this;
-    const originalText = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<i data-feather="loader" class="spinning"></i> Deleting...';
-    
-    fetch(`/admin/houses/${houseId}`, {
-      method: 'DELETE',
-      headers: {
-        'X-CSRF-TOKEN': csrfToken,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
+        'Accept': 'application/json'
       }
     })
     .then(response => response.json())
     .then(data => {
-      if (data.success) {
-        const modal = bootstrap.Modal.getInstance(document.getElementById('deleteHouseModal'));
-        modal.hide();
-        location.reload();
-      } else {
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-        alert('Error: ' + (data.message || 'Unknown error'));
+      if (tbody) {
+        tbody.innerHTML = data.html;
+        feather.replace();
       }
+      if (paginationContainer) {
+        paginationContainer.innerHTML = data.pagination;
+        feather.replace();
+      }
+      if (footer) {
+        footer.innerHTML = `<strong style="color: #ffffff; font-size: 14px;">Total Records: ${data.total}</strong>`;
+      }
+      
+      const newUrl = `{{ route('admin.houses.index') }}?${params.toString()}`;
+      window.history.pushState({ path: newUrl }, '', newUrl);
     })
     .catch(error => {
-      btn.disabled = false;
-      btn.innerHTML = originalText;
-      alert('Error deleting house: ' + error.message);
+      console.error('Error loading houses:', error);
+      if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-danger">Error loading data.</td></tr>';
+      }
     });
-    
-    currentDeleteHouseId = null;
+  }
+
+  // Intercept pagination clicks
+  document.addEventListener('click', function(e) {
+    const paginationLink = e.target.closest('#housesPagination a');
+    if (paginationLink && paginationLink.href && !paginationLink.href.includes('javascript:')) {
+      e.preventDefault();
+      loadHouses(paginationLink.href);
+    }
+  });
+
+  // Handle browser back/forward
+  window.addEventListener('popstate', function(e) {
+    if (e.state && e.state.path) {
+      loadHouses(e.state.path);
+    } else {
+      loadHouses();
+    }
   });
 </script>
 @endpush

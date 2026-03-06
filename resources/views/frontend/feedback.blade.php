@@ -60,7 +60,7 @@
                     <div class="mb-6">
                         <label for="submitted_by" class="block text-gray-700 text-sm font-bold mb-2">Your Name</label>
                         <input type="text" id="submitted_by" name="submitted_by" required
-                            value="{{ old('submitted_by', $complaint->client->client_name ?? '') }}"
+                            value="{{ old('submitted_by', $complaint->house->name ?? '') }}"
                             class="shadow-sm focus:ring-blue-500 focus:border-blue-500 mt-1 block w-full sm:text-sm border border-gray-300 rounded-md p-2"
                             placeholder="Enter your name">
                         @error('submitted_by')

@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Complaint;
 use App\Models\Employee;
-use App\Models\Client;
 use App\Models\Spare;
 use App\Models\SpareApprovalPerforma;
 use App\Traits\LocationFilterTrait;
@@ -33,7 +32,7 @@ class AdminController extends Controller
         $stats = $this->getDashboardStats();
         
         // Get recent complaints
-        $recentComplaints = Complaint::with(['client', 'assignedEmployee'])
+        $recentComplaints = Complaint::with(['assignedEmployee'])
             ->orderBy('complaints.created_at', 'desc')
             ->limit(10)
             ->get();
@@ -53,7 +52,7 @@ class AdminController extends Controller
 
         // Get overdue complaints
         $overdueComplaints = Complaint::overdue()
-            ->with(['client', 'assignedEmployee'])
+            ->with(['assignedEmployee'])
             ->orderBy('complaints.created_at', 'asc')
             ->limit(10)
             ->get();
@@ -98,7 +97,6 @@ class AdminController extends Controller
             'total_complaints' => Complaint::count(),
             'pending_complaints' => Complaint::pending()->count(),
             'resolved_complaints' => Complaint::completed()->count(),
-            'total_clients' => Client::count(),
             'active_employees' => Employee::where('status', 'active')->count(),
             'total_spares' => Spare::count(),
             'low_stock_items' => Spare::lowStock()->count(),
@@ -292,8 +290,7 @@ class AdminController extends Controller
 
         // 1) New complaints today
         try {
-            $newComplaintsQuery = Complaint::with(['client'])
-                ->orderBy('created_at', 'desc')
+            $newComplaintsQuery = Complaint::orderBy('created_at', 'desc')
                 ->whereDate('created_at', today());
             
             if ($user && !$this->canViewAllData($user)) {
@@ -301,15 +298,12 @@ class AdminController extends Controller
             }
             
             $newComplaints = $newComplaintsQuery->get()
-                ->filter(function($c) {
-                    return $c->client !== null;
-                })
                 ->map(function($c) {
                     try {
                         return [
                             'id' => 'complaint-'.$c->id,
                             'title' => 'New Complaint',
-                            'message' => ($c->client && $c->client->client_name ? $c->client->client_name : 'Client').': '.($c->title ?? 'N/A'),
+                            'message' => 'Complaint: '.($c->title ?? 'N/A'),
                             'type' => 'info',
                             'icon' => 'alert-circle',
                             'time' => $c->created_at ? $c->created_at->diffForHumans() : 'Just now',
@@ -403,10 +397,9 @@ class AdminController extends Controller
         // 4) Overdue complaints
         try {
             if (method_exists(Complaint::class, 'overdue')) {
-                $overdueQuery = Complaint::overdue()->with(['client'])->orderBy('created_at', 'asc');
+                $overdueQuery = Complaint::overdue()->orderBy('created_at', 'asc');
             } else {
-                $overdueQuery = Complaint::with(['client'])
-                    ->where('status', '!=', 'resolved')
+                $overdueQuery = Complaint::where('status', '!=', 'resolved')
                     ->where('created_at', '<', now()->subDays(7))
                     ->orderBy('created_at', 'asc');
             }
@@ -416,15 +409,12 @@ class AdminController extends Controller
             }
             
             $overdue = $overdueQuery->get()
-                ->filter(function($c) {
-                    return $c->client !== null;
-                })
                 ->map(function($c) {
                     try {
                         return [
                             'id' => 'overdue-'.$c->id,
                             'title' => 'Overdue Complaint',
-                            'message' => ($c->client && $c->client->client_name ? $c->client->client_name : 'Client').': '.($c->title ?? 'N/A'),
+                            'message' => 'Overdue: '.($c->title ?? 'N/A'),
                             'type' => 'danger',
                             'icon' => 'clock',
                             'time' => $c->created_at ? $c->created_at->diffForHumans() : 'Just now',
@@ -473,7 +463,7 @@ class AdminController extends Controller
 
             // 1) New complaints today
             try {
-                $newComplaintsQuery = Complaint::with(['client'])
+                $newComplaintsQuery = Complaint::with(['house'])
                     ->orderBy('created_at', 'desc')
                     ->whereDate('created_at', today());
                 
@@ -483,15 +473,12 @@ class AdminController extends Controller
                 }
                 
                 $newComplaints = $newComplaintsQuery->limit(5)->get()
-                    ->filter(function($c) {
-                        return $c->client !== null; // Filter out complaints with deleted clients
-                    })
                     ->map(function($c) {
                         try {
                             return [
                                 'id' => 'complaint-'.$c->id,
                                 'title' => 'New Complaint',
-                                'message' => ($c->client && $c->client->client_name ? $c->client->client_name : 'Client').': '.($c->title ?? 'N/A'),
+                                'message' => 'Subject: '.($c->title ?? 'N/A'),
                                 'type' => 'info',
                                 'icon' => 'alert-circle',
                                 'time' => $c->created_at ? $c->created_at->diffForHumans() : 'Just now',
@@ -600,10 +587,10 @@ class AdminController extends Controller
             try {
                 // Check if overdue() method exists, otherwise use manual query
                 if (method_exists(Complaint::class, 'overdue')) {
-                    $overdueQuery = Complaint::overdue()->with(['client'])->orderBy('created_at', 'asc');
+                    $overdueQuery = Complaint::overdue()->with(['house'])->orderBy('created_at', 'asc');
                 } else {
                     // Fallback: manually query overdue complaints
-                    $overdueQuery = Complaint::with(['client'])
+                    $overdueQuery = Complaint::with(['house'])
                         ->where('status', '!=', 'resolved')
                         ->where('created_at', '<', now()->subDays(7))
                         ->orderBy('created_at', 'asc');
@@ -616,15 +603,12 @@ class AdminController extends Controller
                 
                 $overdue = $overdueQuery->limit(5)->get();
                 
-                $overdue = $overdue->filter(function($c) {
-                    return $c->client !== null; // Filter out complaints with deleted clients
-                })
-                ->map(function($c) {
+                $overdue = $overdue->map(function($c) {
                     try {
                         return [
                             'id' => 'overdue-'.$c->id,
                             'title' => 'Overdue Complaint',
-                            'message' => ($c->client && $c->client->client_name ? $c->client->client_name : 'Client').': '.($c->title ?? 'N/A'),
+                            'message' => 'Subject: '.($c->title ?? 'N/A'),
                             'type' => 'danger',
                             'icon' => 'clock',
                             'time' => $c->created_at ? $c->created_at->diffForHumans() : 'Just now',

@@ -87,30 +87,30 @@
                         <i data-feather="user" class="me-3 text-muted" style="width: 16px; height: 16px; margin-top: 3px;"></i>
                         <div>
                             <div class="text-muted small text-uppercase">Name</div>
-                            <div class="fw-medium text-dark">{{ $complaint->client->client_name ?? 'N/A' }}</div>
+                            <div class="fw-medium text-dark">{{ $complaint->house->name ?? 'N/A' }}</div>
                         </div>
                     </div>
                 </div>
 
-                @if($complaint->client->phone)
+                @if($complaint->house->phone)
                 <div class="info-item mb-2">
                     <div class="d-flex">
                         <i data-feather="phone" class="me-3 text-muted" style="width: 16px; height: 16px; margin-top: 3px;"></i>
                         <div>
                             <div class="text-muted small text-uppercase">Phone</div>
-                            <div class="fw-medium text-dark">{{ $complaint->client->phone }}</div>
+                            <div class="fw-medium text-dark">{{ $complaint->house->phone }}</div>
                         </div>
                     </div>
                 </div>
                 @endif
 
-                @if($complaint->client->address)
+                @if($complaint->house->address)
                 <div class="info-item mb-2">
                     <div class="d-flex">
                         <i data-feather="map-pin" class="me-3 text-muted" style="width: 16px; height: 16px; margin-top: 3px;"></i>
                         <div>
                             <div class="text-muted small text-uppercase">Address</div>
-                            <div class="fw-medium text-dark">{{ $complaint->client->address }}</div>
+                            <div class="fw-medium text-dark">{{ $complaint->house->address }}</div>
                         </div>
                     </div>
                 </div>
@@ -331,7 +331,7 @@
                                       @elseif($complaint->feedback->submitted_by)
                                           {{ $complaint->feedback->submitted_by }}
                                       @else
-                                          {{ $complaint->client->client_name ?? 'Client' }}
+                                          {{ $complaint->house->name ?? 'Complainant' }}
                                       @endif
                                   </span>
                                   <span class="badge bg-secondary ms-2" style="font-size: 0.7rem;">

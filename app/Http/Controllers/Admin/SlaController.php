@@ -163,7 +163,7 @@ class SlaController extends Controller
 
         // Get recent complaints for this SLA rule
         $recentComplaints = Complaint::where('category_id', $sla->category_id)
-            ->with(['client', 'assignedEmployee'])
+            ->with(['house', 'assignedEmployee'])
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
@@ -340,7 +340,7 @@ class SlaController extends Controller
 
         $breaches = Complaint::where('created_at', '>=', now()->subDays($period))
             ->whereIn('status', ['new', 'assigned', 'in_progress'])
-            ->with(['client', 'assignedEmployee', 'slaRule'])
+            ->with(['house', 'assignedEmployee', 'slaRule'])
             ->get()
             ->filter(function($complaint) {
                 return $complaint->isSlaBreached();
@@ -348,7 +348,7 @@ class SlaController extends Controller
             ->map(function($complaint) {
                 return [
                     'id' => $complaint->id,
-                    'client_name' => $complaint->client ? $complaint->client->client_name : 'Deleted Client',
+                    'complainant_name' => $complaint->house ? ($complaint->house->name ?? 'Deleted House') : 'Deleted House',
                     'category' => $complaint->category,
                     'status' => $complaint->status,
                     'assigned_to' => $complaint->assignedEmployee ? $complaint->assignedEmployee->name : 'Unassigned',
@@ -409,7 +409,7 @@ class SlaController extends Controller
 
         $alerts = Complaint::where('created_at', '>=', now()->subHours($hours))
             ->whereIn('status', ['new', 'assigned', 'in_progress'])
-            ->with(['client', 'assignedEmployee', 'slaRule'])
+            ->with(['house', 'assignedEmployee', 'slaRule'])
             ->get()
             ->filter(function($complaint) {
                 return $complaint->isSlaBreached();
@@ -417,7 +417,7 @@ class SlaController extends Controller
             ->map(function($complaint) {
                 return [
                     'complaint_id' => $complaint->id,
-                    'client_name' => $complaint->client ? $complaint->client->client_name : 'Deleted Client',
+                    'complainant_name' => $complaint->house ? ($complaint->house->name ?? 'Deleted House') : 'Deleted House',
                     'category' => $complaint->category,
                     'assigned_to' => $complaint->assignedEmployee ? $complaint->assignedEmployee->name : 'Unassigned',
                     'hours_overdue' => $complaint->getHoursOverdue(),

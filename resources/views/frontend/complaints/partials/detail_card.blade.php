@@ -172,30 +172,30 @@
                         <i data-feather="user" class="me-3 text-muted"></i>
                         <div class="w-100 d-flex justify-content-between">
                             <span class="text-muted small text-uppercase">Name:</span>
-                            <span class="fw-medium text-dark text-end">{{ $complaint->client->client_name ?? 'N/A' }}</span>
+                            <span class="fw-medium text-dark text-end">{{ $complaint->house->name ?? 'N/A' }}</span>
                         </div>
                     </div>
                 </div>
 
-                @if($complaint->client->phone)
+                @if($complaint->house->phone)
                 <div class="info-item">
                     <div class="d-flex align-items-center">
                         <i data-feather="phone" class="me-3 text-muted"></i>
                         <div class="w-100 d-flex justify-content-between">
                             <span class="text-muted small text-uppercase">Phone:</span>
-                            <span class="fw-medium text-dark text-end">{{ $complaint->client->phone }}</span>
+                            <span class="fw-medium text-dark text-end">{{ $complaint->house->phone }}</span>
                         </div>
                     </div>
                 </div>
                 @endif
                 
-                @if($complaint->client->address)
+                @if($complaint->house->address)
                 <div class="info-item">
                     <div class="d-flex align-items-start">
                         <i data-feather="map-pin" class="me-3 text-muted mt-1"></i>
                         <div class="w-100 d-flex justify-content-between align-items-start">
                              <span class="text-muted small text-uppercase" style="white-space: nowrap;">Address:</span>
-                             <span class="fw-medium text-dark text-end ms-2" style="line-height: 1.3; font-size: 0.85rem;">{{ $complaint->client->address }}</span>
+                             <span class="fw-medium text-dark text-end ms-2" style="line-height: 1.3; font-size: 0.85rem;">{{ $complaint->house->address }}</span>
                         </div>
                     </div>
                 </div>
@@ -415,7 +415,7 @@
                                 @elseif($complaint->feedback->submitted_by)
                                     {{ $complaint->feedback->submitted_by }}
                                 @else
-                                    {{ $complaint->client->client_name ?? 'Client' }}
+                                    {{ $complaint->house->name ?? 'Complainant' }}
                                 @endif
                             </span>
                             <span class="badge bg-secondary ms-2" style="font-size: 0.6rem; opacity: 0.8;">

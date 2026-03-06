@@ -20,7 +20,6 @@ class ComplaintFeedback extends Model
 
     protected $fillable = [
         'complaint_id',
-        'client_id',
         'house_id',
         'entered_by',
         'submitted_by',
@@ -50,13 +49,7 @@ class ComplaintFeedback extends Model
         return $this->belongsTo(Complaint::class, 'complaint_id', 'id');
     }
 
-    /**
-     * Get the client that provided this feedback.
-     */
-    public function client(): BelongsTo
-    {
-        return $this->belongsTo(Client::class, 'client_id', 'id');
-    }
+
 
     /**
      * Get the house that provided this feedback.

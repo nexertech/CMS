@@ -198,7 +198,7 @@ window.initializeComplaintForm = function(root = document) {
         houseSelect.addEventListener('change', function() {
             const option = this.options[this.selectedIndex];
             if (option.value) {
-                const nameInput = root.querySelector('#client_name');
+                const nameInput = root.querySelector('#complainant_name');
                 const phoneInput = root.querySelector('#client_phone');
                 if (nameInput) nameInput.value = option.getAttribute('data-name') || '';
                 if (phoneInput) phoneInput.value = option.getAttribute('data-phone') || '';

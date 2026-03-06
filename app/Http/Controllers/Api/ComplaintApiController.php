@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Complaint;
-use App\Models\Client;
 use App\Models\City;
 use App\Models\Sector;
 use App\Models\ComplaintLog;
@@ -211,31 +210,13 @@ class ComplaintApiController extends Controller
 
         DB::beginTransaction();
         try {
-            // Find or create lightweight client record for this house
-            $clientEmail = ($house->username ?: 'house_'.$house->id) . '@cms.com';
-            $clientName  = $house->house_no ?? $house->name ?? $house->username ?? ('House '.$house->id);
-
-            $client = Client::firstOrCreate(
-                ['email' => $clientEmail],
-                [
-                    'client_name'    => $clientName,
-                    'contact_person' => $house->name ?? $house->username ?? 'Resident',
-                    'phone'          => $house->phone ?? '',
-                    'status'         => 'active',
-                    // Use scalar fields only to keep the model light
-                    'city'           => optional($house->city)->name ?? '',
-                    'sector'         => optional($house->sector)->name ?? '',
-                    'address'        => $house->address ?? '',
-                ]
-            );
 
             // Create complaint without firing model events to avoid heavy listeners
-            $complaint = Complaint::withoutEvents(function () use ($titleId, $customTitle, $house, $client, $categoryId, $request) {
+            $complaint = Complaint::withoutEvents(function () use ($titleId, $customTitle, $house, $categoryId, $request) {
                 return Complaint::create([
                     'complaint_title_id' => $titleId,
                     'title'              => $customTitle,
                     'house_id'           => $house->id,
-                    'client_id'          => $client->id,
                     'city_id'            => $house->city_id,
                     'sector_id'          => $house->sector_id,
                     'category_id'        => $categoryId,
@@ -249,7 +230,7 @@ class ComplaintApiController extends Controller
             ComplaintLog::create([
                 'complaint_id' => $complaint->id,
                 'action'       => 'created',
-                'remarks'      => 'Complaint registered via App by ' . ($house->house_no ?? $house->name ?? $house->username),
+                'remarks'      => 'Complaint registered via App by ' . ($house->house_no ?? $house->name ?? 'User'),
             ]);
 
             DB::commit();
@@ -414,13 +395,12 @@ class ComplaintApiController extends Controller
 
         $feedback = ComplaintFeedback::create([
             'complaint_id' => $complaint->id,
-            'client_id' => $complaint->client_id,
             'house_id' => $house->id,
             'overall_rating' => $request->overall_rating,
             'rating_score' => $this->getRatingScore($request->overall_rating),
             'comments' => $request->comments,
             'feedback_date' => now(),
-            'submitted_by' => $house->house_no ?? $house->username
+            'submitted_by' => $house->house_no ?? $house->name ?? 'User'
         ]);
 
         return response()->json([

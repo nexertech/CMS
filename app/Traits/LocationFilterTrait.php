@@ -3,7 +3,6 @@
 namespace App\Traits;
 
 use App\Models\Complaint;
-use App\Models\Client;
 use App\Models\Employee;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -73,57 +72,6 @@ trait LocationFilterTrait
                     $query->where('complaints.city_id', $user->city_id);
                 } else {
                     // If no location assigned, show nothing
-                    $query->whereRaw('1 = 0');
-                }
-                break;
-        }
-
-        return $query;
-    }
-
-    /**
-     * Apply location-based filtering to clients query
-     */
-    public function filterClientsByLocation(Builder $query, $user): Builder
-    {
-        if (!$user || !$user->role) {
-            return $query;
-        }
-
-        if ($user->city_id === null && $user->sector_id === null) {
-            return $query;
-        }
-
-        $roleName = strtolower($user->role->role_name ?? '');
-
-        switch ($roleName) {
-            case 'director':
-                break;
-
-            case 'admin':
-                // Admin sees all ONLY if no specific location is assigned
-                if ($user->sector_id && $user->sector) {
-                    $query->where('sector', $user->sector->name);
-                } elseif ($user->city_id && $user->city) {
-                    $query->where('city', $user->city->name);
-                }
-                break;
-
-            case 'garrison_engineer':
-                // GE can see only their city's clients
-                if ($user->city_id && $user->city) {
-                    $query->where('city', $user->city->name);
-                } else {
-                    $query->whereRaw('1 = 0');
-                }
-                break;
-
-            case 'complaint_center':
-            case 'department_staff':
-                // Can see only their sector's clients
-                if ($user->sector_id && $user->sector) {
-                    $query->where('sector', $user->sector->name);
-                } else {
                     $query->whereRaw('1 = 0');
                 }
                 break;

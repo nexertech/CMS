@@ -161,7 +161,7 @@
                 'designation' => 'Designations',
                 'city' => 'GE Groups',
                 'sector' => 'GE Nodes',
-                'clients' => 'Clients',
+                'houses' => 'Houses',
                 'complaints' => 'Complaints Mgmt',
                 'category' => 'Complaint Cat',
                 'complaint-titles' => 'Complaint Types',

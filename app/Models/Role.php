@@ -35,7 +35,7 @@ class Role extends Model
                     'sector',
                     'roles',
                     'employees',
-                    'clients',
+                    'houses',
                     'complaints',
                     'spares',
                     'approvals',

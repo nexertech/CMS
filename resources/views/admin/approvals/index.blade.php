@@ -241,11 +241,11 @@
                     <span style="display: block; text-align: center;">-</span>
                   @endif
                 </td>
-                <td class="px-1" style="font-size: 0.73rem; white-space: nowrap; width: 1%; max-width: 150px; overflow: hidden; text-overflow: ellipsis;" title="{{ $complaint->client->address ?? 'N/A' }}">{{ $complaint->client->address ?? 'N/A' }}</td>
+                <td class="px-1" style="font-size: 0.73rem; white-space: nowrap; width: 1%; max-width: 150px; overflow: hidden; text-overflow: ellipsis;" title="{{ $complaint->house->address ?? 'N/A' }}">{{ $complaint->house->address ?? 'N/A' }}</td>
                 <td class="px-1" style="width: auto;">
                   <div class="text-white" style="font-size: 0.75rem; line-height: 1.1; white-space: normal; min-width: 180px;">{{ $displayText }}</div>
                 </td>
-                <td class="px-1" style="font-size: 0.75rem; white-space: nowrap; width: 1%;">{{ $complaint->client->phone ?? 'N/A' }}</td>
+                <td class="px-1" style="font-size: 0.75rem; white-space: nowrap; width: 1%;">{{ $complaint->house->phone ?? 'N/A' }}</td>
                 <td style="color: white !important; position: relative; text-align: center; vertical-align: middle;">
                   @if($complaintStatus == 'resolved' || $complaintStatus == 'closed')
                     <span style="color: white !important;">-</span>

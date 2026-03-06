@@ -34,15 +34,15 @@
               </tr>
               <tr>
                 <td class="text-white"><strong>Complainant:</strong></td>
-                <td class="text-white">{{ $complaint->client->client_name ?? 'N/A' }}</td>
+                <td class="text-white">{{ $complaint->house->name ?? 'N/A' }}</td>
               </tr>
               <tr>
                 <td class="text-white"><strong>Address:</strong></td>
-                <td class="text-white">{{ $complaint->client->address ?? 'N/A' }}</td>
+                <td class="text-white">{{ $complaint->house->address ?? 'N/A' }}</td>
               </tr>
               <tr>
                 <td class="text-white"><strong>Phone:</strong></td>
-                <td class="text-white">{{ $complaint->client->phone ?? 'N/A' }}</td>
+                <td class="text-white">{{ $complaint->house->phone ?? 'N/A' }}</td>
               </tr>
             </table>
           </div>

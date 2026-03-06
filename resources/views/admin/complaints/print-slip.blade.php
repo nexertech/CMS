@@ -426,33 +426,33 @@
                 <table class="data-table">
                     <tr>
                         <td class="label">Name:</td>
-                        <td class="value">{{ $complaint->client->client_name ?? 'N/A' }}</td>
+                        <td class="value">{{ $complaint->house->name ?? 'N/A' }}</td>
                     </tr>
                     <tr>
                         <td class="label">House No:</td>
                         <td class="value">{{ $complaint->house->house_no ?? 'N/A' }}</td>
                     </tr>
-                    @if($complaint->client && $complaint->client->phone)
+                    @if($complaint->house && $complaint->house->phone)
                         <tr>
                             <td class="label">Phone:</td>
-                            <td class="value">{{ $complaint->client->phone }}</td>
+                            <td class="value">{{ $complaint->house->phone }}</td>
                         </tr>
                     @endif
-                    @if($complaint->client && $complaint->client->address)
+                    @if($complaint->house && $complaint->house->address)
                         <tr>
                             <td class="label">Address:</td>
-                            <td class="value">{{ $complaint->client->address }}</td>
+                            <td class="value">{{ $complaint->house->address }}</td>
                         </tr>
                     @endif
                     @if($complaint->city_id && $complaint->city)
                         <tr>
-                            <td class="label">Group/City:</td>
+                            <td class="label">GE Group:</td>
                             <td class="value">{{ $complaint->city->name }}</td>
                         </tr>
                     @endif
                     @if($complaint->sector_id && $complaint->sector)
                         <tr>
-                            <td class="label">Node/Sector:</td>
+                            <td class="label">GE Node:</td>
                             <td class="value">{{ $complaint->sector->name }}</td>
                         </tr>
                     @endif

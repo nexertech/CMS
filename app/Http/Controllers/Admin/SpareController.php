@@ -305,7 +305,7 @@ class SpareController extends Controller
         ]);
         }
 
-        $spare->load(['complaintSpares.complaint.client', 'approvalItems.performa']);
+        $spare->load(['complaintSpares.complaint.house', 'approvalItems.performa']);
 
         return view('admin.spares.show', compact('spare'));
     }
@@ -315,7 +315,7 @@ class SpareController extends Controller
      */
     public function printSlip(Spare $spare)
     {
-        $spare->load(['stockLogs', 'complaintSpares.complaint.client', 'approvalItems.performa']);
+        $spare->load(['stockLogs', 'complaintSpares.complaint.house', 'approvalItems.performa']);
         
         return view('admin.spares.print-slip', compact('spare'));
     }

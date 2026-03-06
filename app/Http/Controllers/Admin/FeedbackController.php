@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Complaint;
 use App\Models\ComplaintFeedback;
-use App\Models\Client;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +18,7 @@ class FeedbackController extends Controller
      */
     public function index(Request $request)
     {
-        $query = ComplaintFeedback::with(['complaint', 'client', 'enteredBy']);
+        $query = ComplaintFeedback::with(['complaint', 'enteredBy']);
 
         // Filter by rating
         if ($request->has('rating') && $request->rating) {
@@ -34,14 +34,14 @@ class FeedbackController extends Controller
             $query->whereDate('feedback_date', '<=', $request->date_to);
         }
 
-        // Search by complaint ID or client name
+        // Search by complaint ID or house number
         if ($request->has('search') && $request->search) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->whereHas('complaint', function($complaintQuery) use ($search) {
                     $complaintQuery->where('title', 'like', "%{$search}%");
-                })->orWhereHas('client', function($clientQuery) use ($search) {
-                    $clientQuery->where('client_name', 'like', "%{$search}%");
+                })->orWhereHas('complaint.house', function($houseQuery) use ($search) {
+                    $houseQuery->where('house_no', 'like', "%{$search}%");
                 });
             });
         }
@@ -128,7 +128,6 @@ class FeedbackController extends Controller
         try {
             $feedback = ComplaintFeedback::create([
                 'complaint_id' => $complaint->id,
-                'client_id' => $complaint->client_id,
                 'entered_by' => Auth::id(),
                 'house_id' => $complaint->house_id, // Ensure house_id is saved
                 'overall_rating' => $request->overall_rating,
@@ -201,7 +200,7 @@ class FeedbackController extends Controller
                 ->with('error', 'Only Garrison Engineer (GE) can edit feedback.');
         }
         
-        $feedback->load(['complaint', 'client']);
+        $feedback->load(['complaint']);
         
         // Return full view content for modal (JS extracts content)
         if (request()->ajax() || request()->wantsJson() || request()->has('modal')) {

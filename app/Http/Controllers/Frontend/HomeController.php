@@ -538,14 +538,14 @@ class HomeController extends Controller
 
         $page = request()->get('page', 1);
         $perPage = 5;
-        $recentComplaintsQuery = Complaint::with(['client', 'assignedEmployee']);
+        $recentComplaintsQuery = Complaint::with(['house', 'assignedEmployee']);
         $this->filterComplaintsByLocationForFrontend($recentComplaintsQuery, $user, $locationScope);
         $recentComplaints = $recentComplaintsQuery->orderBy('created_at', 'desc')
             ->paginate($perPage, ['*'], 'page', $page);
 
         $self = $this; // Store reference for use in closure
         $pendingApprovals = class_exists(\App\Models\SpareApprovalPerforma::class)
-            ? \App\Models\SpareApprovalPerforma::with(['complaint.client', 'requestedBy', 'items.spare'])
+            ? \App\Models\SpareApprovalPerforma::with(['complaint.house', 'requestedBy', 'items.spare'])
                 ->whereHas('complaint', function ($q) use ($user, $self, $locationScope) {
                     $self->filterComplaintsByLocationForFrontend($q, $user, $locationScope);
                 })
@@ -575,7 +575,7 @@ class HomeController extends Controller
         ];
 
         $overdueComplaintsQuery = Complaint::overdue()
-            ->with(['client', 'assignedEmployee']);
+            ->with(['house', 'assignedEmployee']);
         $this->filterComplaintsByLocationForFrontend($overdueComplaintsQuery, $user, $locationScope);
         $overdueComplaints = $overdueComplaintsQuery->orderBy('created_at', 'asc')
             ->get()
@@ -592,8 +592,8 @@ class HomeController extends Controller
                     ? $complaint->status
                     : null;
 
-                $client = $complaint->client;
- 
+                $house = $complaint->house;
+
                 $createdAt = $complaint->created_at
                     ? $complaint->created_at->timezone('Asia/Karachi')->format('M d, Y H:i')
                     : null;
@@ -610,12 +610,10 @@ class HomeController extends Controller
                     'performa_label' => $performaType ? ucfirst(str_replace('_', ' ', $performaType)) : '-',
                     'category' => $complaint->category_display ?? 'N/A',
                     'designation' => $complaint->assignedEmployee->designation->name ?? 'N/A',
-                    'client_name' => $client->client_name ?? 'N/A',
-                    'house_no' => $complaint->house->house_no ?? 'N/A',
-                    'address' => $complaint->house->address
-                        ?? $client->address
-                        ?? 'N/A',
-                    'phone' => $client->phone ?? '-',
+                    'complainant_name' => $house ? ($house->name ?? 'N/A') : 'N/A',
+                    'house_no' => $house->house_no ?? 'N/A',
+                    'address' => $house->address ?? 'N/A',
+                    'phone' => $house->phone ?? '-',
                     'created_at' => $createdAt,
                     'closed_at' => $closedAt,
                     'overdue' => true,
@@ -648,7 +646,7 @@ class HomeController extends Controller
                 ) as is_overdue_sql
             ")
             ->with([
-                'client:id,client_name,phone,address', 
+
                 'assignedEmployee:id,name', 
                 'house:id,house_no,address'
             ])
@@ -666,8 +664,8 @@ class HomeController extends Controller
                     ? $complaint->status
                     : null;
 
-                $client = $complaint->client;
- 
+                $house = $complaint->house;
+
                 $createdAt = $complaint->created_at
                     ? $complaint->created_at->timezone('Asia/Karachi')->format('M d, Y H:i')
                     : null;
@@ -684,12 +682,10 @@ class HomeController extends Controller
                     'performa_label' => $performaType ? ucfirst(str_replace('_', ' ', $performaType)) : '-',
                     'category' => $complaint->category_display ?? 'N/A',
                     'designation' => $complaint->assignedEmployee->designation->name ?? 'N/A',
-                    'client_name' => $client->client_name ?? 'N/A',
-                    'house_no' => $complaint->house->house_no ?? 'N/A',
-                    'address' => $complaint->house->address
-                        ?? $client->address
-                        ?? 'N/A',
-                    'phone' => $client->phone ?? '-',
+                    'complainant_name' => $house ? ($house->name ?? 'N/A') : 'N/A',
+                    'house_no' => $house->house_no ?? 'N/A',
+                    'address' => $house->address ?? 'N/A',
+                    'phone' => $house->phone ?? '-',
                     'created_at' => $createdAt,
                     'closed_at' => $closedAt,
                     'overdue' => (bool) $complaint->is_overdue_sql,
@@ -1438,7 +1434,7 @@ class HomeController extends Controller
      */
     public function feedback($id)
     {
-        $complaint = Complaint::with(['category', 'assignedEmployee.designation', 'client'])->findOrFail($id);
+        $complaint = Complaint::with(['category', 'assignedEmployee.designation', 'house'])->findOrFail($id);
 
         // If feedback already exists, show success message
         if (\App\Models\ComplaintFeedback::where('complaint_id', $id)->exists()) {
@@ -1510,7 +1506,7 @@ class HomeController extends Controller
     public function show(Request $request, $id)
     {
         $complaint = Complaint::with([
-            'client',
+            'house',
             'city',
             'sector',
             'category',

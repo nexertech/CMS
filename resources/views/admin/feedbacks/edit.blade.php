@@ -34,11 +34,11 @@
               </tr>
               <tr>
                 <td class="text-white"><strong>Complainant:</strong></td>
-                <td class="text-white">{{ $feedback->complaint->client->client_name ?? 'N/A' }}</td>
+                <td class="text-white">{{ $feedback->complaint->house->name ?? 'N/A' }}</td>
               </tr>
               <tr>
                 <td class="text-white"><strong>Phone:</strong></td>
-                <td class="text-white">{{ $feedback->complaint->client->phone ?? 'N/A' }}</td>
+                <td class="text-white">{{ $feedback->complaint->house->phone ?? 'N/A' }}</td>
               </tr>
             </table>
           </div>

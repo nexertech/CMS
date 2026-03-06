@@ -138,11 +138,11 @@
                         </div>
                         <div class="col-md-3">
                             <div class="mb-3">
-                                <label for="client_name" class="form-label text-white">Complainant Name</label>
-                                <input type="text" class="form-control @error('client_name') is-invalid @enderror"
-                                    id="client_name" name="client_name" value="{{ old('client_name') }}"
+                                <label for="complainant_name" class="form-label text-white">Complainant Name</label>
+                                <input type="text" class="form-control @error('complainant_name') is-invalid @enderror"
+                                    id="complainant_name" name="complainant_name" value="{{ old('complainant_name') }}"
                                     placeholder="Enter complainant name">
-                                @error('client_name')
+                                @error('complainant_name')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
@@ -375,7 +375,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             // 1. Element Definitions
             const phoneInput = document.getElementById('phone');
-            const clientNameInput = document.getElementById('client_name');
+            const clientNameInput = document.getElementById('complainant_name');
             const houseSelect = document.getElementById('house_id');
             const citySelect = document.getElementById('city_id');
             const sectorSelect = document.getElementById('sector_id');

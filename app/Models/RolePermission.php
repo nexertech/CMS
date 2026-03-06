@@ -35,7 +35,7 @@ class RolePermission extends Model
             'frontend-users' => 'Frontend Users',
             'roles' => 'Role Management',
             'employees' => 'Employee Management',
-            'clients' => 'Client Management',
+            'houses' => 'House Management',
             'complaints' => 'Complaint Management',
             'spares' => 'Spare Parts Management',
             'approvals' => 'Approvals',

@@ -72,6 +72,14 @@ class HouseController extends Controller
             $sectorsQuery->whereIn('id', $sectorIds);
         }
         $sectors = $sectorsQuery->orderBy('name')->get();
+
+        if ($request->ajax()) {
+            return response()->json([
+                'html' => view('admin.houses.index', compact('houses', 'cities', 'sectors'))->renderSections()['content'],
+                'total' => $houses->total(),
+                'pagination' => $houses->links()->toHtml()
+            ]);
+        }
         
         return view('admin.houses.index', compact('houses', 'cities', 'sectors'));
     }

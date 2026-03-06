@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Complaint;
 use App\Models\Employee;
-use App\Models\Client;
 use App\Models\Spare;
 use App\Models\SpareApprovalPerforma;
 use App\Models\ReportsSummary;
@@ -66,14 +65,12 @@ class ReportController extends Controller
         if ($user && !$this->canViewAllData($user)) {
             $filterApprovals = function ($query) use ($user) {
                 $query->whereHas('complaint', function ($q) use ($user) {
-                    $q->whereHas('client', function ($clientQ) use ($user) {
-                        if ($user->city_id && $user->city) {
-                            $clientQ->where('city', $user->city->name);
-                        }
-                        if ($user->sector_id && $user->sector) {
-                            $clientQ->where('sector', $user->sector->name);
-                        }
-                    });
+                    if ($user->city_id) {
+                        $q->where('city_id', $user->city_id);
+                    }
+                    if ($user->sector_id) {
+                        $q->where('sector_id', $user->sector_id);
+                    }
                 });
             };
             $filterApprovals($approvalsQuery);
@@ -143,15 +140,11 @@ class ReportController extends Controller
                 $complaintsQuery->where('complaints.status', 'resolved');
                 // Apply location filter to complaints - using whereHas on the relation
                 if ($user && !$this->canViewAllData($user)) {
-                    if ($user->city_id && $user->city) {
-                        $complaintsQuery->whereHas('client', function ($clientQ) use ($user) {
-                            $clientQ->where('city', $user->city->name);
-                        });
+                    if ($user->city_id) {
+                        $complaintsQuery->where('city_id', $user->city_id);
                     }
-                    if ($user->sector_id && $user->sector) {
-                        $complaintsQuery->whereHas('client', function ($clientQ) use ($user) {
-                            $clientQ->where('sector', $user->sector->name);
-                        });
+                    if ($user->sector_id) {
+                        $complaintsQuery->where('sector_id', $user->sector_id);
                     }
                 }
             }
@@ -182,16 +175,15 @@ class ReportController extends Controller
         if (Schema::hasTable('complaint_spares')) {
             $query = DB::table('complaint_spares')
                 ->join('spares', 'complaint_spares.spare_id', '=', 'spares.id')
-                ->join('complaints', 'complaint_spares.complaint_id', '=', 'complaints.id')
-                ->join('clients', 'complaints.client_id', '=', 'clients.id');
+                ->join('complaints', 'complaint_spares.complaint_id', '=', 'complaints.id');
 
             // Apply location filtering
             if ($user && !$this->canViewAllData($user)) {
-                if ($user->city_id && $user->city) {
-                    $query->where('clients.city', $user->city->name);
+                if ($user->city_id) {
+                    $query->where('complaints.city_id', $user->city_id);
                 }
-                if ($user->sector_id && $user->sector) {
-                    $query->where('clients.sector', $user->sector->name);
+                if ($user->sector_id) {
+                    $query->where('complaints.sector_id', $user->sector_id);
                 }
             }
 
@@ -207,13 +199,12 @@ class ReportController extends Controller
 
             // Apply location filtering if approval is linked to complaint
             if ($user && !$this->canViewAllData($user) && Schema::hasColumn('spare_approval_performa', 'complaint_id')) {
-                $query->join('complaints', 'spare_approval_performa.complaint_id', '=', 'complaints.id')
-                    ->join('clients', 'complaints.client_id', '=', 'clients.id');
-                if ($user->city_id && $user->city) {
-                    $query->where('clients.city', $user->city->name);
+                $query->join('complaints', 'spare_approval_performa.complaint_id', '=', 'complaints.id');
+                if ($user->city_id) {
+                    $query->where('complaints.city_id', $user->city_id);
                 }
-                if ($user->sector_id && $user->sector) {
-                    $query->where('clients.sector', $user->sector->name);
+                if ($user->sector_id) {
+                    $query->where('complaints.sector_id', $user->sector_id);
                 }
             }
 
@@ -252,9 +243,6 @@ class ReportController extends Controller
         $employeesQuery = Employee::where('status', 'active');
         $this->filterEmployeesByLocation($employeesQuery, $user);
 
-        $clientsQuery = Client::query();
-        $this->filterClientsByLocation($clientsQuery, $user);
-
         // Spares with location filtering
         $sparesQuery = Spare::query();
         $this->filterSparesByLocation($sparesQuery, $user);
@@ -266,14 +254,12 @@ class ReportController extends Controller
         if ($user && !$this->canViewAllData($user)) {
             $filterApprovals = function ($query) use ($user) {
                 $query->whereHas('complaint', function ($q) use ($user) {
-                    $q->whereHas('client', function ($clientQ) use ($user) {
-                        if ($user->city_id && $user->city) {
-                            $clientQ->where('city', $user->city->name);
-                        }
-                        if ($user->sector_id && $user->sector) {
-                            $clientQ->where('sector', $user->sector->name);
-                        }
-                    });
+                    if ($user->city_id) {
+                        $q->where('city_id', $user->city_id);
+                    }
+                    if ($user->sector_id) {
+                        $q->where('sector_id', $user->sector_id);
+                    }
                 });
             };
             $filterApprovals($approvalsQuery);
@@ -293,8 +279,6 @@ class ReportController extends Controller
             'out_of_stock_items' => (clone $sparesQuery)->where('stock_quantity', 0)->count(),
             'total_approvals' => $approvalsQuery->count(),
             'pending_approvals' => $pendingApprovalsQuery->count(),
-            'total_clients' => (clone $clientsQuery)->count(),
-            'active_clients' => (clone $clientsQuery)->where('status', 'active')->count(),
             'total_spare_value' => (clone $sparesQuery)->sum(DB::raw('stock_quantity * unit_price')),
             'employee_performance' => $this->getAverageEmployeePerformance($user)
         ];
@@ -334,7 +318,7 @@ class ReportController extends Controller
 
         try {
             // Recent complaints with location filtering
-            $recentComplaintsQuery = Complaint::with(['client', 'assignedEmployee']);
+            $recentComplaintsQuery = Complaint::with(['assignedEmployee']);
             $this->filterComplaintsByLocation($recentComplaintsQuery, $user);
             $recentComplaints = $recentComplaintsQuery->latest()
                 ->limit(3)
@@ -357,14 +341,12 @@ class ReportController extends Controller
             // Apply location filtering to approvals
             if ($user && !$this->canViewAllData($user)) {
                 $recentApprovalsQuery->whereHas('complaint', function ($q) use ($user) {
-                    $q->whereHas('client', function ($clientQ) use ($user) {
-                        if ($user->city_id && $user->city) {
-                            $clientQ->where('city', $user->city->name);
-                        }
-                        if ($user->sector_id && $user->sector) {
-                            $clientQ->where('sector', $user->sector->name);
-                        }
-                    });
+                    if ($user->city_id) {
+                        $q->where('city_id', $user->city_id);
+                    }
+                    if ($user->sector_id) {
+                        $q->where('sector_id', $user->sector_id);
+                    }
                 });
             }
 
@@ -546,11 +528,11 @@ class ReportController extends Controller
 
             // Eager load relationships safely
             try {
-                $catComplaints = $catQuery->with(['spareParts', 'spareApprovals', 'client'])->get();
+                $catComplaints = $catQuery->with(['spareParts', 'spareApprovals'])->get();
             } catch (\Exception $e) {
                 // If relationships fail, load without them
                 \Log::warning('Failed to eager load relationships: ' . $e->getMessage());
-                $catComplaints = $catQuery->with(['client'])->get();
+                $catComplaints = $catQuery->get();
             }
             $catTotal = $catComplaints->count();
             $categoryTotals[$catKey] = $catTotal;
@@ -873,13 +855,13 @@ class ReportController extends Controller
                 // Apply location filter to complaints - get the underlying query builder
                 if ($user && !$this->canViewAllData($user)) {
                     if ($user->city_id && $user->city) {
-                        $q->whereHas('client', function ($clientQ) use ($user) {
-                            $clientQ->where('city', $user->city->name);
+                        $q->whereHas('house', function ($clientQ) use ($user) {
+                            $clientQ->where('city_id', $user->city_id);
                         });
                     }
-                    if ($user->sector_id && $user->sector) {
-                        $q->whereHas('client', function ($clientQ) use ($user) {
-                            $clientQ->where('sector', $user->sector->name);
+                    if ($user->sector_id) {
+                        $q->whereHas('house', function ($clientQ) use ($user) {
+                            $clientQ->where('sector_id', $user->sector_id);
                         });
                     }
                 }
@@ -1079,16 +1061,15 @@ class ReportController extends Controller
         $spareCostsQuery = DB::table('complaint_spares')
             ->join('spares', 'complaint_spares.spare_id', '=', 'spares.id')
             ->join('complaints', 'complaint_spares.complaint_id', '=', 'complaints.id')
-            ->join('clients', 'complaints.client_id', '=', 'clients.id')
             ->whereBetween('complaint_spares.used_at', [$dateFromStart, $dateToEnd]);
 
         // Apply location filtering
         if ($user && !$this->canViewAllData($user)) {
-            if ($user->city_id && $user->city) {
-                $spareCostsQuery->where('clients.city', $user->city->name);
+            if ($user->city_id) {
+                $spareCostsQuery->where('complaints.city_id', $user->city_id);
             }
-            if ($user->sector_id && $user->sector) {
-                $spareCostsQuery->where('clients.sector', $user->sector->name);
+            if ($user->sector_id) {
+                $spareCostsQuery->where('complaints.sector_id', $user->sector_id);
             }
         }
 
@@ -1106,14 +1087,12 @@ class ReportController extends Controller
         // For now, show all approvals if user can view all, otherwise filter by complaint location
         if ($user && !$this->canViewAllData($user)) {
             $approvalQuery->whereHas('complaint', function ($q) use ($user) {
-                $q->whereHas('client', function ($clientQ) use ($user) {
-                    if ($user->city_id && $user->city) {
-                        $clientQ->where('city', $user->city->name);
-                    }
-                    if ($user->sector_id && $user->sector) {
-                        $clientQ->where('sector', $user->sector->name);
-                    }
-                });
+                if ($user->city_id) {
+                    $q->where('city_id', $user->city_id);
+                }
+                if ($user->sector_id) {
+                    $q->where('sector_id', $user->sector_id);
+                }
             });
         }
 
@@ -1134,12 +1113,12 @@ class ReportController extends Controller
         if ($user && !$this->canViewAllData($user)) {
             $filterApprovals = function ($query) use ($user) {
                 $query->whereHas('complaint', function ($q) use ($user) {
-                    $q->whereHas('client', function ($clientQ) use ($user) {
+                    $q->whereHas('house', function ($clientQ) use ($user) {
                         if ($user->city_id && $user->city) {
-                            $clientQ->where('city', $user->city->name);
+                            $clientQ->where('city_id', $user->city_id);
                         }
-                        if ($user->sector_id && $user->sector) {
-                            $clientQ->where('sector', $user->sector->name);
+                        if ($user->sector_id) {
+                            $clientQ->where('sector_id', $user->sector_id);
                         }
                     });
                 });
@@ -1176,7 +1155,7 @@ class ReportController extends Controller
             'pending_complaints' => Complaint::pending()->count(),
             'overdue_complaints' => Complaint::overdue()->count(),
             'total_employees' => Employee::where('status', 'active')->count(),
-            'total_clients' => Client::count(),
+            'total_clients' => \App\Models\House::count(),
             'total_spares' => Spare::count(),
             'low_stock_items' => Spare::lowStock()->count(),
             'pending_approvals' => SpareApprovalPerforma::pending()->count(),
@@ -1225,13 +1204,13 @@ class ReportController extends Controller
                         // Apply location filter to complaints - using whereHas on the relation
                         if ($user && !$this->canViewAllData($user)) {
                             if ($user->city_id && $user->city) {
-                                $q->whereHas('client', function ($clientQ) use ($user) {
-                                    $clientQ->where('city', $user->city->name);
+                                $q->whereHas('house', function ($clientQ) use ($user) {
+                                    $clientQ->where('city_id', $user->city_id);
                                 });
                             }
-                            if ($user->sector_id && $user->sector) {
-                                $q->whereHas('client', function ($clientQ) use ($user) {
-                                    $clientQ->where('sector', $user->sector->name);
+                            if ($user->sector_id) {
+                                $q->whereHas('house', function ($clientQ) use ($user) {
+                                    $clientQ->where('sector_id', $user->sector_id);
                                 });
                             }
                         }
@@ -1507,15 +1486,16 @@ class ReportController extends Controller
                         return $item;
                     });
                 break;
+            case 'house':
             case 'client':
-                $data = (clone $baseQuery)->selectRaw('client_id, COUNT(*) as count')->groupBy('client_id')->get()
+                $data = (clone $baseQuery)->selectRaw('house_id, COUNT(*) as count')->groupBy('house_id')->get()
                     ->map(function ($item) {
-                        $item->client = Client::find($item->client_id);
+                        $item->house = \App\Models\House::find($item->house_id);
                         return $item;
                     });
                 break;
             default:
-                $data = (clone $baseQuery)->with(['client', 'assignedEmployee'])->get();
+                $data = (clone $baseQuery)->with(['house', 'assignedEmployee'])->get();
         }
 
         $summary = [
@@ -1544,13 +1524,13 @@ class ReportController extends Controller
                 // Apply location filter to complaints - using whereHas on the relation
                 if ($user && !$this->canViewAllData($user)) {
                     if ($user->city_id && $user->city) {
-                        $q->whereHas('client', function ($clientQ) use ($user) {
-                            $clientQ->where('city', $user->city->name);
+                        $q->whereHas('house', function ($clientQ) use ($user) {
+                            $clientQ->where('city_id', $user->city_id);
                         });
                     }
-                    if ($user->sector_id && $user->sector) {
-                        $q->whereHas('client', function ($clientQ) use ($user) {
-                            $clientQ->where('sector', $user->sector->name);
+                    if ($user->sector_id) {
+                        $q->whereHas('house', function ($clientQ) use ($user) {
+                            $clientQ->where('sector_id', $user->sector_id);
                         });
                     }
                 }
@@ -1660,16 +1640,15 @@ class ReportController extends Controller
         $spareCostsQuery = DB::table('complaint_spares')
             ->join('spares', 'complaint_spares.spare_id', '=', 'spares.id')
             ->join('complaints', 'complaint_spares.complaint_id', '=', 'complaints.id')
-            ->join('clients', 'complaints.client_id', '=', 'clients.id')
             ->whereBetween('complaint_spares.used_at', [$dateFromStart, $dateToEnd]);
 
         // Apply location filtering
         if ($user && !$this->canViewAllData($user)) {
-            if ($user->city_id && $user->city) {
-                $spareCostsQuery->where('clients.city', $user->city->name);
+            if ($user->city_id) {
+                $spareCostsQuery->where('complaints.city_id', $user->city_id);
             }
-            if ($user->sector_id && $user->sector) {
-                $spareCostsQuery->where('clients.sector', $user->sector->name);
+            if ($user->sector_id) {
+                $spareCostsQuery->where('complaints.sector_id', $user->sector_id);
             }
         }
 

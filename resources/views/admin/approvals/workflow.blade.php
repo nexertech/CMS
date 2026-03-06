@@ -203,7 +203,7 @@
             <div class="d-flex justify-content-between align-items-start">
               <div class="flex-grow-1">
                 <div class="d-flex align-items-center mb-2">
-                  <h6 class="mb-0 text-white">#${item.id} - ${item.client_name}</h6>
+                  <h6 class="mb-0 text-white">#${item.id} - ${item.complainant_name}</h6>
                   <span class="badge bg-${item.status === 'pending' ? 'warning' : item.status === 'approved' ? 'success' : 'danger'} ms-2">
                     ${item.status.charAt(0).toUpperCase() + item.status.slice(1)}
                   </span>
@@ -254,7 +254,7 @@
                     ${item.status.charAt(0).toUpperCase() + item.status.slice(1)}
                   </span>
                 </div>
-                <p class="text-muted small mb-2">${item.client_name}</p>
+                <p class="text-muted small mb-2">${item.complainant_name}</p>
                 <div class="d-flex justify-content-between align-items-center">
                   <div>
                     <div class="text-white fw-bold">-</div>
@@ -325,7 +325,7 @@
             </tr>
             <tr>
               <td><strong>Client:</strong></td>
-              <td>${approval.client_name}</td>
+              <td>${approval.complainant_name}</td>
             </tr>
             <tr>
               <td><strong>Requested By:</strong></td>

@@ -266,7 +266,7 @@
                       <span class="text-info">{{ $complaint->ticket_number }}</span>
                     </td>
                     <td style="padding: 0.5rem; border-right: 1px solid rgba(201, 160, 160, 0.3) !important;">
-                      {{ $complaint->client->client_name ?? 'N/A' }}
+                      {{ $complaint->house->name ?? 'N/A' }}
                     </td>
                     <td style="padding: 0.5rem; border-right: 1px solid rgba(201, 160, 160, 0.3) !important;">
                       <span

@@ -78,7 +78,7 @@ class ApprovalController extends Controller
             // Use distinct to avoid duplicates from joins
             $query = SpareApprovalPerforma::query()
                 ->join('complaints', 'spare_approval_performa.complaint_id', '=', 'complaints.id')
-                ->join('clients', 'complaints.client_id', '=', 'clients.id')
+                ->leftJoin('houses', 'complaints.house_id', '=', 'houses.id')
                 ->leftJoin('complaint_categories', 'complaints.category_id', '=', 'complaint_categories.id')
                 ->select('spare_approval_performa.*')
                 ->distinct();
@@ -170,7 +170,6 @@ class ApprovalController extends Controller
             
             // Reload relationships after join (join may have affected eager loading)
             $approvals->load([
-                'complaint.client',
                 'complaint.house',
                 'complaint.assignedEmployee',
                 'complaint.spareParts.spare',
@@ -188,7 +187,7 @@ class ApprovalController extends Controller
             }
             
             // Get complaints with location filtering
-            $complaintsQuery = Complaint::pending()->with('client');
+            $complaintsQuery = Complaint::pending()->with('house');
             $this->filterComplaintsByLocation($complaintsQuery, $user);
             $complaints = $complaintsQuery->get();
             
@@ -334,7 +333,6 @@ class ApprovalController extends Controller
         if ($isAjax) {
             // For AJAX: Load only what's needed, skip heavy sync operations
             $approval->load([
-                'complaint.client',
                 'complaint.house',
                 'complaint.feedback.enteredBy', // Load feedback relationship
                 'requestedBy',
@@ -344,7 +342,6 @@ class ApprovalController extends Controller
         } else {
             // For HTML: Load all relationships
             $approval->load([
-                'complaint.client',
                 'complaint.house',
                 'complaint.spareParts.spare',
                 'complaint.stockLogs.spare',
@@ -456,10 +453,12 @@ class ApprovalController extends Controller
                         'id' => $approval->complaint->id,
                         'category' => $approval->complaint->category ?? null,
                         'title' => $approval->complaint->title ?? 'N/A',
-                        'sector' => $approval->complaint->client->sector ?? null,
-                        'city' => $approval->complaint->client->city ?? null,
+                        'sector' => $approval->complaint->house->sector ?? null,
+                        'city' => $approval->complaint->house->city ?? null,
+                        'address' => $approval->complaint->house->address ?? null,
+                        'phone' => $approval->complaint->house->phone ?? null,
                     ] : null,
-                    'client_name' => $approval->complaint->client ? $approval->complaint->client->client_name : 'Deleted Client',
+                    'complainant_name' => $approval->complaint->house ? ($approval->complaint->house->name ?? 'Deleted House') : 'Deleted House',
                     'complaint_title' => $approval->complaint->title ?? 'N/A',
                     'requested_by_name' => $approval->requestedBy->name ?? 'N/A',
                     'approved_by_name' => $approval->approvedBy->name ?? null,
@@ -489,7 +488,7 @@ class ApprovalController extends Controller
     public function approve(Request $request, SpareApprovalPerforma $approval)
     {
         // Load relationships
-        $approval->load(['items.spare', 'complaint.client', 'requestedBy']);
+        $approval->load(['items.spare', 'complaint.house', 'requestedBy']);
         
         $validator = Validator::make($request->all(), [
             'remarks' => 'nullable|string',
@@ -904,7 +903,7 @@ class ApprovalController extends Controller
     public function reject(Request $request, SpareApprovalPerforma $approval)
     {
         // Load relationships
-        $approval->load(['items.spare', 'complaint.client', 'requestedBy']);
+        $approval->load(['items.spare', 'complaint.house', 'requestedBy']);
         
         $validator = Validator::make($request->all(), [
             'remarks' => 'required|string',
@@ -1097,7 +1096,7 @@ class ApprovalController extends Controller
     public function export(Request $request)
     {
         $query = SpareApprovalPerforma::with([
-            'complaint.client',
+            'complaint.house',
             'requestedBy',
             'approvedBy',
             'items.spare'
@@ -1169,9 +1168,9 @@ class ApprovalController extends Controller
             // CSV Data
             foreach ($approvals as $approval) {
                 fputcsv($file, [
-                    $approval->id,
+                    $approval->complaint->id,
                     $approval->complaint->getTicketNumberAttribute(),
-                    $approval->complaint->client ? $approval->complaint->client->client_name : 'Deleted Client',
+                    $approval->complaint->house ? ($approval->complaint->house->name ?? 'Deleted House') : 'Deleted House',
                     $approval->requestedBy->name ?? 'N/A',
                     ucfirst($approval->status),
                     $approval->items->count(),

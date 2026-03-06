@@ -145,9 +145,9 @@
                             <td style="white-space: nowrap; text-align: {{ $complaint->closed_at ? 'left' : 'center' }};">{{ $complaint->closed_at ? $complaint->closed_at->timezone('Asia/Karachi')->format('M d, Y H:i:s') : '-' }}</td>
                             <td style="white-space: nowrap;">{{ $complaint->house->house_no ?? 'N/A' }}</td>
                             @if(!request('modal'))
-                            <td style="white-space: nowrap;">{{ $complaint->client->client_name ?? 'N/A' }}</td>
+                            <td style="white-space: nowrap;">{{ $complaint->house->name ?? 'N/A' }}</td>
                             @endif
-                            <td>{{ $complaint->client->address ?? 'N/A' }}</td>
+                            <td>{{ $complaint->house->address ?? 'N/A' }}</td>
                             <td style="white-space: nowrap;">
                                 @php
                                     $catName = $complaint->category->name ?? $complaint->category ?? 'Uncategorized';

@@ -84,9 +84,9 @@
                 </div>
                 <div class="col-md-3">
                     <div class="mb-3">
-                        <label for="client_name" class="form-label text-white">Complainant Name</label>
-                        <input type="text" class="form-control @error('client_name') is-invalid @enderror" id="client_name" name="client_name" value="{{ old('client_name', $complaint->client->client_name ?? '') }}" placeholder="Enter complainant name">
-                        @error('client_name')
+                        <label for="complainant_name" class="form-label text-white">Complainant Name</label>
+                        <input type="text" class="form-control @error('complainant_name') is-invalid @enderror" id="complainant_name" name="complainant_name" value="{{ old('complainant_name', $complaint->house->name ?? '') }}" placeholder="Enter complainant name">
+                        @error('complainant_name')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
@@ -94,7 +94,7 @@
                 <div class="col-md-3">
                     <div class="mb-3">
                         <label for="address" class="form-label text-white">Address</label>
-                        <input type="text" class="form-control @error('address') is-invalid @enderror" id="client_address" name="address" value="{{ old('address', $complaint->client->address ?? '') }}" placeholder="Enter address">
+                        <input type="text" class="form-control @error('address') is-invalid @enderror" id="client_address" name="address" value="{{ old('address', $complaint->house->address ?? '') }}" placeholder="Enter address">
                         @error('address')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -103,7 +103,7 @@
                 <div class="col-md-3">
                     <div class="mb-3">
                         <label for="phone" class="form-label text-white">Phone No.</label>
-                        <input type="tel" class="form-control @error('phone') is-invalid @enderror" id="client_phone" name="phone" value="{{ old('phone', $complaint->client->phone ?? '') }}" placeholder="Enter phone number">
+                        <input type="tel" class="form-control @error('phone') is-invalid @enderror" id="client_phone" name="phone" value="{{ old('phone', $complaint->house->phone ?? '') }}" placeholder="Enter phone number">
                         @error('phone')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror

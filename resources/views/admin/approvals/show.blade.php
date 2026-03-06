@@ -168,30 +168,30 @@
           <i data-feather="home" class="me-2 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
            <div class="flex-grow-1">
             <div class="text-muted small mb-0" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Name</div>
-            <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->client->client_name ?? 'N/A' }}</div>
+            <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->house->name ?? 'N/A' }}</div>
           </div>
         </div>
       </div>
       
-      @if($complaint->client->phone)
+      @if($complaint->house->phone)
       <div class="info-item mb-1">
         <div class="d-flex align-items-start">
           <i data-feather="phone" class="me-2 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
           <div class="flex-grow-1">
             <div class="text-muted small mb-0" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Phone</div>
-            <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->client->phone }}</div>
+            <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->house->phone }}</div>
           </div>
         </div>
       </div>
       @endif
       
-      @if($complaint->client->address)
+      @if($complaint->house->address)
       <div class="info-item mb-1">
         <div class="d-flex align-items-start">
           <i data-feather="map-pin" class="me-2 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
           <div class="flex-grow-1">
             <div class="text-muted small mb-0" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Address</div>
-            <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->client->address }}</div>
+            <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->house->address }}</div>
           </div>
         </div>
       </div>

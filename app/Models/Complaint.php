@@ -15,7 +15,6 @@ class Complaint extends Model
     protected $fillable = [
         'complaint_title_id',
         'title',
-        'client_id',
         'house_id',
         'city_id',
         'sector_id',
@@ -31,14 +30,6 @@ class Complaint extends Model
     protected $casts = [
         'closed_at' => 'datetime',
     ];
-
-    /**
-     * Get the client that owns the complaint.
-     */
-    public function client(): BelongsTo
-    {
-        return $this->belongsTo(Client::class, 'client_id', 'id')->withTrashed();
-    }
 
     /**
      * Get the complaint category.
@@ -120,9 +111,6 @@ class Complaint extends Model
         return $this->hasMany(SpareApprovalPerforma::class, 'complaint_id', 'id');
     }
 
-    /**
-     * Get the feedback for the complaint.
-     */
     public function feedback(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(ComplaintFeedback::class, 'complaint_id', 'id')->withTrashed();
@@ -513,14 +501,6 @@ class Complaint extends Model
 
 
     /**
-     * Get client name
-     */
-    public function getClientNameAttribute(): string
-    {
-        return $this->client ? $this->client->getDisplayNameAttribute() : 'Unknown Client';
-    }
-
-    /**
      * Get assigned employee name
      */
     public function getAssignedEmployeeNameAttribute(): string
@@ -619,14 +599,6 @@ class Complaint extends Model
     public function scopeByAssignedEmployee($query, $employeeId)
     {
         return $query->where('complaints.assigned_employee_id', $employeeId);
-    }
-
-    /**
-     * Scope for complaints by client
-     */
-    public function scopeByClient($query, $clientId)
-    {
-        return $query->where('complaints.client_id', $clientId);
     }
 
     /**

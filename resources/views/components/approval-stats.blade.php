@@ -7,7 +7,7 @@
         'overdue' => \App\Models\SpareApprovalPerforma::overdue()->count(),
     ];
     
-    $recentApprovals = \App\Models\SpareApprovalPerforma::with(['complaint.client', 'requestedBy'])
+    $recentApprovals = \App\Models\SpareApprovalPerforma::with(['complaint.house', 'requestedBy'])
         ->orderBy('created_at', 'desc')
         ->limit(5)
         ->get();
@@ -66,7 +66,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <div class="fw-bold text-white">#{{ $approval->id }}</div>
-                        <div class="text-muted small">{{ $approval->complaint->client->client_name ?? 'N/A' }}</div>
+                        <div class="text-muted small">{{ $approval->complaint->house->name ?? 'N/A' }}</div>
                     </div>
                     <div class="text-end">
                         <span class="badge bg-{{ $approval->status === 'pending' ? 'warning' : ($approval->status === 'approved' ? 'success' : 'danger') }}">

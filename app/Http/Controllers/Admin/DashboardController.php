@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Complaint;
 use App\Models\User;
-use App\Models\Client;
 use App\Models\Employee;
 use App\Models\Spare;
 use App\Models\SpareApprovalPerforma;
@@ -178,7 +177,7 @@ class DashboardController extends Controller
         $stats = $this->getDashboardStats($user, $cityId, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId);
 
         // Get recent complaints with location filtering and filters
-        $recentComplaintsQuery = Complaint::with(['client', 'assignedEmployee']);
+        $recentComplaintsQuery = Complaint::with(['assignedEmployee']);
         $this->filterComplaintsByLocation($recentComplaintsQuery, $user);
         $this->applyFilters($recentComplaintsQuery, $cityId, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId);
         $recentComplaints = $recentComplaintsQuery->orderBy('created_at', 'desc')
@@ -186,7 +185,7 @@ class DashboardController extends Controller
             ->get();
 
         // Get approvals with location filtering and filters
-        $pendingApprovalsQuery = SpareApprovalPerforma::with(['complaint.client', 'complaint.house', 'complaint.assignedEmployee', 'requestedBy', 'items.spare']);
+        $pendingApprovalsQuery = SpareApprovalPerforma::with(['complaint.house', 'complaint.assignedEmployee', 'requestedBy', 'items.spare']);
 
         // Apply approval status filter directly on approvals (if specified, otherwise show only pending)
         if ($approvalStatus) {
@@ -225,7 +224,7 @@ class DashboardController extends Controller
 
         // Get overdue complaints with location filtering and filters
         $overdueComplaintsQuery = Complaint::overdue()
-            ->with(['client', 'assignedEmployee']);
+            ->with(['assignedEmployee']);
         $this->filterComplaintsByLocation($overdueComplaintsQuery, $user);
         $this->applyFilters($overdueComplaintsQuery, $cityId, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId);
         $overdueComplaints = $overdueComplaintsQuery->orderBy('created_at', 'asc')
@@ -400,9 +399,8 @@ class DashboardController extends Controller
                     $totalComplaintsQuery->where(function ($q) use ($geGroup) {
                         // First try to match by complaint's city_id
                         $q->where('complaints.city_id', $geGroup->id)
-                            // Or match by client's city name
-                            ->orWhereHas('client', function ($clientQ) use ($geGroup) {
-                                $clientQ->where('city', $geGroup->name);
+                            ->orWhereHas('house', function ($houseQ) use ($geGroup) {
+                                $houseQ->where('city_id', $geGroup->id);
                             });
                     });
 
@@ -430,9 +428,8 @@ class DashboardController extends Controller
                     $resolvedComplaintsQuery->where(function ($q) use ($geGroup) {
                         // First try to match by complaint's city_id
                         $q->where('complaints.city_id', $geGroup->id)
-                            // Or match by client's city name
-                            ->orWhereHas('client', function ($clientQ) use ($geGroup) {
-                                $clientQ->where('city', $geGroup->name);
+                            ->orWhereHas('house', function ($houseQ) use ($geGroup) {
+                                $houseQ->where('city_id', $geGroup->id);
                             });
                     })
                         ->whereIn('complaints.status', ['resolved', 'closed'])
@@ -716,9 +713,6 @@ class DashboardController extends Controller
             $employeesQuery->where('sector_id', $sectorId);
         }
 
-        $clientsQuery = Client::query();
-        $this->filterClientsByLocation($clientsQuery, $user);
-
         $sparesQuery = Spare::query();
         $this->filterSparesByLocation($sparesQuery, $user);
 
@@ -772,7 +766,6 @@ class DashboardController extends Controller
             'total_users' => User::count(),
             'active_users' => User::where('status', 'active')->count(),
             'total_employees' => (clone $employeesQuery)->count(),
-            'total_clients' => (clone $clientsQuery)->count(),
 
             // Spare parts statistics with location filtering
             'total_spares' => (clone $sparesQuery)->count(),
