@@ -400,15 +400,7 @@
     <!-- Right side - User info and actions -->
     <div class="d-flex align-items-center gap-3">
       <!-- Search -->
-      <div class="search-box d-none d-lg-block">
-        <div class="input-group">
-          <input type="text" class="form-control" placeholder="Search..." id="globalSearch"
-                 style="width: 220px;">
-          <button class="btn btn-outline-light" type="button" id="searchButton">
-            <i data-feather="search"></i>
-          </button>
-        </div>
-      </div>
+      
 
       <!-- Theme Toggle -->
       @include('components.theme-toggle')

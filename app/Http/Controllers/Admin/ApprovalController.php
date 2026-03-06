@@ -213,9 +213,9 @@ class ApprovalController extends Controller
                 'in_progress' => 'In-Progress',
                 'resolved' => 'Addressed',
                 'work_performa' => 'Work Performa',
-                'maint_performa' => 'Maintenance Performa',
-                'work_priced_performa' => 'Work Performa Priced',
-                'maint_priced_performa' => 'Maintenance Performa Priced',
+                'maint_performa' => 'Maint Performa',
+                'work_priced_performa' => 'Work Priced',
+                'maint_priced_performa' => 'Maint Priced',
                 'product_na' => 'Product N/A',
                 'un_authorized' => 'Un-Authorized',
                 'pertains_to_ge_const_isld' => 'Pertains to GE(N) Const Isld',
@@ -225,7 +225,7 @@ class ApprovalController extends Controller
             // Define performa type labels
             $performaTypeLabels = [
                 'work_performa' => 'Work Performa Required',
-                'maint_performa' => 'Maintenance Performa Required',
+                'maint_performa' => 'Maint Performa Required',
             ];
 
             // Build performa types collection - prefix with 'performa_' to distinguish from status values

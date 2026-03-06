@@ -119,8 +119,18 @@ class SlaController extends Controller
             $categoryRule .= '|in:' . implode(',', $categories);
         }
         
+        $rules = explode('|', $categoryRule);
+        $rules[] = function ($attribute, $value, $fail) use ($request) {
+            $exists = SlaRule::where('category_id', $value)
+                ->where('priority', $request->priority)
+                ->exists();
+            if ($exists) {
+                $fail('An SLA rule already exists for this category and priority.');
+            }
+        };
+
         $validator = Validator::make($request->all(), [
-            'category_id' => $categoryRule,
+            'category_id' => $rules,
             'priority' => 'required|in:low,medium,high,urgent',
             'max_resolution_time' => 'required|integer|min:1',
             'description' => 'nullable|string|max:255',
@@ -222,8 +232,19 @@ class SlaController extends Controller
             $categoryRule .= '|in:' . implode(',', $categories);
         }
         
+        $rules = explode('|', $categoryRule);
+        $rules[] = function ($attribute, $value, $fail) use ($request, $sla) {
+            $exists = SlaRule::where('category_id', $value)
+                ->where('priority', $request->priority)
+                ->where('id', '!=', $sla->id)
+                ->exists();
+            if ($exists) {
+                $fail('An SLA rule already exists for this category and priority.');
+            }
+        };
+
         $validator = Validator::make($request->all(), [
-            'category_id' => $categoryRule,
+            'category_id' => $rules,
             'priority' => 'required|in:low,medium,high,urgent',
             'max_resolution_time' => 'required|integer|min:1',
             'description' => 'nullable|string|max:255',

@@ -86,12 +86,9 @@
               <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>Addressed</option>
               <option value="work_performa" {{ request('status') == 'work_performa' ? 'selected' : '' }}>Work Performa
               </option>
-              <option value="maint_performa" {{ request('status') == 'maint_performa' ? 'selected' : '' }}>Maintenance
-                Performa</option>
-              <option value="work_priced_performa" {{ request('status') == 'work_priced_performa' ? 'selected' : '' }}>Work
-                Performa Priced</option>
-              <option value="maint_priced_performa" {{ request('status') == 'maint_priced_performa' ? 'selected' : '' }}>
-                Maintenance Performa Priced</option>
+              <option value="maint_performa" {{ request('status') == 'maint_performa' ? 'selected' : '' }}>Maint Performa</option>
+              <option value="work_priced_performa" {{ request('status') == 'work_priced_performa' ? 'selected' : '' }}>Work Priced</option>
+              <option value="maint_priced_performa" {{ request('status') == 'maint_priced_performa' ? 'selected' : '' }}>Maint Priced</option>
               <option value="product_na" {{ request('status') == 'product_na' ? 'selected' : '' }}>Product N/A</option>
               <option value="un_authorized" {{ request('status') == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
               </option>
@@ -265,8 +262,12 @@
 
                       if ($performaTypeToShow) {
                         // Handle special cases for performa type labels
-                        if ($performaTypeToShow === 'maint_performa') {
-                          $performaTypeLabel = 'Maintenance Performa';
+                      if ($performaTypeToShow === 'maint_performa') {
+                          $performaTypeLabel = 'Maint Performa';
+                        } elseif ($performaTypeToShow === 'work_priced_performa') {
+                          $performaTypeLabel = 'Work Priced';
+                        } elseif ($performaTypeToShow === 'maint_priced_performa') {
+                          $performaTypeLabel = 'Maint Priced';
                         } elseif ($performaTypeToShow === 'product_na') {
                           $performaTypeLabel = 'Product N/A';
                         } else {
@@ -353,12 +354,10 @@
                           <option value="in_progress" {{ $displayStatusForSelect == 'in_progress' ? 'selected' : '' }}>In Progress
                           </option>
                           <option value="resolved" {{ $displayStatusForSelect == 'resolved' ? 'selected' : '' }}>Addressed</option>
-                          <option value="work_performa" {{ $displayStatusForSelect == 'work_performa' ? 'selected' : '' }}>Work
-                            Performa</option>
-                          <option value="maint_performa" {{ $displayStatusForSelect == 'maint_performa' ? 'selected' : '' }}>
-                            Maintenance Performa</option>
-                          <option value="work_priced_performa" {{ $displayStatusForSelect == 'work_priced_performa' ? 'selected' : '' }}>Work Performa Priced</option>
-                          <option value="maint_priced_performa" {{ $displayStatusForSelect == 'maint_priced_performa' ? 'selected' : '' }}>Maintenance Performa Priced</option>
+                          <option value="work_performa" {{ $displayStatusForSelect == 'work_performa' ? 'selected' : '' }}>Work Performa</option>
+                          <option value="maint_performa" {{ $displayStatusForSelect == 'maint_performa' ? 'selected' : '' }}>Maint Performa</option>
+                          <option value="work_priced_performa" {{ $displayStatusForSelect == 'work_priced_performa' ? 'selected' : '' }}>Work Priced</option>
+                          <option value="maint_priced_performa" {{ $displayStatusForSelect == 'maint_priced_performa' ? 'selected' : '' }}>Maint Priced</option>
                           <option value="product_na" {{ $displayStatusForSelect == 'product_na' ? 'selected' : '' }}>Product N/A
                           </option>
                           <option value="un_authorized" {{ $displayStatusForSelect == 'un_authorized' ? 'selected' : '' }}>
@@ -395,10 +394,8 @@
                           <option value="assigned" {{ $complaintStatus == 'assigned' ? 'selected' : '' }}>Assigned</option>
                           <option value="in_progress" {{ $complaintStatus == 'in_progress' ? 'selected' : '' }}>In Progress</option>
                           <option value="resolved" {{ $complaintStatus == 'resolved' ? 'selected' : '' }}>Addressed</option>
-                          <option value="work_priced_performa" {{ $complaintStatus == 'work_priced_performa' ? 'selected' : '' }}>
-                            Work Performa Priced</option>
-                          <option value="maint_priced_performa" {{ $complaintStatus == 'maint_priced_performa' ? 'selected' : '' }}>
-                            Maintenance Performa Priced</option>
+                          <option value="work_priced_performa" {{ $complaintStatus == 'work_priced_performa' ? 'selected' : '' }}>Work Priced</option>
+                          <option value="maint_priced_performa" {{ $complaintStatus == 'maint_priced_performa' ? 'selected' : '' }}>Maint Priced</option>
                           <option value="product_na" {{ $complaintStatus == 'product_na' ? 'selected' : '' }}>Product N/A</option>
                           <option value="un_authorized" {{ $complaintStatus == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
                           </option>
@@ -434,10 +431,8 @@
                           <option value="assigned" {{ $complaintStatus == 'assigned' ? 'selected' : '' }}>Assigned</option>
                           <option value="in_progress" {{ $complaintStatus == 'in_progress' ? 'selected' : '' }}>In Progress</option>
                           <option value="resolved" {{ $complaintStatus == 'resolved' ? 'selected' : '' }}>Addressed</option>
-                          <option value="work_priced_performa" {{ $complaintStatus == 'work_priced_performa' ? 'selected' : '' }}>
-                            Work Performa Priced</option>
-                          <option value="maint_priced_performa" {{ $complaintStatus == 'maint_priced_performa' ? 'selected' : '' }}>
-                            Maintenance Performa Priced</option>
+                          <option value="work_priced_performa" {{ $complaintStatus == 'work_priced_performa' ? 'selected' : '' }}>Work Priced</option>
+                          <option value="maint_priced_performa" {{ $complaintStatus == 'maint_priced_performa' ? 'selected' : '' }}>Maint Priced</option>
                           <option value="product_na" {{ $complaintStatus == 'product_na' ? 'selected' : '' }}>Product N/A</option>
                           <option value="un_authorized" {{ $complaintStatus == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
                           </option>
@@ -471,10 +466,8 @@
                           <option value="assigned" {{ $complaintStatus == 'assigned' ? 'selected' : '' }}>Assigned</option>
                           <option value="in_progress" {{ $complaintStatus == 'in_progress' ? 'selected' : '' }}>In Progress</option>
                           <option value="resolved" {{ $complaintStatus == 'resolved' ? 'selected' : '' }}>Addressed</option>
-                          <option value="work_priced_performa" {{ $complaintStatus == 'work_priced_performa' ? 'selected' : '' }}>
-                            Work Performa Priced</option>
-                          <option value="maint_priced_performa" {{ $complaintStatus == 'maint_priced_performa' ? 'selected' : '' }}>
-                            Maintenance Performa Priced</option>
+                          <option value="work_priced_performa" {{ $complaintStatus == 'work_priced_performa' ? 'selected' : '' }}>Work Priced</option>
+                          <option value="maint_priced_performa" {{ $complaintStatus == 'maint_priced_performa' ? 'selected' : '' }}>Maint Priced</option>
                           <option value="product_na" {{ $complaintStatus == 'product_na' ? 'selected' : '' }}>Product N/A</option>
                           <option value="un_authorized" {{ $complaintStatus == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
                           </option>
@@ -510,10 +503,8 @@
                           <option value="assigned" {{ $complaintStatus == 'assigned' ? 'selected' : '' }}>Assigned</option>
                           <option value="in_progress" {{ $complaintStatus == 'in_progress' ? 'selected' : '' }}>In Progress</option>
                           <option value="resolved" {{ $complaintStatus == 'resolved' ? 'selected' : '' }}>Addressed</option>
-                          <option value="work_priced_performa" {{ $complaintStatus == 'work_priced_performa' ? 'selected' : '' }}>
-                            Work Performa Priced</option>
-                          <option value="maint_priced_performa" {{ $complaintStatus == 'maint_priced_performa' ? 'selected' : '' }}>
-                            Maintenance Performa Priced</option>
+                          <option value="work_priced_performa" {{ $complaintStatus == 'work_priced_performa' ? 'selected' : '' }}>Work Priced</option>
+                          <option value="maint_priced_performa" {{ $complaintStatus == 'maint_priced_performa' ? 'selected' : '' }}>Maint Priced</option>
                           <option value="product_na" {{ $complaintStatus == 'product_na' ? 'selected' : '' }}>Product N/A</option>
                           <option value="un_authorized" {{ $complaintStatus == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
                           </option>
@@ -549,10 +540,8 @@
                           <option value="assigned" {{ $complaintStatus == 'assigned' ? 'selected' : '' }}>Assigned</option>
                           <option value="in_progress" {{ $complaintStatus == 'in_progress' ? 'selected' : '' }}>In Progress</option>
                           <option value="resolved" {{ $complaintStatus == 'resolved' ? 'selected' : '' }}>Addressed</option>
-                          <option value="work_priced_performa" {{ $complaintStatus == 'work_priced_performa' ? 'selected' : '' }}>
-                            Work Performa Priced</option>
-                          <option value="maint_priced_performa" {{ $complaintStatus == 'maint_priced_performa' ? 'selected' : '' }}>
-                            Maintenance Performa Priced</option>
+                          <option value="work_priced_performa" {{ $complaintStatus == 'work_priced_performa' ? 'selected' : '' }}>Work Priced</option>
+                          <option value="maint_priced_performa" {{ $complaintStatus == 'maint_priced_performa' ? 'selected' : '' }}>Maint Priced</option>
                           <option value="product_na" {{ $complaintStatus == 'product_na' ? 'selected' : '' }}>Product N/A</option>
                           <option value="un_authorized" {{ $complaintStatus == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
                           </option>
@@ -588,10 +577,8 @@
                           <option value="assigned" {{ $complaintStatus == 'assigned' ? 'selected' : '' }}>Assigned</option>
                           <option value="in_progress" {{ $complaintStatus == 'in_progress' ? 'selected' : '' }}>In Progress</option>
                           <option value="resolved" {{ $complaintStatus == 'resolved' ? 'selected' : '' }}>Addressed</option>
-                          <option value="work_priced_performa" {{ $complaintStatus == 'work_priced_performa' ? 'selected' : '' }}>
-                            Work Performa Priced</option>
-                          <option value="maint_priced_performa" {{ $complaintStatus == 'maint_priced_performa' ? 'selected' : '' }}>
-                            Maintenance Performa Priced</option>
+                          <option value="work_priced_performa" {{ $complaintStatus == 'work_priced_performa' ? 'selected' : '' }}>Work Priced</option>
+                          <option value="maint_priced_performa" {{ $complaintStatus == 'maint_priced_performa' ? 'selected' : '' }}>Maint Priced</option>
                           <option value="product_na" {{ $complaintStatus == 'product_na' ? 'selected' : '' }}>Product N/A</option>
                           <option value="un_authorized" {{ $complaintStatus == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
                           </option>
@@ -921,27 +908,27 @@
 
     .table.table-dark.table-sm th:nth-child(2),
     .table.table-dark.table-sm td:nth-child(2) {
-      width: 10% !important;
+      width: 7% !important;
       min-width: 100px !important;
       max-width: 130px !important;
     }
 
     .table.table-dark.table-sm th:nth-child(3),
     .table.table-dark.table-sm td:nth-child(3) {
-      width: 10% !important;
+      width: 8% !important;
       min-width: 100px !important;
       max-width: 130px !important;
     }
 
     .table.table-dark.table-sm th:nth-child(4),
     .table.table-dark.table-sm td:nth-child(4) {
-      width: 9% !important;
+      width: 8% !important;
       max-width: 110px !important;
     }
 
     .table.table-dark.table-sm th:nth-child(5),
     .table.table-dark.table-sm td:nth-child(5) {
-      width: 9% !important;
+      width: 7% !important;
       max-width: 110px !important;
     }
 
@@ -959,19 +946,19 @@
 
     .table.table-dark.table-sm th:nth-child(8),
     .table.table-dark.table-sm td:nth-child(8) {
-      width: 11% !important;
+      width: 8% !important;
       max-width: 130px !important;
     }
 
     .table.table-dark.table-sm th:nth-child(9),
     .table.table-dark.table-sm td:nth-child(9) {
-      width: 11% !important;
+      width: 10% !important;
       max-width: 130px !important;
     }
 
     .table.table-dark.table-sm th:nth-child(10),
     .table.table-dark.table-sm td:nth-child(10) {
-      width: 7% !important;
+      width: 9% !important;
       max-width: 90px !important;
       padding-right: 0.2rem !important;
       padding-left: 0.2rem !important;
