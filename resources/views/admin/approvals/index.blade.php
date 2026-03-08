@@ -608,14 +608,9 @@
                         data-category="{{ $category }}" disabled style="padding: 1px 3px; cursor: not-allowed; opacity: 0.6;">
                         <i data-feather="plus-circle" style="width: 12px; height: 12px;"></i>
                       </button>
-                    @elseif(isset($approval->has_issued_stock) && $approval->has_issued_stock)
-                      <button type="button" class="btn btn-outline-secondary btn-sm add-stock-btn" title="Stock issued"
-                        data-approval-id="{{ $approval->id }}" data-category="{{ $category }}" disabled
-                        style="padding: 1px 3px; cursor: not-allowed; opacity: 0.6;">
-                        <i data-feather="plus-circle" style="width: 12px; height: 12px;"></i>
-                      </button>
                     @else
-                      <button type="button" class="btn btn-outline-primary btn-sm add-stock-btn" title="Submit"
+                      <button type="button" class="btn btn-outline-primary btn-sm add-stock-btn" 
+                        title="{{ (isset($approval->has_issued_stock) && $approval->has_issued_stock) ? 'Issue More Stock' : 'Issue Stock' }}"
                         data-approval-id="{{ $approval->id }}" data-category="{{ $category }}"
                         onclick="openAddStockModal({{ $approval->id }}, '{{ $category }}')"
                         style="padding: 1px 3px; cursor: pointer;">
@@ -3252,48 +3247,8 @@
           if (data.success && data.approval && data.approval.items) {
             const items = data.approval.items || [];
             const issuedStock = data.approval.issued_stock || [];
+            const hasIssuedStock = issuedStock.length > 0;
 
-            if (items.length > 0) {
-              itemsHtml += `
-                <div class="table-responsive mb-3">
-                  <table class="table table-sm table-bordered" style="font-size: 0.85rem;">
-                    <thead class="table-light">
-                      <tr>
-                        <th style="width: 25%;">Product Name</th>
-                        <th style="width: 20%;">Category</th>
-                        <th style="width: 15%; text-align: center;">Req Qty</th>
-                        <th style="width: 15%; text-align: center;">Avail Stock</th>
-                        <th style="width: 25%; text-align: center;">Issue Qty</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-              `;
-
-              items.forEach((item, index) => {
-                const availStock = item.product?.stock ?? 0;
-                itemsHtml += `
-                  <tr>
-                    <td>${item.product_name}</td>
-                    <td>${item.category || 'N/A'}</td>
-                    <td class="text-center">${item.quantity}</td>
-                    <td class="text-center">${availStock}</td>
-                    <td>
-                      <input type="number" class="form-control form-control-sm issue-qty-input" 
-                        data-item-id="${item.id}" data-spare-id="${item.spare_id}"
-                        max="${availStock}" min="0" value="0" style="text-align: center;">
-                    </td>
-                  </tr>
-                `;
-              });
-
-              itemsHtml += `
-                    </tbody>
-                  </table>
-                </div>
-              `;
-            }
-
-            // Build full form with existing items table and manual add section
             let itemsHtml = '<form id="addStockForm">';
 
             if (items.length > 0) {
@@ -3336,11 +3291,48 @@
               `;
             }
 
-            // Check if stock has already been issued - if yes, disable the form
-            const hasIssuedStock = issuedStock.length > 0;
+            // Add "Previously Issued Items" section if stock has been issued
+            if (issuedStock.length > 0) {
+              itemsHtml += `
+                <div class="mb-3">
+                  <h6 class="text-primary fw-bold" style="font-size: 0.9rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 12px;">
+                    <i data-feather="check-square" style="width: 16px; height: 16px; margin-right: 4px;"></i>
+                    Previously Issued Items
+                  </h6>
+                  <div class="table-responsive">
+                    <table class="table table-sm table-bordered" style="font-size: 0.8rem; background-color: #f8fafc;">
+                      <thead style="background-color: #f1f5f9;">
+                        <tr>
+                          <th>Item Name</th>
+                          <th class="text-center">Qty</th>
+                          <th>Issued At</th>
+                          <th>Remarks</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+              `;
+              
+              issuedStock.forEach(log => {
+                itemsHtml += `
+                  <tr>
+                    <td>${log.spare_name}</td>
+                    <td class="text-center fw-bold text-success">${log.quantity_issued}</td>
+                    <td class="text-muted">${log.issued_at}</td>
+                    <td class="small">${log.remarks || '-'}</td>
+                  </tr>
+                `;
+              });
+              
+              itemsHtml += `
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              `;
+            }
 
-            // Manual Add Form Section
-            itemsHtml += `
+            // Build full form with existing items table and manual add section
+            let manualFormHtml = `
                   <div class="card mb-3" style="border: 1px solid #dee2e6; border-radius: 8px;">
                     <div class="card-header bg-primary text-white" style="padding: 12px 16px; font-weight: 600; font-size: 14px;">
                       Authority / Stock Management
@@ -3401,6 +3393,7 @@
                   </div>
                 `;
 
+            itemsHtml += manualFormHtml;
             itemsHtml += '</form>';
             modalBody.innerHTML = itemsHtml;
 
@@ -3459,7 +3452,7 @@
               }
 
               // If authority number exists, populate the form
-              if (existingAuthority && !hasIssuedStock) {
+              if (existingAuthority) {
                 console.log('Found existing authority number:', existingAuthority);
 
                 // Set "Authority No. Req" to "Yes"
@@ -3480,12 +3473,6 @@
                   }
                 }, 50);
               }
-
-              // Don't populate form if stock has already been issued
-              if (hasIssuedStock) {
-                // Form is already disabled above, no need to populate
-                return;
-              }
             }, 100);
 
             // Show Submit button always (will be enabled when product and quantity are selected)
@@ -3494,9 +3481,13 @@
               // Keep submit enabled in all cases
               submitBtn.disabled = false;
               if (hasIssuedStock) {
-                submitBtn.innerHTML = 'Stock Already Issued';
-                submitBtn.classList.add('btn-secondary');
-                submitBtn.classList.remove('btn-success');
+                submitBtn.innerHTML = 'Issue More Stock';
+                submitBtn.classList.add('btn-success');
+                submitBtn.classList.remove('btn-secondary');
+              } else {
+                submitBtn.innerHTML = 'Issue Stock';
+                submitBtn.classList.add('btn-success');
+                submitBtn.classList.remove('btn-secondary');
               }
             }
 

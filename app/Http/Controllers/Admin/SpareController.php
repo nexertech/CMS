@@ -687,7 +687,8 @@ class SpareController extends Controller
             }
 
             // Set reference_id to complaint_id (for stock logs to link to complaint)
-            $referenceId = $complaintId ?? $itemId ?? $approvalId ?? null;
+            // This is critical to avoid ID collision between approvals and complaints
+            $referenceId = $complaintId ?? ($approval ? $approval->complaint_id : null) ?? $approvalId ?? $itemId ?? null;
 
             // Issue stock (decrease inventory)
             $result = $spare->removeStock(

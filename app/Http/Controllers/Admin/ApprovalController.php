@@ -178,11 +178,13 @@ class ApprovalController extends Controller
                 'items.spare'
             ]);
             
-            // Check if each approval has issued stock
+            // Check if each approval has issued stock (query by complaint_id to see job-wide status)
             foreach ($approvals as $approval) {
-                $hasIssuedStock = \App\Models\SpareStockLog::where('reference_id', $approval->id)
-                    ->where('change_type', 'out')
-                    ->exists();
+                $hasIssuedStock = $approval->complaint_id 
+                    ? \App\Models\SpareStockLog::where('reference_id', $approval->complaint_id)
+                        ->where('change_type', 'out')
+                        ->exists()
+                    : false;
                 $approval->has_issued_stock = $hasIssuedStock;
             }
             
@@ -404,10 +406,11 @@ class ApprovalController extends Controller
             }
         }
 
-        // Get previously issued stock from stock logs for this approval (optimized query)
+        // Get previously issued stock from stock logs for this job (query by complaint_id)
         $issuedStock = [];
         try {
-            $stockLogs = \App\Models\SpareStockLog::where('reference_id', $approval->id)
+            $referenceId = $approval->complaint_id ?? $approval->id;
+            $stockLogs = \App\Models\SpareStockLog::where('reference_id', $referenceId)
                 ->where('change_type', 'out')
                 ->with('spare:id,item_name')
                 ->orderBy('created_at', 'desc')

@@ -177,7 +177,7 @@
                     </div>
                 </div>
 
-                @if($complaint->house->phone)
+                @if($complaint->house && $complaint->house->phone)
                 <div class="info-item">
                     <div class="d-flex align-items-center">
                         <i data-feather="phone" class="me-3 text-muted"></i>
@@ -189,7 +189,7 @@
                 </div>
                 @endif
                 
-                @if($complaint->house->address)
+                @if($complaint->house && $complaint->house->address)
                 <div class="info-item">
                     <div class="d-flex align-items-start">
                         <i data-feather="map-pin" class="me-3 text-muted mt-1"></i>
@@ -200,7 +200,6 @@
                     </div>
                 </div>
                 @endif
-
                 @if($complaint->city_id && $complaint->city)
                 <div class="info-item">
                     <div class="d-flex align-items-center">
@@ -212,7 +211,7 @@
                     </div>
                 </div>
                 @endif
-                
+
                 @if($complaint->sector_id && $complaint->sector)
                 <div class="info-item">
                     <div class="d-flex align-items-center">
