@@ -98,7 +98,7 @@
   /* Logo Container - Separate from Navbar */
   .logo-container {
     position: absolute;
-    top: -10px;
+    top: -5px;
     left: 0;
     z-index: 1040;
     padding: 0px 15px;

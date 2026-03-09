@@ -980,7 +980,9 @@ class HomeController extends Controller
         $cmeGraphData = [];
         $cmeResolvedData = []; // New array for addressed complaints
 
-        $cmeDateRange = $request->get('cme_date_range', $dateRange); // Use specific filter or fallback to global
+        $cmeDateRange = $request->get('cme_date_range', 'all_time'); // specific filter or default to all_time
+        
+        $years = collect(range(date('Y'), 2023))->unique()->values()->all();
 
         // Check if user has unrestricted access (all privileges)
         // User is unrestricted if:
@@ -1117,49 +1119,10 @@ class HomeController extends Controller
             $categoryUsageQuery->whereIn('spares.city_id', $cityIdsForProducts);
         }
 
-        // Apply date filter to SpareStockLog created_at column
-        $categoryDateRange = $request->get('category_date_range', $dateRange); // Fallback to global dateRange
+        // Apply date filter to SpareStockLog created_at column (year-based)
+        $categoryDateRange = $request->get('category_date_range', 'all_time');
         if ($categoryDateRange && $categoryDateRange !== 'all_time') {
-            $now = now();
-            switch ($categoryDateRange) {
-                case 'yesterday':
-                    $categoryUsageQuery->whereDate('spare_stock_logs.created_at', $now->copy()->subDay()->toDateString());
-                    break;
-                case 'today':
-                    $categoryUsageQuery->whereDate('spare_stock_logs.created_at', $now->toDateString());
-                    break;
-                case 'this_week':
-                    $categoryUsageQuery->whereBetween('spare_stock_logs.created_at', [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()]);
-                    break;
-                case 'last_week':
-                    $categoryUsageQuery->whereBetween('spare_stock_logs.created_at', [$now->copy()->subWeek()->startOfWeek(), $now->copy()->subWeek()->endOfWeek()]);
-                    break;
-                case 'this_month':
-                    $categoryUsageQuery->whereMonth('spare_stock_logs.created_at', $now->month)
-                        ->whereYear('spare_stock_logs.created_at', $now->year);
-                    break;
-                case 'last_month':
-                    $categoryUsageQuery->whereMonth('spare_stock_logs.created_at', $now->copy()->subMonth()->month)
-                        ->whereYear('spare_stock_logs.created_at', $now->copy()->subMonth()->year);
-                    break;
-                case 'last_6_months':
-                    $categoryUsageQuery->where('spare_stock_logs.created_at', '>=', $now->copy()->subMonths(6)->startOfDay());
-                    break;
-                case 'this_year':
-                    $categoryUsageQuery->whereYear('spare_stock_logs.created_at', $now->year);
-                    break;
-                case 'last_year':
-                    $categoryUsageQuery->whereYear('spare_stock_logs.created_at', $now->copy()->subYear()->year);
-                    break;
-                case 'custom':
-                    if ($request->has('start_date') && $request->has('end_date')) {
-                        $categoryUsageQuery->whereBetween('spare_stock_logs.created_at', [
-                            \Carbon\Carbon::parse($request->start_date)->startOfDay(),
-                            \Carbon\Carbon::parse($request->end_date)->endOfDay()
-                        ]);
-                    }
-                    break;
-            }
+            $categoryUsageQuery->whereYear('spare_stock_logs.created_at', $categoryDateRange);
         }
 
         $categoryUsageData = $categoryUsageQuery->get();
@@ -1200,12 +1163,26 @@ class HomeController extends Controller
         }
 
         if ($tableEntities->isNotEmpty()) {
-            // Process months
-            $months = [];
-            for ($m = 1; $m <= 12; $m++) {
-                $monthName = date('F', mktime(0, 0, 0, $m, 1));
-                $months[$m] = $monthName;
-                $monthlyTableData[$monthName] = [];
+            $isAllTime = ($cmeDateRange === 'all_time' || empty($cmeDateRange));
+
+            // Build report periods
+            $reportMonths = [];
+            if ($isAllTime) {
+                // Get oldest year from DB to build year rows
+                $oldestYear = \App\Models\Complaint::min(\DB::raw('YEAR(created_at)'));
+                $currentYear = now()->year;
+                if (!$oldestYear) $oldestYear = $currentYear;
+                for ($yr = $oldestYear; $yr <= $currentYear; $yr++) {
+                    $reportMonths[$yr] = ['label' => (string)$yr, 'year' => $yr, 'month' => null];
+                    $monthlyTableData[(string)$yr] = [];
+                }
+            } else {
+                $yearVal = (int)$cmeDateRange;
+                for ($m = 1; $m <= 12; $m++) {
+                    $label = date('F', mktime(0, 0, 0, $m, 1));
+                    $reportMonths[] = ['label' => $label, 'year' => $yearVal, 'month' => $m];
+                    $monthlyTableData[$label] = [];
+                }
             }
 
             // FETCHING ALL DATA IN ONE GO - OPTIMIZED
@@ -1231,48 +1208,61 @@ class HomeController extends Controller
                 $tableQuery->whereIn('sector_id', $entityIds);
             }
 
+            // Apply date filter (no filter for all_time so totals match the graph)
             $this->applyCmeDateFilter($tableQuery, $cmeDateRange);
 
-            $allStats = $tableQuery->selectRaw('
-                city_id, sector_id, MONTH(created_at) as month,
-                COUNT(*) as total,
-                SUM(CASE WHEN status IN ("resolved", "closed") THEN 1 ELSE 0 END) as resolved
-            ')
-            ->groupBy('city_id', 'sector_id', 'month')
-            ->get();
+            if ($isAllTime) {
+                // Group by year only (no month needed)
+                $allStats = $tableQuery->selectRaw('
+                    city_id, sector_id, YEAR(created_at) as year,
+                    COUNT(*) as total,
+                    SUM(CASE WHEN status IN ("resolved", "closed") THEN 1 ELSE 0 END) as resolved
+                ')
+                ->groupBy('city_id', 'sector_id', 'year')
+                ->get();
+            } else {
+                // Group by year+month for specific year
+                $allStats = $tableQuery->selectRaw('
+                    city_id, sector_id, YEAR(created_at) as year, MONTH(created_at) as month,
+                    COUNT(*) as total,
+                    SUM(CASE WHEN status IN ("resolved", "closed") THEN 1 ELSE 0 END) as resolved
+                ')
+                ->groupBy('city_id', 'sector_id', 'year', 'month')
+                ->get();
+            }
 
             // PRE-CALCULATE MAPPINGS FOR ACCURATE ATTRIBUTION
             $cityCmeMap = [];
             $sectorCmeMap = [];
-            $sectorCityMap = [];
 
             if ($entityType === 'cme') {
                 $cityCmeMap = \App\Models\City::whereIn('id', $allStats->pluck('city_id')->filter()->unique())->pluck('cme_id', 'id')->toArray();
                 $sectorCmeMap = \App\Models\Sector::whereIn('id', $allStats->pluck('sector_id')->filter()->unique())->pluck('cme_id', 'id')->toArray();
-                $sectorCityMap = \App\Models\Sector::whereIn('id', $allStats->pluck('sector_id')->filter()->unique())->pluck('city_id', 'id')->toArray();
             }
 
-            // Mapping results in memory for performance
-            foreach ($months as $mNum => $mName) {
+            // Map results
+            foreach ($reportMonths as $rm) {
                 foreach ($tableEntities as $entity) {
                     $total = 0; $resolved = 0;
                     
                     foreach ($allStats as $stat) {
-                        if ($stat->month != $mNum) continue;
-                        
+                        // Time match
+                        if ($isAllTime) {
+                            if ($stat->year != $rm['year']) continue;
+                        } else {
+                            if ($stat->month != $rm['month'] || $stat->year != $rm['year']) continue;
+                        }
+
                         $match = false;
                         if ($entityType === 'cme') {
-                            // Match Graph Logic: city_id in CME cities OR sector_id in CME sectors (direct)
                             if ($stat->city_id && isset($cityCmeMap[$stat->city_id]) && $cityCmeMap[$stat->city_id] == $entity->id) {
                                 $match = true;
                             } elseif ($stat->sector_id && isset($sectorCmeMap[$stat->sector_id]) && $sectorCmeMap[$stat->sector_id] == $entity->id) {
                                 $match = true;
                             }
                         } elseif ($entityType === 'city') {
-                            // Match Graph Logic (isCmeUser): only check city_id
                             if ($stat->city_id == $entity->id) $match = true;
                         } else {
-                            // Match Graph Logic (isGeUser/isNodeUser): only check sector_id
                             if ($stat->sector_id == $entity->id) $match = true;
                         }
 
@@ -1281,20 +1271,34 @@ class HomeController extends Controller
                             $resolved += $stat->resolved;
                         }
                     }
-                    $monthlyTableData[$mName][$entity->name] = ['total' => $total, 'resolved' => $resolved];
+                    $monthlyTableData[$rm['label']][$entity->name] = ['total' => $total, 'resolved' => $resolved];
                 }
             }
         }
 
-        // Prepare Stock Consumption Data - Monthly with Inventory Details
-        $filters = [
+        // Stock Consumption data - respects categoryDateRange as a year filter
+        $stockFilters = [
             'cmes_id' => $cmesId,
             'city_id' => $cityId,
             'sector_id' => $sectorId,
             'category' => $category,
             'date_range' => $dateRange,
         ];
-        $stockConsumptionData = $this->getStockConsumptionData($user, $locationScope, 'all_time', $filters);
+        $stockYear = ($categoryDateRange && $categoryDateRange !== 'all_time') ? $categoryDateRange : 'all_time';
+        $stockConsumptionData = $this->getStockConsumptionData($user, $locationScope, $stockYear, $stockFilters);
+
+        // Compute stock month labels for the selected year
+        if ($stockYear === 'all_time') {
+            $stockMonthLabels = [];
+            for ($i = 11; $i >= 0; $i--) {
+                $stockMonthLabels[] = now()->startOfMonth()->subMonths($i)->format('M');
+            }
+        } else {
+            $stockMonthLabels = [];
+            for ($m = 1; $m <= 12; $m++) {
+                $stockMonthLabels[] = date('M', mktime(0, 0, 0, $m, 1));
+            }
+        }
 
 
 
@@ -1323,7 +1327,16 @@ class HomeController extends Controller
                 'empLeastGraphTotal' => $empLeastGraphTotal,
                 'empLeastGraphResolved' => $empLeastGraphResolved,
                 'stockConsumptionData' => $stockConsumptionData,
-                'serverStats' => $stats
+                'stockMonthLabels' => $stockMonthLabels,
+                'serverStats' => $stats,
+                'cmeTableHtml' => view('frontend.dashboard.partials.cme_table', [
+                    'monthlyTableData' => $monthlyTableData,
+                    'tableEntities' => $tableEntities,
+                ])->render(),
+                'stockTableHtml' => view('frontend.dashboard.partials.stock_table', [
+                    'stockConsumptionData' => $stockConsumptionData,
+                    'monthLabels' => $stockMonthLabels,
+                ])->render()
             ]);
         }
 
@@ -1364,10 +1377,14 @@ class HomeController extends Controller
             'monthlyTableData',
             'tableEntities',
             'stockConsumptionData',
+            'stockMonthLabels',
             'categoryLabels',
             'categoryUsageValues',
             'categoryTotalReceivedValues',
-            'overdueComplaints'
+            'overdueComplaints',
+            'years',
+            'cmeDateRange',
+            'categoryDateRange'
         ));
     }
 
@@ -1911,22 +1928,8 @@ class HomeController extends Controller
 
     protected function applyCmeDateFilter($query, $dateRange)
     {
-        if ($dateRange) {
-            $now = now();
-            switch ($dateRange) {
-                case 'this_month':
-                    $query->whereMonth('created_at', $now->month)->whereYear('created_at', $now->year);
-                    break;
-                case 'last_6_months':
-                    $query->where('created_at', '>=', $now->copy()->subMonths(6)->startOfDay());
-                    break;
-                case 'this_year':
-                    $query->whereYear('created_at', $now->year);
-                    break;
-                case 'last_year':
-                    $query->whereYear('created_at', $now->copy()->subYear()->year);
-                    break;
-            }
+        if ($dateRange && $dateRange !== 'all_time') {
+            $query->whereYear('created_at', $dateRange);
         }
     }
 }

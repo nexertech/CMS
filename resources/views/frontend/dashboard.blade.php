@@ -761,11 +761,10 @@
                             <div id="cmeGraphFilterContainer">
                                 <select id="cmeGraphFilter"
                                     class="p-1.5 border rounded text-sm font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    <option value="">All Time</option>
-                                    <option value="this_month">This Month</option>
-                                    <option value="last_6_months">Last 6 Months</option>
-                                    <option value="this_year">This Year</option>
-                                    <option value="last_year">Last Year</option>
+                                    <option value="all_time" {{ $cmeDateRange === 'all_time' ? 'selected' : '' }}>All Time</option>
+                                    @foreach($years as $year)
+                                        <option value="{{ $year }}" {{ $cmeDateRange == $year ? 'selected' : '' }}>{{ $year }}</option>
+                                    @endforeach
                                 </select>
                             </div>
 
@@ -803,7 +802,8 @@
                             <tr>
                                 <th rowspan="2"
                                     class="px-4 py-1 text-left text-xs font-extrabold text-gray-900 uppercase tracking-wider border-r border-gray-200 sticky left-0 bg-gray-50 z-10">
-                                    Month</th>
+                                    @php $firstCmeKey = array_key_first($monthlyTableData ?? []); @endphp
+                                    {{ is_numeric($firstCmeKey) ? 'Year' : 'Month' }}</th>
                                 @foreach($tableEntities as $entity)
                                     <th colspan="2"
                                         class="px-2 py-1 text-center text-xs font-extrabold text-gray-900 uppercase tracking-wider border-r border-gray-200">
@@ -898,11 +898,10 @@
                             <div id="stockGraphFilterContainer">
                                 <select id="categoryGraphFilter"
                                     class="p-1.5 border rounded text-sm font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    <option value="">All Time</option>
-                                    <option value="this_month">This Month</option>
-                                    <option value="last_6_months">Last 6 Months</option>
-                                    <option value="this_year">This Year</option>
-                                    <option value="last_year">Last Year</option>
+                                    <option value="all_time" {{ ($categoryDateRange ?? 'all_time') === 'all_time' ? 'selected' : '' }}>All Time</option>
+                                    @foreach($years as $year)
+                                        <option value="{{ $year }}" {{ ($categoryDateRange ?? '') == $year ? 'selected' : '' }}>{{ $year }}</option>
+                                    @endforeach
                                 </select>
                             </div>
 
@@ -935,120 +934,7 @@
                     </div>
 
                     <div id="stockTableContainer" class="hidden transition-all overflow-x-auto min-h-80 pt-6">
-                         <table id="stockConsumptionTable" class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-2 py-1 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-r border-gray-200 sticky left-0 bg-gray-50 z-10">Item Name</th>
-                                        @foreach($monthLabels as $month)
-                                            <th class="px-4 py-1 text-center text-xs font-bold text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                                                {{ substr($month, 0, 3) }} <!-- Show Jan, Feb etc -->
-                                            </th>
-                                        @endforeach
-                                        <th class="px-4 py-1 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">Total Received</th>
-                                        <th class="px-4 py-1 text-center text-xs font-bold text-red-600 uppercase tracking-wider border-r border-gray-200">Total Used</th>
-                                        <th class="px-4 py-1 text-center text-xs font-bold text-green-600 uppercase tracking-wider">Balance</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    @php
-                                        $stockMonthTotalsReceived = array_fill_keys($monthLabels, 0);
-                                        $stockMonthTotalsReceivedTop10 = array_fill_keys($monthLabels, 0);
-                                        $grandTotalReceived = 0;
-                                        $top10TotalReceived = 0;
-                                        $grandTotalUsed = 0;
-                                        $top10TotalUsed = 0;
-                                        $grandBalance = 0;
-                                        $top10Balance = 0;
-                                        $rowIndex = 0; // Counter for limiting screen display
-                                    @endphp
-                                    @foreach($stockConsumptionData as $itemName => $data)
-                                        @php
-                                            $rowIndex++;
-                                            $grandTotalReceived += $data['total_received'];
-                                            $grandTotalUsed += $data['total_used'];
-                                            $grandBalance += $data['current_stock'];
-                                            
-                                            if ($rowIndex <= 10) {
-                                                $top10TotalReceived += $data['total_received'];
-                                                $top10TotalUsed += $data['total_used'];
-                                                $top10Balance += $data['current_stock'];
-                                            }
-
-                                            // Add class to hide rows beyond 10 on screen (but show in print)
-                                            $rowClass = $rowIndex > 10 ? 'no-print-row' : '';
-                                        @endphp
-                                        <!-- Stock Received Row -->
-                                        <tr class="hover:bg-blue-50 {{ $rowClass }}">
-                                            <td class="px-2 py-1 whitespace-nowrap text-sm font-medium text-gray-900 border-r border-gray-200 sticky left-0 bg-white z-10">
-                                                {{ $itemName }}
-                                            </td>
-                                            @foreach($monthLabels as $month)
-                                                @php
-                                                    $receivedQty = $data['monthly_received_data'][$month] ?? 0;
-                                                    $stockMonthTotalsReceived[$month] += $receivedQty;
-                                                    if ($rowIndex <= 10) {
-                                                        $stockMonthTotalsReceivedTop10[$month] += $receivedQty;
-                                                    }
-                                                @endphp
-                                                <td class="px-4 py-1 whitespace-nowrap text-sm text-center text-blue-600 font-semibold border-r border-gray-200" style="background-color: #eff6ff;">
-                                                    {{ $receivedQty > 0 ? $receivedQty : '-' }}
-                                                </td>
-                                            @endforeach
-                                            <td class="px-4 py-1 whitespace-nowrap text-sm text-center font-bold text-gray-700 border-r border-gray-200">
-                                                {{ $data['total_received'] }}
-                                            </td>
-                                            <td class="px-4 py-1 whitespace-nowrap text-sm text-center font-bold text-red-600 border-r border-gray-200">
-                                                {{ $data['total_used'] }}
-                                            </td>
-                                            <td class="px-4 py-1 whitespace-nowrap text-sm text-center font-bold text-green-600">
-                                                {{ $data['current_stock'] }}
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                                <tfoot class="bg-gray-100 font-bold">
-                                    <!-- Top 10 Total Row (Visible only on Screen) -->
-                                    <tr class="border-t-2 border-gray-400 no-print">
-                                        <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 sticky left-0 bg-gray-100 z-10">
-                                            Total (Top 10)
-                                        </td>
-                                        @foreach($monthLabels as $month)
-                                            <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-blue-600 border-r border-gray-200">
-                                                {{ $stockMonthTotalsReceivedTop10[$month] }}
-                                            </td>
-                                        @endforeach
-                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-gray-900 border-r border-gray-200">
-                                            {{ $top10TotalReceived }}
-                                        </td>
-                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-red-600 border-r border-gray-200">
-                                            {{ $top10TotalUsed }}
-                                        </td>
-                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-green-600">
-                                            {{ $top10Balance }}
-                                        </td>
-                                    </tr>
-                                    <!-- Grand Total Row (Visible in Print/Excel) -->
-                                    <tr class="border-t-2 border-gray-400 no-print-row">
-                                        <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 sticky left-0 bg-gray-100 z-10">
-                                            Grand Total
-                                        </td>
-                                        @foreach($monthLabels as $month)
-                                            <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-blue-600 border-r border-gray-200">
-                                                {{ $stockMonthTotalsReceived[$month] }}
-                                            </td>
-                                        @endforeach
-                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-gray-900 border-r border-gray-200">
-                                                {{ $grandTotalReceived }}
-                                            </td>
-                                            <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-red-600 border-r border-gray-200">
-                                                {{ $grandTotalUsed }}
-                                            </td>
-                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-center text-green-600">
-                                            {{ $grandBalance }}
-                                        </td>
-                                    </tr>
-                                </tfoot>
-                            </table>
+                        @include('frontend.dashboard.partials.stock_table', ['monthLabels' => $stockMonthLabels ?? $monthLabels])
                     </div>
                 </div>
             </div>
@@ -2862,31 +2748,30 @@
             }
         }
 
-        // Handle CME Graph Filter Change
+        // Handle CME Graph Filter Change - AJAX update (no page reload)
         const cmeGraphFilter = document.getElementById('cmeGraphFilter');
         if (cmeGraphFilter) {
             cmeGraphFilter.addEventListener('change', function() {
                 const cmeDateRange = this.value;
 
-                // Get other current filters to maintain context
-                const cityId = document.getElementById('filterCity') ? document.getElementById('filterCity').value : null;
-                const sectorId = document.getElementById('filterSector') ? document.getElementById('filterSector').value : null;
-                const category = document.getElementById('filterCategory') ? document.getElementById('filterCategory').value : null;
-                const status = document.getElementById('filterStatus') ? document.getElementById('filterStatus').value : null;
-                const dateRange = document.getElementById('filterDateRange') ? document.getElementById('filterDateRange').value : null;
-                const cmesId = document.getElementById('filterCMES') ? document.getElementById('filterCMES').value : null;
+                // Collect existing URL params (keep CMES, GE, GE Node, Date Range filters)
+                const currentParams = new URLSearchParams(window.location.search);
 
-                const params = new URLSearchParams();
-                if (cmeDateRange) params.append('cme_date_range', cmeDateRange);
-                if (cmesId) params.append('cmes_id', cmesId);
-                if (cityId) params.append('city_id', cityId);
-                if (sectorId) params.append('sector_id', sectorId);
-                if (category && category !== 'all') params.append('category', category);
-                if (status && status !== 'all') params.append('status', status);
-                if (dateRange) params.append('date_range', dateRange);
+                // Update cme_date_range
+                if (cmeDateRange && cmeDateRange !== 'all_time') {
+                    currentParams.set('cme_date_range', cmeDateRange);
+                } else {
+                    currentParams.delete('cme_date_range');
+                }
 
-                // Fetch data via AJAX
-                fetch('{{ route("frontend.dashboard") }}?' + params.toString(), {
+                // Show loading indicator on table
+                const tableContainer = document.getElementById('cmeTableContainer');
+                if (tableContainer) {
+                    tableContainer.style.opacity = '0.4';
+                }
+
+                // Fetch updated data via AJAX
+                fetch('{{ route("frontend.dashboard") }}?' + currentParams.toString(), {
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                         'Accept': 'application/json',
@@ -2894,21 +2779,33 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    if (data) {
-                        // Update ONLY the CME chart
-                        if (data.cmeGraphData && cmeComplaintsChart) {
-                            cmeComplaintsChart.data.datasets[0].data = data.cmeGraphData;
-                            if (data.cmeResolvedData) {
-                                cmeComplaintsChart.data.datasets[1].data = data.cmeResolvedData;
-                            }
-                            if (data.cmeGraphLabels) {
-                                cmeComplaintsChart.data.labels = data.cmeGraphLabels;
-                            }
-                            cmeComplaintsChart.update();
+                    if (!data) return;
+
+                    // Update CME chart
+                    if (data.cmeGraphData && cmeComplaintsChart) {
+                        cmeComplaintsChart.data.datasets[0].data = data.cmeGraphData;
+                        if (data.cmeResolvedData) {
+                            cmeComplaintsChart.data.datasets[1].data = data.cmeResolvedData;
                         }
+                        if (data.cmeGraphLabels) {
+                            cmeComplaintsChart.data.labels = data.cmeGraphLabels;
+                        }
+                        cmeComplaintsChart.update();
                     }
+
+                    // Update CME Table HTML
+                    if (data.cmeTableHtml && tableContainer) {
+                        tableContainer.innerHTML = data.cmeTableHtml;
+                        tableContainer.style.opacity = '1';
+                    }
+
+                    // Update URL without reload
+                    window.history.pushState({}, '', '{{ route("frontend.dashboard") }}?' + currentParams.toString());
                 })
-                .catch(error => console.error('Error updating CME graph:', error));
+                .catch(error => {
+                    console.error('Error updating CME filter:', error);
+                    if (tableContainer) tableContainer.style.opacity = '1';
+                });
             });
         }
 
@@ -3086,29 +2983,29 @@
             }
         });
 
-        // Handle Category Graph Filter Change (AJAX) - Scoped to this block to access categoryUsageChart
+        // Handle Category/Stock Graph Filter Change - year-based AJAX (no page reload)
         const categoryGraphFilter = document.getElementById('categoryGraphFilter');
         if (categoryGraphFilter) {
             categoryGraphFilter.addEventListener('change', function() {
-                const dateRange = this.value;
-                const cityId = document.getElementById('filterCity') ? document.getElementById('filterCity').value : null;
-                const sectorId = document.getElementById('filterSector') ? document.getElementById('filterSector').value : null;
-                const cmesId = document.getElementById('filterCMES') ? document.getElementById('filterCMES').value : null;
+                const selectedYear = this.value;
 
-                // Keep existing global filters context
-                const category = document.getElementById('filterCategory') ? document.getElementById('filterCategory').value : null;
-                const status = document.getElementById('filterStatus') ? document.getElementById('filterStatus').value : null;
+                // Collect existing URL params to preserve other filters
+                const currentParams = new URLSearchParams(window.location.search);
 
-                const params = new URLSearchParams();
-                if (dateRange) params.append('category_date_range', dateRange);
-                if (cmesId) params.append('cmes_id', cmesId);
-                if (cityId) params.append('city_id', cityId);
-                if (sectorId) params.append('sector_id', sectorId);
-                if (category && category !== 'all') params.append('category', category);
-                if (status && status !== 'all') params.append('status', status);
+                if (selectedYear && selectedYear !== 'all_time') {
+                    currentParams.set('category_date_range', selectedYear);
+                } else {
+                    currentParams.delete('category_date_range');
+                }
 
-                // Fetch data via AJAX
-                fetch('{{ route("frontend.dashboard") }}?' + params.toString(), {
+                // Show loading state on stock table
+                const stockTableContainer = document.getElementById('stockTableContainer');
+                if (stockTableContainer) {
+                    stockTableContainer.style.opacity = '0.4';
+                }
+
+                // Fetch updated data via AJAX
+                fetch('{{ route("frontend.dashboard") }}?' + currentParams.toString(), {
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                         'Accept': 'application/json',
@@ -3116,15 +3013,29 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    if (data && data.categoryLabels) {
-                        // Update Category Usage Chart
+                    if (!data) return;
+
+                    // Update Category Usage Chart
+                    if (data.categoryLabels && categoryUsageChart) {
                         categoryUsageChart.data.labels = data.categoryLabels;
-                        categoryUsageChart.data.datasets[0].data = data.categoryTotalReceivedValues; // Total Stock (Hidden)
-                        categoryUsageChart.data.datasets[1].data = data.categoryUsageValues; // Used Quantity
+                        categoryUsageChart.data.datasets[0].data = data.categoryTotalReceivedValues;
+                        categoryUsageChart.data.datasets[1].data = data.categoryUsageValues;
                         categoryUsageChart.update();
                     }
+
+                    // Update Stock Table HTML
+                    if (data.stockTableHtml && stockTableContainer) {
+                        stockTableContainer.innerHTML = data.stockTableHtml;
+                        stockTableContainer.style.opacity = '1';
+                    }
+
+                    // Update URL without reload
+                    window.history.pushState({}, '', '{{ route("frontend.dashboard") }}?' + currentParams.toString());
                 })
-                .catch(error => console.error('Error updating category chart:', error));
+                .catch(error => {
+                    console.error('Error updating stock filter:', error);
+                    if (stockTableContainer) stockTableContainer.style.opacity = '1';
+                });
             });
         }
     }
