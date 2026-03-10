@@ -177,9 +177,15 @@
                                     <button onclick="viewComplaint({{ $complaint->id }})" class="btn btn-outline-success btn-sm" title="View Details" style="padding: 3px 8px;">
                                         <i data-feather="eye" style="width: 16px; height: 16px;"></i>
                                     </button>
-                                    <a href="{{ route('admin.complaints.edit', $complaint->id) }}" class="btn btn-outline-primary btn-sm" title="Edit" style="padding: 3px 8px;">
-                                        <i data-feather="edit" style="width: 16px; height: 16px;"></i>
-                                    </a>
+                                    @if($complaint->status === 'resolved' || $complaint->status === 'closed')
+                                        <button class="btn btn-outline-secondary btn-sm" title="Complaint is Addresssed/Closed and cannot be edited" style="padding: 3px 8px; cursor: not-allowed; opacity: 1 !important;" disabled>
+                                            <i data-feather="edit" style="width: 16px; height: 16px;"></i>
+                                        </button>
+                                    @else
+                                        <a href="{{ route('admin.complaints.edit', $complaint->id) }}" class="btn btn-outline-primary btn-sm" title="Edit" style="padding: 3px 8px;">
+                                            <i data-feather="edit" style="width: 16px; height: 16px;"></i>
+                                        </a>
+                                    @endif
                                 </div>
                             </td>
                         </tr>

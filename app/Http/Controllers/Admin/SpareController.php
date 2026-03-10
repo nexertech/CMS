@@ -527,7 +527,7 @@ class SpareController extends Controller
                 'quantity_added' => $request->quantity,
                 'available_stock_after' => $spare->stock_quantity,
                 'remarks' => $request->remarks,
-                'added_by' => auth()->user() && auth()->user()->employee ? auth()->user()->employee->id : null,
+                'added_by' => \App\Models\Employee::first()?->id,
                 'reference_id' => $request->reference_id,
             ]);
         } catch (\Exception $e) {
@@ -702,6 +702,18 @@ class SpareController extends Controller
                     'success' => false,
                     'message' => 'Failed to issue stock. Please try again.'
                 ], 500);
+            }
+
+            // Also update the main complaints table if it's the first spare part
+            if ($complaint && !$complaint->spare_id) {
+                $issuingEmployeeId = $complaint->assigned_employee_id ?? (\App\Models\Employee::first()?->id);
+                
+                $complaint->update([
+                    'spare_id' => $spare->id,
+                    'spare_quantity' => $quantity,
+                    'spare_used_by' => $issuingEmployeeId,
+                    'spare_used_at' => now(),
+                ]);
             }
 
             // Reload spare to get updated stock quantity

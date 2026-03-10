@@ -25,6 +25,10 @@ class Complaint extends Model
         'status',
         'closed_at',
         'availability_time',
+        'spare_id',
+        'spare_quantity',
+        'spare_used_by',
+        'spare_used_at',
     ];
 
     protected $casts = [

@@ -598,14 +598,22 @@
                       onclick="viewApproval({{ $approval->id }})" style="padding: 1px 3px;">
                       <i data-feather="eye" style="width: 12px; height: 12px;"></i>
                     </button>
-                    <button type="button" class="btn btn-outline-primary btn-sm" title="Edit Complaint"
-                      onclick="editComplaintModal({{ $complaint->id }})" style="padding: 1px 3px;">
-                      <i data-feather="edit" style="width: 12px; height: 12px;"></i>
-                    </button>
+
+                    @if($complaintStatus === 'resolved' || $complaintStatus === 'closed')
+                        <button type="button" class="btn btn-outline-secondary btn-sm" title="Complaint is Addresssed/Closed and cannot be edited" 
+                          style="padding: 1px 3px; cursor: not-allowed; opacity: 1 !important;" disabled>
+                          <i data-feather="edit" style="width: 12px; height: 12px;"></i>
+                        </button>
+                    @else
+                        <button type="button" class="btn btn-outline-primary btn-sm" title="Edit Complaint"
+                          onclick="editComplaintModal({{ $complaint->id }})" style="padding: 1px 3px;">
+                          <i data-feather="edit" style="width: 12px; height: 12px;"></i>
+                        </button>
+                    @endif
                     @if($complaintStatus == 'resolved' || $complaintStatus == 'closed')
                       <button type="button" class="btn btn-outline-secondary btn-sm add-stock-btn"
                         title="Stock cannot be issued" data-approval-id="{{ $approval->id }}"
-                        data-category="{{ $category }}" disabled style="padding: 1px 3px; cursor: not-allowed; opacity: 0.6;">
+                        data-category="{{ $category }}" disabled style="padding: 1px 3px; cursor: not-allowed; opacity: 1 !important;">
                         <i data-feather="plus-circle" style="width: 12px; height: 12px;"></i>
                       </button>
                     @else

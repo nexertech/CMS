@@ -126,8 +126,8 @@ class ComplaintController extends Controller
         // Order by ID descending (3, 2, 1...) - newest/highest ID first
         // Clear any existing orders and set explicit descending order
         $query->with(['assignedEmployee', 'house', 'category', 'complaintTitle']) // Added relations
-              ->reorder()
-              ->orderBy('complaints.id', 'desc');
+            ->reorder()
+            ->orderBy('complaints.id', 'desc');
         $complaints = $query->paginate(12)->withQueryString();
 
         // Filter employees by location
@@ -231,7 +231,8 @@ class ComplaintController extends Controller
 
             if (!$complaintTitleId) {
                 $customTitle = $request->title_other ?? $request->title;
-                if (strtolower($customTitle) === 'other') $customTitle = null;
+                if (strtolower($customTitle) === 'other')
+                    $customTitle = null;
             }
 
             $complaint = Complaint::create([
@@ -249,7 +250,7 @@ class ComplaintController extends Controller
             ]);
 
             // ... (attachments and logs remain same) ...
-             if ($request->hasFile('attachments')) {
+            if ($request->hasFile('attachments')) {
                 foreach ($request->file('attachments') as $file) {
                     $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
                     $path = $file->storeAs('complaint-attachments', $filename, 'public');
@@ -302,13 +303,17 @@ class ComplaintController extends Controller
      */
     public function edit(Complaint $complaint)
     {
+        if (in_array($complaint->status, ['resolved', 'closed'])) {
+            return redirect()->route('admin.complaints.index')
+                ->with('error', 'Resolved or Closed complaints cannot be edited.');
+        }
         $complaint->load(['assignedEmployee', 'city', 'sector']);
-        
+
         $employeesQuery = Employee::where('status', 'active')->orderBy('name');
 
         $this->filterEmployeesByLocation($employeesQuery, Auth::user());
         $employees = $employeesQuery->get();
-        
+
         $categories = Schema::hasTable('complaint_categories')
             ? ComplaintCategory::orderBy('name')->pluck('name', 'id')
             : collect();
@@ -346,6 +351,10 @@ class ComplaintController extends Controller
      */
     public function update(Request $request, Complaint $complaint)
     {
+        if (in_array($complaint->status, ['resolved', 'closed'])) {
+            return redirect()->route('admin.complaints.index')
+                ->with('error', 'Resolved or Closed complaints cannot be updated.');
+        }
         $data = $request->all();
         if (isset($data['complaint_title_id']) && $data['complaint_title_id'] === 'other') {
             $data['complaint_title_id'] = null;
@@ -382,10 +391,11 @@ class ComplaintController extends Controller
         // Title Updating Logic
         $complaintTitleId = $request->complaint_title_id;
         $customTitle = null;
-        
+
         if (!$complaintTitleId) {
             $customTitle = $request->title_other ?? $request->title;
-             if (strtolower($customTitle) === 'other') $customTitle = null;
+            if (strtolower($customTitle) === 'other')
+                $customTitle = null;
         }
 
         $newStatus = $complaint->status;
@@ -431,6 +441,14 @@ class ComplaintController extends Controller
                     'quantity' => (int) ($part['quantity'] ?? 1),
                     'used_by' => $currentEmployee?->id ?? Employee::first()->id,
                     'used_at' => now(),
+                ]);
+
+                // Also update the main complaints table for compatibility
+                $complaint->update([
+                    'spare_id' => $spare->id,
+                    'spare_quantity' => (int) ($part['quantity'] ?? 1),
+                    'spare_used_by' => $currentEmployee?->id ?? Employee::first()->id,
+                    'spare_used_at' => now(),
                 ]);
 
                 if ($currentEmployee) {
@@ -981,6 +999,16 @@ class ComplaintController extends Controller
                     'used_at' => now(),
                 ]);
 
+                // Also update the main complaints table if it's the first spare part
+                if (!$complaint->spare_id) {
+                    $complaint->update([
+                        'spare_id' => $spare->id,
+                        'spare_quantity' => $part['quantity'],
+                        'spare_used_by' => $currentEmployee->id,
+                        'spare_used_at' => now(),
+                    ]);
+                }
+
                 // No stock deduction here; happens on approval
 
                 $totalCost += $spare->unit_price * $part['quantity'];
@@ -1033,7 +1061,7 @@ class ComplaintController extends Controller
             if (is_numeric($category)) {
                 $query->where('category_id', $category);
             } else {
-                $query->whereHas('category', function($q) use ($category) {
+                $query->whereHas('category', function ($q) use ($category) {
                     $q->where('name', $category);
                 });
             }
