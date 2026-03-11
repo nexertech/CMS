@@ -11,73 +11,28 @@ trait LocationFilterTrait
     /**
      * Apply location-based filtering to complaints query
      */
-    /**
-     * Apply location-based filtering to complaints query
-     */
     public function filterComplaintsByLocation(Builder $query, $user): Builder
     {
-        if (!$user || !$user->role) {
+        if (!$user) {
             return $query;
         }
 
+        // 1. If user has no specific location, they see everything (Global Admin/Director)
         if ($user->city_id === null && $user->sector_id === null) {
             return $query;
         }
 
-        $roleName = strtolower($user->role->role_name ?? '');
-
-        switch ($roleName) {
-            case 'director':
-                // Director sees all
-                break;
-
-            case 'admin':
-                // Admin sees all ONLY if no specific location is assigned
-                if ($user->sector_id) {
-                    $query->where('complaints.sector_id', $user->sector_id);
-                } elseif ($user->city_id) {
-                    $query->where('complaints.city_id', $user->city_id);
-                }
-                break;
-
-            case 'garrison_engineer':
-                // GE can see only their city's complaints
-                if ($user->city_id) {
-                    $query->where('complaints.city_id', $user->city_id);
-                } else {
-                    // If no city assigned, show nothing
-                    $query->whereRaw('1 = 0');
-                }
-                break;
-
-            case 'complaint_center':
-            case 'department_staff':
-            case 'staff':
-                // Complaint Center and Staff can see only their sector's complaints
-                if ($user->sector_id) {
-                    $query->where('complaints.sector_id', $user->sector_id);
-                } else {
-                    // If no sector assigned, show nothing
-                    $query->whereRaw('1 = 0');
-                }
-                break;
-            
-            default:
-                // For any other role
-                // If they have sector_id, filter by sector
-                // Else if they have city_id, filter by city
-                if ($user->sector_id) {
-                    $query->where('complaints.sector_id', $user->sector_id);
-                } elseif ($user->city_id) {
-                    $query->where('complaints.city_id', $user->city_id);
-                } else {
-                    // If no location assigned, show nothing
-                    $query->whereRaw('1 = 0');
-                }
-                break;
-        }
-
-        return $query;
+        // 2. Filter complaints based on the House's location
+        // This is more robust than filtering on complaints table directly
+        return $query->whereHas('house', function ($houseQuery) use ($user) {
+            if ($user->sector_id) {
+                // Restricted to a specific Sector
+                $houseQuery->where('sector_id', $user->sector_id);
+            } elseif ($user->city_id) {
+                // Restricted to a specific City (e.g. GE)
+                $houseQuery->where('city_id', $user->city_id);
+            }
+        });
     }
 
     /**
@@ -120,6 +75,7 @@ trait LocationFilterTrait
 
             case 'complaint_center':
             case 'department_staff':
+            case 'complaint officer':
                 // Can see only their sector's employees
                 if ($user->sector_id) {
                     $query->where('sector_id', $user->sector_id);
@@ -173,7 +129,7 @@ trait LocationFilterTrait
             return [$user->city_id]; // Only their city
         }
 
-        if (in_array($roleName, ['complaint_center', 'department_staff', 'staff']) && $user->city_id) {
+        if (in_array($roleName, ['complaint_center', 'department_staff', 'staff', 'complaint officer']) && $user->city_id) {
             return [$user->city_id]; // Their city
         }
 
@@ -207,7 +163,7 @@ trait LocationFilterTrait
                 ->toArray();
         }
 
-        if (in_array($roleName, ['complaint_center', 'department_staff', 'staff']) && $user->sector_id) {
+        if (in_array($roleName, ['complaint_center', 'department_staff', 'staff', 'complaint officer']) && $user->sector_id) {
             return [$user->sector_id]; // Only their sector
         }
 
@@ -268,6 +224,7 @@ trait LocationFilterTrait
 
             case 'complaint_center':
             case 'department_staff':
+            case 'complaint officer':
                 // Complaint Center and Department Staff can see only their sector's spares
                 if ($user->sector_id) {
                     $query->where('sector_id', $user->sector_id);
@@ -333,6 +290,7 @@ trait LocationFilterTrait
 
             case 'complaint_center':
             case 'department_staff':
+            case 'complaint officer':
                 // Can see only their sector's houses
                 if ($user->sector_id) {
                     $query->where('sector_id', $user->sector_id);

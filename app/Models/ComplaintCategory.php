@@ -13,6 +13,7 @@ class ComplaintCategory extends Model
         'name',
         'app_name',
         'description',
+        'status',
     ];
 
     /**

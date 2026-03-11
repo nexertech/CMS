@@ -207,17 +207,17 @@ class Complaint extends Model
     {
         // Internal status 'new' maps to 'unassigned' display label "Unassigned"
         $status = $this->status === 'new' ? 'unassigned' : $this->status;
-        
+
         // Performa types and 'in_progress' should display as "In Progress"
         if (in_array($status, ['in_progress', 'work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa', 'product_na'])) {
             return 'In Progress';
         }
-        
+
         // 'resolved' maps to 'Addressed'
         if ($status === 'resolved') {
             return 'Addressed';
         }
-        
+
         return self::getStatuses()[$status] ?? ucfirst(str_replace('_', ' ', $status));
     }
 
@@ -228,11 +228,11 @@ class Complaint extends Model
     public function getMappedStatusAttribute(): string
     {
         $status = $this->status === 'new' ? 'unassigned' : $this->status;
-        
+
         if (in_array($status, ['work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa', 'product_na'])) {
             return 'in_progress';
         }
-        
+
         return $status;
     }
 
@@ -305,14 +305,12 @@ class Complaint extends Model
     }
 
     /**
-     * Get 4-digit complaint ID
+     * Get complaint ID (padded to at least 4 digits)
      */
     public function getComplaintIdAttribute(): string
     {
-        // Generate 4-digit complaint ID based on complaint id
-        // Use modulo to ensure it's always 4 digits (0001-9999)
-        $complaintNumber = ($this->id % 10000);
-        return str_pad($complaintNumber, 4, '0', STR_PAD_LEFT);
+        // Return the full complaint ID, padded with zeros to at least 4 digits
+        return str_pad((string)$this->id, 4, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -332,7 +330,7 @@ class Complaint extends Model
         $slaRule = $this->slaRule;
 
         if ($slaRule && $slaRule->status === 'active') {
-             return $this->created_at->addHours($slaRule->max_resolution_time)->isPast();
+            return $this->created_at->addHours($slaRule->max_resolution_time)->isPast();
         }
 
         return false;

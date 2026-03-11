@@ -469,7 +469,7 @@
                     </tr>
                     <tr>
                         <td class="label">Nature & Type:</td>
-                        <td class="value">{{ ucfirst($complaint->getCategoryDisplayAttribute()) . ' - ' . ($complaint->assignedEmployee->designation->name ?? $complaint->assignedEmployee->designation ?? 'N/A') }}</td>
+                        <td class="value">{{ ucfirst($complaint->getCategoryDisplayAttribute()) . ' - ' . ($complaint->complaintTitle->title ?? $complaint->title ?? 'N/A') }}</td>
                     </tr>
                     <tr>
                         <td class="label">Priority:</td>

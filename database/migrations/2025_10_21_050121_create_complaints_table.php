@@ -15,7 +15,6 @@ return new class extends Migration {
             $table->string('title')->nullable();
             $table->unsignedBigInteger('category_id')->nullable();
             $table->unsignedBigInteger('complaint_title_id')->nullable();
-            $table->unsignedBigInteger('client_id');
             $table->unsignedBigInteger('house_id')->nullable();
             $table->unsignedBigInteger('city_id')->nullable();
             $table->unsignedBigInteger('sector_id')->nullable();

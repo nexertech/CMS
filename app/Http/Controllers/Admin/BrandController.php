@@ -14,7 +14,7 @@ class BrandController extends Controller
     {
         // Get brands with category relationship
         $brands = Brand::with('category')->orderBy('id', 'asc')->paginate(15);
-        $categories = ComplaintCategory::all()->pluck('name', 'id');
+        $categories = ComplaintCategory::where('status', 'active')->get()->pluck('name', 'id');
         
         return view('admin.brands.index', compact('brands', 'categories'));
     }

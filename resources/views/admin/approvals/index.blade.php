@@ -11,7 +11,8 @@
         <p class="text-light small mb-0" style="font-size: 0.8rem;">View and manage complaint records</p>
       </div>
       <div class="d-flex gap-2">
-        <button class="btn btn-outline-secondary btn-sm" onclick="refreshPage()" style="padding: 0.25rem 0.6rem; font-size: 0.8rem;">
+        <button class="btn btn-outline-secondary btn-sm" onclick="refreshPage()"
+          style="padding: 0.25rem 0.6rem; font-size: 0.8rem;">
           <i data-feather="refresh-cw" class="me-1" style="width: 14px; height: 14px;"></i>Refresh
         </button>
       </div>
@@ -26,31 +27,35 @@
         <div class="col-auto">
           <label class="form-label small mb-1"
             style="font-size: 0.75rem; color: #000000 !important; font-weight: 500;">Search</label>
-          <input type="text" class="form-control form-control-sm" id="searchInput" name="search" placeholder="Complaint ID..."
-            value="{{ request('search') }}" autocomplete="off" style="font-size: 0.8rem; width: 160px; height: 30px;">
+          <input type="text" class="form-control form-control-sm" id="searchInput" name="search"
+            placeholder="Complaint ID..." value="{{ request('search') }}" autocomplete="off"
+            style="font-size: 0.8rem; width: 160px; height: 30px;">
         </div>
         <div class="col-auto">
           <label class="form-label small mb-1"
             style="font-size: 0.75rem; color: #000000 !important; font-weight: 500;">House No.</label>
-          <input type="text" class="form-control form-control-sm" id="houseNoInput" name="house_no" placeholder="House No..."
-            value="{{ request('house_no') }}" autocomplete="off" style="font-size: 0.8rem; width: 160px; height: 30px;">
+          <input type="text" class="form-control form-control-sm" id="houseNoInput" name="house_no"
+            placeholder="House No..." value="{{ request('house_no') }}" autocomplete="off"
+            style="font-size: 0.8rem; width: 160px; height: 30px;">
         </div>
         <div class="col-auto">
           <label class="form-label small mb-1"
             style="font-size: 0.75rem; color: #000000 !important; font-weight: 500;">From Date</label>
-          <input type="date" class="form-control form-control-sm" name="complaint_date" value="{{ request('complaint_date') }}"
-            placeholder="Select Date" autocomplete="off" style="font-size: 0.8rem; width: 130px; height: 30px;">
+          <input type="date" class="form-control form-control-sm" name="complaint_date"
+            value="{{ request('complaint_date') }}" placeholder="Select Date" autocomplete="off"
+            style="font-size: 0.8rem; width: 130px; height: 30px;">
         </div>
         <div class="col-auto">
           <label class="form-label small mb-1" style="font-size: 0.75rem; color: #000000 !important; font-weight: 500;">To
             Date</label>
-          <input type="date" class="form-control form-control-sm" name="date_to" value="{{ request('date_to') }}" placeholder="End Date"
-            autocomplete="off" style="font-size: 0.8rem; width: 130px; height: 30px;">
+          <input type="date" class="form-control form-control-sm" name="date_to" value="{{ request('date_to') }}"
+            placeholder="End Date" autocomplete="off" style="font-size: 0.8rem; width: 130px; height: 30px;">
         </div>
         <div class="col-auto">
           <label class="form-label small mb-1"
             style="font-size: 0.75rem; color: #000000 !important; font-weight: 500;">Category</label>
-          <select class="form-select form-select-sm" name="category" autocomplete="off" style="font-size: 0.8rem; width: 120px; height: 30px;">
+          <select class="form-select form-select-sm" name="category" autocomplete="off"
+            style="font-size: 0.8rem; width: 120px; height: 30px;">
             <option value="" {{ request('category') ? '' : 'selected' }}>All</option>
             @if(isset($categories) && $categories->count() > 0)
               @foreach($categories as $cat)
@@ -86,9 +91,12 @@
               <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>Addressed</option>
               <option value="work_performa" {{ request('status') == 'work_performa' ? 'selected' : '' }}>Work Performa
               </option>
-              <option value="maint_performa" {{ request('status') == 'maint_performa' ? 'selected' : '' }}>Maint Performa</option>
-              <option value="work_priced_performa" {{ request('status') == 'work_priced_performa' ? 'selected' : '' }}>Work Priced</option>
-              <option value="maint_priced_performa" {{ request('status') == 'maint_priced_performa' ? 'selected' : '' }}>Maint Priced</option>
+              <option value="maint_performa" {{ request('status') == 'maint_performa' ? 'selected' : '' }}>Maint Performa
+              </option>
+              <option value="work_priced_performa" {{ request('status') == 'work_priced_performa' ? 'selected' : '' }}>Work
+                Priced</option>
+              <option value="maint_priced_performa" {{ request('status') == 'maint_priced_performa' ? 'selected' : '' }}>Maint
+                Priced</option>
               <option value="product_na" {{ request('status') == 'product_na' ? 'selected' : '' }}>Product N/A</option>
               <option value="un_authorized" {{ request('status') == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
               </option>
@@ -142,8 +150,8 @@
                 $categoryObj = $complaint->category;
                 $categoryName = 'N/A';
                 if ($categoryObj) {
-                    // Check if it's a string (legacy) or object (relationship)
-                    $categoryName = is_string($categoryObj) ? $categoryObj : ($categoryObj->name ?? 'N/A');
+                  // Check if it's a string (legacy) or object (relationship)
+                  $categoryName = is_string($categoryObj) ? $categoryObj : ($categoryObj->name ?? 'N/A');
                 }
                 // Assign categoryName to category for backward compatibility
                 $category = $categoryName;
@@ -151,11 +159,13 @@
                 $designationObj = $complaint->assignedEmployee->designation ?? null;
                 $designationName = 'N/A';
                 if ($designationObj) {
-                    $designationName = is_string($designationObj) ? $designationObj : ($designationObj->name ?? 'N/A');
+                  $designationName = is_string($designationObj) ? $designationObj : ($designationObj->name ?? 'N/A');
                 }
-                
+
+                $titleName = $complaint->complaintTitle->title ?? $complaint->title ?? 'N/A';
+
                 $catDisplay = ucfirst($categoryName);
-                $displayText = $catDisplay . ' - ' . $designationName;
+                $displayText = $catDisplay . ' - ' . $titleName;
 
                 // Logic: If performa_type is set, use it as status, otherwise use complaint status
                 $rawStatus = $complaint->status ?? 'new';
@@ -241,11 +251,17 @@
                     <span style="display: block; text-align: center;">-</span>
                   @endif
                 </td>
-                <td class="px-1" style="font-size: 0.73rem; white-space: nowrap; width: 1%; max-width: 150px; overflow: hidden; text-overflow: ellipsis;" title="{{ $complaint->house->address ?? 'N/A' }}">{{ $complaint->house->address ?? 'N/A' }}</td>
+                <td class="px-1"
+                  style="font-size: 0.73rem; white-space: nowrap; width: 1%; max-width: 150px; overflow: hidden; text-overflow: ellipsis;"
+                  title="{{ $complaint->house->address ?? 'N/A' }}">{{ $complaint->house->address ?? 'N/A' }}</td>
                 <td class="px-1" style="width: auto;">
-                  <div class="text-white" style="font-size: 0.75rem; line-height: 1.1; white-space: normal; min-width: 180px;">{{ $displayText }}</div>
+                  <div class="text-white"
+                    style="font-size: 0.75rem; line-height: 1.1; white-space: normal; min-width: 180px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;" title="{{ $displayText }}">{{ $displayText }}
+                  </div>
                 </td>
-                <td class="px-1" style="font-size: 0.75rem; white-space: nowrap; width: 1%;">{{ $complaint->house->phone ?? 'N/A' }}</td>
+                <td class="px-1" style="font-size: 0.75rem; white-space: nowrap; width: 1%;">
+                  {{ $complaint->house->phone ?? 'N/A' }}
+                </td>
                 <td style="color: white !important; position: relative; text-align: center; vertical-align: middle;">
                   @if($complaintStatus == 'resolved' || $complaintStatus == 'closed')
                     <span style="color: white !important;">-</span>
@@ -262,7 +278,7 @@
 
                       if ($performaTypeToShow) {
                         // Handle special cases for performa type labels
-                      if ($performaTypeToShow === 'maint_performa') {
+                        if ($performaTypeToShow === 'maint_performa') {
                           $performaTypeLabel = 'Maint Performa';
                         } elseif ($performaTypeToShow === 'work_priced_performa') {
                           $performaTypeLabel = 'Work Priced';
@@ -340,7 +356,7 @@
                         @if(isset($statuses) && $statuses->count() > 0)
                           @foreach($statuses as $statusValue => $statusLabel)
                             @if($statusValue === 'unassigned' && $displayStatusForSelect !== 'unassigned')
-                                @continue
+                              @continue
                             @endif
                             <option value="{{ $statusValue }}" {{ $displayStatusForSelect == $statusValue ? 'selected' : '' }}>
                               {{ $statusLabel }}
@@ -354,8 +370,10 @@
                           <option value="in_progress" {{ $displayStatusForSelect == 'in_progress' ? 'selected' : '' }}>In Progress
                           </option>
                           <option value="resolved" {{ $displayStatusForSelect == 'resolved' ? 'selected' : '' }}>Addressed</option>
-                          <option value="work_performa" {{ $displayStatusForSelect == 'work_performa' ? 'selected' : '' }}>Work Performa</option>
-                          <option value="maint_performa" {{ $displayStatusForSelect == 'maint_performa' ? 'selected' : '' }}>Maint Performa</option>
+                          <option value="work_performa" {{ $displayStatusForSelect == 'work_performa' ? 'selected' : '' }}>Work
+                            Performa</option>
+                          <option value="maint_performa" {{ $displayStatusForSelect == 'maint_performa' ? 'selected' : '' }}>Maint
+                            Performa</option>
                           <option value="work_priced_performa" {{ $displayStatusForSelect == 'work_priced_performa' ? 'selected' : '' }}>Work Priced</option>
                           <option value="maint_priced_performa" {{ $displayStatusForSelect == 'maint_priced_performa' ? 'selected' : '' }}>Maint Priced</option>
                           <option value="product_na" {{ $displayStatusForSelect == 'product_na' ? 'selected' : '' }}>Product N/A
@@ -381,7 +399,7 @@
                         @if(isset($statuses) && $statuses->count() > 0)
                           @foreach($statuses as $statusValue => $statusLabel)
                             @if($statusValue === 'unassigned' && $complaintStatus !== 'unassigned')
-                                @continue
+                              @continue
                             @endif
                             <option value="{{ $statusValue }}" {{ $complaintStatus == $statusValue ? 'selected' : '' }}>
                               {{ $statusLabel }}
@@ -394,8 +412,10 @@
                           <option value="assigned" {{ $complaintStatus == 'assigned' ? 'selected' : '' }}>Assigned</option>
                           <option value="in_progress" {{ $complaintStatus == 'in_progress' ? 'selected' : '' }}>In Progress</option>
                           <option value="resolved" {{ $complaintStatus == 'resolved' ? 'selected' : '' }}>Addressed</option>
-                          <option value="work_priced_performa" {{ $complaintStatus == 'work_priced_performa' ? 'selected' : '' }}>Work Priced</option>
-                          <option value="maint_priced_performa" {{ $complaintStatus == 'maint_priced_performa' ? 'selected' : '' }}>Maint Priced</option>
+                          <option value="work_priced_performa" {{ $complaintStatus == 'work_priced_performa' ? 'selected' : '' }}>
+                            Work Priced</option>
+                          <option value="maint_priced_performa" {{ $complaintStatus == 'maint_priced_performa' ? 'selected' : '' }}>
+                            Maint Priced</option>
                           <option value="product_na" {{ $complaintStatus == 'product_na' ? 'selected' : '' }}>Product N/A</option>
                           <option value="un_authorized" {{ $complaintStatus == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
                           </option>
@@ -418,7 +438,7 @@
                         @if(isset($statuses) && $statuses->count() > 0)
                           @foreach($statuses as $statusValue => $statusLabel)
                             @if($statusValue === 'unassigned' && $complaintStatus !== 'unassigned')
-                                @continue
+                              @continue
                             @endif
                             <option value="{{ $statusValue }}" {{ $complaintStatus == $statusValue ? 'selected' : '' }}>
                               {{ $statusLabel }}
@@ -431,8 +451,10 @@
                           <option value="assigned" {{ $complaintStatus == 'assigned' ? 'selected' : '' }}>Assigned</option>
                           <option value="in_progress" {{ $complaintStatus == 'in_progress' ? 'selected' : '' }}>In Progress</option>
                           <option value="resolved" {{ $complaintStatus == 'resolved' ? 'selected' : '' }}>Addressed</option>
-                          <option value="work_priced_performa" {{ $complaintStatus == 'work_priced_performa' ? 'selected' : '' }}>Work Priced</option>
-                          <option value="maint_priced_performa" {{ $complaintStatus == 'maint_priced_performa' ? 'selected' : '' }}>Maint Priced</option>
+                          <option value="work_priced_performa" {{ $complaintStatus == 'work_priced_performa' ? 'selected' : '' }}>
+                            Work Priced</option>
+                          <option value="maint_priced_performa" {{ $complaintStatus == 'maint_priced_performa' ? 'selected' : '' }}>
+                            Maint Priced</option>
                           <option value="product_na" {{ $complaintStatus == 'product_na' ? 'selected' : '' }}>Product N/A</option>
                           <option value="un_authorized" {{ $complaintStatus == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
                           </option>
@@ -453,7 +475,7 @@
                         @if(isset($statuses) && $statuses->count() > 0)
                           @foreach($statuses as $statusValue => $statusLabel)
                             @if($statusValue === 'unassigned' && $complaintStatus !== 'unassigned')
-                                @continue
+                              @continue
                             @endif
                             <option value="{{ $statusValue }}" {{ $complaintStatus == $statusValue ? 'selected' : '' }}>
                               {{ $statusLabel }}
@@ -466,8 +488,10 @@
                           <option value="assigned" {{ $complaintStatus == 'assigned' ? 'selected' : '' }}>Assigned</option>
                           <option value="in_progress" {{ $complaintStatus == 'in_progress' ? 'selected' : '' }}>In Progress</option>
                           <option value="resolved" {{ $complaintStatus == 'resolved' ? 'selected' : '' }}>Addressed</option>
-                          <option value="work_priced_performa" {{ $complaintStatus == 'work_priced_performa' ? 'selected' : '' }}>Work Priced</option>
-                          <option value="maint_priced_performa" {{ $complaintStatus == 'maint_priced_performa' ? 'selected' : '' }}>Maint Priced</option>
+                          <option value="work_priced_performa" {{ $complaintStatus == 'work_priced_performa' ? 'selected' : '' }}>
+                            Work Priced</option>
+                          <option value="maint_priced_performa" {{ $complaintStatus == 'maint_priced_performa' ? 'selected' : '' }}>
+                            Maint Priced</option>
                           <option value="product_na" {{ $complaintStatus == 'product_na' ? 'selected' : '' }}>Product N/A</option>
                           <option value="un_authorized" {{ $complaintStatus == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
                           </option>
@@ -490,7 +514,7 @@
                         @if(isset($statuses) && $statuses->count() > 0)
                           @foreach($statuses as $statusValue => $statusLabel)
                             @if($statusValue === 'unassigned' && $complaintStatus !== 'unassigned')
-                                @continue
+                              @continue
                             @endif
                             <option value="{{ $statusValue }}" {{ $complaintStatus == $statusValue ? 'selected' : '' }}>
                               {{ $statusLabel }}
@@ -503,8 +527,10 @@
                           <option value="assigned" {{ $complaintStatus == 'assigned' ? 'selected' : '' }}>Assigned</option>
                           <option value="in_progress" {{ $complaintStatus == 'in_progress' ? 'selected' : '' }}>In Progress</option>
                           <option value="resolved" {{ $complaintStatus == 'resolved' ? 'selected' : '' }}>Addressed</option>
-                          <option value="work_priced_performa" {{ $complaintStatus == 'work_priced_performa' ? 'selected' : '' }}>Work Priced</option>
-                          <option value="maint_priced_performa" {{ $complaintStatus == 'maint_priced_performa' ? 'selected' : '' }}>Maint Priced</option>
+                          <option value="work_priced_performa" {{ $complaintStatus == 'work_priced_performa' ? 'selected' : '' }}>
+                            Work Priced</option>
+                          <option value="maint_priced_performa" {{ $complaintStatus == 'maint_priced_performa' ? 'selected' : '' }}>
+                            Maint Priced</option>
                           <option value="product_na" {{ $complaintStatus == 'product_na' ? 'selected' : '' }}>Product N/A</option>
                           <option value="un_authorized" {{ $complaintStatus == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
                           </option>
@@ -527,7 +553,7 @@
                         @if(isset($statuses) && $statuses->count() > 0)
                           @foreach($statuses as $statusValue => $statusLabel)
                             @if($statusValue === 'unassigned' && $complaintStatus !== 'unassigned')
-                                @continue
+                              @continue
                             @endif
                             <option value="{{ $statusValue }}" {{ $complaintStatus == $statusValue ? 'selected' : '' }}>
                               {{ $statusLabel }}
@@ -540,8 +566,10 @@
                           <option value="assigned" {{ $complaintStatus == 'assigned' ? 'selected' : '' }}>Assigned</option>
                           <option value="in_progress" {{ $complaintStatus == 'in_progress' ? 'selected' : '' }}>In Progress</option>
                           <option value="resolved" {{ $complaintStatus == 'resolved' ? 'selected' : '' }}>Addressed</option>
-                          <option value="work_priced_performa" {{ $complaintStatus == 'work_priced_performa' ? 'selected' : '' }}>Work Priced</option>
-                          <option value="maint_priced_performa" {{ $complaintStatus == 'maint_priced_performa' ? 'selected' : '' }}>Maint Priced</option>
+                          <option value="work_priced_performa" {{ $complaintStatus == 'work_priced_performa' ? 'selected' : '' }}>
+                            Work Priced</option>
+                          <option value="maint_priced_performa" {{ $complaintStatus == 'maint_priced_performa' ? 'selected' : '' }}>
+                            Maint Priced</option>
                           <option value="product_na" {{ $complaintStatus == 'product_na' ? 'selected' : '' }}>Product N/A</option>
                           <option value="un_authorized" {{ $complaintStatus == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
                           </option>
@@ -564,7 +592,7 @@
                         @if(isset($statuses) && $statuses->count() > 0)
                           @foreach($statuses as $statusValue => $statusLabel)
                             @if($statusValue === 'unassigned' && $complaintStatus !== 'unassigned')
-                                @continue
+                              @continue
                             @endif
                             <option value="{{ $statusValue }}" {{ $complaintStatus == $statusValue ? 'selected' : '' }}>
                               {{ $statusLabel }}
@@ -577,8 +605,10 @@
                           <option value="assigned" {{ $complaintStatus == 'assigned' ? 'selected' : '' }}>Assigned</option>
                           <option value="in_progress" {{ $complaintStatus == 'in_progress' ? 'selected' : '' }}>In Progress</option>
                           <option value="resolved" {{ $complaintStatus == 'resolved' ? 'selected' : '' }}>Addressed</option>
-                          <option value="work_priced_performa" {{ $complaintStatus == 'work_priced_performa' ? 'selected' : '' }}>Work Priced</option>
-                          <option value="maint_priced_performa" {{ $complaintStatus == 'maint_priced_performa' ? 'selected' : '' }}>Maint Priced</option>
+                          <option value="work_priced_performa" {{ $complaintStatus == 'work_priced_performa' ? 'selected' : '' }}>
+                            Work Priced</option>
+                          <option value="maint_priced_performa" {{ $complaintStatus == 'maint_priced_performa' ? 'selected' : '' }}>
+                            Maint Priced</option>
                           <option value="product_na" {{ $complaintStatus == 'product_na' ? 'selected' : '' }}>Product N/A</option>
                           <option value="un_authorized" {{ $complaintStatus == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
                           </option>
@@ -600,24 +630,25 @@
                     </button>
 
                     @if($complaintStatus === 'resolved' || $complaintStatus === 'closed')
-                        <button type="button" class="btn btn-outline-secondary btn-sm" title="Complaint is Addresssed/Closed and cannot be edited" 
-                          style="padding: 1px 3px; cursor: not-allowed; opacity: 1 !important;" disabled>
-                          <i data-feather="edit" style="width: 12px; height: 12px;"></i>
-                        </button>
+                      <button type="button" class="btn btn-outline-secondary btn-sm"
+                        title="Complaint is Addresssed/Closed and cannot be edited"
+                        style="padding: 1px 3px; cursor: not-allowed; opacity: 1 !important;" disabled>
+                        <i data-feather="edit" style="width: 12px; height: 12px;"></i>
+                      </button>
                     @else
-                        <button type="button" class="btn btn-outline-primary btn-sm" title="Edit Complaint"
-                          onclick="editComplaintModal({{ $complaint->id }})" style="padding: 1px 3px;">
-                          <i data-feather="edit" style="width: 12px; height: 12px;"></i>
-                        </button>
+                      <button type="button" class="btn btn-outline-primary btn-sm" title="Edit Complaint"
+                        onclick="editComplaintModal({{ $complaint->id }})" style="padding: 1px 3px;">
+                        <i data-feather="edit" style="width: 12px; height: 12px;"></i>
+                      </button>
                     @endif
                     @if($complaintStatus == 'resolved' || $complaintStatus == 'closed')
                       <button type="button" class="btn btn-outline-secondary btn-sm add-stock-btn"
-                        title="Stock cannot be issued" data-approval-id="{{ $approval->id }}"
-                        data-category="{{ $category }}" disabled style="padding: 1px 3px; cursor: not-allowed; opacity: 1 !important;">
+                        title="Stock cannot be issued" data-approval-id="{{ $approval->id }}" data-category="{{ $category }}"
+                        disabled style="padding: 1px 3px; cursor: not-allowed; opacity: 1 !important;">
                         <i data-feather="plus-circle" style="width: 12px; height: 12px;"></i>
                       </button>
                     @else
-                      <button type="button" class="btn btn-outline-primary btn-sm add-stock-btn" 
+                      <button type="button" class="btn btn-outline-primary btn-sm add-stock-btn"
                         title="{{ (isset($approval->has_issued_stock) && $approval->has_issued_stock) ? 'Issue More Stock' : 'Issue Stock' }}"
                         data-approval-id="{{ $approval->id }}" data-category="{{ $category }}"
                         onclick="openAddStockModal({{ $approval->id }}, '{{ $category }}')"
@@ -707,7 +738,8 @@
     </div>
 
     <!-- PAGINATION -->
-    <div class="d-flex justify-content-center mt-2 small" id="approvalsPagination" style="transform: scale(0.9); transform-origin: center;">
+    <div class="d-flex justify-content-center mt-2 small" id="approvalsPagination"
+      style="transform: scale(0.9); transform-origin: center;">
       <div>
         {{ $approvals->links() }}
       </div>
@@ -937,7 +969,7 @@
 
     .table.table-dark.table-sm th:nth-child(6),
     .table.table-dark.table-sm td:nth-child(6) {
-      width: 14% !important;
+      width: 16% !important;
       max-width: 170px !important;
     }
 
@@ -1563,7 +1595,7 @@
 @endpush
 
 @push('scripts')
-@include('admin.complaints.partials.form_scripts')
+  @include('admin.complaints.partials.form_scripts')
 
   <script>
     feather.replace();
@@ -1891,38 +1923,38 @@
         headers: { 'Accept': 'text/html' },
         credentials: 'same-origin'
       })
-      .then(response => {
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        return response.text();
-      })
-      .then(html => {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
+        .then(response => {
+          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+          return response.text();
+        })
+        .then(html => {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
 
-        // Extract content section
-        let contentSection = doc.querySelector('section.content') || doc.querySelector('.content') || doc.body;
-        
-        // Remove scripts we don't need in modal (since we have them globally now)
-        contentSection.querySelectorAll('script').forEach(s => s.remove());
+          // Extract content section
+          let contentSection = doc.querySelector('section.content') || doc.querySelector('.content') || doc.body;
 
-        modalBody.innerHTML = contentSection.innerHTML;
+          // Remove scripts we don't need in modal (since we have them globally now)
+          contentSection.querySelectorAll('script').forEach(s => s.remove());
 
-        // Initialize using the shared global function
-        setTimeout(() => {
-          if (typeof window.initializeComplaintForm === 'function') {
-            console.log('Initializing complaint form in modal using shared logic');
-            window.initializeComplaintForm(modalBody);
-          } else {
-            console.error('initializeComplaintForm function not found!');
-            // Fallback: Re-init feather at least
-            feather.replace();
-          }
-        }, 150);
-      })
-      .catch(error => {
-        console.error('Error loading edit form:', error);
-        modalBody.innerHTML = '<div class="text-center py-5 text-danger">Error loading edit form: ' + error.message + '</div>';
-      });
+          modalBody.innerHTML = contentSection.innerHTML;
+
+          // Initialize using the shared global function
+          setTimeout(() => {
+            if (typeof window.initializeComplaintForm === 'function') {
+              console.log('Initializing complaint form in modal using shared logic');
+              window.initializeComplaintForm(modalBody);
+            } else {
+              console.error('initializeComplaintForm function not found!');
+              // Fallback: Re-init feather at least
+              feather.replace();
+            }
+          }, 150);
+        })
+        .catch(error => {
+          console.error('Error loading edit form:', error);
+          modalBody.innerHTML = '<div class="text-center py-5 text-danger">Error loading edit form: ' + error.message + '</div>';
+        });
     }
 
     // Approval Functions
@@ -2716,33 +2748,33 @@
     function renderItemRow(item) {
       const canDelete = !item.isExisting;
       return `
-              <tr data-item-id="${item.itemId}" data-spare-id="${item.spareId}" data-is-existing="${item.isExisting}">
-                <td style="vertical-align: middle; font-weight: 500; padding: 12px;">${escapeHtml(item.productName)}</td>
-                <td style="vertical-align: middle; text-align: center; font-weight: 500; padding: 12px;">${escapeHtml(item.category)}</td>
-                <td style="vertical-align: middle; text-align: center; font-weight: 500; padding: 12px;">${item.requestedQty}</td>
-                <td style="vertical-align: middle; text-align: center; font-weight: 500; padding: 12px;">
-                  <span class="badge ${item.availableStock > 0 ? 'bg-success' : 'bg-danger'}" style="font-size: 12px;">${item.availableStock}</span>
-                </td>
-                <td style="vertical-align: middle; text-align: center; padding: 12px;">
-                  <input type="number" 
-                         class="form-control form-control-sm issue-quantity-input" 
-                         name="items[${item.itemId}][issue_quantity]" 
-                         value="${item.issueQty}" 
-                         min="0" 
-                         max="${item.availableStock}"
-                         data-spare-id="${item.spareId}"
-                         data-item-id="${item.itemId}"
-                         data-product-name="${escapeHtml(item.productName)}"
-                         data-available-stock="${item.availableStock}"
-                         style="width: 120px; text-align: center; margin: 0 auto; display: block;">
-                </td>
-                <td style="vertical-align: middle; text-align: center; padding: 12px;">
-                  ${canDelete ? `<button type="button" class="btn btn-danger btn-sm remove-item-btn" data-item-id="${item.itemId}" style="padding: 3px 8px;" title="Remove">
-                    <i data-feather="trash-2" style="width: 14px; height: 14px;"></i>
-                  </button>` : '<span class="text-muted">-</span>'}
-                </td>
-              </tr>
-            `;
+                  <tr data-item-id="${item.itemId}" data-spare-id="${item.spareId}" data-is-existing="${item.isExisting}">
+                    <td style="vertical-align: middle; font-weight: 500; padding: 12px;">${escapeHtml(item.productName)}</td>
+                    <td style="vertical-align: middle; text-align: center; font-weight: 500; padding: 12px;">${escapeHtml(item.category)}</td>
+                    <td style="vertical-align: middle; text-align: center; font-weight: 500; padding: 12px;">${item.requestedQty}</td>
+                    <td style="vertical-align: middle; text-align: center; font-weight: 500; padding: 12px;">
+                      <span class="badge ${item.availableStock > 0 ? 'bg-success' : 'bg-danger'}" style="font-size: 12px;">${item.availableStock}</span>
+                    </td>
+                    <td style="vertical-align: middle; text-align: center; padding: 12px;">
+                      <input type="number" 
+                             class="form-control form-control-sm issue-quantity-input" 
+                             name="items[${item.itemId}][issue_quantity]" 
+                             value="${item.issueQty}" 
+                             min="0" 
+                             max="${item.availableStock}"
+                             data-spare-id="${item.spareId}"
+                             data-item-id="${item.itemId}"
+                             data-product-name="${escapeHtml(item.productName)}"
+                             data-available-stock="${item.availableStock}"
+                             style="width: 120px; text-align: center; margin: 0 auto; display: block;">
+                    </td>
+                    <td style="vertical-align: middle; text-align: center; padding: 12px;">
+                      ${canDelete ? `<button type="button" class="btn btn-danger btn-sm remove-item-btn" data-item-id="${item.itemId}" style="padding: 3px 8px;" title="Remove">
+                        <i data-feather="trash-2" style="width: 14px; height: 14px;"></i>
+                      </button>` : '<span class="text-muted">-</span>'}
+                    </td>
+                  </tr>
+                `;
     }
 
     // Load categories for modal dropdown
@@ -2981,7 +3013,7 @@
         const updateAuthorityVisibility = () => {
           const required = authorityYes.checked;
           console.log('Authority visibility update - required:', required);
-          
+
           // Use explicit classList methods for better compatibility and clarity
           if (required) {
             authorityNoCol.classList.remove('d-none');
@@ -3007,7 +3039,7 @@
         const updateIssueStockVisibility = () => {
           const issuing = issueStockYes.checked;
           console.log('Stock visibility update - issuing:', issuing);
-          
+
           if (issuing) {
             productIssueFields.classList.remove('d-none');
             if (productSelect) productSelect.disabled = false;
@@ -3016,8 +3048,8 @@
             productIssueFields.classList.add('d-none');
             // If not issuing stock, clear product fields
             if (productSelect) {
-                productSelect.value = '';
-                productSelect.disabled = true;
+              productSelect.value = '';
+              productSelect.disabled = true;
             }
             if (availableStockInput) availableStockInput.value = '';
             if (requestQtyInput) {
@@ -3035,12 +3067,12 @@
       // 3. Product Fields listeners - Only if elements exist
       if (productSelect && availableStockInput && requestQtyInput) {
         console.log('Attaching product field listeners');
-        
+
         // Product change
         productSelect.addEventListener('change', function () {
           const selectedOption = this.options[this.selectedIndex];
           if (!selectedOption) return;
-          
+
           const stock = parseInt(selectedOption.getAttribute('data-stock')) || 0;
           availableStockInput.value = stock;
 
@@ -3261,145 +3293,145 @@
 
             if (items.length > 0) {
               itemsHtml += `
-                <div class="table-responsive mb-3">
-                  <table class="table table-sm table-bordered" style="font-size: 0.85rem;">
-                    <thead class="table-light">
-                      <tr>
-                        <th style="width: 25%;">Product Name</th>
-                        <th style="width: 20%;">Category</th>
-                        <th style="width: 15%; text-align: center;">Req Qty</th>
-                        <th style="width: 15%; text-align: center;">Avail Stock</th>
-                        <th style="width: 25%; text-align: center;">Issue Qty</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-              `;
+                    <div class="table-responsive mb-3">
+                      <table class="table table-sm table-bordered" style="font-size: 0.85rem;">
+                        <thead class="table-light">
+                          <tr>
+                            <th style="width: 25%;">Product Name</th>
+                            <th style="width: 20%;">Category</th>
+                            <th style="width: 15%; text-align: center;">Req Qty</th>
+                            <th style="width: 15%; text-align: center;">Avail Stock</th>
+                            <th style="width: 25%; text-align: center;">Issue Qty</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                  `;
 
               items.forEach((item, index) => {
                 const availStock = item.product?.stock ?? 0;
                 itemsHtml += `
-                  <tr>
-                    <td>${item.product_name}</td>
-                    <td>${item.category || 'N/A'}</td>
-                    <td class="text-center">${item.quantity}</td>
-                    <td class="text-center">${availStock}</td>
-                    <td>
-                      <input type="number" class="form-control form-control-sm issue-qty-input" 
-                        data-item-id="${item.id}" data-spare-id="${item.spare_id}"
-                        max="${availStock}" min="0" value="0" style="text-align: center;">
-                    </td>
-                  </tr>
-                `;
+                      <tr>
+                        <td>${item.product_name}</td>
+                        <td>${item.category || 'N/A'}</td>
+                        <td class="text-center">${item.quantity}</td>
+                        <td class="text-center">${availStock}</td>
+                        <td>
+                          <input type="number" class="form-control form-control-sm issue-qty-input" 
+                            data-item-id="${item.id}" data-spare-id="${item.spare_id}"
+                            max="${availStock}" min="0" value="0" style="text-align: center;">
+                        </td>
+                      </tr>
+                    `;
               });
 
               itemsHtml += `
-                    </tbody>
-                  </table>
-                </div>
-              `;
+                        </tbody>
+                      </table>
+                    </div>
+                  `;
             }
 
             // Add "Previously Issued Items" section if stock has been issued
             if (issuedStock.length > 0) {
               itemsHtml += `
-                <div class="mb-3">
-                  <h6 class="text-primary fw-bold" style="font-size: 0.9rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 12px;">
-                    <i data-feather="check-square" style="width: 16px; height: 16px; margin-right: 4px;"></i>
-                    Previously Issued Items
-                  </h6>
-                  <div class="table-responsive">
-                    <table class="table table-sm table-bordered" style="font-size: 0.8rem; background-color: #f8fafc;">
-                      <thead style="background-color: #f1f5f9;">
-                        <tr>
-                          <th>Item Name</th>
-                          <th class="text-center">Qty</th>
-                          <th>Issued At</th>
-                          <th>Remarks</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-              `;
-              
+                    <div class="mb-3">
+                      <h6 class="text-primary fw-bold" style="font-size: 0.9rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 12px;">
+                        <i data-feather="check-square" style="width: 16px; height: 16px; margin-right: 4px;"></i>
+                        Previously Issued Items
+                      </h6>
+                      <div class="table-responsive">
+                        <table class="table table-sm table-bordered" style="font-size: 0.8rem; background-color: #f8fafc;">
+                          <thead style="background-color: #f1f5f9;">
+                            <tr>
+                              <th>Item Name</th>
+                              <th class="text-center">Qty</th>
+                              <th>Issued At</th>
+                              <th>Remarks</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                  `;
+
               issuedStock.forEach(log => {
                 itemsHtml += `
-                  <tr>
-                    <td>${log.spare_name}</td>
-                    <td class="text-center fw-bold text-success">${log.quantity_issued}</td>
-                    <td class="text-muted">${log.issued_at}</td>
-                    <td class="small">${log.remarks || '-'}</td>
-                  </tr>
-                `;
+                      <tr>
+                        <td>${log.spare_name}</td>
+                        <td class="text-center fw-bold text-success">${log.quantity_issued}</td>
+                        <td class="text-muted">${log.issued_at}</td>
+                        <td class="small">${log.remarks || '-'}</td>
+                      </tr>
+                    `;
               });
-              
+
               itemsHtml += `
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              `;
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  `;
             }
 
             // Build full form with existing items table and manual add section
             let manualFormHtml = `
-                  <div class="card mb-3" style="border: 1px solid #dee2e6; border-radius: 8px;">
-                    <div class="card-header bg-primary text-white" style="padding: 12px 16px; font-weight: 600; font-size: 14px;">
-                      Authority / Stock Management
-                    </div>
-                    <div class="card-body" style="padding: 16px;">
-                      <!-- Authority No. Req and Issue Stock Row - Combined -->
-                      <div class="row g-3 mb-3 align-items-end" id="authorityRow">
-                        <div class="col-md-3">
-                          <label class="form-label small mb-1" style="font-size: 0.85rem; font-weight: 600; color: #000000 !important;">Authority No. Req</label>
-                          <div class="d-flex align-items-center" style="gap: 10px;">
-                            <div class="form-check form-check-inline" style="margin: 0;">
-                              <input class="form-check-input" type="radio" name="authorityRequired" id="authorityNo" value="no" checked>
-                              <label class="form-check-label" for="authorityNo" style="font-size: 0.85rem;">No</label>
+                      <div class="card mb-3" style="border: 1px solid #dee2e6; border-radius: 8px;">
+                        <div class="card-header bg-primary text-white" style="padding: 12px 16px; font-weight: 600; font-size: 14px;">
+                          Authority / Stock Management
+                        </div>
+                        <div class="card-body" style="padding: 16px;">
+                          <!-- Authority No. Req and Issue Stock Row - Combined -->
+                          <div class="row g-3 mb-3 align-items-end" id="authorityRow">
+                            <div class="col-md-3">
+                              <label class="form-label small mb-1" style="font-size: 0.85rem; font-weight: 600; color: #000000 !important;">Authority No. Req</label>
+                              <div class="d-flex align-items-center" style="gap: 10px;">
+                                <div class="form-check form-check-inline" style="margin: 0;">
+                                  <input class="form-check-input" type="radio" name="authorityRequired" id="authorityNo" value="no" checked>
+                                  <label class="form-check-label" for="authorityNo" style="font-size: 0.85rem;">No</label>
+                                </div>
+                                <div class="form-check form-check-inline" style="margin: 0;">
+                                  <input class="form-check-input" type="radio" name="authorityRequired" id="authorityYes" value="yes">
+                                  <label class="form-check-label" for="authorityYes" style="font-size: 0.85rem;">Yes</label>
+                                </div>
+                              </div>
                             </div>
-                            <div class="form-check form-check-inline" style="margin: 0;">
-                              <input class="form-check-input" type="radio" name="authorityRequired" id="authorityYes" value="yes">
-                              <label class="form-check-label" for="authorityYes" style="font-size: 0.85rem;">Yes</label>
+                            <div class="col-md-3 d-none" id="authorityNoCol">
+                              <label class="form-label small mb-1" style="font-size: 0.85rem; font-weight: 600; color: #000000 !important;">Authority No.</label>
+                              <input type="text" class="form-control form-control-sm" id="authorityNumber" placeholder="Enter Authority No." style="font-size: 0.9rem;">
+                            </div>
+                            <div class="col-md-3">
+                              <label class="form-label small mb-1" style="font-size: 0.85rem; font-weight: 600; color: #000000 !important;">Issue Stock</label>
+                              <div class="d-flex align-items-center" style="gap: 10px;">
+                                <div class="form-check form-check-inline" style="margin: 0;">
+                                  <input class="form-check-input" type="radio" name="issueStockRequired" id="issueStockNo" value="no" checked>
+                                  <label class="form-check-label" for="issueStockNo" style="font-size: 0.85rem;">No</label>
+                                </div>
+                                <div class="form-check form-check-inline" style="margin: 0;">
+                                  <input class="form-check-input" type="radio" name="issueStockRequired" id="issueStockYes" value="yes">
+                                  <label class="form-check-label" for="issueStockYes" style="font-size: 0.85rem;">Yes</label>
+                                </div>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div class="col-md-3 d-none" id="authorityNoCol">
-                          <label class="form-label small mb-1" style="font-size: 0.85rem; font-weight: 600; color: #000000 !important;">Authority No.</label>
-                          <input type="text" class="form-control form-control-sm" id="authorityNumber" placeholder="Enter Authority No." style="font-size: 0.9rem;">
-                        </div>
-                        <div class="col-md-3">
-                          <label class="form-label small mb-1" style="font-size: 0.85rem; font-weight: 600; color: #000000 !important;">Issue Stock</label>
-                          <div class="d-flex align-items-center" style="gap: 10px;">
-                            <div class="form-check form-check-inline" style="margin: 0;">
-                              <input class="form-check-input" type="radio" name="issueStockRequired" id="issueStockNo" value="no" checked>
-                              <label class="form-check-label" for="issueStockNo" style="font-size: 0.85rem;">No</label>
-                            </div>
-                            <div class="form-check form-check-inline" style="margin: 0;">
-                              <input class="form-check-input" type="radio" name="issueStockRequired" id="issueStockYes" value="yes">
-                              <label class="form-check-label" for="issueStockYes" style="font-size: 0.85rem;">Yes</label>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
 
-                      <!-- Product Issue Fields - Hidden by default -->
-                      <div class="row g-3 d-none" id="productIssueFields">
-                        <div class="col-md-4">
-                          <label class="form-label small mb-1" style="font-size: 0.85rem; font-weight: 600; color: #000000 !important;">Product</label>
-                          <select class="form-select form-select-sm" id="manualProduct" style="font-size: 0.9rem;" disabled>
-                            <option value="">Loading Products...</option>
-                          </select>
-                        </div>
-                        <div class="col-md-2">
-                          <label class="form-label small mb-1" style="font-size: 0.85rem; font-weight: 600; color: #000000 !important;">Available Stock</label>
-                          <input type="text" class="form-control form-control-sm" id="manualAvailableStock" readonly style="font-size: 0.9rem; background-color: #f8f9fa; font-weight: 600; text-align: center;">
-                        </div>
-                        <div class="col-md-3">
-                          <label class="form-label small mb-1" style="font-size: 0.85rem; font-weight: 600; color: #000000 !important;">Request Quantity</label>
-                          <input type="number" class="form-control form-control-sm" id="manualRequestQty" min="1" style="font-size: 0.9rem; text-align: center;" placeholder="Enter quantity">
+                          <!-- Product Issue Fields - Hidden by default -->
+                          <div class="row g-3 d-none" id="productIssueFields">
+                            <div class="col-md-4">
+                              <label class="form-label small mb-1" style="font-size: 0.85rem; font-weight: 600; color: #000000 !important;">Product</label>
+                              <select class="form-select form-select-sm" id="manualProduct" style="font-size: 0.9rem;" disabled>
+                                <option value="">Loading Products...</option>
+                              </select>
+                            </div>
+                            <div class="col-md-2">
+                              <label class="form-label small mb-1" style="font-size: 0.85rem; font-weight: 600; color: #000000 !important;">Available Stock</label>
+                              <input type="text" class="form-control form-control-sm" id="manualAvailableStock" readonly style="font-size: 0.9rem; background-color: #f8f9fa; font-weight: 600; text-align: center;">
+                            </div>
+                            <div class="col-md-3">
+                              <label class="form-label small mb-1" style="font-size: 0.85rem; font-weight: 600; color: #000000 !important;">Request Quantity</label>
+                              <input type="number" class="form-control form-control-sm" id="manualRequestQty" min="1" style="font-size: 0.9rem; text-align: center;" placeholder="Enter quantity">
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                `;
+                    `;
 
             itemsHtml += manualFormHtml;
             itemsHtml += '</form>';
@@ -3409,27 +3441,27 @@
             let complaintCategory = window.currentComplaintCategory || data.approval?.complaint?.category || null;
             let complaintSector = data.approval?.complaint?.sector || null;
             let complaintCity = data.approval?.complaint?.city || null;
-            
+
             // Helper to safe extract name or value from object/string
             const extractSafeValue = (val) => {
-                if (!val) return null;
-                if (typeof val === 'object') {
-                    return val.name || val.id || null;
-                }
-                return val;
+              if (!val) return null;
+              if (typeof val === 'object') {
+                return val.name || val.id || null;
+              }
+              return val;
             };
 
             complaintCategory = extractSafeValue(complaintCategory);
             complaintSector = extractSafeValue(complaintSector);
             complaintCity = extractSafeValue(complaintCity);
-            
+
             console.log('Processed Complaint info:', { category: complaintCategory, sector: complaintSector, city: complaintCity });
 
             // Wait for DOM to be ready before initializing
             setTimeout(() => {
               // Safe category string check
               const catStr = String(complaintCategory || '').trim();
-              
+
               if (catStr && catStr !== '' && catStr !== 'N/A' && catStr !== 'null') {
                 console.log('Loading products for safe category:', catStr);
                 loadProductsByCategory(catStr, complaintSector, complaintCity);
@@ -3569,13 +3601,13 @@
 
       // 1. Collect data from both manual form and table
       const stockData = [];
-      
+
       // Manual form entry
       if (productId && issueQty > 0) {
         if (issueQty > availableStock) {
-            alert(`Manual entry: Request quantity (${issueQty}) cannot exceed available stock (${availableStock})`);
-            requestQtyInput.focus();
-            return;
+          alert(`Manual entry: Request quantity (${issueQty}) cannot exceed available stock (${availableStock})`);
+          requestQtyInput.focus();
+          return;
         }
         stockData.push({
           spare_id: parseInt(productId),
@@ -3599,10 +3631,10 @@
           const availStock = parseInt(input.getAttribute('max')) || 0;
 
           if (qty > availStock) {
-              alert(`Table item "${prodName}": Quantity (${qty}) cannot exceed available stock (${availStock})`);
-              input.focus();
-              tableValidationError = true;
-              return;
+            alert(`Table item "${prodName}": Quantity (${qty}) cannot exceed available stock (${availStock})`);
+            input.focus();
+            tableValidationError = true;
+            return;
           }
 
           stockData.push({
@@ -3623,56 +3655,56 @@
 
       // If no stock is being issued, check if it's an authority-only update
       if (stockData.length === 0) {
-          if (authNo && isAuthorityRequired) {
-             console.log('Authority-only update triggered');
-             if (submitBtn) {
-               submitBtn.disabled = true;
-               submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving Authority...';
-             }
-
-             const typeLabel = perfVal === 'work_performa' ? 'Work Performa' : (perfVal === 'maint_performa' ? 'Maintenance Performa' : 'General');
-             const authorityInfo = `Authority No. Req: ${typeLabel}, Authority No: ${authNo}`;
-
-             fetch(`/admin/approvals/${window.currentApprovalId}/save-performa`, {
-               method: 'POST',
-               headers: {
-                 'X-Requested-With': 'XMLHttpRequest',
-                 'Accept': 'application/json',
-                 'Content-Type': 'application/json',
-                 'X-CSRF-TOKEN': csrfToken
-               },
-               body: JSON.stringify({
-                 performa_type: perfVal || null,
-                 remarks: authorityInfo
-               }),
-               credentials: 'same-origin'
-             })
-             .then(response => response.json())
-             .then(data => {
-               if (data.success) {
-                 alert('Authority number saved successfully!');
-                 window.location.reload();
-               } else {
-                 alert('Error saving authority: ' + (data.message || 'Unknown error'));
-                 if (submitBtn) {
-                   submitBtn.disabled = false;
-                   submitBtn.innerHTML = '<i data-feather="check-circle"></i> Submit';
-                 }
-               }
-             })
-             .catch(error => {
-               console.error('Error:', error);
-               alert('Error saving authority: ' + error.message);
-               if (submitBtn) {
-                 submitBtn.disabled = false;
-                 submitBtn.innerHTML = '<i data-feather="check-circle"></i> Submit';
-               }
-             });
-             return;
-          } else {
-             alert('Please select a product and enter quantity or provide an authority number.');
-             return;
+        if (authNo && isAuthorityRequired) {
+          console.log('Authority-only update triggered');
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving Authority...';
           }
+
+          const typeLabel = perfVal === 'work_performa' ? 'Work Performa' : (perfVal === 'maint_performa' ? 'Maintenance Performa' : 'General');
+          const authorityInfo = `Authority No. Req: ${typeLabel}, Authority No: ${authNo}`;
+
+          fetch(`/admin/approvals/${window.currentApprovalId}/save-performa`, {
+            method: 'POST',
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest',
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'X-CSRF-TOKEN': csrfToken
+            },
+            body: JSON.stringify({
+              performa_type: perfVal || null,
+              remarks: authorityInfo
+            }),
+            credentials: 'same-origin'
+          })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                alert('Authority number saved successfully!');
+                window.location.reload();
+              } else {
+                alert('Error saving authority: ' + (data.message || 'Unknown error'));
+                if (submitBtn) {
+                  submitBtn.disabled = false;
+                  submitBtn.innerHTML = '<i data-feather="check-circle"></i> Submit';
+                }
+              }
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              alert('Error saving authority: ' + error.message);
+              if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i data-feather="check-circle"></i> Submit';
+              }
+            });
+          return;
+        } else {
+          alert('Please select a product and enter quantity or provide an authority number.');
+          return;
+        }
       }
 
       // Proceed with confirmation and stock issue
@@ -4167,56 +4199,56 @@
       const alertDiv = document.createElement('div');
       alertDiv.className = 'custom-alert-toast alert-success-toast';
       alertDiv.style.cssText = `
-              position: fixed;
-              top: 20px;
-              right: 20px;
-              z-index: 10000;
-              min-width: 320px;
-              max-width: 450px;
-              background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-              color: white;
-              padding: 16px 20px;
-              border-radius: 12px;
-              box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3), 0 4px 10px rgba(0, 0, 0, 0.2);
-              display: flex;
-              align-items: center;
-              gap: 12px;
-              animation: slideInRight 0.3s ease-out;
-              font-size: 14px;
-              font-weight: 500;
-            `;
+                  position: fixed;
+                  top: 20px;
+                  right: 20px;
+                  z-index: 10000;
+                  min-width: 320px;
+                  max-width: 450px;
+                  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                  color: white;
+                  padding: 16px 20px;
+                  border-radius: 12px;
+                  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3), 0 4px 10px rgba(0, 0, 0, 0.2);
+                  display: flex;
+                  align-items: center;
+                  gap: 12px;
+                  animation: slideInRight 0.3s ease-out;
+                  font-size: 14px;
+                  font-weight: 500;
+                `;
       alertDiv.innerHTML = `
-              <div style="flex-shrink: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
-              </div>
-              <div style="flex: 1; line-height: 1.5;">
-                <strong style="display: block; margin-bottom: 2px; font-size: 15px;">Success!</strong>
-                <span style="opacity: 0.95;">${message}</span>
-              </div>
-              <button type="button" onclick="this.parentElement.remove()" style="
-                background: rgba(255, 255, 255, 0.2);
-                border: none;
-                color: white;
-                width: 24px;
-                height: 24px;
-                border-radius: 50%;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 0;
-                flex-shrink: 0;
-                transition: background 0.2s;
-              " onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-            `;
+                  <div style="flex-shrink: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                  </div>
+                  <div style="flex: 1; line-height: 1.5;">
+                    <strong style="display: block; margin-bottom: 2px; font-size: 15px;">Success!</strong>
+                    <span style="opacity: 0.95;">${message}</span>
+                  </div>
+                  <button type="button" onclick="this.parentElement.remove()" style="
+                    background: rgba(255, 255, 255, 0.2);
+                    border: none;
+                    color: white;
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 50%;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 0;
+                    flex-shrink: 0;
+                    transition: background 0.2s;
+                  " onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                `;
       document.body.appendChild(alertDiv);
 
       // Auto remove after 3 seconds
@@ -4241,57 +4273,57 @@
       const alertDiv = document.createElement('div');
       alertDiv.className = 'custom-alert-toast alert-error-toast';
       alertDiv.style.cssText = `
-              position: fixed;
-              top: 20px;
-              right: 20px;
-              z-index: 10000;
-              min-width: 320px;
-              max-width: 450px;
-              background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-              color: white;
-              padding: 16px 20px;
-              border-radius: 12px;
-              box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3), 0 4px 10px rgba(0, 0, 0, 0.2);
-              display: flex;
-              align-items: center;
-              gap: 12px;
-              animation: slideInRight 0.3s ease-out, shake 0.5s ease-in-out 0.3s;
-              font-size: 14px;
-              font-weight: 500;
-            `;
+                  position: fixed;
+                  top: 20px;
+                  right: 20px;
+                  z-index: 10000;
+                  min-width: 320px;
+                  max-width: 450px;
+                  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                  color: white;
+                  padding: 16px 20px;
+                  border-radius: 12px;
+                  box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3), 0 4px 10px rgba(0, 0, 0, 0.2);
+                  display: flex;
+                  align-items: center;
+                  gap: 12px;
+                  animation: slideInRight 0.3s ease-out, shake 0.5s ease-in-out 0.3s;
+                  font-size: 14px;
+                  font-weight: 500;
+                `;
       alertDiv.innerHTML = `
-              <div style="flex-shrink: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="12" y1="8" x2="12" y2="12"></line>
-                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-              </div>
-              <div style="flex: 1; line-height: 1.5;">
-                <strong style="display: block; margin-bottom: 2px; font-size: 15px;">Error!</strong>
-                <span style="opacity: 0.95;">${message}</span>
-              </div>
-              <button type="button" onclick="this.parentElement.remove()" style="
-                background: rgba(255, 255, 255, 0.2);
-                border: none;
-                color: white;
-                width: 24px;
-                height: 24px;
-                border-radius: 50%;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 0;
-                flex-shrink: 0;
-                transition: background 0.2s;
-              " onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-            `;
+                  <div style="flex-shrink: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="8" x2="12" y2="12"></line>
+                      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                  </div>
+                  <div style="flex: 1; line-height: 1.5;">
+                    <strong style="display: block; margin-bottom: 2px; font-size: 15px;">Error!</strong>
+                    <span style="opacity: 0.95;">${message}</span>
+                  </div>
+                  <button type="button" onclick="this.parentElement.remove()" style="
+                    background: rgba(255, 255, 255, 0.2);
+                    border: none;
+                    color: white;
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 50%;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 0;
+                    flex-shrink: 0;
+                    transition: background 0.2s;
+                  " onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                `;
       document.body.appendChild(alertDiv);
 
       // Auto remove after 6 seconds (slightly longer for errors)
@@ -4380,10 +4412,10 @@
         const currentActualStatus = select.getAttribute('data-actual-status');
         const statusesAllowedWithoutAssignment = ['assigned', 'un_authorized', 'pertains_to_ge_const_isld', 'barak_damages'];
         if (currentActualStatus === 'new' && !statusesAllowedWithoutAssignment.includes(newStatus)) {
-            alert('First assigned the complaint');
-            select.value = 'unassigned';
-            updateStatusSelectColor(select, 'unassigned');
-            return;
+          alert('First assigned the complaint');
+          select.value = 'unassigned';
+          updateStatusSelectColor(select, 'unassigned');
+          return;
         }
 
         // Store original status before any modifications for special options
@@ -4746,13 +4778,13 @@
 
         const oldStatus = select.dataset.oldStatus || select.value;
         const labelMap = { in_progress: 'In Progress', resolved: 'Addressed', assigned: 'Assigned', new: 'New', closed: 'Closed' };
-        
+
         // INTERCEPT ASSIGNED STATUS
         if (newStatus === 'assigned') {
           // Revert selection immediately
           select.value = select.dataset.oldStatus || '';
           updateStatusSelectColor(select, select.value);
-          
+
           // Trigger edit modal instead
           if (typeof editComplaintModal === 'function') {
             editComplaintModal(complaintId);
@@ -4988,7 +5020,7 @@
               if (actionsCell) {
                 // Determine container - could be just the td, or a d-flex container inside
                 const btnContainer = actionsCell.querySelector('.d-flex') || actionsCell;
-                
+
                 if (btnContainer) {
                   // Check if feedback button already exists (check for onclick with viewFeedbackCreate or viewFeedbackEdit)
                   const existingFeedbackBtn = btnContainer.querySelector('a[onclick*="viewFeedback"]');
@@ -5002,7 +5034,7 @@
                     // Use exact styling from other feedback buttons (warning color: #f59e0b)
                     feedbackBtn.style.cssText = 'padding: 1px 3px; background-color: #f59e0b !important; border-color: #f59e0b !important; color: #ffffff !important;';
                     feedbackBtn.innerHTML = '<i data-feather="message-square" style="width: 12px; height: 12px; color: #ffffff;"></i>';
-                    
+
                     btnContainer.appendChild(feedbackBtn);
                     // Reinitialize feather icons
                     if (typeof feather !== 'undefined') {
@@ -5537,7 +5569,7 @@
       if (typeof initPerformaBadges === 'function') {
         initPerformaBadges();
       }
-      
+
       // Run initStatusSelects after initPerformaBadges to ensure colors are set correctly
       setTimeout(function () {
         if (typeof initStatusSelects === 'function') {

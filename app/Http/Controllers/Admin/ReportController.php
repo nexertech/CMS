@@ -179,11 +179,12 @@ class ReportController extends Controller
 
             // Apply location filtering
             if ($user && !$this->canViewAllData($user)) {
+                $query->join('houses', 'complaints.house_id', '=', 'houses.id');
                 if ($user->city_id) {
-                    $query->where('complaints.city_id', $user->city_id);
+                    $query->where('houses.city_id', $user->city_id);
                 }
                 if ($user->sector_id) {
-                    $query->where('complaints.sector_id', $user->sector_id);
+                    $query->where('houses.sector_id', $user->sector_id);
                 }
             }
 
@@ -199,12 +200,13 @@ class ReportController extends Controller
 
             // Apply location filtering if approval is linked to complaint
             if ($user && !$this->canViewAllData($user) && Schema::hasColumn('spare_approval_performa', 'complaint_id')) {
-                $query->join('complaints', 'spare_approval_performa.complaint_id', '=', 'complaints.id');
+                $query->join('complaints', 'spare_approval_performa.complaint_id', '=', 'complaints.id')
+                      ->join('houses', 'complaints.house_id', '=', 'houses.id');
                 if ($user->city_id) {
-                    $query->where('complaints.city_id', $user->city_id);
+                    $query->where('houses.city_id', $user->city_id);
                 }
                 if ($user->sector_id) {
-                    $query->where('complaints.sector_id', $user->sector_id);
+                    $query->where('houses.sector_id', $user->sector_id);
                 }
             }
 
@@ -453,7 +455,7 @@ class ReportController extends Controller
         $user = Auth::user();
 
         // Get actual categories from ComplaintCategory table - this is the source of truth
-        $actualCategories = \App\Models\ComplaintCategory::orderBy('name')
+        $actualCategories = \App\Models\ComplaintCategory::where('status', 'active')->orderBy('name')
             ->pluck('name')
             ->toArray();
 
@@ -1065,11 +1067,12 @@ class ReportController extends Controller
 
         // Apply location filtering
         if ($user && !$this->canViewAllData($user)) {
+            $spareCostsQuery->join('houses', 'complaints.house_id', '=', 'houses.id');
             if ($user->city_id) {
-                $spareCostsQuery->where('complaints.city_id', $user->city_id);
+                $spareCostsQuery->where('houses.city_id', $user->city_id);
             }
             if ($user->sector_id) {
-                $spareCostsQuery->where('complaints.sector_id', $user->sector_id);
+                $spareCostsQuery->where('houses.sector_id', $user->sector_id);
             }
         }
 
@@ -1644,11 +1647,12 @@ class ReportController extends Controller
 
         // Apply location filtering
         if ($user && !$this->canViewAllData($user)) {
+            $spareCostsQuery->join('houses', 'complaints.house_id', '=', 'houses.id');
             if ($user->city_id) {
-                $spareCostsQuery->where('complaints.city_id', $user->city_id);
+                $spareCostsQuery->where('houses.city_id', $user->city_id);
             }
             if ($user->sector_id) {
-                $spareCostsQuery->where('complaints.sector_id', $user->sector_id);
+                $spareCostsQuery->where('houses.sector_id', $user->sector_id);
             }
         }
 
@@ -1728,7 +1732,7 @@ class ReportController extends Controller
         $user = Auth::user();
 
         // Get actual categories from ComplaintCategory table
-        $actualCategories = \App\Models\ComplaintCategory::orderBy('name')
+        $actualCategories = \App\Models\ComplaintCategory::where('status', 'active')->orderBy('name')
             ->pluck('name')
             ->toArray();
 

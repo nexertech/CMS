@@ -248,9 +248,16 @@
     })
     .then(response => response.json())
     .then(data => {
-      if (tbody) {
-        tbody.innerHTML = data.html;
-        feather.replace();
+      if (data.html) {
+        // Parse the full section HTML returned by the server
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(data.html, 'text/html');
+        const newTbody = doc.querySelector('#housesTableBody');
+        
+        if (tbody && newTbody) {
+          tbody.innerHTML = newTbody.innerHTML;
+          feather.replace();
+        }
       }
       if (paginationContainer) {
         paginationContainer.innerHTML = data.pagination;

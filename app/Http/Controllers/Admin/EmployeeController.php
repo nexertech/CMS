@@ -66,7 +66,7 @@ class EmployeeController extends Controller
         // Get categories for filter dropdown from ComplaintCategory table
         $categories = collect();
         if (Schema::hasTable('complaint_categories')) {
-            $categories = ComplaintCategory::orderBy('name')->pluck('name', 'id');
+            $categories = ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name', 'id');
         } else {
             // Fallback: Empty collection if table doesn't exist
             $categories = collect();
@@ -86,7 +86,7 @@ class EmployeeController extends Controller
         $user = Auth::user();
 
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name', 'id')
+            ? ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name', 'id')
             : collect();
         
         // Filter cities based on user permissions
@@ -237,7 +237,7 @@ class EmployeeController extends Controller
         $user = Auth::user();
         
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name', 'id')
+            ? ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name', 'id')
             : collect();
         
         // Filter cities based on user permissions

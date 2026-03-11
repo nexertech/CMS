@@ -69,7 +69,7 @@ class FeedbackController extends Controller
         // Check if complaint is resolved
         if (!in_array($complaint->status, ['resolved', 'closed'])) {
             if (request()->ajax() || request()->wantsJson() || request()->has('modal')) {
-                return response()->json(['error' => 'Feedback can only be added for resolved complaints.'], 400);
+                return response()->json(['error' => 'Feedback can only be added for resolved complaints.'], 400)->header('Vary', 'X-Requested-With');
             }
             return redirect()->back()
                 ->with('error', 'Feedback can only be added for resolved complaints.');
@@ -77,7 +77,9 @@ class FeedbackController extends Controller
 
         // Return full view content for modal (JS extracts content)
         if (request()->ajax() || request()->wantsJson() || request()->has('modal')) {
-            return view('admin.feedbacks.create', compact('complaint'))->render();
+            return response(view('admin.feedbacks.create', compact('complaint'))->render())
+                ->header('Content-Type', 'text/html')
+                ->header('Vary', 'X-Requested-With');
         }
 
         return view('admin.feedbacks.create', compact('complaint'));
@@ -153,7 +155,7 @@ class FeedbackController extends Controller
                     'success' => true,
                     'message' => 'Feedback added successfully.',
                     'complaint_id' => $complaint->id
-                ]);
+                ])->header('Vary', 'X-Requested-With');
             }
             
             // Redirect back to approvals page (Complaints Regn) with complaint ID to open in modal
@@ -165,7 +167,7 @@ class FeedbackController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Failed to add feedback: ' . $e->getMessage()
-                ], 500);
+                ], 500)->header('Vary', 'X-Requested-With');
             }
             return redirect()->back()
                 ->with('error', 'Failed to add feedback: ' . $e->getMessage())
@@ -194,7 +196,7 @@ class FeedbackController extends Controller
             if (request()->ajax() || request()->wantsJson() || request()->has('modal')) {
                 return response()->json([
                     'error' => 'Only Garrison Engineer (GE) can edit feedback.'
-                ], 403);
+                ], 403)->header('Vary', 'X-Requested-With');
             }
             return redirect()->back()
                 ->with('error', 'Only Garrison Engineer (GE) can edit feedback.');
@@ -204,7 +206,9 @@ class FeedbackController extends Controller
         
         // Return full view content for modal (JS extracts content)
         if (request()->ajax() || request()->wantsJson() || request()->has('modal')) {
-            return view('admin.feedbacks.edit', compact('feedback'))->render();
+            return response(view('admin.feedbacks.edit', compact('feedback'))->render())
+                ->header('Content-Type', 'text/html')
+                ->header('Vary', 'X-Requested-With');
         }
         
         return view('admin.feedbacks.edit', compact('feedback'));
@@ -232,7 +236,7 @@ class FeedbackController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Only Garrison Engineer (GE) can update feedback.'
-                ], 403);
+                ], 403)->header('Vary', 'X-Requested-With');
             }
             return redirect()->back()
                 ->with('error', 'Only Garrison Engineer (GE) can update feedback.');
@@ -255,7 +259,7 @@ class FeedbackController extends Controller
                 return response()->json([
                     'success' => false,
                     'errors' => $validator->errors()
-                ], 422);
+                ], 422)->header('Vary', 'X-Requested-With');
             }
             return redirect()->back()
                 ->withErrors($validator)
@@ -288,7 +292,7 @@ class FeedbackController extends Controller
                     'success' => true,
                     'message' => 'Feedback updated successfully.',
                     'complaint_id' => $feedback->complaint_id
-                ]);
+                ])->header('Vary', 'X-Requested-With');
             }
             
             // Redirect back to approvals page (Complaints Regn) with complaint ID to open in modal
@@ -300,7 +304,7 @@ class FeedbackController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Failed to update feedback: ' . $e->getMessage()
-                ], 500);
+                ], 500)->header('Vary', 'X-Requested-With');
             }
             return redirect()->back()
                 ->with('error', 'Failed to update feedback: ' . $e->getMessage())

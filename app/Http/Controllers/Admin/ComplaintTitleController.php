@@ -42,7 +42,7 @@ class ComplaintTitleController extends Controller
             ->paginate(20);
 
         // Get categories for filter dropdown
-        $categories = ComplaintCategory::orderBy('name')->get();
+        $categories = ComplaintCategory::where('status', 'active')->orderBy('name')->get();
 
         return view('admin.complaint-titles.index', compact('complaintTitles', 'categories'));
     }
@@ -52,7 +52,7 @@ class ComplaintTitleController extends Controller
      */
     public function create()
     {
-        $categories = ComplaintCategory::orderBy('name')->get();
+        $categories = ComplaintCategory::where('status', 'active')->orderBy('name')->get();
         return view('admin.complaint-titles.create', compact('categories'));
     }
 
@@ -96,7 +96,7 @@ class ComplaintTitleController extends Controller
      */
     public function edit(ComplaintTitle $complaintTitle)
     {
-        $categories = ComplaintCategory::orderBy('name')->get();
+        $categories = ComplaintCategory::where('status', 'active')->orderBy('name')->get();
         return view('admin.complaint-titles.edit', compact('complaintTitle', 'categories'));
     }
 

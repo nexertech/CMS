@@ -35,7 +35,8 @@
 
     // Use assigned employee designation like index
     $designation = $complaint->assignedEmployee->designation->name ?? $complaint->assignedEmployee->designation ?? 'N/A';
-    $displayText = $catDisplay . ' - ' . $designation;
+    $titleName = $complaint->complaintTitle->title ?? $complaint->title ?? 'N/A';
+    $displayText = $catDisplay . ' - ' . $titleName;
 
     $rawStatus = $complaint->status ?? 'new';
     $complaintStatus = ($rawStatus == 'new') ? 'unassigned' : $rawStatus;

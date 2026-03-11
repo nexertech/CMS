@@ -136,7 +136,7 @@ class ComplaintController extends Controller
         $employees = $employeesQuery->get();
 
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name', 'id')
+            ? ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name', 'id')
             : collect();
 
         return view('admin.complaints.index', compact('complaints', 'employees', 'categories'));
@@ -152,7 +152,7 @@ class ComplaintController extends Controller
         $this->filterEmployeesByLocation($employeesQuery, Auth::user());
         $employees = $employeesQuery->get();
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name', 'id')
+            ? ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name', 'id')
             : collect();
 
         // Get cities and sectors for dropdowns
@@ -315,7 +315,7 @@ class ComplaintController extends Controller
         $employees = $employeesQuery->get();
 
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name', 'id')
+            ? ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name', 'id')
             : collect();
 
         // Get cities and sectors for dropdowns
@@ -326,17 +326,18 @@ class ComplaintController extends Controller
         }
         $cities = Schema::hasTable('cities') ? $citiesQuery->get() : collect();
 
-        // Load sectors for the complaint's city
+        // Load sectors for the complaint's city (via house if needed)
         $sectors = collect();
-        if ($complaint->city_id) {
-            $sectors = Sector::where('city_id', $complaint->city_id)
+        $complaintCityId = $complaint->city_id ?? $complaint->house?->city_id;
+        if ($complaintCityId) {
+            $sectors = Sector::where('city_id', $complaintCityId)
                 ->where('status', 'active')
                 ->orderBy('name')
                 ->get();
         }
 
-        $defaultCityId = $complaint->city_id ?? (Auth::user()?->city_id);
-        $defaultSectorId = $complaint->sector_id ?? (Auth::user()?->sector_id);
+        $defaultCityId = $complaint->city_id ?? $complaint->house?->city_id ?? (Auth::user()?->city_id);
+        $defaultSectorId = $complaint->sector_id ?? $complaint->house?->sector_id ?? (Auth::user()?->sector_id);
 
         // Get houses filtered by location
         $housesQuery = House::where('status', 'active')->orderBy('username');

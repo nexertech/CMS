@@ -52,8 +52,9 @@
   
   $category = $complaint->category_id ?? 'N/A';
   $designation = $complaint->assignedEmployee->designation->name ?? $complaint->assignedEmployee->designation ?? 'N/A';
+  $titleName = $complaint->complaintTitle->title ?? $complaint->title ?? 'N/A';
   $catDisplay = $complaint->getCategoryDisplayAttribute();
-  $displayText = $catDisplay . ' - ' . $designation;
+  $displayText = $catDisplay . ' - ' . $titleName;
 @endphp
 
 <!-- Single Combined Card for All Details -->

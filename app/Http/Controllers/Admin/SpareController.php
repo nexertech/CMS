@@ -86,7 +86,7 @@ class SpareController extends Controller
         $spares = $query->with(['stockLogs', 'city', 'sector', 'category'])->orderBy('id', 'asc')->paginate(15);
         
         // Get categories from complaint_categories table for the filter dropdown
-        $categories = ComplaintCategory::orderBy('name')->pluck('name', 'id');
+        $categories = ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name', 'id');
 
         return view('admin.spares.index', compact('spares', 'categories'));
     }
@@ -98,7 +98,7 @@ class SpareController extends Controller
     {
         $user = Auth::user();
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name', 'id')
+            ? ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name', 'id')
             : collect();
         
         // Get cities based on user role/location
@@ -327,7 +327,7 @@ class SpareController extends Controller
     {
         $user = Auth::user();
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name', 'id')
+            ? ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name', 'id')
             : collect();
         
         // Get cities based on user role/location
@@ -986,7 +986,7 @@ class SpareController extends Controller
 
             case 'change_category':
                 $validCategories = Schema::hasTable('complaint_categories')
-                    ? ComplaintCategory::orderBy('name')->pluck('name')->toArray()
+                    ? ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name')->toArray()
                     : [];
                 $validator = Validator::make($request->all(), [
                     'category' => 'required|string|max:100' . (!empty($validCategories) ? '|in:' . implode(',', $validCategories) : ''),
@@ -1081,7 +1081,7 @@ class SpareController extends Controller
             // Get categories from ComplaintCategory table
             $dbCategories = [];
             if (\Schema::hasTable('complaint_categories')) {
-                $dbCategories = \App\Models\ComplaintCategory::orderBy('name')->pluck('name')->toArray();
+                $dbCategories = \App\Models\ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name')->toArray();
             }
             
             // Only use DB categories, Spares table no longer has distinct 'category' string column

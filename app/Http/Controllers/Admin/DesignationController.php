@@ -22,7 +22,7 @@ class DesignationController extends Controller
 
         $designations = Designation::with('category')->orderBy('id', 'asc')->paginate(15);
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name', 'id')
+            ? ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name', 'id')
             : collect();
         
         return view('admin.designation.index', compact('designations', 'categories'));

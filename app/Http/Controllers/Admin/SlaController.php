@@ -98,7 +98,7 @@ class SlaController extends Controller
         
         // Fetch categories from database (ComplaintCategory table)
         $complaintTypes = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name', 'id')->toArray()
+            ? ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name', 'id')->toArray()
             : [];
 
         return view('admin.sla.create', compact('users', 'complaintTypes'));
@@ -111,7 +111,7 @@ class SlaController extends Controller
     {
         // Get categories from database
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('id')->toArray()
+            ? ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('id')->toArray()
             : [];
         
         $categoryRule = 'required|integer';
@@ -211,7 +211,7 @@ class SlaController extends Controller
         
         // Fetch categories from database (ComplaintCategory table)
         $complaintTypes = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name', 'id')->toArray()
+            ? ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name', 'id')->toArray()
             : [];
 
         return view('admin.sla.edit', compact('sla', 'users', 'complaintTypes'));
@@ -224,7 +224,7 @@ class SlaController extends Controller
     {
         // Get categories from database
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('id')->toArray()
+            ? ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('id')->toArray()
             : [];
         
         $categoryRule = 'required|integer';
@@ -373,7 +373,7 @@ class SlaController extends Controller
         $performance = [];
         // Fetch categories from database
         $complaintTypes = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::orderBy('name')->pluck('name', 'id')->toArray()
+            ? ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name', 'id')->toArray()
             : [];
 
         foreach ($complaintTypes as $categoryId => $label) {

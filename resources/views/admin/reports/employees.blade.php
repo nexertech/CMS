@@ -37,7 +37,7 @@
         <label for="category" class="form-label text-white">Category</label>
         <select class="form-select" id="category" name="category" onchange="submitEmployeesReportFilters()">
           <option value="">All Categories</option>
-          @foreach(\App\Models\ComplaintCategory::orderBy('name')->pluck('name') as $cat)
+          @foreach(\App\Models\ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name') as $cat)
             <option value="{{ $cat }}" {{ request('category') == $cat ? 'selected' : '' }}>{{ ucfirst($cat) }}</option>
           @endforeach
         </select>
