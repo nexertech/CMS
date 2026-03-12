@@ -266,6 +266,7 @@ Route::middleware(['auth', 'verified', AdminAccessMiddleware::class])
     Route::post('approvals/{approval}/save-performa', [AdminApprovalController::class, 'saveWithPerforma'])->middleware(['permission:approvals.view'])->name('approvals.save-performa');
     Route::post('approvals/{approval}/update-performa-type', [AdminApprovalController::class, 'updatePerformaType'])->middleware(['permission:approvals.view'])->name('approvals.update-performa-type');
     Route::post('approvals/bulk-action', [AdminApprovalController::class, 'bulkAction'])->middleware(['permission:approvals.view'])->name('approvals.bulk-action');
+    Route::post('complaints/{complaint}/ensure-approval', [AdminApprovalController::class, 'ensureApproval'])->middleware(['permission:approvals.view'])->name('complaints.ensure-approval');
     Route::post('approvals/complaints/{complaintId}/update-status', [AdminApprovalController::class, 'updateComplaintStatus'])->middleware(['permission:approvals.view'])->name('approvals.complaints.update-status');
     Route::resource('sla', AdminSlaController::class)->middleware(['permission:sla.view']);
     Route::post('sla/{sla}/toggle-status', [AdminSlaController::class, 'toggleStatus'])->name('sla.toggle-status');

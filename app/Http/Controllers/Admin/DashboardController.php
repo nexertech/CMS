@@ -177,10 +177,7 @@ class DashboardController extends Controller
         $stats = $this->getDashboardStats($user, $cityId, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId);
 
         // Get recent complaints with location filtering and filters
-        $recentComplaintsQuery = Complaint::with(['assignedEmployee'])
-            ->whereHas('category', function($q) {
-                $q->where('status', 'active');
-            });
+        $recentComplaintsQuery = Complaint::with(['assignedEmployee']);
         $this->filterComplaintsByLocation($recentComplaintsQuery, $user);
         $this->applyFilters($recentComplaintsQuery, $cityId, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId);
         $recentComplaints = $recentComplaintsQuery->orderBy('created_at', 'desc')
@@ -227,10 +224,7 @@ class DashboardController extends Controller
 
         // Get overdue complaints with location filtering and filters
         $overdueComplaintsQuery = Complaint::overdue()
-            ->with(['assignedEmployee'])
-            ->whereHas('category', function($q) {
-                $q->where('status', 'active');
-            });
+            ->with(['assignedEmployee']);
         $this->filterComplaintsByLocation($overdueComplaintsQuery, $user);
         $this->applyFilters($overdueComplaintsQuery, $cityId, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId);
         $overdueComplaints = $overdueComplaintsQuery->orderBy('created_at', 'asc')
@@ -238,9 +232,7 @@ class DashboardController extends Controller
             ->get();
 
         // Get complaints by status with location filtering and filters
-        $complaintsByStatusQuery = Complaint::whereHas('category', function($q) {
-            $q->where('status', 'active');
-        });
+        $complaintsByStatusQuery = Complaint::query();
         $this->filterComplaintsByLocation($complaintsByStatusQuery, $user);
         $this->applyFilters($complaintsByStatusQuery, $cityId, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId);
 
@@ -324,9 +316,7 @@ class DashboardController extends Controller
         $complaintsByCategory = [];
 
         foreach ($allCategories as $cat) {
-            $complaintsByTypeQuery = Complaint::whereHas('category', function($q) {
-                $q->where('status', 'active');
-            });
+            $complaintsByTypeQuery = Complaint::query();
             $this->filterComplaintsByLocation($complaintsByTypeQuery, $user);
             $this->applyFilters($complaintsByTypeQuery, $cityId, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId);
             $count = $complaintsByTypeQuery->where('category_id', $cat->id)->count();
@@ -697,9 +687,7 @@ class DashboardController extends Controller
         $lastMonth = now()->subMonth()->startOfMonth();
 
         // Apply location filtering to queries
-        $complaintsQuery = Complaint::query()->whereHas('category', function($q) {
-            $q->where('status', 'active');
-        });
+        $complaintsQuery = Complaint::query();
         $this->filterComplaintsByLocation($complaintsQuery, $user);
 
         // Apply additional filters
@@ -733,7 +721,7 @@ class DashboardController extends Controller
         return [
             // Complaint statistics with location filtering
             'total_complaints' => (clone $complaintsQuery)->count(),
-            'pending_complaints' => (clone $complaintsQuery)->whereIn('complaints.status', ['assigned', 'in_progress'])->count(),
+            'pending_complaints' => (clone $complaintsQuery)->whereIn('complaints.status', ['new','assigned', 'in_progress'])->count(),
             'in_progress_complaints' => (clone $complaintsQuery)->where('complaints.status', 'in_progress')->count(),
             'addressed_complaints' => (clone $complaintsQuery)->where('complaints.status', 'resolved')->count(),
             'overdue_complaints' => (clone $complaintsQuery)->overdue()->count(),
@@ -800,7 +788,7 @@ class DashboardController extends Controller
      */
     private function getSlaPerformance()
     {
-        $totalComplaints = Complaint::whereHas('category', function($q) { $q->where('status', 'active'); })
+        $totalComplaints = Complaint::query()
             ->where('created_at', '>=', now()->subDays(30))->count();
         $withinSla = 0;
         $breached = 0;
@@ -808,7 +796,7 @@ class DashboardController extends Controller
         if ($totalComplaints > 0) {
             $timeDiff = $this->getTimeDiffInHours('created_at', 'updated_at');
 
-            $withinSla = Complaint::whereHas('category', function($q) { $q->where('status', 'active'); })
+            $withinSla = Complaint::query()
                 ->where('created_at', '>=', now()->subDays(30))
                 ->whereIn('status', ['resolved', 'closed'])
                 ->whereRaw("{$timeDiff} <= COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE category_id = complaints.category_id AND status = 'active'), 999999)")

@@ -140,9 +140,9 @@
           </tr>
         </thead>
         <tbody id="approvalsTableBody">
-          @forelse($approvals as $approval)
+          @forelse($approvals as $complaint)
             @php
-              $complaint = $approval->complaint ?? null;
+              $approval = $complaint->spareApprovals->first();
             @endphp
             @if($complaint)
               @php
@@ -625,7 +625,7 @@
                 <td class="px-1" style="width: 1%; white-space: nowrap;">
                   <div class="d-flex align-items-center" style="gap: 1.5px;">
                     <button type="button" class="btn btn-outline-success btn-sm" title="View Details"
-                      onclick="viewApproval({{ $approval->id }})" style="padding: 1px 3px;">
+                      onclick="{{ $approval ? "viewApproval($approval->id)" : "viewComplaintDetails($complaint->id)" }}" style="padding: 1px 3px;">
                       <i data-feather="eye" style="width: 12px; height: 12px;"></i>
                     </button>
 
@@ -643,15 +643,15 @@
                     @endif
                     @if($complaintStatus == 'resolved' || $complaintStatus == 'closed')
                       <button type="button" class="btn btn-outline-secondary btn-sm add-stock-btn"
-                        title="Stock cannot be issued" data-approval-id="{{ $approval->id }}" data-category="{{ $category }}"
+                        title="Stock cannot be issued" data-approval-id="{{ $approval->id ?? '' }}" data-category="{{ $category }}"
                         disabled style="padding: 1px 3px; cursor: not-allowed; opacity: 1 !important;">
                         <i data-feather="plus-circle" style="width: 12px; height: 12px;"></i>
                       </button>
                     @else
                       <button type="button" class="btn btn-outline-primary btn-sm add-stock-btn"
-                        title="{{ (isset($approval->has_issued_stock) && $approval->has_issued_stock) ? 'Issue More Stock' : 'Issue Stock' }}"
-                        data-approval-id="{{ $approval->id }}" data-category="{{ $category }}"
-                        onclick="openAddStockModal({{ $approval->id }}, '{{ $category }}')"
+                        title="{{ ($complaint->has_issued_stock) ? 'Issue More Stock' : 'Issue Stock' }}"
+                        data-approval-id="{{ $approval->id ?? '' }}" data-category="{{ $category }}"
+                        onclick="{{ $approval ? "openAddStockModal($approval->id, '$category')" : "createApprovalAndOpenStockModal($complaint->id, '$category')" }}"
                         style="padding: 1px 3px; cursor: pointer;">
                         <i data-feather="plus-circle" style="width: 12px; height: 12px;"></i>
                       </button>
@@ -1604,6 +1604,42 @@
     let currentApprovalId = null;
     let isProcessing = false;
     let currentComplaintId = null;
+
+    // Helper to view complaint details when no approval exists
+    function viewComplaintDetails(complaintId) {
+      viewComplaint(complaintId);
+    }
+
+    // Helper to create approval and open stock modal
+    function createApprovalAndOpenStockModal(complaintId, category) {
+        if (isProcessing) return;
+        isProcessing = true;
+
+        fetch(`/admin/complaints/${complaintId}/ensure-approval`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.approval_id) {
+                openAddStockModal(data.approval_id, category);
+                // Optionally refresh the row or part of the table to show the eye icon correctly now
+            } else {
+                alert('Error creating approval record: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to ensure approval record exists.');
+        })
+        .finally(() => {
+            isProcessing = false;
+        });
+    }
 
     // Complaint Functions
     function viewComplaint(complaintId) {

@@ -34,62 +34,16 @@ class ApprovalController extends Controller
         try {
             $user = Auth::user();
 
-            // Automatically create missing approval performas for complaints that don't have them
-            // This ensures all complaints appear in the approval modal
-            // Only create if approval doesn't already exist to avoid duplicates
-            $complaintsWithoutApprovalsQuery = Complaint::query()->whereDoesntHave('spareApprovals');
-            $this->filterComplaintsByLocation($complaintsWithoutApprovalsQuery, $user);
-            $complaintsWithoutApprovals = $complaintsWithoutApprovalsQuery->get();
-            if ($complaintsWithoutApprovals->count() > 0) {
-                $defaultEmployee = Employee::first();
-                if ($defaultEmployee) {
-                    foreach ($complaintsWithoutApprovals as $complaint) {
-                        try {
-                            // Double check if approval doesn't exist (race condition prevention)
-                            $existingApproval = SpareApprovalPerforma::where('complaint_id', $complaint->id)->first();
-                            if ($existingApproval) {
-                                continue; // Skip if approval already exists
-                            }
-
-                            $requestedByEmployee = $complaint->assigned_employee_id
-                                ?Employee::find($complaint->assigned_employee_id)
-                                : $defaultEmployee;
-
-                            if (!$requestedByEmployee) {
-                                $requestedByEmployee = $defaultEmployee;
-                            }
-
-                            SpareApprovalPerforma::create([
-                                'complaint_id' => $complaint->id,
-                                'requested_by' => $requestedByEmployee->id,
-                                'status' => 'pending',
-                                'remarks' => 'Auto-created for existing complaint',
-                            ]);
-                        }
-                        catch (\Exception $e) {
-                            \Log::warning('Failed to create approval performa for complaint: ' . $complaint->id, [
-                                'error' => $e->getMessage()
-                            ]);
-                        }
-                    }
-                }
-            }
-
-            // Start with base query and join complaints table for filtering/ordering
-            // Use distinct to avoid duplicates from joins
-            $query = SpareApprovalPerforma::query()
-                ->join('complaints', 'spare_approval_performa.complaint_id', '=', 'complaints.id')
+            // Start with base query from Complaint model
+            // We want to show complaints that are eligible for approvals
+            $query = Complaint::query()
                 ->leftJoin('houses', 'complaints.house_id', '=', 'houses.id')
                 ->leftJoin('complaint_categories', 'complaints.category_id', '=', 'complaint_categories.id')
-                ->select('spare_approval_performa.*')
+                ->select('complaints.*')
                 ->distinct();
 
-            // Apply location-based filtering through complaint relationship
-            if (!$this->canViewAllData($user)) {
-                $query->whereHas('complaint', function ($q) use ($user) {
-                    $this->filterComplaintsByLocation($q, $user);
-                });
-            }
+            // Apply location-based filtering
+            $this->filterComplaintsByLocation($query, $user);
 
             // Search functionality - by Complaint ID only
             if ($request->has('search') && $request->search) {
@@ -102,7 +56,7 @@ class ApprovalController extends Controller
             // Filter by House No.
             if ($request->has('house_no') && $request->house_no) {
                 $houseNo = trim($request->house_no);
-                $query->whereHas('complaint.house', function ($q) use ($houseNo) {
+                $query->whereHas('house', function ($q) use ($houseNo) {
                     $q->where('house_no', 'like', "%{$houseNo}%");
                 });
             }
@@ -112,7 +66,7 @@ class ApprovalController extends Controller
                 $query->whereDate('complaints.created_at', '>=', $request->complaint_date);
             }
 
-            // Filter by End Date (To Date) - works even when category is not selected
+            // Filter by End Date (To Date)
             if ($request->has('date_to') && $request->date_to) {
                 $query->whereDate('complaints.created_at', '<=', $request->date_to);
             }
@@ -128,19 +82,32 @@ class ApprovalController extends Controller
                 // Check if it's a performa_type filter (prefixed with 'performa_')
                 if (strpos($statusValue, 'performa_') === 0) {
                     $performaType = str_replace('performa_', '', $statusValue);
-                    $query->where('spare_approval_performa.performa_type', $performaType);
+                    $query->whereHas('spareApprovals', function($q) use ($performaType) {
+                        $q->where('performa_type', $performaType);
+                    });
                     // Exclude "Addressed" (resolved) complaints when filtering by performa_type
                     $query->where('complaints.status', '!=', 'resolved');
                 }
                 elseif ($statusValue === 'work_priced_performa') {
-                    // Handle work_priced_performa filter
-                    // Only check for direct status match (waiting_for_authority removed)
                     $query->where('complaints.status', 'work_priced_performa');
                 }
                 elseif ($statusValue === 'maint_priced_performa') {
-                    // Handle maint_priced_performa filter
-                    // Only check for direct status match (waiting_for_authority removed)
                     $query->where('complaints.status', 'maint_priced_performa');
+                }
+                elseif ($statusValue === 'pending') {
+                    $query->whereHas('spareApprovals', function($q) {
+                        $q->where('status', 'pending');
+                    });
+                }
+                elseif ($statusValue === 'approved') {
+                    $query->whereHas('spareApprovals', function($q) {
+                        $q->where('status', 'approved');
+                    });
+                }
+                elseif ($statusValue === 'rejected') {
+                    $query->whereHas('spareApprovals', function($q) {
+                        $q->where('status', 'rejected');
+                    });
                 }
                 else {
                     // Regular status filter
@@ -148,48 +115,44 @@ class ApprovalController extends Controller
                 }
             }
 
-            // Filter by requester or by complaint's assigned employee (using the same requested_by param)
+            // Filter by requester or by complaint's assigned employee
             if ($request->has('requested_by') && $request->requested_by) {
                 $employeeId = $request->requested_by;
                 $query->where(function ($q) use ($employeeId) {
-                    $q->where('spare_approval_performa.requested_by', $employeeId)
-                        ->orWhere('complaints.assigned_employee_id', $employeeId);
+                    $q->whereHas('spareApprovals', function($sq) use ($employeeId) {
+                        $sq->where('requested_by', $employeeId);
+                    })
+                    ->orWhere('complaints.assigned_employee_id', $employeeId);
                 });
             }
 
             // Filter by complaint
             if ($request->has('complaint_id') && $request->complaint_id) {
-                $query->where('spare_approval_performa.complaint_id', $request->complaint_id);
+                $query->where('complaints.id', $request->complaint_id);
             }
 
-            // Filter by date range (for approval creation date) - only if not using complaint date filters
-            if ($request->has('date_from') && $request->date_from && !$request->has('complaint_date') && !$request->has('date_to')) {
-                $query->whereDate('spare_approval_performa.created_at', '>=', $request->date_from);
-            }
-
-            // Order by approval ID (descending) - newest first
-            $query->orderBy('spare_approval_performa.id', 'desc');
+            // Order by complaint ID (descending) - newest first
+            $query->orderBy('complaints.id', 'desc');
 
             $approvals = $query->paginate(15);
 
-            // Reload relationships after join (join may have affected eager loading)
+            // Load relationships
             $approvals->load([
-                'complaint.house',
-                'complaint.assignedEmployee',
-                'complaint.spareParts.spare',
-                'requestedBy',
-                'approvedBy',
-                'items.spare'
+                'house',
+                'assignedEmployee',
+                'spareParts.spare',
+                'spareApprovals.requestedBy',
+                'spareApprovals.approvedBy',
+                'spareApprovals.items.spare'
             ]);
 
-            // Check if each approval has issued stock (query by complaint_id to see job-wide status)
-            foreach ($approvals as $approval) {
-                $hasIssuedStock = $approval->complaint_id
-                    ?\App\Models\SpareStockLog::where('reference_id', $approval->complaint_id)
+
+            // Check if each complaint has issued stock
+            foreach ($approvals as $complaint) {
+                $hasIssuedStock = \App\Models\SpareStockLog::where('reference_id', $complaint->id)
                     ->where('change_type', 'out')
-                    ->exists()
-                    : false;
-                $approval->has_issued_stock = $hasIssuedStock;
+                    ->exists();
+                $complaint->has_issued_stock = $hasIssuedStock;
             }
 
             // Get complaints with location filtering
@@ -1433,4 +1396,64 @@ class ApprovalController extends Controller
             ->with('success', 'Complaint status updated successfully.');
     }
 
+    /**
+     * Ensure an approval record exists for the given complaint
+     */
+    public function ensureApproval(Complaint $complaint)
+    {
+        try {
+            $user = Auth::user();
+
+            // Apply location filter to ensure user has access to this complaint
+            $accessQuery = Complaint::where('id', $complaint->id);
+            $this->filterComplaintsByLocation($accessQuery, $user);
+
+            if (!$accessQuery->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access to this complaint.'
+                ], 403);
+            }
+
+            // Check if approval already exists
+            $approval = $complaint->spareApprovals()->first();
+
+            if (!$approval) {
+                // Create missing approval record
+                $defaultEmployee = Employee::first();
+                if (!$defaultEmployee) {
+                    throw new \Exception('No employee record found to assign as requester.');
+                }
+
+                $requestedByEmployee = $complaint->assigned_employee_id
+                    ? Employee::find($complaint->assigned_employee_id)
+                    : $defaultEmployee;
+
+                if (!$requestedByEmployee) {
+                    $requestedByEmployee = $defaultEmployee;
+                }
+
+                $approval = SpareApprovalPerforma::create([
+                    'complaint_id' => $complaint->id,
+                    'requested_by' => $requestedByEmployee->id,
+                    'status' => 'pending',
+                    'remarks' => 'Created on-the-fly for stock issuance',
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'approval_id' => $approval->id,
+                'message' => 'Approval record ensured successfully.'
+            ]);
+        }
+        catch (\Exception $e) {
+            \Log::error('Error in ensureApproval: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to ensure approval record: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
+

@@ -1162,6 +1162,15 @@
                 style="color:#fff; background:${color}; width: 120px; padding: 0.35rem 0.5rem; border-radius:5px; text-align:center;">${label}</span>`;
         }
 
+        function formatNumberK(num) {
+            if (num === undefined || num === null) return '0';
+            const n = Number(num);
+            if (n >= 1000) {
+                return (n / 1000).toFixed(1) + 'k';
+            }
+            return n.toString();
+        }
+
         function filterComplaintsByStatus(statusKey) {
             if (!statusKey || statusKey === 'all') {
                 return dashboardComplaints;
@@ -1175,87 +1184,104 @@
             return dashboardComplaints.filter(c => c.status === statusKey);
         }
 
-        function renderComplaintsTable(statusKey = 'all', titleText = 'Complaints', toggleView = true, requestedPage = null) {
-            if (!complaintsTableSection || !complaintsTableBody) return;
+        let isLoadingTable = false;
+
+        function renderComplaintsTable(statusKey = 'all', titleText = 'Complaints', toggleView = true, requestedPage = 1) {
+            if (!complaintsTableSection || !complaintsTableBody || isLoadingTable) return;
 
             activeStatusKey = statusKey || 'all';
             complaintsTableSection.dataset.activeStatus = activeStatusKey;
             complaintsTableSection.dataset.activeTitle = titleText;
-
-            if (requestedPage) {
-                currentPage = requestedPage;
-            }
-
-            const records = filterComplaintsByStatus(activeStatusKey);
+            currentPage = requestedPage;
             complaintsTableTitle.textContent = titleText;
-            // Show that table contains a lightweight/sample dataset while totals come from server-side stats
-            const totalForStatus = (function() {
-                if (!activeStatusKey || activeStatusKey === 'all') return serverStats.total_complaints ?? records.length;
-                if (activeStatusKey === 'overdue') return serverStats.overdue_complaints ?? records.filter(r => r.overdue).length;
-                // Fall back to complaintsByStatus map (from server) or client-side sample count
-                return (complaintsByStatus && complaintsByStatus[activeStatusKey] !== undefined) ? complaintsByStatus[activeStatusKey] : records.length;
-            })();
-
-            complaintsTableSubtitle.textContent = `${records.length} of ${totalForStatus} records`;
 
             if (toggleView) {
                 complaintsTableSection.classList.remove('hidden');
                 graphsSection?.classList.add('hidden');
-                
-                // Auto-scroll to the section (helpful for mobile/tablet)
                 setTimeout(() => {
                     complaintsTableSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }, 50);
             }
 
-            if (!records.length) {
-                complaintsTableBody.innerHTML = `<tr><td colspan="10" class="px-3 py-6 text-center text-gray-500">No complaints found for this status.</td></tr>`;
-                updatePagination(0, 0, 0);
-                return;
-            }
+            // Show loading state
+            isLoadingTable = true;
+            complaintsTableBody.innerHTML = `<tr><td colspan="10" class="px-3 py-12 text-center text-gray-500">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600 mb-2"></div>
+                <p>Loading complaints...</p>
+            </td></tr>`;
 
-            const total = records.length;
-            const totalPages = Math.max(1, Math.ceil(total / pageSize));
-            currentPage = Math.min(Math.max(1, currentPage), totalPages);
-            const startIdx = (currentPage - 1) * pageSize;
-            const endIdx = Math.min(startIdx + pageSize, total);
-            const pageRecords = records.slice(startIdx, endIdx);
-            const viewIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>`;
+            // Prepare filters for AJAX request
+            const params = new URLSearchParams(window.location.search);
+            params.set('status', activeStatusKey);
+            params.set('page', currentPage);
+            params.set('ajax_table', '1');
 
-            complaintsTableBody.innerHTML = pageRecords.map(row => {
-                const statusColor = statusBadgeColors[row.status] || '#4b5563';
-                const statusLabel = statusLabelOverrides[row.status] || row.status_label || row.status;
-                const statusBadge = badgeTemplate(statusLabel, statusColor);
-                const cmpValue = row.cmp ?? row.id;
-                // Use a placeholder for the ID and replace it in JS to avoid Blade error for missing required parameter
-                const viewUrl = "{{ route('frontend.complaint.show', ':id') }}".replace(':id', row.id);
+            fetch('{{ route("frontend.dashboard") }}?' + params.toString(), {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                isLoadingTable = false;
+                if (!data || !data.dashboardComplaints) {
+                    complaintsTableBody.innerHTML = `<tr><td colspan="10" class="px-3 py-6 text-center text-gray-500">No complaints found.</td></tr>`;
+                    updatePagination(0, 0, 0);
+                    return;
+                }
 
-                const typeLabel = row.designation && row.designation !== 'N/A'
-                    ? `${row.category} · ${row.designation}`
-                    : row.category;
+                const records = data.dashboardComplaints;
+                const pagination = data.pagination || {};
+                
+                if (!records.length) {
+                    complaintsTableBody.innerHTML = `<tr><td colspan="10" class="px-3 py-6 text-center text-gray-500">No complaints found for this status.</td></tr>`;
+                    updatePagination(0, 0, 0);
+                    return;
+                }
 
-                return `
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-3 py-2 font-semibold text-gray-700">CMP-${String(cmpValue ?? '').padStart(4, '0')}</td>
-                        <td class="px-3 py-2 text-gray-700">${row.created_at ?? '-'}</td>
-                        <td class="px-3 py-2 text-gray-700">${row.closed_at ?? '-'}</td>
-                        <td class="px-3 py-2 text-gray-700">${row.house_no ?? 'N/A'}</td>
-                        <td class="px-3 py-2 text-gray-700">${row.address ?? 'N/A'}</td>
-                        <td class="px-3 py-2 text-gray-700">${typeLabel ?? 'N/A'}</td>
-                        <td class="px-3 py-2 text-center">${statusBadge}</td>
-                        <td class="px-3 py-2 text-center">
-                            <button class="view-complaint-btn inline-flex items-center justify-center px-3 py-1 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded decoration-0"
-                                data-complaint-id="${row.id}">
-                                ${viewIcon}
-                                <span class="sr-only">View</span>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
+                complaintsTableSubtitle.textContent = `Showing ${pagination.from || 0}–${pagination.to || 0} of ${pagination.total || 0} records`;
+                
+                const viewIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>`;
 
-            updatePagination(startIdx + 1, endIdx, total, totalPages);
-            bindViewButtons();
+                complaintsTableBody.innerHTML = records.map(row => {
+                    const statusColor = statusBadgeColors[row.status] || '#4b5563';
+                    const statusLabel = statusLabelOverrides[row.status] || row.status_label || row.status;
+                    const statusBadge = badgeTemplate(statusLabel, statusColor);
+                    const cmpValue = row.cmp ?? row.id;
+
+                    const typeLabel = row.designation && row.designation !== 'N/A'
+                        ? `${row.category} · ${row.designation}`
+                        : row.category;
+
+                    return `
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-3 py-2 font-semibold text-gray-700">CMP-${String(cmpValue ?? '').padStart(4, '0')}</td>
+                            <td class="px-3 py-2 text-gray-700">${row.created_at ?? '-'}</td>
+                            <td class="px-3 py-2 text-gray-700">${row.closed_at ?? '-'}</td>
+                            <td class="px-3 py-2 text-gray-700">${row.house_no ?? 'N/A'}</td>
+                            <td class="px-3 py-2 text-gray-700">${row.address ?? 'N/A'}</td>
+                            <td class="px-3 py-2 text-gray-700">${typeLabel ?? 'N/A'}</td>
+                            <td class="px-3 py-2 text-center">${statusBadge}</td>
+                            <td class="px-3 py-2 text-center">
+                                <button class="view-complaint-btn inline-flex items-center justify-center px-3 py-1 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded decoration-0"
+                                    data-complaint-id="${row.id}">
+                                    ${viewIcon}
+                                    <span class="sr-only">View</span>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                updatePagination(pagination.from, pagination.to, pagination.total, pagination.last_page);
+                bindViewButtons();
+            })
+            .catch(error => {
+                isLoadingTable = false;
+                console.error('Error fetching complaints:', error);
+                complaintsTableBody.innerHTML = `<tr><td colspan="10" class="px-3 py-6 text-center text-danger font-bold">Failed to load complaints.</td></tr>`;
+            });
         }
 
         function updatePagination(start, end, total, totalPages = null) {
@@ -1317,7 +1343,6 @@
             if (!complaintModal || !modalBody) return;
 
             // 1. Show modal IMMEDIATELY with loading state
-            // Use a slight skeleton-like loader or just a spinner for perceived speed
             modalBody.innerHTML = `
                 <div class="p-12 text-center">
                     <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white mb-4"></div>
@@ -1325,7 +1350,6 @@
                 </div>
             `;
             
-            // Hide filters and show blur when modal is open
             document.body.classList.add('modal-open-blur');
             const filtersContainer = document.querySelector('.filters-container');
             if (filtersContainer) {
@@ -1334,7 +1358,6 @@
             const header = document.getElementById('modalTitleHeader');
             if(header) header.style.display = 'none';
 
-            // Show the modal container instantly
             complaintModal.classList.remove('hidden');
             complaintModal.classList.add('flex');
             
@@ -1373,8 +1396,7 @@
             card.addEventListener('click', () => {
                 const statusKey = card.dataset.statusKey || 'all';
                 const titleText = card.dataset.title || 'Complaints';
-                currentPage = 1;
-                renderComplaintsTable(statusKey, titleText, true);
+                renderComplaintsTable(statusKey, titleText, true, 1);
             });
         });
 
@@ -1388,7 +1410,6 @@
                 alert('Please enter a complaint number.');
                 return;
             }
-            // Strip "CMP-" or non-digits to get the integer ID
             const id = rawValue.replace(/\D/g, ''); 
             
             if (!id) {
@@ -1411,18 +1432,13 @@
             const target = e.target;
             if (!(target instanceof HTMLElement)) return;
             const action = target.dataset.page;
-            if (!action) return;
-
-            const records = filterComplaintsByStatus(activeStatusKey || 'all');
-            const totalPages = Math.max(1, Math.ceil((records.length || 0) / pageSize));
+            if (!action || isLoadingTable) return;
 
             if (action === 'prev' && currentPage > 1) {
-                currentPage -= 1;
-            } else if (action === 'next' && currentPage < totalPages) {
-                currentPage += 1;
+                renderComplaintsTable(activeStatusKey, complaintsTableSection.dataset.activeTitle, false, currentPage - 1);
+            } else if (action === 'next') {
+                renderComplaintsTable(activeStatusKey, complaintsTableSection.dataset.activeTitle, false, currentPage + 1);
             }
-
-            renderComplaintsTable(activeStatusKey || 'all', complaintsTableSection?.dataset.activeTitle || 'Complaints', false, currentPage);
         });
 
         // Helper to format numbers with K notation (e.g. 1.2K)
@@ -1432,6 +1448,7 @@
             }
             return value;
         }
+
 
         // Monthly Complaints Chart (Grouped Bar Chart)
         const ctx = document.getElementById('monthlyComplaintsChart').getContext('2d');
@@ -2641,36 +2658,56 @@
         }
 
         function updateStats(stats) {
-            // Update all stat boxes
+            // Update all stat boxes with correct IDs from the blade template
             if (stats.total_complaints !== undefined) {
-                document.getElementById('stat-total-complaints').textContent = stats.total_complaints || 0;
+                const el = document.getElementById('stat-total-complaints');
+                if (el) el.textContent = formatNumberK(stats.total_complaints);
             }
             if (stats.in_progress !== undefined) {
-                document.getElementById('stat-in-progress').textContent = stats.in_progress || 0;
-            }
-            if (stats.addressed !== undefined) {
-                document.getElementById('stat-addressed').textContent = stats.addressed || 0;
-            }
-            if (stats.work_performa !== undefined) {
-                document.getElementById('stat-work-performa').textContent = stats.work_performa || 0;
-            }
-            if (stats.maint_performa !== undefined) {
-                document.getElementById('stat-maint-performa').textContent = stats.maint_performa || 0;
-            }
-            if (stats.un_authorized !== undefined) {
-                document.getElementById('stat-un-authorized').textContent = stats.un_authorized || 0;
-            }
-            if (stats.product !== undefined) {
-                document.getElementById('stat-product').textContent = stats.product || 0;
-            }
-            if (stats.resolution_rate !== undefined) {
-                document.getElementById('stat-resolution-rate').textContent = (stats.resolution_rate || 0) + '%';
-            }
-            if (stats.pertains_to_ge_const_isld !== undefined) {
-                document.getElementById('stat-pertains-ge').textContent = stats.pertains_to_ge_const_isld || 0;
+                const el = document.getElementById('stat-in-progress');
+                if (el) el.textContent = formatNumberK(stats.in_progress);
             }
             if (stats.assigned !== undefined) {
-                document.getElementById('stat-assigned').textContent = stats.assigned || 0;
+                const el = document.getElementById('stat-assigned');
+                if (el) el.textContent = formatNumberK(stats.assigned);
+            }
+            if (stats.addressed !== undefined) {
+                const el = document.getElementById('stat-addressed');
+                if (el) el.textContent = formatNumberK(stats.addressed);
+            }
+            if (stats.overdue_complaints !== undefined) {
+                const el = document.getElementById('stat-overdue-complaints');
+                if (el) el.textContent = formatNumberK(stats.overdue_complaints);
+            }
+            if (stats.work_performa !== undefined) {
+                const el = document.getElementById('stat-work-performa');
+                if (el) el.textContent = formatNumberK(stats.work_performa);
+            }
+            if (stats.maint_performa !== undefined) {
+                const el = document.getElementById('stat-maint-performa');
+                if (el) el.textContent = formatNumberK(stats.maint_performa);
+            }
+            if (stats.un_authorized !== undefined) {
+                const el = document.getElementById('stat-un-authorized');
+                if (el) el.textContent = formatNumberK(stats.un_authorized);
+            }
+            if (stats.product !== undefined) {
+                const el = document.getElementById('stat-product');
+                if (el) el.textContent = formatNumberK(stats.product);
+            }
+            if (stats.pertains_to_ge_const_isld !== undefined) {
+                const el = document.getElementById('stat-pertains-ge');
+                if (el) el.textContent = formatNumberK(stats.pertains_to_ge_const_isld);
+            }
+            if (stats.barak_damages !== undefined) {
+                const el = document.getElementById('stat-barak-damages');
+                if (el) el.textContent = formatNumberK(stats.barak_damages);
+            }
+            
+            // Update Resolution Rate
+            if (stats.resolution_rate !== undefined) {
+                const el = document.getElementById('stat-resolution-rate');
+                if (el) el.textContent = stats.resolution_rate + '%';
             }
         }
 
@@ -2689,14 +2726,14 @@
 
                 const statusKeys = Object.keys(data.complaintsByStatus);
                 const statusLabels = statusKeys.map(key => {
-                    if (statusMap[key] && statusMap[key].label) {
-                        return statusMap[key].label;
+                    if (statusLabelOverrides[key]) {
+                        return statusLabelOverrides[key];
                     }
                     return key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                 });
                 const statusData = Object.values(data.complaintsByStatus);
                 const statusColors = statusKeys.map(key => {
-                    return (statusMap[key] && statusMap[key].color) ? statusMap[key].color : '#64748b';
+                    return statusBadgeColors[key] || '#64748b';
                 });
                 
                 complaintsByStatusChart.data.labels = statusLabels;
@@ -2705,12 +2742,13 @@
                 complaintsByStatusChart.update();
             }
 
-            // Update Resolution Trend Chart
-            if (data.recentEdData && data.resolvedVsEdData && resolutionTrendChart) {
-                resolutionTrendChart.data.datasets[0].data = data.recentEdData;
-                resolutionTrendChart.data.datasets[1].data = data.resolvedVsEdData;
-                resolutionTrendChart.data.labels = data.monthLabels;
-                resolutionTrendChart.data.labels = data.monthLabels;
+            // Update Resolution Trend Chart (Line Chart)
+            if (resolutionTrendChart) {
+                if (data.monthLabels) resolutionTrendChart.data.labels = data.monthLabels;
+                if (data.monthlyComplaints) resolutionTrendChart.data.datasets[0].data = data.monthlyComplaints;
+                if (data.resolvedVsEdData) resolutionTrendChart.data.datasets[1].data = data.resolvedVsEdData;
+                if (data.unauthorizedData) resolutionTrendChart.data.datasets[2].data = data.unauthorizedData;
+                if (data.performaData) resolutionTrendChart.data.datasets[3].data = data.performaData;
                 resolutionTrendChart.update();
             }
 
