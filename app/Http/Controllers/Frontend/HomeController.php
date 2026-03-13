@@ -1078,7 +1078,9 @@ class HomeController extends Controller
             }
         }
 
-        $cmesList = $cmesListQuery->orderBy('name')->get();
+        $cmesList = $cmesListQuery->orderByRaw("CASE WHEN name = 'CMES ISLD/LHR' THEN 0 ELSE 1 END")
+            ->orderBy('name')
+            ->get();
 
         // Get CME Complaint Stats for Graph
         $cmeGraphLabels = [];

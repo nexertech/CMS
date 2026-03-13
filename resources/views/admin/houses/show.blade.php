@@ -16,6 +16,10 @@
             <td class="px-4 py-2 whitespace-nowrap">{{ $house->house_no }}</td>
           </tr>
           <tr>
+            <th>Name</th>
+            <td>{{ $house->name ?: 'N/A' }}</td>
+          </tr>
+          <tr>
             <th>Username</th>
             <td>{{ $house->username }}</td>
           </tr>

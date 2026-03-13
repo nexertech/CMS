@@ -288,7 +288,7 @@ class ApprovalController extends Controller
             }
 
             // Return error view for regular requests
-            return redirect()->route('admin.approvals.index')
+            return redirect()->route('admin.dashboard')
                 ->with('error', 'Error loading approvals: ' . $e->getMessage());
         }
     }

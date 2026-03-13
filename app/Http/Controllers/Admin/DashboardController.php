@@ -396,8 +396,12 @@ class DashboardController extends Controller
                     // Get total complaints for this GE Group (city) with filters applied
                     // Filter by complaint's city_id
                     $totalComplaintsQuery = Complaint::query();
-                    $totalComplaintsQuery->whereHas('house', function ($houseQ) use ($geGroup) {
-                        $houseQ->where('city_id', $geGroup->id);
+                    $totalComplaintsQuery->where(function ($q) use ($geGroup) {
+                        $q->whereHas('house', function ($houseQ) use ($geGroup) {
+                            $houseQ->where('city_id', $geGroup->id);
+                        })->orWhere(function ($cq) use ($geGroup) {
+                            $cq->whereNull('house_id')->where('city_id', $geGroup->id);
+                        });
                     });
 
                     // Apply location filtering based on logged-in user's city_id and sector_id
@@ -407,8 +411,12 @@ class DashboardController extends Controller
                         // User has no city_id and no sector_id - show all data (no filter)
                     } elseif ($user->city_id && !$user->sector_id) {
                         // User has city_id but no sector_id - show only their city's data
-                        $totalComplaintsQuery->whereHas('house', function ($hq) use ($user) {
-                            $hq->where('city_id', $user->city_id);
+                        $totalComplaintsQuery->where(function ($q) use ($user) {
+                            $q->whereHas('house', function ($hq) use ($user) {
+                                $hq->where('city_id', $user->city_id);
+                            })->orWhere(function ($cq) use ($user) {
+                                $cq->whereNull('house_id')->where('city_id', $user->city_id);
+                            });
                         });
                     }
                     // If user has sector_id, they shouldn't see GE Feedback Overview (handled by canSeeAllData check)
@@ -423,8 +431,12 @@ class DashboardController extends Controller
                     // Feedback relationship automatically excludes soft deleted records
                     // When feedback is updated, the existing record is updated (not deleted)
                     $resolvedComplaintsQuery = Complaint::query();
-                    $resolvedComplaintsQuery->whereHas('house', function ($houseQ) use ($geGroup) {
-                        $houseQ->where('city_id', $geGroup->id);
+                    $resolvedComplaintsQuery->where(function ($q) use ($geGroup) {
+                        $q->whereHas('house', function ($houseQ) use ($geGroup) {
+                            $houseQ->where('city_id', $geGroup->id);
+                        })->orWhere(function ($cq) use ($geGroup) {
+                            $cq->whereNull('house_id')->where('city_id', $geGroup->id);
+                        });
                     })
                         ->whereIn('complaints.status', ['resolved', 'closed'])
                         ->with('feedback'); // Load feedback relationship
@@ -436,8 +448,12 @@ class DashboardController extends Controller
                         // User has no city_id and no sector_id - show all data (no filter)
                     } elseif ($user->city_id && !$user->sector_id) {
                         // User has city_id but no sector_id - show only their city's data
-                        $resolvedComplaintsQuery->whereHas('house', function ($hq) use ($user) {
-                            $hq->where('city_id', $user->city_id);
+                        $resolvedComplaintsQuery->where(function ($q) use ($user) {
+                            $q->whereHas('house', function ($hq) use ($user) {
+                                $hq->where('city_id', $user->city_id);
+                            })->orWhere(function ($cq) use ($user) {
+                                $cq->whereNull('house_id')->where('city_id', $user->city_id);
+                            });
                         });
                     }
                     // If user has sector_id, they shouldn't see GE Feedback Overview (handled by canSeeAllData check)
@@ -543,20 +559,37 @@ class DashboardController extends Controller
         // Filter by city - inclusive: check house's city_id OR if its sector belongs to this city
         if ($cityId) {
             $sectorIdsForCity = Sector::where('city_id', $cityId)->pluck('id')->toArray();
-            $query->whereHas('house', function ($q) use ($cityId, $sectorIdsForCity) {
-                $q->where(function ($sub) use ($cityId, $sectorIdsForCity) {
-                    $sub->where('city_id', $cityId);
-                    if (!empty($sectorIdsForCity)) {
-                        $sub->orWhereIn('sector_id', $sectorIdsForCity);
-                    }
+            $query->where(function ($q) use ($cityId, $sectorIdsForCity) {
+                // Match via house
+                $q->whereHas('house', function ($hq) use ($cityId, $sectorIdsForCity) {
+                    $hq->where(function ($sub) use ($cityId, $sectorIdsForCity) {
+                        $sub->where('city_id', $cityId);
+                        if (!empty($sectorIdsForCity)) {
+                            $sub->orWhereIn('sector_id', $sectorIdsForCity);
+                        }
+                    });
+                })
+                // OR Match via direct complaint columns (for house-less complaints)
+                ->orWhere(function ($cq) use ($cityId, $sectorIdsForCity) {
+                    $cq->whereNull('house_id')
+                        ->where(function ($sub) use ($cityId, $sectorIdsForCity) {
+                            $sub->where('city_id', $cityId);
+                            if (!empty($sectorIdsForCity)) {
+                                $sub->orWhereIn('sector_id', $sectorIdsForCity);
+                            }
+                        });
                 });
             });
         }
 
-        // Filter by sector - use house's sector_id
+        // Filter by sector - use house's sector_id or direct sector_id
         if ($sectorId) {
-            $query->whereHas('house', function ($q) use ($sectorId) {
-                $q->where('sector_id', $sectorId);
+            $query->where(function ($q) use ($sectorId) {
+                $q->whereHas('house', function ($hq) use ($sectorId) {
+                    $hq->where('sector_id', $sectorId);
+                })->orWhere(function ($cq) use ($sectorId) {
+                    $cq->whereNull('house_id')->where('sector_id', $sectorId);
+                });
             });
         }
 
@@ -659,14 +692,29 @@ class DashboardController extends Controller
                 $cmeCityIds = City::where('cme_id', $cmesId)->pluck('id')->toArray();
                 $cmeSectorIds = Sector::where('cme_id', $cmesId)->pluck('id')->toArray();
 
-                $query->whereHas('house', function ($q) use ($cmeCityIds, $cmeSectorIds) {
-                    $q->where(function ($sub) use ($cmeCityIds, $cmeSectorIds) {
-                        if (!empty($cmeCityIds)) {
-                            $sub->whereIn('city_id', $cmeCityIds);
-                        }
-                        if (!empty($cmeSectorIds)) {
-                            $sub->orWhereIn('sector_id', $cmeSectorIds);
-                        }
+                $query->where(function ($q) use ($cmeCityIds, $cmeSectorIds) {
+                    // Match via house
+                    $q->whereHas('house', function ($hq) use ($cmeCityIds, $cmeSectorIds) {
+                        $hq->where(function ($sub) use ($cmeCityIds, $cmeSectorIds) {
+                            if (!empty($cmeCityIds)) {
+                                $sub->whereIn('city_id', $cmeCityIds);
+                            }
+                            if (!empty($cmeSectorIds)) {
+                                $sub->orWhereIn('sector_id', $cmeSectorIds);
+                            }
+                        });
+                    })
+                    // OR Match via direct complaint columns (for house-less complaints)
+                    ->orWhere(function ($cq) use ($cmeCityIds, $cmeSectorIds) {
+                        $cq->whereNull('house_id')
+                            ->where(function ($sub) use ($cmeCityIds, $cmeSectorIds) {
+                                if (!empty($cmeCityIds)) {
+                                    $sub->whereIn('city_id', $cmeCityIds);
+                                }
+                                if (!empty($cmeSectorIds)) {
+                                    $sub->orWhereIn('sector_id', $cmeSectorIds);
+                                }
+                            });
                     });
                 });
             } catch (\Exception $e) {

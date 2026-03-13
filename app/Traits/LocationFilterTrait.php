@@ -22,16 +22,28 @@ trait LocationFilterTrait
             return $query;
         }
 
-        // 2. Filter complaints based on the House's location
-        // This is more robust than filtering on complaints table directly
-        return $query->whereHas('house', function ($houseQuery) use ($user) {
-            if ($user->sector_id) {
-                // Restricted to a specific Sector
-                $houseQuery->where('sector_id', $user->sector_id);
-            } elseif ($user->city_id) {
-                // Restricted to a specific City (e.g. GE)
-                $houseQuery->where('city_id', $user->city_id);
-            }
+        $cityId = $user->city_id;
+        $sectorId = $user->sector_id;
+
+        // 2. Inclusive Filtering: Match via House relationship OR direct Complaint location (for house-less complaints)
+        return $query->where(function ($q) use ($cityId, $sectorId) {
+            // Match via House relationship
+            $q->whereHas('house', function ($hq) use ($cityId, $sectorId) {
+                if ($sectorId) {
+                    $hq->where('sector_id', $sectorId);
+                } elseif ($cityId) {
+                    $hq->where('city_id', $cityId);
+                }
+            })
+            // OR Match via direct complaint columns (for complaints without a house)
+            ->orWhere(function ($cq) use ($cityId, $sectorId) {
+                $cq->whereNull('complaints.house_id');
+                if ($sectorId) {
+                    $cq->where('complaints.sector_id', $sectorId);
+                } elseif ($cityId) {
+                    $cq->where('complaints.city_id', $cityId);
+                }
+            });
         });
     }
 

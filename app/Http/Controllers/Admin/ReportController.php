@@ -65,12 +65,27 @@ class ReportController extends Controller
         if ($user && !$this->canViewAllData($user)) {
             $filterApprovals = function ($query) use ($user) {
                 $query->whereHas('complaint', function ($q) use ($user) {
-                    if ($user->city_id) {
-                        $q->where('city_id', $user->city_id);
-                    }
-                    if ($user->sector_id) {
-                        $q->where('sector_id', $user->sector_id);
-                    }
+                    $q->where(function ($sub) use ($user) {
+                        // Match via house
+                        $sub->whereHas('house', function ($hq) use ($user) {
+                            if ($user->city_id) {
+                                $hq->where('city_id', $user->city_id);
+                            }
+                            if ($user->sector_id) {
+                                $hq->where('sector_id', $user->sector_id);
+                            }
+                        })
+                        // OR Match via direct complaint columns (for house-less complaints)
+                        ->orWhere(function ($cq) use ($user) {
+                            $cq->whereNull('house_id');
+                            if ($user->city_id) {
+                                $cq->where('city_id', $user->city_id);
+                            }
+                            if ($user->sector_id) {
+                                $cq->where('sector_id', $user->sector_id);
+                            }
+                        });
+                    });
                 });
             };
             $filterApprovals($approvalsQuery);
@@ -139,13 +154,31 @@ class ReportController extends Controller
             'assignedComplaints' => function ($complaintsQuery) use ($user) {
                 $complaintsQuery->where('complaints.status', 'resolved');
                 // Apply location filter to complaints - using whereHas on the relation
+                // Apply location filter to complaints - using whereHas on the relation
                 if ($user && !$this->canViewAllData($user)) {
-                    if ($user->city_id) {
-                        $complaintsQuery->where('city_id', $user->city_id);
-                    }
-                    if ($user->sector_id) {
-                        $complaintsQuery->where('sector_id', $user->sector_id);
-                    }
+                    $complaintsQuery->where(function ($q) use ($user) {
+                        $q->where(function ($sub) use ($user) {
+                            // Match via house
+                            $sub->whereHas('house', function ($hq) use ($user) {
+                                if ($user->city_id) {
+                                    $hq->where('city_id', $user->city_id);
+                                }
+                                if ($user->sector_id) {
+                                    $hq->where('sector_id', $user->sector_id);
+                                }
+                            })
+                            // OR Match via direct complaint columns (for house-less complaints)
+                            ->orWhere(function ($cq) use ($user) {
+                                $cq->whereNull('house_id');
+                                if ($user->city_id) {
+                                    $cq->where('city_id', $user->city_id);
+                                }
+                                if ($user->sector_id) {
+                                    $cq->where('sector_id', $user->sector_id);
+                                }
+                            });
+                        });
+                    });
                 }
             }
         ])->get();
@@ -179,13 +212,26 @@ class ReportController extends Controller
 
             // Apply location filtering
             if ($user && !$this->canViewAllData($user)) {
-                $query->join('houses', 'complaints.house_id', '=', 'houses.id');
-                if ($user->city_id) {
-                    $query->where('houses.city_id', $user->city_id);
-                }
-                if ($user->sector_id) {
-                    $query->where('houses.sector_id', $user->sector_id);
-                }
+                $query->leftJoin('houses', 'complaints.house_id', '=', 'houses.id');
+                $query->where(function ($q) use ($user) {
+                    $q->where(function ($sub) use ($user) {
+                        $sub->whereNotNull('complaints.house_id');
+                        if ($user->city_id) {
+                            $sub->where('houses.city_id', $user->city_id);
+                        }
+                        if ($user->sector_id) {
+                            $sub->where('houses.sector_id', $user->sector_id);
+                        }
+                    })->orWhere(function ($sub) use ($user) {
+                        $sub->whereNull('complaints.house_id');
+                        if ($user->city_id) {
+                            $sub->where('complaints.city_id', $user->city_id);
+                        }
+                        if ($user->sector_id) {
+                            $sub->where('complaints.sector_id', $user->sector_id);
+                        }
+                    });
+                });
             }
 
             return $query->sum(DB::raw('complaint_spares.quantity * spares.unit_price'));
@@ -201,13 +247,26 @@ class ReportController extends Controller
             // Apply location filtering if approval is linked to complaint
             if ($user && !$this->canViewAllData($user) && Schema::hasColumn('spare_approval_performa', 'complaint_id')) {
                 $query->join('complaints', 'spare_approval_performa.complaint_id', '=', 'complaints.id')
-                      ->join('houses', 'complaints.house_id', '=', 'houses.id');
-                if ($user->city_id) {
-                    $query->where('houses.city_id', $user->city_id);
-                }
-                if ($user->sector_id) {
-                    $query->where('houses.sector_id', $user->sector_id);
-                }
+                      ->leftJoin('houses', 'complaints.house_id', '=', 'houses.id');
+                $query->where(function ($q) use ($user) {
+                    $q->where(function ($sub) use ($user) {
+                        $sub->whereNotNull('complaints.house_id');
+                        if ($user->city_id) {
+                            $sub->where('houses.city_id', $user->city_id);
+                        }
+                        if ($user->sector_id) {
+                            $sub->where('houses.sector_id', $user->sector_id);
+                        }
+                    })->orWhere(function ($sub) use ($user) {
+                        $sub->whereNull('complaints.house_id');
+                        if ($user->city_id) {
+                            $sub->where('complaints.city_id', $user->city_id);
+                        }
+                        if ($user->sector_id) {
+                            $sub->where('complaints.sector_id', $user->sector_id);
+                        }
+                    });
+                });
             }
 
             return $query->sum(DB::raw('COALESCE(spare_approval_items.quantity_approved, 0) * spares.unit_price'));
@@ -256,12 +315,27 @@ class ReportController extends Controller
         if ($user && !$this->canViewAllData($user)) {
             $filterApprovals = function ($query) use ($user) {
                 $query->whereHas('complaint', function ($q) use ($user) {
-                    if ($user->city_id) {
-                        $q->where('city_id', $user->city_id);
-                    }
-                    if ($user->sector_id) {
-                        $q->where('sector_id', $user->sector_id);
-                    }
+                    $q->where(function ($sub) use ($user) {
+                        // Match via house
+                        $sub->whereHas('house', function ($hq) use ($user) {
+                            if ($user->city_id) {
+                                $hq->where('city_id', $user->city_id);
+                            }
+                            if ($user->sector_id) {
+                                $hq->where('sector_id', $user->sector_id);
+                            }
+                        })
+                        // OR Match via direct complaint columns (for house-less complaints)
+                        ->orWhere(function ($cq) use ($user) {
+                            $cq->whereNull('house_id');
+                            if ($user->city_id) {
+                                $cq->where('city_id', $user->city_id);
+                            }
+                            if ($user->sector_id) {
+                                $cq->where('sector_id', $user->sector_id);
+                            }
+                        });
+                    });
                 });
             };
             $filterApprovals($approvalsQuery);
@@ -343,12 +417,27 @@ class ReportController extends Controller
             // Apply location filtering to approvals
             if ($user && !$this->canViewAllData($user)) {
                 $recentApprovalsQuery->whereHas('complaint', function ($q) use ($user) {
-                    if ($user->city_id) {
-                        $q->where('city_id', $user->city_id);
-                    }
-                    if ($user->sector_id) {
-                        $q->where('sector_id', $user->sector_id);
-                    }
+                    $q->where(function ($sub) use ($user) {
+                        // Match via house
+                        $sub->whereHas('house', function ($hq) use ($user) {
+                            if ($user->city_id) {
+                                $hq->where('city_id', $user->city_id);
+                            }
+                            if ($user->sector_id) {
+                                $hq->where('sector_id', $user->sector_id);
+                            }
+                        })
+                        // OR Match via direct complaint columns (for house-less complaints)
+                        ->orWhere(function ($cq) use ($user) {
+                            $cq->whereNull('house_id');
+                            if ($user->city_id) {
+                                $cq->where('city_id', $user->city_id);
+                            }
+                            if ($user->sector_id) {
+                                $cq->where('sector_id', $user->sector_id);
+                            }
+                        });
+                    });
                 });
             }
 

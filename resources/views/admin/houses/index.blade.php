@@ -105,7 +105,7 @@
               <a href="{{ route('admin.houses.edit', $house) }}" class="btn btn-outline-primary btn-sm" title="Edit" style="padding: 3px 8px;">
                 <i data-feather="edit" style="width: 16px; height: 16px;"></i>
               </a>
-              <button class="btn btn-outline-danger btn-sm" onclick="deleteHouse({{ $house->id }})" title="Delete" data-house-id="{{ $house->id }}" style="padding: 3px 8px;">
+              <button class="btn btn-outline-danger btn-sm" onclick="deleteHouse({{ $house->id }}, '{{ $house->house_no }}')" title="Delete" data-house-id="{{ $house->id }}" style="padding: 3px 8px;">
                 <i data-feather="trash-2" style="width: 16px; height: 16px;"></i>
               </button>
             </div>
@@ -295,5 +295,129 @@
       loadHouses();
     }
   });
+
+  // House-specific functions
+  window.viewHouse = function(houseId) {
+    const modalElement = document.getElementById('viewHouseModal');
+    const modalBody = document.getElementById('viewHouseModalBody');
+    
+    // Show loading spinner
+    modalBody.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+    
+    // Add blur effect to background
+    document.body.classList.add('modal-open-blur');
+    
+    const modal = new bootstrap.Modal(modalElement, {
+      backdrop: false,
+      keyboard: true,
+      focus: true
+    });
+    modal.show();
+    
+    // Ensure any backdrop that might be created is removed
+    const removeBackdrop = () => {
+      const backdrops = document.querySelectorAll('.modal-backdrop');
+      backdrops.forEach(backdrop => backdrop.remove());
+    };
+    
+    // Use MutationObserver for safety
+    const observer = new MutationObserver(removeBackdrop);
+    observer.observe(document.body, { childList: true, subtree: true });
+    
+    removeBackdrop();
+    
+    modalElement.addEventListener('hidden.bs.modal', function() {
+      document.body.classList.remove('modal-open-blur');
+      observer.disconnect();
+      removeBackdrop();
+    }, { once: true });
+    
+    fetch(`/admin/houses/${houseId}`, {
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'text/html'
+      }
+    })
+    .then(response => response.text())
+    .then(html => {
+      modalBody.innerHTML = html;
+      feather.replace();
+    })
+    .catch(error => {
+      console.error('Error loading house details:', error);
+      modalBody.innerHTML = '<div class="alert alert-danger">Error loading house details.</div>';
+    });
+  };
+
+  window.deleteHouse = function(houseId, houseNo = '') {
+    const modalElement = document.getElementById('deleteHouseModal');
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+    const idSpan = document.getElementById('houseIdModal');
+    const noSpan = document.getElementById('houseUsernameModal');
+    
+    idSpan.textContent = houseId;
+    if (noSpan) noSpan.textContent = houseNo;
+    
+    // Add blur effect to background
+    document.body.classList.add('modal-open-blur');
+    
+    const modal = new bootstrap.Modal(modalElement, {
+      backdrop: false,
+      keyboard: true,
+      focus: true
+    });
+    modal.show();
+    
+    // Ensure any backdrop that might be created is removed
+    const removeBackdrop = () => {
+      const backdrops = document.querySelectorAll('.modal-backdrop');
+      backdrops.forEach(backdrop => backdrop.remove());
+    };
+    
+    // Use MutationObserver for safety
+    const observer = new MutationObserver(removeBackdrop);
+    observer.observe(document.body, { childList: true, subtree: true });
+    
+    removeBackdrop();
+    
+    modalElement.addEventListener('hidden.bs.modal', function() {
+      document.body.classList.remove('modal-open-blur');
+      observer.disconnect();
+      removeBackdrop();
+    }, { once: true });
+    
+    confirmBtn.onclick = function() {
+      confirmBtn.disabled = true;
+      confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Deleting...';
+      
+      fetch(`/admin/houses/${houseId}`, {
+        method: 'DELETE',
+        headers: {
+          'X-CSRF-TOKEN': '{{ csrf_token() }}',
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          modal.hide();
+          loadHouses(); // Refresh table
+        } else {
+          alert('Error deleting house: ' + data.message);
+          confirmBtn.disabled = false;
+          confirmBtn.innerHTML = '<i data-feather="trash-2" class="me-1"></i>Delete House';
+          feather.replace();
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while deleting the house.');
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = '<i data-feather="trash-2" class="me-1"></i>Delete House';
+        feather.replace();
+      });
+    };
+  };
 </script>
 @endpush
