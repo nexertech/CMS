@@ -22,7 +22,7 @@ class DesignationController extends Controller
 
         $designations = Designation::with('category')->orderBy('id', 'asc')->paginate(15);
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name', 'id')
+            ? ComplaintCategory::where('status', 1)->orderBy('name')->pluck('name', 'id')
             : collect();
         
         return view('admin.designation.index', compact('designations', 'categories'));
@@ -42,7 +42,7 @@ class DesignationController extends Controller
                 'max:100',
                 function ($attribute, $value, $fail) use ($request) {
                     $query = Designation::where('name', $value)
-                        ->where('status', 'active')
+                        ->where('status', 1)
                         ->where('category_id', $request->category_id);
                     
                     if ($query->exists()) {
@@ -50,7 +50,7 @@ class DesignationController extends Controller
                     }
                 }
             ],
-            'status' => 'required|in:active,inactive',
+            'status' => 'required|in:0,1',
         ];
         
         $validated = $request->validate($rules);
@@ -82,7 +82,7 @@ class DesignationController extends Controller
                     'max:100',
                     function ($attribute, $value, $fail) use ($request, $id) {
                         $query = Designation::where('name', $value)
-                            ->where('status', 'active')
+                            ->where('status', 1)
                             ->where('id', '!=', $id)
                             ->where('category_id', $request->category_id);
                         
@@ -92,7 +92,7 @@ class DesignationController extends Controller
                     }
                 ],
                 'description' => 'nullable|string',
-                'status' => 'required|in:active,inactive',
+                'status' => 'required|in:0,1',
             ];
             
             $validated = $request->validate($rules);
@@ -127,7 +127,7 @@ class DesignationController extends Controller
         try {
             $designation = Designation::findOrFail($id);
             $designation->update([
-                'status' => 'inactive'
+                'status' => 0
             ]);
             
             if (request()->ajax() || request()->wantsJson()) {

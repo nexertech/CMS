@@ -65,7 +65,7 @@ class FrontendUserController extends Controller
             ->select('cmes.id', 'cmes.name as cme_name', 'cities.id as city_id', 'cities.name as city_name', 'sectors.id as sector_id', 'sectors.name as sector_name')
             ->leftJoin('cities', 'cmes.id', '=', 'cities.cme_id')
             ->leftJoin('sectors', 'cmes.id', '=', 'sectors.cme_id')
-            ->where('cmes.status', '=', 'active')
+            ->where('cmes.status', '=', 1)
             ->orderBy('cmes.name')
             ->orderBy('cities.name')
             ->orderBy('sectors.name')
@@ -85,7 +85,7 @@ class FrontendUserController extends Controller
             'email' => 'nullable|email|max:150|unique:frontend_users,email',
             'phone' => 'nullable|string|min:11|max:20',
             'password' => 'required|string|min:6|confirmed',
-            'status' => 'required|in:active,inactive',
+            'status' => 'required|in:0,1',
         ]);
 
         if ($validator->fails()) {
@@ -106,9 +106,9 @@ class FrontendUserController extends Controller
         // Handle "Grant all privileges" (Super Admin)
         if ($request->has('is_super_admin') && $request->is_super_admin == 1) {
             // Assign ALL CMEs, Cities, and Sectors
-            $user->cme_ids = DB::table('cmes')->where('status', 'active')->pluck('id')->toArray();
-            $user->group_ids = DB::table('cities')->where('status', 'active')->pluck('id')->toArray();
-            $user->node_ids = DB::table('sectors')->where('status', 'active')->pluck('id')->toArray();
+            $user->cme_ids = DB::table('cmes')->where('status', 1)->pluck('id')->toArray();
+            $user->group_ids = DB::table('cities')->where('status', 1)->pluck('id')->toArray();
+            $user->node_ids = DB::table('sectors')->where('status', 1)->pluck('id')->toArray();
             $user->save();
         }
 
@@ -173,7 +173,7 @@ class FrontendUserController extends Controller
         $cmes = DB::table('cmes')
             ->select('cmes.id', 'cmes.name as cme_name', 'cities.id as city_id', 'cities.name as city_name')
             ->leftJoin('cities', 'cmes.id', '=', 'cities.cme_id')
-            ->where('cmes.status', '=', 'active')
+            ->where('cmes.status', '=', 1)
             ->orderBy('cmes.name')
             ->orderBy('cities.name')
             ->get();
@@ -197,7 +197,7 @@ class FrontendUserController extends Controller
             ->select('cmes.id', 'cmes.name as cme_name', 'cities.id as city_id', 'cities.name as city_name', 'sectors.id as sector_id', 'sectors.name as sector_name')
             ->leftJoin('cities', 'cmes.id', '=', 'cities.cme_id')
             ->leftJoin('sectors', 'cmes.id', '=', 'sectors.cme_id')
-            ->where('cmes.status', '=', 'active')
+            ->where('cmes.status', '=', 1)
             ->orderBy('cmes.name')
             ->orderBy('cities.name')
             ->orderBy('sectors.name')
@@ -208,8 +208,8 @@ class FrontendUserController extends Controller
         $userCityIds = $frontend_user->group_ids ?? [];
 
         // Determine if user is "Super Admin" (has ALL privileges)
-        $totalActiveCmes = DB::table('cmes')->where('status', 'active')->count();
-        $totalActiveCities = DB::table('cities')->where('status', 'active')->count();
+        $totalActiveCmes = DB::table('cmes')->where('status', 1)->count();
+        $totalActiveCities = DB::table('cities')->where('status', 1)->count();
         $isSuperAdmin = (count($userCmeIds) === $totalActiveCmes) && (count($userCityIds) === $totalActiveCities) && ($totalActiveCmes > 0) && ($totalActiveCities > 0);
 
         return view('admin.frontend-users.edit', compact('frontend_user', 'cmes', 'userCmeIds', 'userCityIds', 'isSuperAdmin'));
@@ -226,7 +226,7 @@ class FrontendUserController extends Controller
             'email' => 'nullable|email|max:150|unique:frontend_users,email,' . $frontend_user->id,
             'phone' => 'nullable|string|min:11|max:20',
             'password' => 'nullable|string|min:6|confirmed',
-            'status' => 'required|in:active,inactive',
+            'status' => 'required|in:0,1',
         ]);
 
         if ($validator->fails()) {
@@ -251,8 +251,8 @@ class FrontendUserController extends Controller
             $frontend_user->update($updateData);
 
             // Handle "Grant all privileges" (Super Admin) logic carefully
-            $totalActiveCmes = DB::table('cmes')->where('status', 'active')->count();
-            $totalActiveCities = DB::table('cities')->where('status', 'active')->count();
+            $totalActiveCmes = DB::table('cmes')->where('status', 1)->count();
+            $totalActiveCities = DB::table('cities')->where('status', 1)->count();
             
             $userCmeIds = $frontend_user->cme_ids ?? [];
             $userCityIds = $frontend_user->group_ids ?? [];
@@ -263,9 +263,9 @@ class FrontendUserController extends Controller
 
             if ($request->has('is_super_admin') && $request->is_super_admin == 1) {
                 // Grant ALL CMEs, Cities, and Sectors
-                $frontend_user->cme_ids = DB::table('cmes')->where('status', 'active')->pluck('id')->toArray();
-                $frontend_user->group_ids = DB::table('cities')->where('status', 'active')->pluck('id')->toArray();
-                $frontend_user->node_ids = DB::table('sectors')->where('status', 'active')->pluck('id')->toArray();
+                $frontend_user->cme_ids = DB::table('cmes')->where('status', 1)->pluck('id')->toArray();
+                $frontend_user->group_ids = DB::table('cities')->where('status', 1)->pluck('id')->toArray();
+                $frontend_user->node_ids = DB::table('sectors')->where('status', 1)->pluck('id')->toArray();
                 $frontend_user->save();
             } elseif ($wasSuperAdmin && !$request->has('is_super_admin')) {
                 // Was super admin but now unchecked, so demote (remove all)
@@ -309,10 +309,10 @@ class FrontendUserController extends Controller
     public function toggleStatus(FrontendUser $frontend_user)
     {
         $frontend_user->update([
-            'status' => $frontend_user->status === 'active' ? 'inactive' : 'active'
+            'status' => $frontend_user->status === 1 ? 0 : 1
         ]);
 
-        $status = $frontend_user->status === 'active' ? 'activated' : 'deactivated';
+        $status = $frontend_user->status === 1 ? 'activated' : 'deactivated';
 
         return redirect()->back()
             ->with('success', "Frontend user {$status} successfully.");
@@ -323,9 +323,9 @@ class FrontendUserController extends Controller
      */
     public function getAssignForm(FrontendUser $frontend_user)
     {
-        $cities = City::where('status', 'active')
+        $cities = City::where('status', 1)
             ->with(['cme', 'sectors' => function($query) {
-                $query->where('status', 'active')->orderBy('id', 'asc');
+                $query->where('status', 1)->orderBy('id', 'asc');
             }])
             ->orderBy('id', 'asc')
             ->get();
@@ -357,8 +357,8 @@ class FrontendUserController extends Controller
             'cities' => $citiesData,
             'assignedCityIds' => $assignedCityIds,
             'assignedSectorIds' => $assignedSectorIds,
-            'allCmes' => DB::table('cmes')->where('status', 'active')->select('id', 'name')->orderBy('name')->get(),
-            'allCities' => DB::table('cities')->where('status', 'active')->select('id', 'name', 'cme_id')->orderBy('name')->get(),
+            'allCmes' => DB::table('cmes')->where('status', 1)->select('id', 'name')->orderBy('name')->get(),
+            'allCities' => DB::table('cities')->where('status', 1)->select('id', 'name', 'cme_id')->orderBy('name')->get(),
             'userCmeIds' => $frontend_user->cme_ids ?? [],
             'userCityIds' => $frontend_user->group_ids ?? [],
         ]);

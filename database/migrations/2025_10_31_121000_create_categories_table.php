@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name', 100);
             $table->string('app_name')->nullable();
             $table->text('description')->nullable();
-            $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->tinyInteger('status')->default(1);
             $table->timestamps();
         });
     }

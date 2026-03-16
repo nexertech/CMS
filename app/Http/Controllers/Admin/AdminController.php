@@ -97,7 +97,7 @@ class AdminController extends Controller
             'total_complaints' => Complaint::count(),
             'pending_complaints' => Complaint::pending()->count(),
             'resolved_complaints' => Complaint::completed()->count(),
-            'active_employees' => Employee::where('status', 'active')->count(),
+            'active_employees' => Employee::where('status', 1)->count(),
             'total_spares' => Spare::count(),
             'low_stock_items' => Spare::lowStock()->count(),
             'out_of_stock_items' => Spare::outOfStock()->count(),
@@ -125,7 +125,7 @@ class AdminController extends Controller
      */
     public function getEmployeePerformance()
     {
-        $employees = Employee::where('status', 'active')
+        $employees = Employee::where('status', 1)
             ->get()
             ->map(function($employee) {
                 $metrics = $employee->getPerformanceMetrics();

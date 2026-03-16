@@ -21,7 +21,7 @@ return new class extends Migration
             $table->rememberToken();
             $table->string('email', 150)->nullable()->unique();
             $table->string('phone', 20)->nullable();
-            $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->tinyInteger('status')->default(1);
             $table->json('cme_ids')->nullable();
             $table->json('group_ids')->nullable();
             $table->json('node_ids')->nullable();

@@ -34,7 +34,7 @@ class DashboardController extends Controller
         $cmesId = $request->input('cmes_id');
         $cmesList = collect();
         if (Schema::hasTable('cmes')) {
-            $cmesQuery = Cme::where('status', 'active')->orderBy('name');
+            $cmesQuery = Cme::where('status', 1)->orderBy('name');
             $this->filterCmesByLocation($cmesQuery, $user);
             $cmesList = $cmesQuery->get();
         }
@@ -60,7 +60,7 @@ class DashboardController extends Controller
         if (Schema::hasTable('cities')) {
             if (empty($user->city_ids)) {
                 // User has no city_ids assigned, can see all cities
-                $citiesQuery = City::where('status', 'active')->orderBy('id', 'asc');
+                $citiesQuery = City::where('status', 1)->orderBy('id', 'asc');
                 if ($cmesId) {
                     $citiesQuery->where('cme_id', $cmesId);
                 }
@@ -69,7 +69,7 @@ class DashboardController extends Controller
                 if ($geRole) {
                     foreach ($cities as $city) {
                         $geUsers = User::where('role_id', $geRole->id)
-                            ->where('status', 'active')
+                            ->where('status', 1)
                             ->whereJsonContains('city_ids', (int)$city->id)
                             ->get();
                         $city->setRelation('users', $geUsers);
@@ -77,7 +77,7 @@ class DashboardController extends Controller
                 }
             } elseif (!empty($user->city_ids)) {
                 // User has city_ids assigned, sees only their cities
-                $citiesQuery = City::whereIn('id', $user->city_ids)->where('status', 'active');
+                $citiesQuery = City::whereIn('id', $user->city_ids)->where('status', 1);
                 if ($cmesId) {
                     $citiesQuery->where('cme_id', $cmesId);
                 }
@@ -86,7 +86,7 @@ class DashboardController extends Controller
                 if ($geRole) {
                     foreach ($cities as $city) {
                         $geUsers = User::where('role_id', $geRole->id)
-                            ->where('status', 'active')
+                            ->where('status', 1)
                             ->whereJsonContains('city_ids', (int)$city->id)
                             ->get();
                         $city->setRelation('users', $geUsers);
@@ -98,7 +98,7 @@ class DashboardController extends Controller
         // Get sectors for filter
         $sectors = collect();
         if (Schema::hasTable('sectors')) {
-            $sectorsQuery = Sector::where('status', 'active')->orderBy('id', 'asc');
+            $sectorsQuery = Sector::where('status', 1)->orderBy('id', 'asc');
 
             // Start with user's sector restriction if applicable
             if (!empty($user->sector_ids)) {
@@ -130,7 +130,7 @@ class DashboardController extends Controller
         // Get categories for filter
         $categories = collect();
         if (Schema::hasTable('complaint_categories')) {
-            $categories = ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name');
+            $categories = ComplaintCategory::where('status', 1)->orderBy('name')->pluck('name');
         } else {
             // Fallback: Get from complaints
             $categories = Complaint::select('category')
@@ -310,7 +310,7 @@ class DashboardController extends Controller
         }
 
         // Get complaints by category - using ComplaintCategory model
-        $allCategories = ComplaintCategory::where('status', 'active')->orderBy('name', 'asc')->get();
+        $allCategories = ComplaintCategory::where('status', 1)->orderBy('name', 'asc')->get();
         $complaintsByType = [];
         $complaintsByCategory = [];
 
@@ -369,7 +369,7 @@ class DashboardController extends Controller
         if ($shouldShowGeProgress) {
             if (Schema::hasTable('cities')) {
                 // Base query for cities
-                $geGroupsQuery = City::where('status', 'active');
+                $geGroupsQuery = City::where('status', 1);
                 
                 $effectiveCityId = $cityId ?: null;
                 $effectiveCityIds = empty($user->city_ids) ? [] : $user->city_ids;
@@ -761,7 +761,7 @@ class DashboardController extends Controller
             'barak_damages' => $dashboardStats->barak_damages ?? 0,
 
             'total_users' => User::count(),
-            'active_users' => User::where('status', 'active')->count(),
+            'active_users' => User::where('status', 1)->count(),
             'total_employees' => (clone $employeesQuery)->count(),
 
             'total_spares' => (clone $sparesQuery)->count(),
@@ -769,7 +769,7 @@ class DashboardController extends Controller
             'out_of_stock_items' => (clone $sparesQuery)->outOfStock()->count(),
             'total_spare_value' => (clone $sparesQuery)->sum(DB::raw('stock_quantity * unit_price')),
 
-            'active_sla_rules' => SlaRule::where('status', 'active')->count(),
+            'active_sla_rules' => SlaRule::where('status', 1)->count(),
             'sla_breaches' => $this->getSlaBreaches(),
         ];
     }
@@ -792,7 +792,7 @@ class DashboardController extends Controller
             $withinSla = Complaint::query()
                 ->where('created_at', '>=', now()->subDays(30))
                 ->whereIn('status', ['resolved', 'closed'])
-                ->whereRaw("{$timeDiff} <= COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE category_id = complaints.category_id AND status = 'active'), 999999)")
+                ->whereRaw("{$timeDiff} <= COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE category_id = complaints.category_id AND status = 1), 999999)")
                 ->count();
 
             $breached = $totalComplaints - $withinSla;
@@ -859,7 +859,7 @@ class DashboardController extends Controller
         $timeDiff = $this->getTimeDiffFromNow('created_at');
 
         return Complaint::whereIn('status', ['assigned', 'in_progress'])
-            ->whereRaw("{$timeDiff} > COALESCE((SELECT MIN(max_response_time) FROM sla_rules WHERE category_id = complaints.category_id AND status = 'active'), 999999)")
+            ->whereRaw("{$timeDiff} > COALESCE((SELECT MIN(max_response_time) FROM sla_rules WHERE category_id = complaints.category_id AND status = 1), 999999)")
             ->count();
     }
 
@@ -938,8 +938,8 @@ class DashboardController extends Controller
         $data = Complaint::where('created_at', '>=', now()->subDays($period))
             ->selectRaw("category, 
                 COUNT(*) as total,
-                SUM(CASE WHEN {$timeDiff} <= COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE category_id = complaints.category_id AND status = 'active'), 999999) THEN 1 ELSE 0 END) as within_sla,
-                SUM(CASE WHEN {$timeDiff} > COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE category_id = complaints.category_id AND status = 'active'), 999999) THEN 1 ELSE 0 END) as breached")
+                SUM(CASE WHEN {$timeDiff} <= COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE category_id = complaints.category_id AND status = 1), 999999) THEN 1 ELSE 0 END) as within_sla,
+                SUM(CASE WHEN {$timeDiff} > COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE category_id = complaints.category_id AND status = 1), 999999) THEN 1 ELSE 0 END) as breached")
             ->groupBy('category')
             ->get();
 

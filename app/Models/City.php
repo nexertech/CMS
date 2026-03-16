@@ -16,6 +16,10 @@ class City extends Model
         'status',
     ];
 
+    protected $casts = [
+        'status' => 'integer',
+    ];
+
     /**
      * Get the users for this city.
      * Note: This relationship is broken as users table now uses JSON array city_ids

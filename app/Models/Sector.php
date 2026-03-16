@@ -16,6 +16,10 @@ class Sector extends Model
         'status',
     ];
 
+    protected $casts = [
+        'status' => 'integer',
+    ];
+
     /**
      * Get the city that owns the sector.
      */

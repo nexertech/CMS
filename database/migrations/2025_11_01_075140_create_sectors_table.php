@@ -43,7 +43,7 @@ return new class extends Migration
             // Add city_id column (nullable for existing installations)
             $table->unsignedBigInteger('city_id')->nullable();
             $table->string('name', 100)->unique();
-            $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->tinyInteger('status')->default(1);
             $table->timestamps();
 
             // Performance indexes

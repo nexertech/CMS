@@ -54,8 +54,8 @@
       <div style="min-width: 140px; flex: 0 0 160px;">
         <label class="form-label small mb-1" style="color: #000000 !important; font-weight: 500;">Status</label>
         <select name="status" class="form-select @error('status') is-invalid @enderror" required>
-          <option value="active" {{ old('status') == 'active' ? 'selected' : '' }}>Active</option>
-          <option value="inactive" {{ old('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
+          <option value="1" {{ old('status') == 'active' ? 'selected' : '' }}>Active</option>
+          <option value="0" {{ old('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
         </select>
         @error('status')<div class="invalid-feedback">{{ $message }}</div>@enderror
       </div>
@@ -98,7 +98,7 @@
             <td>{{ $cat->name }}</td>
             <td>{{ $cat->app_name ?? '-' }}</td>
             <td>
-              @if($cat->status === 'active')
+              @if($cat->status === 1)
                 <span class="badge bg-success" style="color: #ffffff !important;">Active</span>
               @else
                 <span class="badge bg-danger" style="color: #ffffff !important;">Inactive</span>
@@ -166,8 +166,8 @@
           <div class="mb-3">
             <label class="form-label">Status</label>
             <select name="status" id="editCategoryStatus" class="form-select" required>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
+              <option value="1">Active</option>
+              <option value="0">Inactive</option>
             </select>
           </div>
           <div class="mb-3">

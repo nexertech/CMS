@@ -16,6 +16,10 @@ class ComplaintCategory extends Model
         'status',
     ];
 
+    protected $casts = [
+        'status' => 'integer',
+    ];
+
     /**
      * Get the SLA rule for the category.
      */

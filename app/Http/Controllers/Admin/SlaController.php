@@ -53,7 +53,7 @@ class SlaController extends Controller
         }
 
         $slaRules = $query->orderBy('created_at', 'desc')->paginate(15);
-        $users = User::where('status', 'active')->get();
+        $users = User::where('status', 1)->get();
 
         return view('admin.sla.index', compact('slaRules', 'users'));
     }
@@ -64,7 +64,7 @@ class SlaController extends Controller
     public function create()
     {
         $loggedInUser = Auth::user();
-        $usersQuery = User::where('status', 'active')->with('role');
+        $usersQuery = User::where('status', 1)->with('role');
         
         // Apply location filtering for users
         if ($loggedInUser && $loggedInUser->role) {
@@ -114,7 +114,7 @@ class SlaController extends Controller
         
         // Fetch categories from database (ComplaintCategory table)
         $complaintTypes = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name', 'id')->toArray()
+            ? ComplaintCategory::where('status', 1)->orderBy('name')->pluck('name', 'id')->toArray()
             : [];
 
         return view('admin.sla.create', compact('users', 'complaintTypes'));
@@ -127,7 +127,7 @@ class SlaController extends Controller
     {
         // Get categories from database
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('id')->toArray()
+            ? ComplaintCategory::where('status', 1)->orderBy('name')->pluck('id')->toArray()
             : [];
         
         $categoryRule = 'required|integer';
@@ -150,7 +150,7 @@ class SlaController extends Controller
             'priority' => 'required|in:low,medium,high,urgent',
             'max_resolution_time' => 'required|integer|min:1',
             'description' => 'nullable|string|max:255',
-            'status' => 'required|in:active,inactive',
+            'status' => 'required|in:0,1',
         ]);
 
         if ($validator->fails()) {
@@ -193,7 +193,7 @@ class SlaController extends Controller
     public function edit(SlaRule $sla)
     {
         $loggedInUser = Auth::user();
-        $usersQuery = User::where('status', 'active')->with('role');
+        $usersQuery = User::where('status', 1)->with('role');
         
         // Apply location filtering for users
         if ($loggedInUser && $loggedInUser->role) {
@@ -243,7 +243,7 @@ class SlaController extends Controller
         
         // Fetch categories from database (ComplaintCategory table)
         $complaintTypes = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name', 'id')->toArray()
+            ? ComplaintCategory::where('status', 1)->orderBy('name')->pluck('name', 'id')->toArray()
             : [];
 
         return view('admin.sla.edit', compact('sla', 'users', 'complaintTypes'));
@@ -256,7 +256,7 @@ class SlaController extends Controller
     {
         // Get categories from database
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('id')->toArray()
+            ? ComplaintCategory::where('status', 1)->orderBy('name')->pluck('id')->toArray()
             : [];
         
         $categoryRule = 'required|integer';
@@ -280,7 +280,7 @@ class SlaController extends Controller
             'priority' => 'required|in:low,medium,high,urgent',
             'max_resolution_time' => 'required|integer|min:1',
             'description' => 'nullable|string|max:255',
-            'status' => 'required|in:active,inactive',
+            'status' => 'required|in:0,1',
         ]);
 
         if ($validator->fails()) {
@@ -319,10 +319,10 @@ class SlaController extends Controller
     public function toggleStatus(SlaRule $sla)
     {
         $sla->update([
-            'status' => $sla->status === 'active' ? 'inactive' : 'active'
+            'status' => $sla->status === 1 ? 0 : 1
         ]);
 
-        $status = $sla->status === 'active' ? 'activated' : 'deactivated';
+        $status = $sla->status === 1 ? 'activated' : 'deactivated';
         
         return redirect()->back()
             ->with('success', "SLA rule {$status} successfully.");
@@ -337,8 +337,8 @@ class SlaController extends Controller
 
         $stats = [
             'total_rules' => SlaRule::count(),
-            'active_rules' => SlaRule::where('status', 'active')->count(),
-            'inactive_rules' => SlaRule::where('status', 'inactive')->count(),
+            'active_rules' => SlaRule::where('status', 1)->count(),
+            'inactive_rules' => SlaRule::where('status', 0)->count(),
             'total_complaints' => Complaint::where('created_at', '>=', now()->subDays($period))->count(),
             'complaints_within_sla' => $this->getComplaintsWithinSla($period),
             'complaints_breached' => $this->getComplaintsBreached($period),
@@ -405,7 +405,7 @@ class SlaController extends Controller
         $performance = [];
         // Fetch categories from database
         $complaintTypes = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name', 'id')->toArray()
+            ? ComplaintCategory::where('status', 1)->orderBy('name')->pluck('name', 'id')->toArray()
             : [];
 
         foreach ($complaintTypes as $categoryId => $label) {
@@ -517,12 +517,12 @@ class SlaController extends Controller
 
         switch ($action) {
             case 'activate':
-                SlaRule::whereIn('id', $slaRuleIds)->update(['status' => 'active']);
+                SlaRule::whereIn('id', $slaRuleIds)->update(['status' => 1]);
                 $message = 'Selected SLA rules activated successfully.';
                 break;
 
             case 'deactivate':
-                SlaRule::whereIn('id', $slaRuleIds)->update(['status' => 'inactive']);
+                SlaRule::whereIn('id', $slaRuleIds)->update(['status' => 0]);
                 $message = 'Selected SLA rules deactivated successfully.';
                 break;
 

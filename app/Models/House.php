@@ -38,6 +38,7 @@ class House extends Authenticatable
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'password_updated_at' => 'datetime',
+        'status' => 'integer',
     ];
 
     /**

@@ -51,8 +51,8 @@
       <label class="form-label small mb-1" style="font-size: 0.8rem; color: #000000 !important; font-weight: 500;">Status</label>
       <select class="form-select" name="status" onchange="submitHousesFilters()" style="font-size: 0.9rem; width: 120px;">
         <option value="" {{ request('status') ? '' : 'selected' }}>All</option>
-        <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active</option>
-        <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
+        <option value="1" {{ request('status') == '1' ? 'selected' : '' }}>Active</option>
+        <option value="0" {{ request('status') == '0' ? 'selected' : '' }}>Inactive</option>
       </select>
     </div>
     <div class="col-auto">
@@ -92,8 +92,8 @@
           <td>{{ $house->sector ? $house->sector->name : 'N/A' }}</td>
           <td>{{ Str::limit($house->address, 30) ?: 'N/A' }}</td>
           <td>
-            <span class="badge {{ $house->status === 'active' ? 'bg-success' : 'bg-danger' }}" style="color: #ffffff !important;">
-              {{ ucfirst($house->status ?? 'inactive') }}
+            <span class="badge {{ $house->status === 1 ? 'bg-success' : 'bg-danger' }}" style="color: #ffffff !important;">
+              {{ ($house->status ? 'Active' : 'Inactive') }}
             </span>
           </td>
           <td>{{ $house->created_at ? $house->created_at->format('M d, Y') : 'N/A' }}</td>

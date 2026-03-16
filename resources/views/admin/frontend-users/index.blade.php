@@ -33,8 +33,8 @@
           <select class="form-select" name="status" onchange="submitFrontendUsersFilters()"
             style="font-size: 0.9rem; width: 120px;">
             <option value="" {{ request('status') ? '' : 'selected' }}>All</option>
-            <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active</option>
-            <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
+            <option value="1" {{ request('status') == '1' ? 'selected' : '' }}>Active</option>
+            <option value="0" {{ request('status') == '0' ? 'selected' : '' }}>Inactive</option>
           </select>
         </div>
         <div class="col-auto">
@@ -78,9 +78,9 @@
               <td>{{ $user->email ?? 'N/A' }}</td>
               <td>{{ $user->phone ?? 'N/A' }}</td>
               <td>
-                <span class="badge {{ $user->status === 'active' ? 'bg-success' : 'bg-danger' }}"
+                <span class="badge {{ $user->status === 1 ? 'bg-success' : 'bg-danger' }}"
                   style="color: #ffffff !important;">
-                  {{ ucfirst($user->status) }}
+                  {{ ($user->status ? 'Active' : 'Inactive') }}
                 </span>
               </td>
               <td>

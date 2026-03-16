@@ -25,7 +25,7 @@ class AppVersionController extends Controller
 
         // Get the latest active update for the platform
         $latestUpdate = AppUpdate::where('platform', $platform)
-            ->where('status', 'active')
+            ->where('status', 1)
             ->orderBy('version_code', 'desc')
             ->first();
 

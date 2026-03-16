@@ -19,7 +19,7 @@ return new class extends Migration
             $table->integer('max_response_time')->comment('In hours');
             $table->integer('max_resolution_time')->comment('In hours');
             $table->unsignedBigInteger('notify_to')->nullable(); // Made nullable based on recent change
-            $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->tinyInteger('status')->default(1);
             $table->timestamps();
         });
     }

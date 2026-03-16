@@ -21,6 +21,10 @@ class SlaRule extends Model
         'status',
     ];
 
+    protected $casts = [
+        'status' => 'integer',
+    ];
+
     /**
      * Get the complaint category.
      */

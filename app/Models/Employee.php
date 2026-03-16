@@ -41,6 +41,7 @@ class Employee extends Model
 
     protected $casts = [
         'date_of_hire' => 'date',
+        'status' => 'integer',
     ];
 
     // Derived name accessor retained for backwards compatibility

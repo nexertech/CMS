@@ -56,8 +56,8 @@ class UserController extends Controller
         $users = $query->orderBy('id', 'asc')->paginate(15);
         $roles = Role::all();
         
-        $totalCities = City::where('status', 'active')->count();
-        $totalSectors = Sector::where('status', 'active')->count();
+        $totalCities = City::where('status', 1)->count();
+        $totalSectors = Sector::where('status', 1)->count();
 
         return view('admin.users.index', compact('users', 'roles', 'totalCities', 'totalSectors'));
     }
@@ -74,7 +74,7 @@ class UserController extends Controller
         $cityIds = $this->getUserCityIds($user);
         $roleName = strtolower($user->role->role_name ?? '');
         
-        $citiesQuery = City::where('status', 'active');
+        $citiesQuery = City::where('status', 1);
         // If user is admin or director, they should see all cities in management forms
         if ($cityIds !== null && !in_array($roleName, ['admin', 'director'])) {
             $citiesQuery->whereIn('id', $cityIds);
@@ -142,7 +142,7 @@ class UserController extends Controller
             'role_id' => 'required|exists:roles,id',
             'city_id' => 'nullable|array',
             'sector_id' => 'nullable|array',
-            'status' => 'required|in:active,inactive',
+            'status' => 'required|in:0,1',
         ]);
 
         if ($validator->fails()) {
@@ -224,7 +224,7 @@ class UserController extends Controller
         $cityIds = $this->getUserCityIds($loggedInUser);
         $roleName = strtolower($loggedInUser->role->role_name ?? '');
         
-        $citiesQuery = City::where('status', 'active');
+        $citiesQuery = City::where('status', 1);
         // If user is admin or director, they should see all cities in management forms
         if ($cityIds !== null && !in_array($roleName, ['admin', 'director'])) {
             $citiesQuery->whereIn('id', $cityIds);
@@ -232,7 +232,7 @@ class UserController extends Controller
         $cities = $citiesQuery->orderBy('id', 'asc')->get();
 
         $sectors = !empty($user->city_ids)
-            ?Sector::whereIn('city_id', $user->city_ids)->where('status', 'active')->orderBy('id', 'asc')->get()
+            ?Sector::whereIn('city_id', $user->city_ids)->where('status', 1)->orderBy('id', 'asc')->get()
             : collect();
 
         $defaultCityId = !empty($loggedInUser->city_ids) ? $loggedInUser->city_ids[0] : null;
@@ -294,7 +294,7 @@ class UserController extends Controller
             'role_id' => 'required|exists:roles,id',
             'city_id' => 'nullable|array',
             'sector_id' => 'nullable|array',
-            'status' => 'required|in:active,inactive',
+            'status' => 'required|in:0,1',
             'theme' => 'nullable|in:auto,light,dark',
         ]);
 
@@ -415,10 +415,10 @@ class UserController extends Controller
     public function toggleStatus(User $user)
     {
         $user->update([
-            'status' => $user->status === 'active' ? 'inactive' : 'active'
+            'status' => $user->status === 1 ? 0 : 1
         ]);
 
-        $status = $user->status === 'active' ? 'activated' : 'deactivated';
+        $status = $user->status === 1 ? 'activated' : 'deactivated';
 
         return redirect()->back()
             ->with('success', "User {$status} successfully.");
@@ -522,12 +522,12 @@ class UserController extends Controller
 
         switch ($action) {
             case 'activate':
-                User::whereIn('id', $userIds)->update(['status' => 'active']);
+                User::whereIn('id', $userIds)->update(['status' => 1]);
                 $message = 'Selected users activated successfully.';
                 break;
 
             case 'deactivate':
-                User::whereIn('id', $userIds)->update(['status' => 'inactive']);
+                User::whereIn('id', $userIds)->update(['status' => 0]);
                 $message = 'Selected users deactivated successfully.';
                 break;
 

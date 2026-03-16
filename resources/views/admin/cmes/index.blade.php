@@ -49,8 +49,8 @@
         <div style="min-width: 160px; flex: 0 0 180px;">
           <label class="form-label small mb-1" style="color: #000000 !important; font-weight: 500;">Status</label>
           <select name="status" class="form-select">
-            <option value="active" {{ old('status','active')==='active'?'selected':'' }}>Active</option>
-            <option value="inactive" {{ old('status')==='inactive'?'selected':'' }}>Inactive</option>
+            <option value="1" {{ old('status', 1)==='active'?'selected':'' }}>Active</option>
+            <option value="0" {{ old('status')==='inactive'?'selected':'' }}>Inactive</option>
           </select>
         </div>
         <div class="d-grid" style="flex: 0 0 140px;">
@@ -81,7 +81,7 @@
               <td>{{ $cme->id }}</td>
               <td>{{ $cme->name }}</td>
               <td>
-                <span class="badge {{ $cme->status==='active' ? 'bg-success' : 'bg-danger' }}" style="color: #ffffff !important;">{{ ucfirst($cme->status) }}</span>
+                <span class="badge {{ $cme->status === 1 ? 'bg-success' : 'bg-danger' }}" style="color: #ffffff !important;">{{ ($cme->status ? 'Active' : 'Inactive') }}</span>
               </td>
               <td>
                 <div class="btn-group" role="group">
@@ -136,8 +136,8 @@
             <div class="mb-3">
               <label class="form-label">Status</label>
               <select name="status" id="editCmeStatus" class="form-select">
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
+                <option value="1">Active</option>
+                <option value="0">Inactive</option>
               </select>
             </div>
           </div>

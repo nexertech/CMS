@@ -117,7 +117,7 @@ class SearchController extends Controller
                         'title' => $user->username,
                         'subtitle' => $user->email,
                         'description' => $user->role->role_name ?? 'No Role',
-                        'status' => $user->status === 'active' ? 'Active' : 'Inactive',
+                        'status' => $user->status === 1 ? 'Active' : 'Inactive',
                         'url' => route('admin.users.show', $user->id),
                         'created_at' => $user->created_at->format('M d, Y')
                     ];
@@ -148,7 +148,7 @@ class SearchController extends Controller
                         'title' => $house->house_no,
                         'subtitle' => $house->name ?? $house->username,
                         'description' => $house->address,
-                        'status' => $house->status === 'active' ? 'Active' : 'Inactive',
+                        'status' => $house->status === 1 ? 'Active' : 'Inactive',
                         'url' => route('admin.houses.show', $house->id),
                         'created_at' => $house->created_at->format('M d, Y')
                     ];
@@ -179,7 +179,7 @@ class SearchController extends Controller
                         'title' => $employee->name ?? 'Unknown',
                         'subtitle' => $employee->designation,
                         'description' => '',
-                        'status' => ($employee->status === 'active') ? 'Active' : 'Inactive',
+                        'status' => ($employee->status === 1) ? 'Active' : 'Inactive',
                         'url' => route('admin.employees.show', $employee->id),
                         'created_at' => $employee->created_at->format('M d, Y')
                     ];

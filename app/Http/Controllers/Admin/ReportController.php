@@ -51,7 +51,7 @@ class ReportController extends Controller
         $this->filterComplaintsByLocation($complaintsQuery, $user);
 
         // Employees with location filtering
-        $employeesQuery = \App\Models\Employee::where('status', 'active');
+        $employeesQuery = \App\Models\Employee::where('status', 1);
         $this->filterEmployeesByLocation($employeesQuery, $user);
 
         // Spares with location filtering
@@ -301,7 +301,7 @@ class ReportController extends Controller
         $complaintsQuery = Complaint::query();
         $this->filterComplaintsByLocation($complaintsQuery, $user);
 
-        $employeesQuery = Employee::where('status', 'active');
+        $employeesQuery = Employee::where('status', 1);
         $this->filterEmployeesByLocation($employeesQuery, $user);
 
         // Spares with location filtering
@@ -544,7 +544,7 @@ class ReportController extends Controller
         $user = Auth::user();
 
         // Get actual categories from ComplaintCategory table - this is the source of truth
-        $actualCategories = \App\Models\ComplaintCategory::where('status', 'active')->orderBy('name')
+        $actualCategories = \App\Models\ComplaintCategory::where('status', 1)->orderBy('name')
             ->pluck('name')
             ->toArray();
 
@@ -657,7 +657,7 @@ class ReportController extends Controller
         }
 
         // Map database categories to their IDs for lookups
-        $categoryNameToId = \App\Models\ComplaintCategory::where('status', 'active')
+        $categoryNameToId = \App\Models\ComplaintCategory::where('status', 1)
             ->pluck('id', 'name')->toArray();
 
         // Process report data structure
@@ -1203,7 +1203,7 @@ class ReportController extends Controller
             'resolved_complaints' => Complaint::whereIn('status', ['resolved', 'closed'])->count(),
             'pending_complaints' => Complaint::pending()->count(),
             'overdue_complaints' => Complaint::overdue()->count(),
-            'total_employees' => Employee::where('status', 'active')->count(),
+            'total_employees' => Employee::where('status', 1)->count(),
             'total_clients' => \App\Models\House::count(),
             'total_spares' => Spare::count(),
             'low_stock_items' => Spare::lowStock()->count(),
@@ -1244,7 +1244,7 @@ class ReportController extends Controller
                 break;
 
             case 'employees':
-                $employeesQuery = Employee::where('status', 'active');
+                $employeesQuery = Employee::where('status', 1);
                 $this->filterEmployeesByLocation($employeesQuery, $user);
                 $data = $employeesQuery->withCount([
                     'assignedComplaints' => function ($q) use ($period, $user) {
@@ -1778,7 +1778,7 @@ class ReportController extends Controller
         $user = Auth::user();
 
         // Get actual categories from ComplaintCategory table
-        $actualCategories = \App\Models\ComplaintCategory::where('status', 'active')->orderBy('name')
+        $actualCategories = \App\Models\ComplaintCategory::where('status', 1)->orderBy('name')
             ->pluck('name')
             ->toArray();
 
@@ -1810,7 +1810,7 @@ class ReportController extends Controller
         $globalResolvedCount = 0;
 
         $cmesId = $request->cmes_id;
-        $categoryNameToId = \App\Models\ComplaintCategory::where('status', 'active')
+        $categoryNameToId = \App\Models\ComplaintCategory::where('status', 1)
             ->pluck('id', 'name')->toArray();
 
         // Optimized SLA data fetch

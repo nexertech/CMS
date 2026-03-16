@@ -15,6 +15,10 @@ class Cme extends Model
         'status',
     ];
 
+    protected $casts = [
+        'status' => 'integer',
+    ];
+
     /**
      * Get the GE groups (cities) that belong to this CMES.
      */

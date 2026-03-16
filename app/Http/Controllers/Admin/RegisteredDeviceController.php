@@ -46,7 +46,7 @@ class RegisteredDeviceController extends Controller
         $user = Auth::user();
         $cityIds = $this->getUserCityIds($user);
         
-        $citiesQuery = City::where('status', 'active');
+        $citiesQuery = City::where('status', 1);
         if ($cityIds !== null) {
             $citiesQuery->whereIn('id', $cityIds);
         }
@@ -59,7 +59,7 @@ class RegisteredDeviceController extends Controller
         $sectors = collect();
         if ($defaultCityId) {
              $sectorIds = $this->getUserSectorIds($user);
-             $sectorsQuery = Sector::where('city_id', $defaultCityId)->where('status', 'active');
+             $sectorsQuery = Sector::where('city_id', $defaultCityId)->where('status', 1);
              if ($sectorIds !== null) {
                  $sectorsQuery->whereIn('id', $sectorIds);
              }
@@ -109,7 +109,7 @@ class RegisteredDeviceController extends Controller
         $sectorIds = $this->getUserSectorIds($user);
 
         // Filter cities
-        $citiesQuery = City::where('status', 'active');
+        $citiesQuery = City::where('status', 1);
         if ($cityIds !== null) {
             $citiesQuery->whereIn('id', $cityIds);
         }
@@ -118,7 +118,7 @@ class RegisteredDeviceController extends Controller
         // Filter sectors for the device's city
         $sectors = collect();
         if ($registeredDevice->city_id) {
-            $sectorsQuery = Sector::where('city_id', $registeredDevice->city_id)->where('status', 'active');
+            $sectorsQuery = Sector::where('city_id', $registeredDevice->city_id)->where('status', 1);
             if ($sectorIds !== null) {
                 $sectorsQuery->whereIn('id', $sectorIds);
             }
@@ -129,7 +129,7 @@ class RegisteredDeviceController extends Controller
         $houses = collect();
         if ($registeredDevice->sector_id) {
             $houses = House::where('sector_id', $registeredDevice->sector_id)
-                ->where('status', 'active')
+                ->where('status', 1)
                 ->orderBy('house_no')
                 ->get();
         }
@@ -192,7 +192,7 @@ class RegisteredDeviceController extends Controller
         }
 
         $houses = House::where('sector_id', $sectorId)
-            ->where('status', 'active')
+            ->where('status', 1)
             ->orderBy('house_no', 'asc')
             ->get(['id', 'house_no', 'name']); // Fetch name if needed for display like "H-101 (Owner Name)"
         

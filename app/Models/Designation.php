@@ -15,6 +15,10 @@ class Designation extends Model
         'status',
     ];
 
+    protected $casts = [
+        'status' => 'integer',
+    ];
+
     public function category()
     {
         return $this->belongsTo(ComplaintCategory::class, 'category_id');

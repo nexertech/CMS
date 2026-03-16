@@ -29,7 +29,7 @@ class HouseAuthController extends Controller
             ], 401);
         }
 
-        if ($house->status !== 'active') {
+        if ($house->status !== 1) {
              return response()->json([
                 'success' => false,
                 'message' => 'Account is inactive'

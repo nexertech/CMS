@@ -29,10 +29,10 @@ class SectorController extends Controller
         // Show all sectors; status column indicates active/inactive
         $sectors = Sector::with(['city.cme'])->orderBy('id', 'asc')->paginate(15);
         $cities = Schema::hasTable('cities')
-            ? City::where('status', 'active')->with('cme')->orderBy('id', 'asc')->get()
+            ? City::where('status', 1)->with('cme')->orderBy('id', 'asc')->get()
             : collect();
         $cmes = Schema::hasTable('cmes')
-            ? Cme::where('status', 'active')->orderBy('name')->get()
+            ? Cme::where('status', 1)->orderBy('name')->get()
             : collect();
 
         return view('admin.sector.index', compact('sectors', 'cities', 'cmes'));
@@ -53,13 +53,13 @@ class SectorController extends Controller
                 }),
             ],
             'name' => 'required|string|max:100',
-            'status' => 'required|in:active,inactive',
+            'status' => 'required|in:0,1',
         ]);
 
         // Check uniqueness: same sector name can exist for different cities
         $exists = Sector::where('name', $request->name)
             ->where('city_id', $request->city_id)
-            ->where('status', 'active')
+            ->where('status', 1)
             ->exists();
 
         if ($exists) {
@@ -89,14 +89,14 @@ class SectorController extends Controller
                     }),
                 ],
                 'name' => 'required|string|max:100',
-                'status' => 'required|in:active,inactive',
+                'status' => 'required|in:0,1',
             ];
 
             // Only validate uniqueness if name changed and check against active sectors only
             if ($request->name !== $sector->name || $request->city_id != $sector->city_id) {
                 $exists = Sector::where('name', $request->name)
                     ->where('city_id', $request->city_id)
-                    ->where('status', 'active')
+                    ->where('status', 1)
                     ->where('id', '!=', $id)
                     ->exists();
 
@@ -132,7 +132,7 @@ class SectorController extends Controller
             $sector = Sector::findOrFail($id);
             // Soft delete without migration: mark as inactive
             $sector->update([
-                'status' => 'inactive'
+                'status' => 0
             ]);
 
             if (request()->ajax() || request()->wantsJson()) {
@@ -169,7 +169,7 @@ class SectorController extends Controller
         $user = auth()->user();
 
         $query = Sector::whereIn('city_id', $cityIds)
-            ->where('status', 'active');
+            ->where('status', 1);
             
         // Apply data isolation if user is logged in
         if ($user) {

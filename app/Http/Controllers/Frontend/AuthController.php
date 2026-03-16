@@ -33,7 +33,7 @@ class AuthController extends Controller
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'role_id' => 2, // default to Employee/standard role if exists
-            'status' => 'active',
+            'status' => 1,
             'theme' => 'light',
         ]);
 
@@ -53,7 +53,7 @@ class AuthController extends Controller
             // Check if user is active
             $user = Auth::guard('frontend')->user();
             
-            if ($user->status !== 'active') {
+            if ($user->status !== 1) {
                 Auth::guard('frontend')->logout();
                 
                 return back()->withErrors([

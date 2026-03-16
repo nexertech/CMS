@@ -42,6 +42,7 @@ class FrontendUser extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'status' => 'integer',
             'cme_ids' => 'array',
             'group_ids' => 'array',
             'node_ids' => 'array',
@@ -62,7 +63,7 @@ class FrontendUser extends Authenticatable
      */
     public function isActive(): bool
     {
-        return $this->status === 'active';
+        return (int) $this->status === 1;
     }
 
     /**

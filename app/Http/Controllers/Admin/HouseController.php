@@ -61,13 +61,13 @@ class HouseController extends Controller
         $cityIds = $this->getUserCityIds($user);
         $sectorIds = $this->getUserSectorIds($user);
 
-        $citiesQuery = City::where('status', 'active');
+        $citiesQuery = City::where('status', 1);
         if ($cityIds !== null) {
             $citiesQuery->whereIn('id', $cityIds);
         }
         $cities = $citiesQuery->orderBy('name')->get();
 
-        $sectorsQuery = Sector::where('status', 'active');
+        $sectorsQuery = Sector::where('status', 1);
         if ($sectorIds !== null) {
             $sectorsQuery->whereIn('id', $sectorIds);
         }
@@ -92,7 +92,7 @@ class HouseController extends Controller
         $user = Auth::user();
         $cityIds = $this->getUserCityIds($user);
 
-        $citiesQuery = City::where('status', 'active');
+        $citiesQuery = City::where('status', 1);
         if ($cityIds !== null) {
             $citiesQuery->whereIn('id', $cityIds);
         }
@@ -118,7 +118,7 @@ class HouseController extends Controller
             'city_id' => 'required|exists:cities,id',
             'sector_id' => 'required|exists:sectors,id',
             'address' => 'nullable|string|max:500',
-            'status' => 'nullable|in:active,inactive',
+            'status' => 'nullable|in:0,1',
             'type' => 'nullable|string|max:100',
         ]);
 
@@ -146,7 +146,7 @@ class HouseController extends Controller
                 'city_id' => $request->city_id,
                 'sector_id' => $request->sector_id,
                 'address' => $request->address,
-                'status' => $request->status ?? 'active',
+                'status' => $request->status ?? 1,
                 'type' => $request->type,
             ]);
 
@@ -211,14 +211,14 @@ class HouseController extends Controller
         $sectorIds = $this->getUserSectorIds($user);
 
         // Filter cities
-        $citiesQuery = City::where('status', 'active');
+        $citiesQuery = City::where('status', 1);
         if ($cityIds !== null) {
             $citiesQuery->whereIn('id', $cityIds);
         }
         $cities = $citiesQuery->orderBy('name')->get();
 
         // Filter sectors
-        $sectorsQuery = Sector::where('status', 'active')->where('city_id', $house->city_id);
+        $sectorsQuery = Sector::where('status', 1)->where('city_id', $house->city_id);
         if ($sectorIds !== null) {
             $sectorsQuery->whereIn('id', $sectorIds);
         }
@@ -241,7 +241,7 @@ class HouseController extends Controller
             'city_id' => 'required|exists:cities,id',
             'sector_id' => 'required|exists:sectors,id',
             'address' => 'nullable|string|max:500',
-            'status' => 'required|in:active,inactive',
+            'status' => 'required|in:0,1',
             'type' => 'nullable|string|max:100',
         ]);
 
@@ -359,7 +359,7 @@ class HouseController extends Controller
         }
 
         $query = Sector::where('city_id', '=', $cityId)
-            ->where('status', '=', 'active');
+            ->where('status', '=', 1);
 
         // Apply data isolation
         $sectorIds = $this->getUserSectorIds($user);

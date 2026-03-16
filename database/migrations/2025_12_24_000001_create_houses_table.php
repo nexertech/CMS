@@ -23,7 +23,7 @@ return new class extends Migration
             $table->unsignedBigInteger('city_id');
             $table->unsignedBigInteger('sector_id');
             $table->text('address')->nullable();
-            $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->tinyInteger('status')->default(1);
             $table->string('type', 100)->nullable();
             $table->timestamps();
             $table->softDeletes();

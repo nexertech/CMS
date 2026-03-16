@@ -24,7 +24,7 @@ class CityController extends Controller
         // Show all cities; status column indicates active/inactive
         $cities = City::with('cme')->orderBy('id', 'asc')->paginate(15);
         $cmes = Schema::hasTable('cmes')
-            ? Cme::where('status', 'active')->orderBy('name')->get()
+            ? Cme::where('status', 1)->orderBy('name')->get()
             : collect();
 
         return view('admin.city.index', compact('cities', 'cmes'));
@@ -38,7 +38,7 @@ class CityController extends Controller
         $validated = $request->validate([
             'cme_id' => 'required|exists:cmes,id',
             'name' => 'required|string|max:100|unique:cities,name,NULL,id,status,active',
-            'status' => 'required|in:active,inactive',
+            'status' => 'required|in:0,1',
         ]);
         City::create($validated);
         return back()->with('success', 'City created');
@@ -56,13 +56,13 @@ class CityController extends Controller
             $rules = [
                 'cme_id' => 'required|exists:cmes,id',
                 'name' => 'required|string|max:100',
-                'status' => 'required|in:active,inactive',
+                'status' => 'required|in:0,1',
             ];
             
             // Only validate uniqueness if name changed and check against active cities only
             if ($request->name !== $city->name) {
                 $exists = City::where('name', $request->name)
-                    ->where('status', 'active')
+                    ->where('status', 1)
                     ->where('id', '!=', $id)
                     ->exists();
                 
@@ -97,7 +97,7 @@ class CityController extends Controller
             $city = City::findOrFail($id);
             // Soft delete without migration: mark as inactive
             $city->update([
-                'status' => 'inactive'
+                'status' => 0
             ]);
             
             if (request()->ajax() || request()->wantsJson()) {

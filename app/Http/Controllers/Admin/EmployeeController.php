@@ -66,7 +66,7 @@ class EmployeeController extends Controller
         // Get categories for filter dropdown from ComplaintCategory table
         $categories = collect();
         if (Schema::hasTable('complaint_categories')) {
-            $categories = ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name', 'id');
+            $categories = ComplaintCategory::where('status', 1)->orderBy('name')->pluck('name', 'id');
         } else {
             // Fallback: Empty collection if table doesn't exist
             $categories = collect();
@@ -86,13 +86,13 @@ class EmployeeController extends Controller
         $user = Auth::user();
 
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name', 'id')
+            ? ComplaintCategory::where('status', 1)->orderBy('name')->pluck('name', 'id')
             : collect();
         
         // Filter cities based on user permissions
         $cityIds = $this->getUserCityIds($user);
         $citiesQuery = Schema::hasTable('cities') 
-            ? City::where('status', 'active')->orderBy('id', 'asc')
+            ? City::where('status', 1)->orderBy('id', 'asc')
             : City::whereRaw('1=0'); // Empty query if table doesn't exist
 
         if ($cityIds !== null) {
@@ -101,7 +101,7 @@ class EmployeeController extends Controller
         $cities = $citiesQuery->get();
         
         $designations = Schema::hasTable('designations')
-            ? Designation::where('status', 'active')->orderBy('name')->get()
+            ? Designation::where('status', 1)->orderBy('name')->get()
             : collect();
             
         $defaultCityId = !empty($user->city_ids) ? $user->city_ids[0] : null;
@@ -139,7 +139,7 @@ class EmployeeController extends Controller
             'address' => 'nullable|string|max:500',
             'city_id' => 'required|exists:cities,id',
             'sector_id' => 'required|exists:sectors,id',
-            'status' => 'nullable|in:active,inactive',
+            'status' => 'nullable|in:0,1',
         ]);
 
         if ($validator->fails()) {
@@ -171,7 +171,7 @@ class EmployeeController extends Controller
                 'address' => $request->address,
                 'city_id' => $request->city_id,
                 'sector_id' => $request->sector_id,
-                'status' => $request->status ?? 'active',
+                'status' => $request->status ?? 1,
             ]);
             Log::info('Employee created successfully with ID: ' . $employee->id);
 
@@ -237,13 +237,13 @@ class EmployeeController extends Controller
         $user = Auth::user();
         
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name', 'id')
+            ? ComplaintCategory::where('status', 1)->orderBy('name')->pluck('name', 'id')
             : collect();
         
         // Filter cities based on user permissions
         $cityIds = $this->getUserCityIds($user);
         $citiesQuery = Schema::hasTable('cities') 
-            ? City::where('status', 'active')->orderBy('id', 'asc')
+            ? City::where('status', 1)->orderBy('id', 'asc')
             : City::whereRaw('1=0');
 
         if ($cityIds !== null) {
@@ -252,7 +252,7 @@ class EmployeeController extends Controller
         $cities = $citiesQuery->get();
         
         $designations = Schema::hasTable('designations')
-            ? Designation::where('status', 'active')->orderBy('name')->get()
+            ? Designation::where('status', 1)->orderBy('name')->get()
             : collect();
         
         return view('admin.employees.edit', compact('employee', 'categories', 'cities', 'designations'));
@@ -276,7 +276,7 @@ class EmployeeController extends Controller
 
         // Get active designations for this category
         $designations = Designation::where('category_id', $categoryId)
-            ->where('status', 'active')
+            ->where('status', 1)
             ->orderBy('name')
             ->get(['id', 'name']);
         
@@ -326,7 +326,7 @@ class EmployeeController extends Controller
         $user = Auth::user();
         
         $query = Sector::where('city_id', '=', $cityId)
-            ->where('status', '=', 'active');
+            ->where('status', '=', 1);
             
         // Apply data isolation
         $sectorIds = $this->getUserSectorIds($user);
@@ -365,7 +365,7 @@ class EmployeeController extends Controller
             'address' => 'nullable|string|max:500',
             'city_id' => 'required|exists:cities,id',
             'sector_id' => 'required|exists:sectors,id',
-            'status' => 'required|in:active,inactive',
+            'status' => 'required|in:0,1',
         ]);
 
         if ($validator->fails()) {
@@ -485,7 +485,7 @@ class EmployeeController extends Controller
     public function toggleStatus(Employee $employee)
     {
         try {
-            $newStatus = $employee->status === 'active' ? 'inactive' : 'active';
+            $newStatus = $employee->status === 1 ? 0 : 1;
             $employee->update(['status' => $newStatus]);
 
             return response()->json([
@@ -542,11 +542,11 @@ class EmployeeController extends Controller
                     $message = 'Selected employees deleted successfully.';
                     break;
                 case 'activate':
-                    $employees->update(['status' => 'active']);
+                    $employees->update(['status' => 1]);
                     $message = 'Selected employees activated successfully.';
                     break;
                 case 'deactivate':
-                    $employees->update(['status' => 'inactive']);
+                    $employees->update(['status' => 0]);
                     $message = 'Selected employees deactivated successfully.';
                     break;
             }

@@ -42,7 +42,7 @@ class User extends Authenticatable
 
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'status' => 'string',
+        'status' => 'integer',
         'city_ids' => 'array',
         'sector_ids' => 'array',
     ];
@@ -119,7 +119,7 @@ class User extends Authenticatable
      */
     public function isActive(): bool
     {
-        return $this->status === 'active';
+        return (int) $this->status === 1;
     }
 
     /**

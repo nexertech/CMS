@@ -33,7 +33,7 @@ class CategoryController extends Controller
             'name' => 'required|string|max:100|unique:complaint_categories,name',
             'app_name' => 'nullable|string|max:100',
             'description' => 'nullable|string',
-            'status' => 'required|in:active,inactive',
+            'status' => 'required|in:0,1',
         ]);
         ComplaintCategory::create($validated);
         return back()->with('success', 'Category created');
@@ -52,7 +52,7 @@ class CategoryController extends Controller
                 'name' => 'required|string|max:100',
                 'app_name' => 'nullable|string|max:100',
                 'description' => 'nullable|string',
-                'status' => 'required|in:active,inactive',
+                'status' => 'required|in:0,1',
             ];
             
             // Only validate uniqueness if name changed

@@ -36,8 +36,8 @@
     <div class="col-6 col-md-3">
       <select class="form-select" name="status" onchange="submitSlaFilters()">
             <option value="" {{ request('status') ? '' : 'selected' }}>All Status</option>
-            <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active</option>
-            <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
+            <option value="1" {{ request('status') == '1' ? 'selected' : '' }}>Active</option>
+            <option value="0" {{ request('status') == '0' ? 'selected' : '' }}>Inactive</option>
           </select>
     </div>
   </div>
@@ -80,8 +80,8 @@
               </td>
           <td >{{ $rule->max_resolution_time ?? 'N/A' }} hours</td>
           <td>
-            <span class="status-badge status-{{ $rule->status ?? 'active' }}" style="color: #ffffff !important;">
-              {{ ucfirst($rule->status ?? 'active') }}
+            <span class="status-badge status-{{ $rule->status ?? 1 }}" style="color: #ffffff !important;">
+              {{ ($rule->status ? 'Active' : 'Inactive') }}
                 </span>
               </td>
           <td >{{ $rule->created_at->format('M d, Y') }}</td>

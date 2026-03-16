@@ -18,7 +18,7 @@ return new class extends Migration
         Schema::create('cmes', function (Blueprint $table) {
             $table->id();
             $table->string('name', 150)->unique();
-            $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->tinyInteger('status')->default(1);
             $table->timestamps();
         });
     }

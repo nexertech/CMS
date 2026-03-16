@@ -402,7 +402,7 @@
             @if($cities && $cities->count() > 0)
               @foreach($cities as $city)
                 @php
-                  $geUser = $city->users->where('role_id', $geRole->id ?? null)->where('status', 'active')->first();
+                  $geUser = $city->users->where('role_id', $geRole->id ?? null)->where('status', 1)->first();
                   $displayName = $city->name;
                   if ($geUser) {
                     if ($geUser->name) {

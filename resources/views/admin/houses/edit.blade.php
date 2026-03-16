@@ -130,8 +130,8 @@
           <label for="status" class="form-label text-white">Status <span class="text-danger">*</span></label>
           <select class="form-select @error('status') is-invalid @enderror" 
                   id="status" name="status" required>
-            <option value="active" {{ old('status', $house->status) == 'active' ? 'selected' : '' }}>Active</option>
-            <option value="inactive" {{ old('status', $house->status) == 'inactive' ? 'selected' : '' }}>Inactive</option>
+            <option value="1" {{ old('status', $house->status) == 'active' ? 'selected' : '' }}>Active</option>
+            <option value="0" {{ old('status', $house->status) == 'inactive' ? 'selected' : '' }}>Inactive</option>
           </select>
           @error('status')
             <div class="invalid-feedback">{{ $message }}</div>

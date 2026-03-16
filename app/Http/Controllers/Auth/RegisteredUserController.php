@@ -46,7 +46,7 @@ class RegisteredUserController extends Controller
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
                 'role_id' => 4, // Default to client role
-                'status' => 'active',
+                'status' => 1,
             ]);
 
             // Log the user creation for debugging

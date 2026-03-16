@@ -31,7 +31,7 @@ class CmeController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:150|unique:cmes,name',
-            'status' => 'required|in:active,inactive',
+            'status' => 'required|in:0,1',
         ]);
 
         Cme::create($validated);
@@ -50,7 +50,7 @@ class CmeController extends Controller
 
             $rules = [
                 'name' => 'required|string|max:150',
-                'status' => 'required|in:active,inactive',
+                'status' => 'required|in:0,1',
             ];
 
             if ($request->name !== $cme->name) {
@@ -91,7 +91,7 @@ class CmeController extends Controller
         try {
             $cme = Cme::findOrFail($id);
             $cme->update([
-                'status' => 'inactive'
+                'status' => 0
             ]);
 
             if (request()->ajax() || request()->wantsJson()) {

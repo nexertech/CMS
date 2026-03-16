@@ -161,14 +161,14 @@ class ApprovalController extends Controller
             $complaints = $complaintsQuery->get();
 
             // Get employees with location filtering
-            $employeesQuery = Employee::query()->where('status', 'active');
+            $employeesQuery = Employee::query()->where('status', 1);
             $this->filterEmployeesByLocation($employeesQuery, $user);
             $employees = $employeesQuery->get();
 
             // Get categories for Nature filter - get from ComplaintCategory table if exists
             if (Schema::hasTable('complaint_categories')) {
                 // Get categories from ComplaintCategory table
-                $categories = ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name');
+                $categories = ComplaintCategory::where('status', 1)->orderBy('name')->pluck('name');
             }
             else {
                 // Fallback: Table doesn't exist or migration pending

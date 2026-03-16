@@ -46,8 +46,8 @@
           <tr>
             <th>Status</th>
             <td>
-              <span class="badge {{ $house->status === 'active' ? 'bg-success' : 'bg-danger' }}">
-                {{ ucfirst($house->status ?? 'inactive') }}
+              <span class="badge {{ $house->status === 1 ? 'bg-success' : 'bg-danger' }}">
+                {{ ($house->status ? 'Active' : 'Inactive') }}
               </span>
             </td>
           </tr>

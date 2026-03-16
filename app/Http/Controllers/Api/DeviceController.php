@@ -66,7 +66,7 @@ class DeviceController extends Controller
 
         // Find the house to get city_id and sector_id
         $house = House::where('house_no', $request->assigned_to_house_no)
-            ->where('status', 'active')
+            ->where('status', 1)
             ->first();
 
         if (!$house) {

@@ -131,12 +131,12 @@ class ComplaintController extends Controller
         $complaints = $query->paginate(12)->withQueryString();
 
         // Filter employees by location
-        $employeesQuery = Employee::where('status', 'active');
+        $employeesQuery = Employee::where('status', 1);
         $this->filterEmployeesByLocation($employeesQuery, $user);
         $employees = $employeesQuery->get();
 
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name', 'id')
+            ? ComplaintCategory::where('status', 1)->orderBy('name')->pluck('name', 'id')
             : collect();
 
         return view('admin.complaints.index', compact('complaints', 'employees', 'categories'));
@@ -148,15 +148,15 @@ class ComplaintController extends Controller
     public function create()
     {
 
-        $employeesQuery = Employee::where('status', 'active')->orderBy('name');
+        $employeesQuery = Employee::where('status', 1)->orderBy('name');
         $this->filterEmployeesByLocation($employeesQuery, Auth::user());
         $employees = $employeesQuery->get();
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name', 'id')
+            ? ComplaintCategory::where('status', 1)->orderBy('name')->pluck('name', 'id')
             : collect();
 
         // Get cities and sectors for dropdowns
-        $citiesQuery = City::where('status', 'active')->orderBy('id', 'asc');
+        $citiesQuery = City::where('status', 1)->orderBy('id', 'asc');
         $userCityIds = $this->getUserCityIds(Auth::user());
         if ($userCityIds !== null) {
             $citiesQuery->whereIn('id', $userCityIds);
@@ -175,7 +175,7 @@ class ComplaintController extends Controller
         }
 
         // Get houses filtered by location
-        $housesQuery = House::where('status', 'active')->orderBy('username');
+        $housesQuery = House::where('status', 1)->orderBy('username');
         $this->filterHousesByLocation($housesQuery, $authUser);
         $houses = $housesQuery->get();
 
@@ -309,17 +309,17 @@ class ComplaintController extends Controller
         }
         $complaint->load(['assignedEmployee', 'city', 'sector']);
 
-        $employeesQuery = Employee::where('status', 'active')->orderBy('name');
+        $employeesQuery = Employee::where('status', 1)->orderBy('name');
 
         $this->filterEmployeesByLocation($employeesQuery, Auth::user());
         $employees = $employeesQuery->get();
 
         $categories = Schema::hasTable('complaint_categories')
-            ? ComplaintCategory::where('status', 'active')->orderBy('name')->pluck('name', 'id')
+            ? ComplaintCategory::where('status', 1)->orderBy('name')->pluck('name', 'id')
             : collect();
 
         // Get cities and sectors for dropdowns
-        $citiesQuery = City::where('status', 'active')->orderBy('id', 'asc');
+        $citiesQuery = City::where('status', 1)->orderBy('id', 'asc');
         $userCityIds = $this->getUserCityIds(Auth::user());
         if ($userCityIds !== null) {
             $citiesQuery->whereIn('id', $userCityIds);
@@ -331,7 +331,7 @@ class ComplaintController extends Controller
         $complaintCityId = $complaint->city_id ?? $complaint->house?->city_id;
         if ($complaintCityId) {
             $sectors = Sector::where('city_id', $complaintCityId)
-                ->where('status', 'active')
+                ->where('status', 1)
                 ->orderBy('name')
                 ->get();
         }
@@ -340,7 +340,7 @@ class ComplaintController extends Controller
         $defaultSectorId = $complaint->sector_id ?? $complaint->house?->sector_id ?? (!empty(Auth::user()->sector_ids) ? Auth::user()->sector_ids[0] : null);
 
         // Get houses filtered by location
-        $housesQuery = House::where('status', 'active')->orderBy('username');
+        $housesQuery = House::where('status', 1)->orderBy('username');
         $this->filterHousesByLocation($housesQuery, Auth::user());
         $houses = $housesQuery->get();
 

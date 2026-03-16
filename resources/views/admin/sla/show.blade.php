@@ -16,9 +16,9 @@
         </a>
         <form action="{{ route('admin.sla.toggle-status', $sla) }}" method="POST" class="d-inline">
           @csrf
-          <button type="submit" class="btn btn-{{ $sla->status === 'active' ? 'outline-warning' : 'outline-success' }}">
-            <i data-feather="{{ $sla->status === 'active' ? 'pause' : 'play' }}" class="me-2"></i>
-            {{ $sla->status === 'active' ? 'Deactivate' : 'Activate' }}
+          <button type="submit" class="btn btn-{{ $sla->status === 1 ? 'outline-warning' : 'outline-success' }}">
+            <i data-feather="{{ $sla->status === 1 ? 'pause' : 'play' }}" class="me-2"></i>
+            {{ $sla->status === 1 ? 'Deactivate' : 'Activate' }}
           </button>
         </form>
       </div>
@@ -95,9 +95,9 @@
               <div class="text-muted small mb-1"
                 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Status</div>
               <div>
-                <span class="badge bg-{{ $sla->status === 'active' ? 'success' : 'danger' }}"
+                <span class="badge bg-{{ $sla->status === 1 ? 'success' : 'danger' }}"
                   style="font-size: 0.85rem; padding: 6px 12px; color: #ffffff !important;">
-                  {{ ucfirst($sla->status) }}
+                  {{ ($sla->status ? 'Active' : 'Inactive') }}
                 </span>
               </div>
             </div>

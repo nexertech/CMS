@@ -71,7 +71,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('cme_id')->nullable();
             $table->string('name', 100)->unique();
-            $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->tinyInteger('status')->default(1);
             $table->timestamps();
 
             // Performance indexes

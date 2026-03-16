@@ -22,7 +22,7 @@ return new class extends Migration
             $table->unsignedBigInteger('role_id')->nullable();
             $table->json('city_ids')->nullable();
             $table->json('sector_ids')->nullable();
-            $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->tinyInteger('status')->default(1);
             $table->string('theme', 10)->default('auto');
             $table->timestamps();
         });

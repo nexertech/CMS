@@ -107,7 +107,7 @@ class HomeController extends Controller
         // 2. CME-based check (if they have all CMEs assigned, they are global)
         $hasAllCmes = false;
         if (!empty($cmeIds)) {
-            $totalCmes = \App\Models\Cme::where('status', 'active')->count();
+            $totalCmes = \App\Models\Cme::where('status', 1)->count();
             if (count($cmeIds) >= $totalCmes) {
                 $hasAllCmes = true;
             }
@@ -466,7 +466,7 @@ class HomeController extends Controller
                 ->orWhere('name', 'LIKE', '%ge%')
                 ->orWhere('name', 'LIKE', '%age%');
         })
-            ->where('status', 'active');
+            ->where('status', 1);
 
         // If CMES selected, restrict GE groups to that CMES
         if ($cmesId) {
@@ -484,7 +484,7 @@ class HomeController extends Controller
 
         $geGroups = $geGroupsQuery->orderBy('name')->get();
 
-        $geNodesQuery = Sector::where('status', 'active');
+        $geNodesQuery = Sector::where('status', 1);
 
         // If CMES selected, show only nodes belonging to cities of that CMES
         if ($cmesId) {
@@ -520,7 +520,7 @@ class HomeController extends Controller
         $geNodes = $geNodesQuery->orderBy('name')->get();
 
 
-        $categories = ComplaintCategory::where('status', 'active')->get();
+        $categories = ComplaintCategory::where('status', 1)->get();
 
         // Get all statuses from database (same as admin side)
         $statuses = [
@@ -673,7 +673,7 @@ class HomeController extends Controller
                     EXISTS(
                         SELECT 1 FROM sla_rules 
                         WHERE sla_rules.category_id = complaints.category_id
-                        AND sla_rules.status = 'active'
+                        AND sla_rules.status = 1
                         AND sla_rules.deleted_at IS NULL
                         AND complaints.created_at < DATE_SUB(NOW(), INTERVAL sla_rules.max_resolution_time HOUR)
                     )
@@ -1043,7 +1043,7 @@ class HomeController extends Controller
         ];
 
         // Fetch CMES list for dropdown - filter based on user privileges
-        $cmesListQuery = \App\Models\Cme::where('status', 'active');
+        $cmesListQuery = \App\Models\Cme::where('status', 1);
 
         // Apply CMES filtering based on user privileges
         if ($user && !empty($user->cme_ids)) {
@@ -1107,7 +1107,7 @@ class HomeController extends Controller
             // Check if user has all CMEs assigned
             $hasAllCmes = false;
             if (!empty($user->cme_ids)) {
-                $totalCmes = \App\Models\Cme::where('status', 'active')->count();
+                $totalCmes = \App\Models\Cme::where('status', 1)->count();
                 $userCmesCount = count($user->cme_ids);
                 $hasAllCmes = ($userCmesCount >= $totalCmes);
             }
@@ -1123,7 +1123,7 @@ class HomeController extends Controller
                     $q->where('name', 'LIKE', '%GE%')
                         ->orWhere('name', 'LIKE', '%AGE%');
                 })
-                ->where('status', 'active')
+                ->where('status', 1)
                 ->orderBy('name')
                 ->get();
 
@@ -1152,7 +1152,7 @@ class HomeController extends Controller
         } elseif (!$hasUnrestrictedAccess && $user && !empty($user->group_ids)) {
             // GE User: Show all GE Nodes (sectors) under their assigned GE Groups
             $geNodesForGroup = \App\Models\Sector::whereIn('city_id', $user->group_ids)
-                ->where('status', 'active')
+                ->where('status', 1)
                 ->orderBy('name')
                 ->get();
 
@@ -1181,7 +1181,7 @@ class HomeController extends Controller
         } elseif (!$hasUnrestrictedAccess && $user && !empty($user->node_ids)) {
             // Node User: Show only their assigned GE Nodes (sectors)
             $userNodes = \App\Models\Sector::whereIn('id', $user->node_ids)
-                ->where('status', 'active')
+                ->where('status', 1)
                 ->orderBy('name')
                 ->get();
 
@@ -2053,7 +2053,7 @@ class HomeController extends Controller
         }
 
         $query = \App\Models\City::where('cme_id', $cmeId)
-            ->where('status', 'active')
+            ->where('status', 1)
             ->where(function ($q) {
                 $q->where('name', 'LIKE', '%GE%')
                     ->orWhere('name', 'LIKE', '%AGE%')
@@ -2089,7 +2089,7 @@ class HomeController extends Controller
         }
 
         $query = \App\Models\Sector::where('city_id', $cityId)
-            ->where('status', 'active');
+            ->where('status', 1);
 
         // Apply privileges
         if (!empty($locationScope['restricted'])) {

@@ -329,7 +329,7 @@ class Complaint extends Model
 
         $slaRule = $this->slaRule;
 
-        if ($slaRule && $slaRule->status === 'active') {
+        if ($slaRule && $slaRule->status === 1) {
             return $this->created_at->addHours($slaRule->max_resolution_time)->isPast();
         }
 
@@ -359,7 +359,7 @@ class Complaint extends Model
     {
         $slaRule = $this->slaRule;
 
-        if (!$slaRule || $slaRule->status !== 'active') {
+        if (!$slaRule || $slaRule->status !== 1) {
             return false;
         }
 
@@ -373,7 +373,7 @@ class Complaint extends Model
     {
         $slaRule = $this->slaRule;
 
-        if (!$slaRule || $slaRule->status !== 'active') {
+        if (!$slaRule || $slaRule->status !== 1) {
             return 0;
         }
 
@@ -611,7 +611,7 @@ class Complaint extends Model
         return $query->whereIn('complaints.status', ['new', 'assigned', 'in_progress'])
             ->join('sla_rules', function ($join) {
                 $join->on('complaints.category_id', '=', 'sla_rules.category_id')
-                    ->where('sla_rules.status', '=', 'active')
+                    ->where('sla_rules.status', '=', 1)
                     ->whereNull('sla_rules.deleted_at');
             })
             ->whereRaw('complaints.created_at < DATE_SUB(NOW(), INTERVAL sla_rules.max_resolution_time HOUR)')

@@ -126,10 +126,10 @@
           <div class="flex-grow-1">
             <div class="text-muted small mb-1" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Status</div>
             <div>
-              <span class="badge {{ $employee->status === 'active' ? 'bg-success' : 'bg-danger' }}" style="font-size: 0.85rem; padding: 6px 12px; color: #ffffff !important;">
-                {{ ucfirst($employee->status ?? 'inactive') }}
+              <span class="badge {{ $employee->status === 1 ? 'bg-success' : 'bg-danger' }}" style="font-size: 0.85rem; padding: 6px 12px; color: #ffffff !important;">
+                {{ ($employee->status ? 'Active' : 'Inactive') }}
               </span>
-              @if($employee->status === 'inactive' && $employee->updated_at)
+              @if($employee->status === 0 && $employee->updated_at)
                 <span class="text-muted ms-2 small" style="font-size: 0.8rem;">
                   (Since: {{ $employee->updated_at->setTimezone('Asia/Karachi')->format('M d, Y') }})
                 </span>
