@@ -104,8 +104,8 @@ class EmployeeController extends Controller
             ? Designation::where('status', 'active')->orderBy('name')->get()
             : collect();
             
-        $defaultCityId = $user->city_id;
-        $defaultSectorId = $user->sector_id;
+        $defaultCityId = !empty($user->city_ids) ? $user->city_ids[0] : null;
+        $defaultSectorId = !empty($user->sector_ids) ? $user->sector_ids[0] : null;
         
         $response = response()->view('admin.employees.create', compact('categories', 'cities', 'designations', 'defaultCityId', 'defaultSectorId'));
         

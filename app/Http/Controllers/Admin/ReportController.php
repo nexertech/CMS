@@ -68,21 +68,21 @@ class ReportController extends Controller
                     $q->where(function ($sub) use ($user) {
                         // Match via house
                         $sub->whereHas('house', function ($hq) use ($user) {
-                            if ($user->city_id) {
-                                $hq->where('city_id', $user->city_id);
+                            if (!empty($user->city_ids)) {
+                                $hq->whereIn('city_id', $user->city_ids);
                             }
-                            if ($user->sector_id) {
-                                $hq->where('sector_id', $user->sector_id);
+                            if (!empty($user->sector_ids)) {
+                                $hq->whereIn('sector_id', $user->sector_ids);
                             }
                         })
                         // OR Match via direct complaint columns (for house-less complaints)
                         ->orWhere(function ($cq) use ($user) {
                             $cq->whereNull('house_id');
-                            if ($user->city_id) {
-                                $cq->where('city_id', $user->city_id);
+                            if (!empty($user->city_ids)) {
+                                $cq->whereIn('city_id', $user->city_ids);
                             }
-                            if ($user->sector_id) {
-                                $cq->where('sector_id', $user->sector_id);
+                            if (!empty($user->sector_ids)) {
+                                $cq->whereIn('sector_id', $user->sector_ids);
                             }
                         });
                     });
@@ -160,21 +160,21 @@ class ReportController extends Controller
                         $q->where(function ($sub) use ($user) {
                             // Match via house
                             $sub->whereHas('house', function ($hq) use ($user) {
-                                if ($user->city_id) {
-                                    $hq->where('city_id', $user->city_id);
+                                if (!empty($user->city_ids)) {
+                                    $hq->whereIn('city_id', $user->city_ids);
                                 }
-                                if ($user->sector_id) {
-                                    $hq->where('sector_id', $user->sector_id);
+                                if (!empty($user->sector_ids)) {
+                                    $hq->whereIn('sector_id', $user->sector_ids);
                                 }
                             })
                             // OR Match via direct complaint columns (for house-less complaints)
                             ->orWhere(function ($cq) use ($user) {
                                 $cq->whereNull('house_id');
-                                if ($user->city_id) {
-                                    $cq->where('city_id', $user->city_id);
+                                if (!empty($user->city_ids)) {
+                                    $cq->whereIn('city_id', $user->city_ids);
                                 }
-                                if ($user->sector_id) {
-                                    $cq->where('sector_id', $user->sector_id);
+                                if (!empty($user->sector_ids)) {
+                                    $cq->whereIn('sector_id', $user->sector_ids);
                                 }
                             });
                         });
@@ -216,19 +216,19 @@ class ReportController extends Controller
                 $query->where(function ($q) use ($user) {
                     $q->where(function ($sub) use ($user) {
                         $sub->whereNotNull('complaints.house_id');
-                        if ($user->city_id) {
-                            $sub->where('houses.city_id', $user->city_id);
+                        if (!empty($user->city_ids)) {
+                            $sub->whereIn('houses.city_id', $user->city_ids);
                         }
-                        if ($user->sector_id) {
-                            $sub->where('houses.sector_id', $user->sector_id);
+                        if (!empty($user->sector_ids)) {
+                            $sub->whereIn('houses.sector_id', $user->sector_ids);
                         }
                     })->orWhere(function ($sub) use ($user) {
                         $sub->whereNull('complaints.house_id');
-                        if ($user->city_id) {
-                            $sub->where('complaints.city_id', $user->city_id);
+                        if (!empty($user->city_ids)) {
+                            $sub->whereIn('complaints.city_id', $user->city_ids);
                         }
-                        if ($user->sector_id) {
-                            $sub->where('complaints.sector_id', $user->sector_id);
+                        if (!empty($user->sector_ids)) {
+                            $sub->whereIn('complaints.sector_id', $user->sector_ids);
                         }
                     });
                 });
@@ -251,19 +251,19 @@ class ReportController extends Controller
                 $query->where(function ($q) use ($user) {
                     $q->where(function ($sub) use ($user) {
                         $sub->whereNotNull('complaints.house_id');
-                        if ($user->city_id) {
-                            $sub->where('houses.city_id', $user->city_id);
+                        if (!empty($user->city_ids)) {
+                            $sub->whereIn('houses.city_id', $user->city_ids);
                         }
-                        if ($user->sector_id) {
-                            $sub->where('houses.sector_id', $user->sector_id);
+                        if (!empty($user->sector_ids)) {
+                            $sub->whereIn('houses.sector_id', $user->sector_ids);
                         }
                     })->orWhere(function ($sub) use ($user) {
                         $sub->whereNull('complaints.house_id');
-                        if ($user->city_id) {
-                            $sub->where('complaints.city_id', $user->city_id);
+                        if (!empty($user->city_ids)) {
+                            $sub->whereIn('complaints.city_id', $user->city_ids);
                         }
-                        if ($user->sector_id) {
-                            $sub->where('complaints.sector_id', $user->sector_id);
+                        if (!empty($user->sector_ids)) {
+                            $sub->whereIn('complaints.sector_id', $user->sector_ids);
                         }
                     });
                 });
@@ -318,21 +318,21 @@ class ReportController extends Controller
                     $q->where(function ($sub) use ($user) {
                         // Match via house
                         $sub->whereHas('house', function ($hq) use ($user) {
-                            if ($user->city_id) {
-                                $hq->where('city_id', $user->city_id);
+                            if (!empty($user->city_ids)) {
+                                $hq->whereIn('city_id', $user->city_ids);
                             }
-                            if ($user->sector_id) {
-                                $hq->where('sector_id', $user->sector_id);
+                            if (!empty($user->sector_ids)) {
+                                $hq->whereIn('sector_id', $user->sector_ids);
                             }
                         })
                         // OR Match via direct complaint columns (for house-less complaints)
                         ->orWhere(function ($cq) use ($user) {
                             $cq->whereNull('house_id');
-                            if ($user->city_id) {
-                                $cq->where('city_id', $user->city_id);
+                            if (!empty($user->city_ids)) {
+                                $cq->whereIn('city_id', $user->city_ids);
                             }
-                            if ($user->sector_id) {
-                                $cq->where('sector_id', $user->sector_id);
+                            if (!empty($user->sector_ids)) {
+                                $cq->whereIn('sector_id', $user->sector_ids);
                             }
                         });
                     });
@@ -420,21 +420,21 @@ class ReportController extends Controller
                     $q->where(function ($sub) use ($user) {
                         // Match via house
                         $sub->whereHas('house', function ($hq) use ($user) {
-                            if ($user->city_id) {
-                                $hq->where('city_id', $user->city_id);
+                            if (!empty($user->city_ids)) {
+                                $hq->whereIn('city_id', $user->city_ids);
                             }
-                            if ($user->sector_id) {
-                                $hq->where('sector_id', $user->sector_id);
+                            if (!empty($user->sector_ids)) {
+                                $hq->whereIn('sector_id', $user->sector_ids);
                             }
                         })
                         // OR Match via direct complaint columns (for house-less complaints)
                         ->orWhere(function ($cq) use ($user) {
                             $cq->whereNull('house_id');
-                            if ($user->city_id) {
-                                $cq->where('city_id', $user->city_id);
+                            if (!empty($user->city_ids)) {
+                                $cq->whereIn('city_id', $user->city_ids);
                             }
-                            if ($user->sector_id) {
-                                $cq->where('sector_id', $user->sector_id);
+                            if (!empty($user->sector_ids)) {
+                                $cq->whereIn('sector_id', $user->sector_ids);
                             }
                         });
                     });
@@ -595,41 +595,87 @@ class ReportController extends Controller
         $rows['un_authorized'] = 'Un-Authorized';
         $rows['pertains_to_ge_const_isld'] = 'Pertains to GE(N) Const Isld';
 
-        // Base query for all complaints in date range
-        // Note: $user already defined above
-        $baseQuery = Complaint::whereBetween('created_at', [$dateFromStart, $dateToEnd]);
+        // Get user for location filtering and CMES filter
+        $user = Auth::user();
+        $cmesId = $request->cmes_id;
 
+        // Base query for all complaints in date range
+        $baseQuery = Complaint::whereBetween('complaints.created_at', [$dateFromStart, $dateToEnd]);
+        
         // Apply location-based filtering
         $this->filterComplaintsByLocation($baseQuery, $user);
 
-        // Initialize report data structure
+        // Initialize report structure variables
         $reportData = [];
         $categoryTotals = [];
         $rowTotals = [];
         $grandTotal = 0;
+        foreach ($rows as $rowKey => $rowName) {
+            $rowTotals[$rowKey] = 0;
+        }
 
-        // Process each category from actual database
-        foreach ($categories as $catKey => $catName) {
-            $categoryTotals[$catKey] = 0;
-
-            // Query for this specific category
-            $catQuery = (clone $baseQuery)->whereHas('category', function($q) use ($catName) {
-                $q->where('name', $catName);
+        // Apply CMES filter if provided
+        if ($cmesId) {
+            $baseQuery->where(function($q) use ($cmesId) {
+                $q->whereHas('house', function($hq) use ($cmesId) {
+                    $hq->whereHas('city', function($ccq) use ($cmesId) { $ccq->where('cme_id', $cmesId); })
+                       ->orWhereHas('sector', function($ssq) use ($cmesId) { $ssq->where('cme_id', $cmesId); });
+                })->orWhere(function($cq) use ($cmesId) {
+                    $cq->whereNull('house_id')
+                       ->where(function($lq) use ($cmesId) {
+                            $lq->whereHas('city', function($ccq) use ($cmesId) { $ccq->where('cme_id', $cmesId); })
+                               ->orWhereHas('sector', function($ssq) use ($cmesId) { $ssq->where('cme_id', $cmesId); });
+                       });
+                });
             });
+        }
 
-            // Eager load relationships safely
-            try {
-                $catComplaints = $catQuery->with(['spareParts', 'spareApprovals'])->get();
-            } catch (\Exception $e) {
-                // If relationships fail, load without them
-                \Log::warning('Failed to eager load relationships: ' . $e->getMessage());
-                $catComplaints = $catQuery->get();
+        // OPTIMIZED: Fetch all counts in ONE grouped query
+        $allStats = (clone $baseQuery)
+            ->selectRaw('category_id, status, COUNT(*) as count')
+            ->groupBy('category_id', 'status')
+            ->get();
+
+        // Fetch performa-type statistics from approvals joined with complaints
+        $performaStats = (clone $baseQuery)
+            ->join('spare_approval_performa', 'complaints.id', '=', 'spare_approval_performa.complaint_id')
+            ->where('complaints.status', 'in_progress')
+            ->where('spare_approval_performa.status', '!=', 'rejected')
+            ->selectRaw('complaints.category_id, spare_approval_performa.performa_type, COUNT(*) as count')
+            ->groupBy('complaints.category_id', 'spare_approval_performa.performa_type')
+            ->get();
+
+        // Pre-index records for fast mapping
+        $indexedStats = [];
+        foreach ($allStats as $stat) {
+            $indexedStats[$stat->category_id][$stat->status] = $stat->count;
+        }
+        
+        $indexedPerformas = [];
+        foreach ($performaStats as $pStat) {
+            $indexedPerformas[$pStat->category_id][$pStat->performa_type] = $pStat->count;
+        }
+
+        // Map database categories to their IDs for lookups
+        $categoryNameToId = \App\Models\ComplaintCategory::where('status', 'active')
+            ->pluck('id', 'name')->toArray();
+
+        // Process report data structure
+        foreach ($categories as $catKey => $catName) {
+            $catId = $categoryNameToId[$catName] ?? null;
+            if (!$catId) {
+                $categoryTotals[$catKey] = 0;
+                foreach ($rows as $rowKey => $rowName) {
+                    $reportData[$rowKey]['categories'][$catKey] = ['count' => 0, 'percentage' => 0];
+                }
+                continue;
             }
-            $catTotal = $catComplaints->count();
+
+            // Category Total
+            $catTotal = collect($indexedStats[$catId] ?? [])->sum();
             $categoryTotals[$catKey] = $catTotal;
             $grandTotal += $catTotal;
 
-            // Process each row for this category
             foreach ($rows as $rowKey => $rowName) {
                 if (!isset($reportData[$rowKey])) {
                     $reportData[$rowKey] = ['name' => $rowName, 'categories' => []];
@@ -637,161 +683,38 @@ class ReportController extends Controller
                 }
 
                 $count = 0;
-
-                // Row mapping logic - based on complaint status (closed removed)
                 if ($rowKey === 'unassigned') {
-                    $count = $catComplaints->where('status', 'new')->count();
+                    $count = $indexedStats[$catId]['new'] ?? 0;
                 } elseif ($rowKey === 'assigned') {
-                    $count = $catComplaints->where('status', 'assigned')->count();
+                    $count = $indexedStats[$catId]['assigned'] ?? 0;
                 } elseif ($rowKey === 'in_progress') {
-                    // Count complaints with in_progress status that do NOT have any performa type
-                    // Exclude complaints that have work_performa, maint_performa, or product_na performa_type
-                    $count = $catComplaints->filter(function ($complaint) {
-                        if ($complaint->status !== 'in_progress') {
-                            return false;
-                        }
-                        // Exclude if status is product_na, work_performa, maint_performa, or priced performa (should be counted separately)
-                        if (in_array($complaint->status, ['product_na', 'work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa'])) {
-                            return false;
-                        }
-                        // Check if complaint has any performa type set (work_performa, maint_performa, or product_na) - exclude rejected
-                        $hasWorkPerforma = $complaint->spareApprovals->contains(function ($approval) {
-                            return $approval->performa_type === 'work_performa' &&
-                                $approval->status !== 'rejected';
-                        });
-                        $hasMaintPerforma = $complaint->spareApprovals->contains(function ($approval) {
-                            return $approval->performa_type === 'maint_performa' &&
-                                $approval->status !== 'rejected';
-                        });
-                        $hasProductNa = $complaint->spareApprovals->contains(function ($approval) {
-                            return $approval->performa_type === 'product_na' &&
-                                $approval->status !== 'rejected';
-                        });
-                        // Exclude if has any performa type
-                        return !$hasWorkPerforma && !$hasMaintPerforma && !$hasProductNa;
-                    })->count();
+                    $totalInProgress = $indexedStats[$catId]['in_progress'] ?? 0;
+                    $hasPerformaCount = collect($indexedPerformas[$catId] ?? [])
+                        ->only(['work_performa', 'maint_performa', 'product_na'])
+                        ->sum();
+                    $count = max(0, $totalInProgress - $hasPerformaCount);
                 } elseif ($rowKey === 'resolved') {
-                    $count = $catComplaints->where('status', 'resolved')->count();
+                    $count = $indexedStats[$catId]['resolved'] ?? 0;
                 } elseif ($rowKey === 'work_performa') {
-                    // Count complaints that have work_performa performa_type in spareApprovals
-                    // Logic: If performa_type is set, use it; otherwise use complaint status
-                    $count = $catComplaints->filter(function ($complaint) {
-                        // First check complaint status - if it's work_performa, include it (simple performa)
-                        if ($complaint->status === 'work_performa') {
-                            // Exclude if status is work_priced_performa (should be in work_priced_performa row)
-                            if ($complaint->status === 'work_priced_performa') {
-                                return false;
-                            }
-                            return true;
-                        }
-
-                        // Get approval with performa_type
-                        $approval = $complaint->spareApprovals->first();
-
-                        // If performa_type is set, use it
-                        if ($approval && $approval->performa_type === 'work_performa') {
-                            // Exclude if status is work_priced_performa (should be in work_priced_performa row)
-                            if ($complaint->status === 'work_priced_performa') {
-                                return false;
-                            }
-                            // waiting_for_authority removed - only check status
-                            // Exclude if status is rejected
-                            if ($approval->status === 'rejected') {
-                                return false;
-                            }
-                            return true;
-                        }
-
-                        return false;
-                    })->count();
+                    $count = ($indexedStats[$catId]['work_performa'] ?? 0) + ($indexedPerformas[$catId]['work_performa'] ?? 0);
                 } elseif ($rowKey === 'maint_performa') {
-                    // Count complaints that have maint_performa performa_type in spareApprovals
-                    // Logic: If performa_type is set, use it; otherwise use complaint status
-                    $count = $catComplaints->filter(function ($complaint) {
-                        // First check complaint status - if it's maint_performa, include it (simple performa)
-                        if ($complaint->status === 'maint_performa') {
-                            // Exclude if status is maint_priced_performa (should be in maint_priced_performa row)
-                            if ($complaint->status === 'maint_priced_performa') {
-                                return false;
-                            }
-                            return true;
-                        }
-
-                        // Get approval with performa_type
-                        $approval = $complaint->spareApprovals->first();
-
-                        // If performa_type is set, use it
-                        if ($approval && $approval->performa_type === 'maint_performa') {
-                            // Exclude if status is maint_priced_performa (should be in maint_priced_performa row)
-                            if ($complaint->status === 'maint_priced_performa') {
-                                return false;
-                            }
-                            // waiting_for_authority removed - only check status
-                            // Exclude if status is rejected
-                            if ($approval->status === 'rejected') {
-                                return false;
-                            }
-                            return true;
-                        }
-
-                        return false;
-                    })->count();
+                    $count = ($indexedStats[$catId]['maint_performa'] ?? 0) + ($indexedPerformas[$catId]['maint_performa'] ?? 0);
                 } elseif ($rowKey === 'work_priced_performa') {
-                    // waiting_for_authority removed - only count direct status match
-                    $count = $catComplaints->filter(function ($complaint) {
-                        return $complaint->status === 'work_priced_performa';
-                    })->count();
+                    $count = $indexedStats[$catId]['work_priced_performa'] ?? 0;
                 } elseif ($rowKey === 'maint_priced_performa') {
-                    // waiting_for_authority removed - only count direct status match
-                    $count = $catComplaints->filter(function ($complaint) {
-                        return $complaint->status === 'maint_priced_performa';
-                    })->count();
+                    $count = $indexedStats[$catId]['maint_priced_performa'] ?? 0;
                 } elseif ($rowKey === 'product_na') {
-                    // Count complaints that have product_na status OR product_na performa_type in spareApprovals
-                    // Logic: If performa_type is set, use it; otherwise use complaint status
-                    $count = $catComplaints->filter(function ($complaint) {
-                        // Get approval with performa_type
-                        $approval = $complaint->spareApprovals->first();
-
-                        // If performa_type is set, use it
-                        if ($approval && $approval->performa_type === 'product_na') {
-                            // Exclude if status is rejected
-                            if ($approval->status === 'rejected') {
-                                return false;
-                            }
-                            return true;
-                        }
-
-                        // If performa_type is null, check complaint status
-                        if ($complaint->status === 'product_na') {
-                            return true;
-                        }
-
-                        return false;
-                    })->count();
+                    $count = ($indexedStats[$catId]['product_na'] ?? 0) + ($indexedPerformas[$catId]['product_na'] ?? 0);
                 } elseif ($rowKey === 'un_authorized') {
-                    // Count complaints with un_authorized status
-                    $count = $catComplaints->filter(function ($complaint) {
-                        return $complaint->status === 'un_authorized';
-                    })->count();
+                    $count = $indexedStats[$catId]['un_authorized'] ?? 0;
                 } elseif ($rowKey === 'pertains_to_ge_const_isld') {
-                    // Count complaints with pertains_to_ge_const_isld status
-                    $count = $catComplaints->filter(function ($complaint) {
-                        return $complaint->status === 'pertains_to_ge_const_isld';
-                    })->count();
+                    $count = $indexedStats[$catId]['pertains_to_ge_const_isld'] ?? 0;
                 } elseif ($rowKey === 'barak_damages') {
-                    $count = $catComplaints->filter(function ($complaint) {
-                        return $complaint->status === 'barak_damages';
-                    })->count();
+                    $count = $indexedStats[$catId]['barak_damages'] ?? 0;
                 }
 
                 $percentage = $catTotal > 0 ? round(($count / $catTotal) * 100, 1) : 0;
-
-                $reportData[$rowKey]['categories'][$catKey] = [
-                    'count' => $count,
-                    'percentage' => $percentage,
-                ];
-
+                $reportData[$rowKey]['categories'][$catKey] = ['count' => $count, 'percentage' => $percentage];
                 $rowTotals[$rowKey] += $count;
             }
         }
@@ -937,27 +860,10 @@ class ReportController extends Controller
         // Ensure dates are properly formatted and include time for full day coverage
         $dateFromStart = \Carbon\Carbon::parse($dateFrom)->startOfDay();
         $dateToEnd = \Carbon\Carbon::parse($dateTo)->endOfDay();
+        $cmesId = $request->cmes_id;
         $category = $request->category;
-
         $user = Auth::user();
-        $query = Employee::with([
-            'assignedComplaints' => function ($q) use ($dateFromStart, $dateToEnd, $user) {
-                $q->whereBetween('created_at', [$dateFromStart, $dateToEnd]);
-                // Apply location filter to complaints - get the underlying query builder
-                if ($user && !$this->canViewAllData($user)) {
-                    if ($user->city_id && $user->city) {
-                        $q->whereHas('house', function ($clientQ) use ($user) {
-                            $clientQ->where('city_id', $user->city_id);
-                        });
-                    }
-                    if ($user->sector_id) {
-                        $q->whereHas('house', function ($clientQ) use ($user) {
-                            $clientQ->where('sector_id', $user->sector_id);
-                        });
-                    }
-                }
-            }
-        ]);
+        $query = Employee::query();
 
         // Filter by category if provided
         if ($category) {
@@ -969,25 +875,58 @@ class ReportController extends Controller
         // Apply location-based filtering to employees
         $this->filterEmployeesByLocation($query, $user);
 
-        $employees = $query->get()->map(function ($employee) {
-            $complaints = $employee->assignedComplaints;
-            $resolved = $complaints->whereIn('status', ['resolved', 'closed']);
+        // Fetch employee statistics efficiently
+        $employeeIds = $query->pluck('id')->toArray();
+        if (empty($employeeIds)) {
+            $employees = collect();
+        } else {
+            $statsQuery = Complaint::whereIn('assigned_employee_id', $employeeIds)
+                ->whereBetween('created_at', [$dateFromStart, $dateToEnd]);
 
-            return [
-                'employee' => $employee,
-                'total_complaints' => $complaints->count(),
-                'resolved_complaints' => $resolved->count(),
-                'resolution_rate' => $complaints->count() > 0 ? round(($resolved->count() / $complaints->count()) * 100, 2) : 0,
-                'avg_resolution_time' => $resolved->avg(function ($complaint) {
-                    return $complaint->created_at->diffInHours($complaint->updated_at);
-                }) ?? 0,
-            ];
-        });
+            // Apply location and CMES filters to the complaints counted
+            $this->filterComplaintsByLocation($statsQuery, $user);
+            if ($cmesId) {
+                $statsQuery->where(function($q) use ($cmesId) {
+                    $q->whereHas('house', function($hq) use ($cmesId) {
+                        $hq->whereHas('city', function($ccq) use ($cmesId) { $ccq->where('cme_id', $cmesId); })
+                           ->orWhereHas('sector', function($ssq) use ($cmesId) { $ssq->where('cme_id', $cmesId); });
+                    })->orWhere(function($cq) use ($cmesId) {
+                        $cq->whereNull('house_id')
+                           ->where(function($lq) use ($cmesId) {
+                                $lq->whereHas('city', function($ccq) use ($cmesId) { $ccq->where('cme_id', $cmesId); })
+                                   ->orWhereHas('sector', function($ssq) use ($cmesId) { $ssq->where('cme_id', $cmesId); });
+                           });
+                    });
+                });
+            }
+
+            $complaintStats = $statsQuery->selectRaw('
+                assigned_employee_id,
+                COUNT(*) as total,
+                SUM(CASE WHEN status IN ("resolved", "closed") THEN 1 ELSE 0 END) as resolved,
+                AVG(CASE WHEN status IN ("resolved", "closed") AND updated_at IS NOT NULL THEN TIMESTAMPDIFF(HOUR, created_at, updated_at) ELSE NULL END) as avg_time
+            ')->groupBy('assigned_employee_id')->get()->keyBy('assigned_employee_id');
+
+            $allEmployees = $query->get();
+            $employees = $allEmployees->map(function ($employee) use ($complaintStats) {
+                $stat = $complaintStats->get($employee->id);
+                return [
+                    'employee' => $employee,
+                    'total_complaints' => $stat->total ?? 0,
+                    'resolved_complaints' => $stat->resolved ?? 0,
+                    'resolution_rate' => ($stat->total ?? 0) > 0 ? round(($stat->resolved / $stat->total) * 100, 2) : 0,
+                    'avg_resolution_time' => round($stat->avg_time ?? 0, 1),
+                ];
+            });
+        }
 
         $summary = [
             'total_employees' => $employees->count(),
-            'avg_resolution_rate' => $employees->avg('resolution_rate'),
+            'total_complaints' => $employees->sum('total_complaints'),
+            'total_resolved' => $employees->sum('resolved_complaints'),
+            'avg_resolution_rate' => $employees->count() > 0 ? round($employees->avg('resolution_rate'), 1) : 0,
             'top_performer' => $employees->sortByDesc('resolution_rate')->first(),
+            'average_resolution_time' => $employees->count() > 0 ? round($employees->avg('avg_resolution_time'), 1) : 0,
         ];
 
         if ($format === 'html') {
@@ -1041,6 +980,7 @@ class ReportController extends Controller
         $dateFromStart = \Carbon\Carbon::parse($dateFrom)->startOfDay();
         $dateToEnd = \Carbon\Carbon::parse($dateTo)->endOfDay();
 
+        $cmesId = $request->cmes_id;
         $user = Auth::user();
         $query = Spare::query();
 
@@ -1053,52 +993,48 @@ class ReportController extends Controller
             });
         }
 
-        // Eager load complaint spares and stock logs safely
-        try {
-            $spares = $query->with([
-                'complaintSpares' => function ($q) use ($dateFromStart, $dateToEnd) {
-                    $q->whereBetween('used_at', [$dateFromStart, $dateToEnd]);
-                },
-                'stockLogs' => function ($q) use ($dateFromStart, $dateToEnd) {
-                    $q->where('change_type', 'out')
-                        ->whereBetween('created_at', [$dateFromStart, $dateToEnd]);
+        // Fetch spares with pre-filtered usage stats
+        $spareIds = $query->pluck('id')->toArray();
+        if (empty($spareIds)) {
+            $spares = collect();
+        } else {
+            // Stats from stock logs (total used)
+            $logQuery = \App\Models\SpareStockLog::whereIn('spare_id', $spareIds)
+                ->where('change_type', 'out')
+                ->whereBetween('spare_stock_logs.created_at', [$dateFromStart, $dateToEnd]);
+            
+            // Note: Stock logs use reference_id for complaint links
+            $logQuery->whereHas('complaint', function ($q) use ($user, $cmesId) {
+                $this->filterComplaintsByLocation($q, $user);
+                
+                if ($cmesId) {
+                    $q->where(function($sq) use ($cmesId) {
+                        $sq->whereHas('house', function($hq) use ($cmesId) {
+                            $hq->whereHas('city', function($ccq) use ($cmesId) { $ccq->where('cme_id', $cmesId); })
+                               ->orWhereHas('sector', function($ssq) use ($cmesId) { $ssq->where('cme_id', $cmesId); });
+                        })->orWhere(function($cq) use ($cmesId) {
+                            $cq->whereNull('house_id')->where(function($lq) use ($cmesId) {
+                                $lq->whereHas('city', function($ccq) use ($cmesId) { $ccq->where('cme_id', $cmesId); })
+                                   ->orWhereHas('sector', function($ssq) use ($cmesId) { $ssq->where('cme_id', $cmesId); });
+                            });
+                        });
+                    });
                 }
-            ])->get()->map(function ($spare) use ($dateFromStart, $dateToEnd) {
-                // Calculate usage from complaint_spares (for cost/usage count if needed)
-                $usage = $spare->complaintSpares ?? collect();
-                $complaintUsed = $usage->sum('quantity') ?? 0;
-
-                // Calculate usage from stock logs (primary source for issued quantity)
-                $stockLogs = $spare->stockLogs ?? collect();
-                $stockOut = $stockLogs->sum('quantity') ?? 0;
-
-                // Use stock logs for issued quantity as it tracks all 'out' movements
-                $totalUsed = $stockOut;
-
-                // Calculate cost based on total used
-                $totalCost = $totalUsed * ($spare->unit_price ?? 0);
-
-                // Usage count can be from logs count
-                $usageCount = $stockLogs->count();
-
-                return [
-                    'spare' => $spare,
-                    'total_used' => $totalUsed,
-                    'total_cost' => $totalCost,
-                    'usage_count' => $usageCount ?? 0,
-                    'current_stock' => $spare->stock_quantity ?? 0,
-                    'stock_status' => method_exists($spare, 'getStockStatusAttribute') ? $spare->getStockStatusAttribute() : 'in_stock',
-                ];
             });
-        } catch (\Exception $e) {
-            // If relationship fails, load without it
-            \Log::warning('Failed to load complaint spares or approvals: ' . $e->getMessage());
-            $spares = $query->get()->map(function ($spare) {
+
+            $logStats = $logQuery->selectRaw('spare_id, SUM(quantity) as total_used, COUNT(*) as usage_count')
+                ->groupBy('spare_id')->get()->keyBy('spare_id');
+
+            $allSpares = $query->get();
+            $spares = $allSpares->map(function ($spare) use ($logStats) {
+                $stat = $logStats->get($spare->id);
+                $periodUsed = $stat->total_used ?? 0;
                 return [
                     'spare' => $spare,
-                    'total_used' => 0,
-                    'total_cost' => 0,
-                    'usage_count' => 0,
+                    'total_used' => $spare->issued_quantity ?? 0, // Use lifetime value for consistency with Index and Balance
+                    'period_used' => $periodUsed,
+                    'total_cost' => $periodUsed * ($spare->unit_price ?? 0),
+                    'usage_count' => $stat->usage_count ?? 0,
                     'current_stock' => $spare->stock_quantity ?? 0,
                     'stock_status' => method_exists($spare, 'getStockStatusAttribute') ? $spare->getStockStatusAttribute() : 'in_stock',
                 ];
@@ -1145,8 +1081,8 @@ class ReportController extends Controller
         // Ensure dates are properly formatted and include time for full day coverage
         $dateFromStart = \Carbon\Carbon::parse($dateFrom)->startOfDay();
         $dateToEnd = \Carbon\Carbon::parse($dateTo)->endOfDay();
-
         $user = Auth::user();
+        $cmesId = $request->cmes_id;
 
         // Build spare costs query with location filtering
         $spareCostsQuery = DB::table('complaint_spares')
@@ -1156,13 +1092,34 @@ class ReportController extends Controller
 
         // Apply location filtering
         if ($user && !$this->canViewAllData($user)) {
-            $spareCostsQuery->join('houses', 'complaints.house_id', '=', 'houses.id');
-            if ($user->city_id) {
-                $spareCostsQuery->where('houses.city_id', $user->city_id);
-            }
-            if ($user->sector_id) {
-                $spareCostsQuery->where('houses.sector_id', $user->sector_id);
-            }
+            $spareCostsQuery->leftJoin('houses', 'complaints.house_id', '=', 'houses.id');
+            $spareCostsQuery->where(function ($q) use ($user) {
+                $q->where(function ($sub) use ($user) {
+                    $sub->whereNotNull('complaints.house_id');
+                    if (!empty($user->city_ids)) { $sub->whereIn('houses.city_id', $user->city_ids); }
+                    if (!empty($user->sector_ids)) { $sub->whereIn('houses.sector_id', $user->sector_ids); }
+                })->orWhere(function ($sub) use ($user) {
+                    $sub->whereNull('complaints.house_id');
+                    if (!empty($user->city_ids)) { $sub->whereIn('complaints.city_id', $user->city_ids); }
+                    if (!empty($user->sector_ids)) { $sub->whereIn('complaints.sector_id', $user->sector_ids); }
+                });
+            });
+        }
+
+        // Apply CMES filter if provided
+        if ($cmesId) {
+             $spareCostsQuery->whereExists(function ($query) use ($cmesId) {
+                $query->select(DB::raw(1))
+                    ->from('houses')
+                    ->join('cities', 'houses.city_id', '=', 'cities.id')
+                    ->whereRaw('houses.id = complaints.house_id')
+                    ->where('cities.cme_id', $cmesId);
+            })->orWhereExists(function ($query) use ($cmesId) {
+                $query->select(DB::raw(1))
+                    ->from('cities')
+                    ->whereRaw('cities.id = complaints.city_id')
+                    ->where('cities.cme_id', $cmesId);
+            });
         }
 
         $spareCosts = $spareCostsQuery
@@ -1179,11 +1136,11 @@ class ReportController extends Controller
         // For now, show all approvals if user can view all, otherwise filter by complaint location
         if ($user && !$this->canViewAllData($user)) {
             $approvalQuery->whereHas('complaint', function ($q) use ($user) {
-                if ($user->city_id) {
-                    $q->where('city_id', $user->city_id);
+                if (!empty($user->city_ids)) {
+                    $q->whereIn('city_id', $user->city_ids);
                 }
-                if ($user->sector_id) {
-                    $q->where('sector_id', $user->sector_id);
+                if (!empty($user->sector_ids)) {
+                    $q->whereIn('sector_id', $user->sector_ids);
                 }
             });
         }
@@ -1206,11 +1163,11 @@ class ReportController extends Controller
             $filterApprovals = function ($query) use ($user) {
                 $query->whereHas('complaint', function ($q) use ($user) {
                     $q->whereHas('house', function ($clientQ) use ($user) {
-                        if ($user->city_id && $user->city) {
-                            $clientQ->where('city_id', $user->city_id);
+                        if (!empty($user->city_ids)) {
+                            $clientQ->whereIn('city_id', $user->city_ids);
                         }
-                        if ($user->sector_id) {
-                            $clientQ->where('sector_id', $user->sector_id);
+                        if (!empty($user->sector_ids)) {
+                            $clientQ->whereIn('sector_id', $user->sector_ids);
                         }
                     });
                 });
@@ -1295,14 +1252,14 @@ class ReportController extends Controller
                             ->whereIn('status', ['resolved', 'closed']);
                         // Apply location filter to complaints - using whereHas on the relation
                         if ($user && !$this->canViewAllData($user)) {
-                            if ($user->city_id && $user->city) {
+                            if (!empty($user->city_ids)) {
                                 $q->whereHas('house', function ($clientQ) use ($user) {
-                                    $clientQ->where('city_id', $user->city_id);
+                                    $clientQ->whereIn('city_id', $user->city_ids);
                                 });
                             }
-                            if ($user->sector_id) {
+                            if (!empty($user->sector_ids)) {
                                 $q->whereHas('house', function ($clientQ) use ($user) {
-                                    $clientQ->where('sector_id', $user->sector_id);
+                                    $clientQ->whereIn('sector_id', $user->sector_ids);
                                 });
                             }
                         }
@@ -1615,14 +1572,14 @@ class ReportController extends Controller
                 $q->whereBetween('created_at', [$dateFromStart, $dateToEnd]);
                 // Apply location filter to complaints - using whereHas on the relation
                 if ($user && !$this->canViewAllData($user)) {
-                    if ($user->city_id && $user->city) {
+                    if (!empty($user->city_ids)) {
                         $q->whereHas('house', function ($clientQ) use ($user) {
-                            $clientQ->where('city_id', $user->city_id);
+                            $clientQ->whereIn('city_id', $user->city_ids);
                         });
                     }
-                    if ($user->sector_id) {
+                    if (!empty($user->sector_ids)) {
                         $q->whereHas('house', function ($clientQ) use ($user) {
-                            $clientQ->where('sector_id', $user->sector_id);
+                            $clientQ->whereIn('sector_id', $user->sector_ids);
                         });
                     }
                 }
@@ -1737,11 +1694,11 @@ class ReportController extends Controller
         // Apply location filtering
         if ($user && !$this->canViewAllData($user)) {
             $spareCostsQuery->join('houses', 'complaints.house_id', '=', 'houses.id');
-            if ($user->city_id) {
-                $spareCostsQuery->where('houses.city_id', $user->city_id);
+            if (!empty($user->city_ids)) {
+                $spareCostsQuery->whereIn('houses.city_id', $user->city_ids);
             }
-            if ($user->sector_id) {
-                $spareCostsQuery->where('houses.sector_id', $user->sector_id);
+            if (!empty($user->sector_ids)) {
+                $spareCostsQuery->whereIn('houses.sector_id', $user->sector_ids);
             }
         }
 
@@ -1852,40 +1809,52 @@ class ReportController extends Controller
         $globalTotalHours = 0;
         $globalResolvedCount = 0;
 
-        foreach ($categories as $catKey => $catName) {
-            // Query for this category
-            $catQuery = (clone $baseQuery)->whereHas('category', function($q) use ($catName) {
-                $q->where('name', $catName);
+        $cmesId = $request->cmes_id;
+        $categoryNameToId = \App\Models\ComplaintCategory::where('status', 'active')
+            ->pluck('id', 'name')->toArray();
+
+        // Optimized SLA data fetch
+        $slaQuery = (clone $baseQuery);
+        // Apply CMES filter if provided
+        if ($cmesId) {
+            $slaQuery->where(function($q) use ($cmesId) {
+                $q->whereHas('house', function($hq) use ($cmesId) {
+                    $hq->whereHas('city', function($ccq) use ($cmesId) { $ccq->where('cme_id', $cmesId); })
+                       ->orWhereHas('sector', function($ssq) use ($cmesId) { $ssq->where('cme_id', $cmesId); });
+                })->orWhere(function($cq) use ($cmesId) {
+                    $cq->whereNull('house_id')->where(function($lq) use ($cmesId) {
+                        $lq->whereHas('city', function($ccq) use ($cmesId) { $ccq->where('cme_id', $cmesId); })
+                           ->orWhereHas('sector', function($ssq) use ($cmesId) { $ssq->where('cme_id', $cmesId); });
+                    });
+                });
             });
+        }
 
-            $complaints = $catQuery->get();
-            $total = $complaints->count();
-            
-            // Stats for this category
-            $resolvedCount = 0;
-            $lt24 = 0;
-            $bw2448 = 0;
-            $gt48 = 0;
-            $toalHours = 0;
+        $allSlaStats = $slaQuery->selectRaw('
+                category_id,
+                COUNT(*) as total,
+                SUM(CASE WHEN status = "resolved" THEN 1 ELSE 0 END) as resolved_count,
+                SUM(CASE WHEN status = "resolved" AND TIMESTAMPDIFF(HOUR, created_at, updated_at) < 24 THEN 1 ELSE 0 END) as lt_24,
+                SUM(CASE WHEN status = "resolved" AND TIMESTAMPDIFF(HOUR, created_at, updated_at) BETWEEN 24 AND 48 THEN 1 ELSE 0 END) as bw_24_48,
+                SUM(CASE WHEN status = "resolved" AND TIMESTAMPDIFF(HOUR, created_at, updated_at) > 48 THEN 1 ELSE 0 END) as gt_48,
+                SUM(CASE WHEN status = "resolved" THEN TIMESTAMPDIFF(HOUR, created_at, updated_at) ELSE 0 END) as total_hours
+            ')
+            ->groupBy('category_id')
+            ->get()->keyBy('category_id');
 
-            foreach ($complaints as $complaint) {
-                if ($complaint->status === 'resolved' && $complaint->updated_at) {
-                    $resolvedCount++;
-                    $hours = $complaint->created_at->diffInHours($complaint->updated_at);
-                    $toalHours += $hours;
+        foreach ($categories as $catKey => $catName) {
+            $catId = $categoryNameToId[$catName] ?? null;
+            $stat = $allSlaStats->get($catId);
 
-                    if ($hours < 24) {
-                        $lt24++;
-                    } elseif ($hours >= 24 && $hours <= 48) {
-                        $bw2448++;
-                    } else {
-                        $gt48++;
-                    }
-                }
-            }
+            $total = $stat->total ?? 0;
+            $resolvedCount = $stat->resolved_count ?? 0;
+            $lt24 = $stat->lt_24 ?? 0;
+            $bw2448 = $stat->bw_24_48 ?? 0;
+            $gt48 = $stat->gt_48 ?? 0;
+            $totalHours = $stat->total_hours ?? 0;
 
-            $avgTime = $resolvedCount > 0 ? round($toalHours / $resolvedCount, 1) : 0;
-            $slaMet = $lt24 + $bw2448; // Assuming 48h is the max acceptable SLA for generic reporting
+            $avgTime = $resolvedCount > 0 ? round($totalHours / $resolvedCount, 1) : 0;
+            $slaMet = $lt24 + $bw2448;
 
             $slaData[$catKey] = [
                 'name' => $catName,
@@ -1901,7 +1870,7 @@ class ReportController extends Controller
             $grandTotal += $total;
             $totalResolved += $resolvedCount;
             $totalCompliant += $slaMet;
-            $globalTotalHours += $toalHours;
+            $globalTotalHours += $totalHours;
             $globalResolvedCount += $resolvedCount;
         }
 

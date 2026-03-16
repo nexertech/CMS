@@ -22,5 +22,13 @@ class Cme extends Model
     {
         return $this->hasMany(City::class);
     }
+
+    /**
+     * Get the GE nodes (sectors) that belong to this CMES.
+     */
+    public function sectors(): HasMany
+    {
+        return $this->hasMany(Sector::class);
+    }
 }
 

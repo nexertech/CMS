@@ -170,8 +170,8 @@ class ComplaintController extends Controller
         $defaultSectorId = null;
         $authUser = Auth::user();
         if ($authUser) {
-            $defaultCityId = $authUser->city_id;
-            $defaultSectorId = $authUser->sector_id;
+            $defaultCityId = !empty($authUser->city_ids) ? $authUser->city_ids[0] : null;
+            $defaultSectorId = !empty($authUser->sector_ids) ? $authUser->sector_ids[0] : null;
         }
 
         // Get houses filtered by location
@@ -336,8 +336,8 @@ class ComplaintController extends Controller
                 ->get();
         }
 
-        $defaultCityId = $complaint->city_id ?? $complaint->house?->city_id ?? (Auth::user()?->city_id);
-        $defaultSectorId = $complaint->sector_id ?? $complaint->house?->sector_id ?? (Auth::user()?->sector_id);
+        $defaultCityId = $complaint->city_id ?? $complaint->house?->city_id ?? (!empty(Auth::user()->city_ids) ? Auth::user()->city_ids[0] : null);
+        $defaultSectorId = $complaint->sector_id ?? $complaint->house?->sector_id ?? (!empty(Auth::user()->sector_ids) ? Auth::user()->sector_ids[0] : null);
 
         // Get houses filtered by location
         $housesQuery = House::where('status', 'active')->orderBy('username');

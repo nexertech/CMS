@@ -72,20 +72,36 @@ class SlaController extends Controller
             
             // Director and Admin can see all users
             if (!in_array($roleName, ['director', 'admin'])) {
-                // Garrison Engineer: Show users from their city
-                if ($roleName === 'garrison_engineer' && $loggedInUser->city_id) {
-                    $usersQuery->where('city_id', $loggedInUser->city_id);
+                // Garrison Engineer: Show users from their cities
+                if ($roleName === 'garrison_engineer' && !empty($loggedInUser->city_ids)) {
+                    $usersQuery->where(function($q) use ($loggedInUser) {
+                        foreach ($loggedInUser->city_ids as $cityId) {
+                            $q->orWhereJsonContains('city_ids', (int)$cityId);
+                        }
+                    });
                 }
-                // Complaint Center and Department Staff: Show users from their sector
-                elseif (in_array($roleName, ['complaint_center', 'department_staff']) && $loggedInUser->sector_id) {
-                    $usersQuery->where('sector_id', $loggedInUser->sector_id);
+                // Complaint Center and Department Staff: Show users from their sectors
+                elseif (in_array($roleName, ['complaint_center', 'department_staff']) && !empty($loggedInUser->sector_ids)) {
+                    $usersQuery->where(function($q) use ($loggedInUser) {
+                        foreach ($loggedInUser->sector_ids as $sectorId) {
+                            $q->orWhereJsonContains('sector_ids', (int)$sectorId);
+                        }
+                    });
                 }
-                // Other roles: Filter by city_id if available, otherwise by sector_id
+                // Other roles: Filter by city_ids or sector_ids
                 else {
-                    if ($loggedInUser->sector_id) {
-                        $usersQuery->where('sector_id', $loggedInUser->sector_id);
-                    } elseif ($loggedInUser->city_id) {
-                        $usersQuery->where('city_id', $loggedInUser->city_id);
+                    if (!empty($loggedInUser->sector_ids)) {
+                        $usersQuery->where(function($q) use ($loggedInUser) {
+                            foreach ($loggedInUser->sector_ids as $sectorId) {
+                                $q->orWhereJsonContains('sector_ids', (int)$sectorId);
+                            }
+                        });
+                    } elseif (!empty($loggedInUser->city_ids)) {
+                        $usersQuery->where(function($q) use ($loggedInUser) {
+                            foreach ($loggedInUser->city_ids as $cityId) {
+                                $q->orWhereJsonContains('city_ids', (int)$cityId);
+                            }
+                        });
                     } else {
                         // If no location assigned, show no users
                         $usersQuery->whereRaw('1 = 0');
@@ -185,20 +201,36 @@ class SlaController extends Controller
             
             // Director and Admin can see all users
             if (!in_array($roleName, ['director', 'admin'])) {
-                // Garrison Engineer: Show users from their city
-                if ($roleName === 'garrison_engineer' && $loggedInUser->city_id) {
-                    $usersQuery->where('city_id', $loggedInUser->city_id);
+                // Garrison Engineer: Show users from their cities
+                if ($roleName === 'garrison_engineer' && !empty($loggedInUser->city_ids)) {
+                    $usersQuery->where(function($q) use ($loggedInUser) {
+                        foreach ($loggedInUser->city_ids as $cityId) {
+                            $q->orWhereJsonContains('city_ids', (int)$cityId);
+                        }
+                    });
                 }
-                // Complaint Center and Department Staff: Show users from their sector
-                elseif (in_array($roleName, ['complaint_center', 'department_staff']) && $loggedInUser->sector_id) {
-                    $usersQuery->where('sector_id', $loggedInUser->sector_id);
+                // Complaint Center and Department Staff: Show users from their sectors
+                elseif (in_array($roleName, ['complaint_center', 'department_staff']) && !empty($loggedInUser->sector_ids)) {
+                    $usersQuery->where(function($q) use ($loggedInUser) {
+                        foreach ($loggedInUser->sector_ids as $sectorId) {
+                            $q->orWhereJsonContains('sector_ids', (int)$sectorId);
+                        }
+                    });
                 }
-                // Other roles: Filter by city_id if available, otherwise by sector_id
+                // Other roles: Filter by city_ids or sector_ids
                 else {
-                    if ($loggedInUser->sector_id) {
-                        $usersQuery->where('sector_id', $loggedInUser->sector_id);
-                    } elseif ($loggedInUser->city_id) {
-                        $usersQuery->where('city_id', $loggedInUser->city_id);
+                    if (!empty($loggedInUser->sector_ids)) {
+                        $usersQuery->where(function($q) use ($loggedInUser) {
+                            foreach ($loggedInUser->sector_ids as $sectorId) {
+                                $q->orWhereJsonContains('sector_ids', (int)$sectorId);
+                            }
+                        });
+                    } elseif (!empty($loggedInUser->city_ids)) {
+                        $usersQuery->where(function($q) use ($loggedInUser) {
+                            foreach ($loggedInUser->city_ids as $cityId) {
+                                $q->orWhereJsonContains('city_ids', (int)$cityId);
+                            }
+                        });
                     } else {
                         // If no location assigned, show no users
                         $usersQuery->whereRaw('1 = 0');

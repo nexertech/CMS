@@ -17,33 +17,41 @@ trait LocationFilterTrait
             return $query;
         }
 
-        // 1. If user has no specific location, they see everything (Global Admin/Director)
-        if ($user->city_id === null && $user->sector_id === null) {
-            return $query;
+        $ids = $this->getNormalizedLocationIds($user);
+        $cityIds = $ids['city_ids'];
+        $sectorIds = $ids['sector_ids'];
+
+        if (empty($cityIds) && empty($sectorIds)) {
+            $roleName = strtolower($user->role->role_name ?? '');
+            if (in_array($roleName, ['admin', 'director'])) {
+                return $query;
+            }
+            return $query->whereRaw('1 = 0');
         }
 
-        $cityId = $user->city_id;
-        $sectorId = $user->sector_id;
-
         // 2. Inclusive Filtering: Match via House relationship OR direct Complaint location (for house-less complaints)
-        return $query->where(function ($q) use ($cityId, $sectorId) {
+        return $query->where(function ($q) use ($cityIds, $sectorIds) {
             // Match via House relationship
-            $q->whereHas('house', function ($hq) use ($cityId, $sectorId) {
-                if ($sectorId) {
-                    $hq->where('sector_id', $sectorId);
-                } elseif ($cityId) {
-                    $hq->where('city_id', $cityId);
+            $q->whereHas('house', function ($hq) use ($cityIds, $sectorIds) {
+                    if (!empty($sectorIds)) {
+                        $hq->whereIn('sector_id', $sectorIds);
+                    }
+                    elseif (!empty($cityIds)) {
+                        $hq->whereIn('city_id', $cityIds);
+                    }
                 }
-            })
-            // OR Match via direct complaint columns (for complaints without a house)
-            ->orWhere(function ($cq) use ($cityId, $sectorId) {
+                )
+                    // OR Match via direct complaint columns (for complaints without a house)
+                    ->orWhere(function ($cq) use ($cityIds, $sectorIds) {
                 $cq->whereNull('complaints.house_id');
-                if ($sectorId) {
-                    $cq->where('complaints.sector_id', $sectorId);
-                } elseif ($cityId) {
-                    $cq->where('complaints.city_id', $cityId);
+                if (!empty($sectorIds)) {
+                    $cq->whereIn('complaints.sector_id', $sectorIds);
                 }
-            });
+                elseif (!empty($cityIds)) {
+                    $cq->whereIn('complaints.city_id', $cityIds);
+                }
+            }
+            );
         });
     }
 
@@ -52,59 +60,27 @@ trait LocationFilterTrait
      */
     public function filterEmployeesByLocation(Builder $query, $user): Builder
     {
-        if (!$user || !$user->role) {
+        if (!$user) {
             return $query;
         }
 
-        if ($user->city_id === null && $user->sector_id === null) {
-            return $query;
+        $ids = $this->getNormalizedLocationIds($user);
+        $cityIds = $ids['city_ids'];
+        $sectorIds = $ids['sector_ids'];
+
+        if (empty($cityIds) && empty($sectorIds)) {
+            $roleName = strtolower($user->role->role_name ?? '');
+            if (in_array($roleName, ['admin', 'director'])) {
+                return $query;
+            }
+            return $query->whereRaw('1 = 0');
         }
 
-        $roleName = strtolower($user->role->role_name ?? '');
-
-        switch ($roleName) {
-            case 'director':
-                break;
-
-            case 'admin':
-                // Admin sees all ONLY if no specific location is assigned
-                if ($user->sector_id) {
-                    $query->where('sector_id', $user->sector_id);
-                } elseif ($user->city_id) {
-                    $query->where('city_id', $user->city_id);
-                }
-                break;
-
-            case 'garrison_engineer':
-                // GE can see only their city's employees
-                if ($user->city_id) {
-                    $query->where('city_id', $user->city_id);
-                } else {
-                    // If no city assigned, show nothing
-                    $query->whereRaw('1 = 0');
-                }
-                break;
-
-            case 'complaint_center':
-            case 'department_staff':
-            case 'complaint officer':
-                // Can see only their sector's employees
-                if ($user->sector_id) {
-                    $query->where('sector_id', $user->sector_id);
-                } else {
-                    // If no sector assigned, show nothing
-                    $query->whereRaw('1 = 0');
-                }
-                break;
-            
-            default:
-                // For any other role, if they have city_id, filter by city
-                if ($user->city_id) {
-                    $query->where('city_id', $user->city_id);
-                } else {
-                    $query->whereRaw('1 = 0');
-                }
-                break;
+        if (!empty($sectorIds)) {
+            $query->whereIn('sector_id', $sectorIds);
+        }
+        elseif (!empty($cityIds)) {
+            $query->whereIn('city_id', $cityIds);
         }
 
         return $query;
@@ -115,42 +91,31 @@ trait LocationFilterTrait
      */
     public function canViewAllData($user): bool
     {
-        if (!$user) {
-            return false;
-        }
-
-        return $user->city_id === null && $user->sector_id === null;
+        // No one can view all data automatically anymore unless they have all locations selected
+        return false;
     }
 
-    /**
-     * Get user's accessible city IDs (null means all cities)
-     */
     public function getUserCityIds($user): ?array
     {
-        if (!$user || !$user->role) {
+        if (!$user) {
             return null;
         }
 
-        if ($user->city_id === null && $user->sector_id === null) {
-            return null; // All cities
+        $ids = $this->getNormalizedLocationIds($user);
+        $cityIds = $ids['city_ids'];
+        $sectorIds = $ids['sector_ids'];
+
+        // If no locations assigned, return null (all cities) for Admins/Directors
+        // This is primarily for populating form dropdowns/checkboxes
+        if (empty($cityIds) && empty($sectorIds)) {
+            $roleName = strtolower($user->role->role_name ?? '');
+            if (in_array($roleName, ['admin', 'director'])) {
+                return null;
+            }
+            return [];
         }
 
-        $roleName = strtolower($user->role->role_name ?? '');
-
-        if ($roleName === 'garrison_engineer' && $user->city_id) {
-            return [$user->city_id]; // Only their city
-        }
-
-        if (in_array($roleName, ['complaint_center', 'department_staff', 'staff', 'complaint officer']) && $user->city_id) {
-            return [$user->city_id]; // Their city
-        }
-
-        // Fallback: If user has a city_id, return it
-        if ($user->city_id) {
-            return [$user->city_id];
-        }
-
-        return [];
+        return $cityIds;
     }
 
     /**
@@ -162,31 +127,29 @@ trait LocationFilterTrait
             return null;
         }
 
-        if ($user->city_id === null && $user->sector_id === null) {
-            return null; // All sectors
-        }
-
         $roleName = strtolower($user->role->role_name ?? '');
 
-        if ($roleName === 'garrison_engineer' && $user->city_id) {
-            // GE can see all sectors in their city
-            return \App\Models\Sector::where('city_id', $user->city_id)
-                ->pluck('id')
-                ->toArray();
+        $ids = $this->getNormalizedLocationIds($user);
+        $cityIds = $ids['city_ids'];
+        $sectorIds = $ids['sector_ids'];
+
+        // If no locations assigned, return null (all sectors) for Admins/Directors
+        // This is primarily for populating form dropdowns/checkboxes
+        if (empty($cityIds) && empty($sectorIds)) {
+            if (in_array($roleName, ['admin', 'director'])) {
+                return null;
+            }
+            return [];
         }
 
-        if (in_array($roleName, ['complaint_center', 'department_staff', 'staff', 'complaint officer']) && $user->sector_id) {
-            return [$user->sector_id]; // Only their sector
+        // If user has sector_ids, return them
+        if (!empty($sectorIds)) {
+            return $sectorIds;
         }
 
-        // Fallback: If user has a sector_id, return it
-        if ($user->sector_id) {
-            return [$user->sector_id];
-        }
-
-        // If user has city_id but no sector_id, they can see all sectors in their city
-        if ($user->city_id) {
-            return \App\Models\Sector::where('city_id', $user->city_id)
+        // If user has city_ids but no sector_ids, they can see all sectors in their cities
+        if (!empty($cityIds)) {
+            return \App\Models\Sector::whereIn('city_id', $cityIds)
                 ->pluck('id')
                 ->toArray();
         }
@@ -199,66 +162,30 @@ trait LocationFilterTrait
      */
     public function filterSparesByLocation(Builder $query, $user): Builder
     {
-        if (!$user || !$user->role) {
-            // If no user or role, show nothing for safety
+        if (!$user) {
             $query->whereRaw('1 = 0');
             return $query;
         }
 
-        if ($user->city_id === null && $user->sector_id === null) {
-            return $query;
+        $ids = $this->getNormalizedLocationIds($user);
+        $cityIds = $ids['city_ids'];
+        $sectorIds = $ids['sector_ids'];
+
+        if (empty($cityIds) && empty($sectorIds)) {
+            $roleName = strtolower($user->role->role_name ?? '');
+            if (in_array($roleName, ['admin', 'director'])) {
+                return $query;
+            }
+            return $query->whereRaw('1 = 0');
         }
 
-        $roleName = strtolower($user->role->role_name ?? '');
-
-        switch ($roleName) {
-            case 'director':
-                break;
-
-            case 'admin':
-                // Admin sees all ONLY if no specific location is assigned
-                if ($user->sector_id) {
-                    $query->where('sector_id', $user->sector_id);
-                } elseif ($user->city_id) {
-                    $query->where('city_id', $user->city_id);
-                }
-                break;
-
-            case 'garrison_engineer':
-                // GE can see only their city's spares
-                if ($user->city_id) {
-                    $query->where('city_id', $user->city_id);
-                } else {
-                    // If no city assigned, show nothing
-                    $query->whereRaw('1 = 0');
-                }
-                break;
-
-            case 'complaint_center':
-            case 'department_staff':
-            case 'complaint officer':
-                // Complaint Center and Department Staff can see only their sector's spares
-                if ($user->sector_id) {
-                    $query->where('sector_id', $user->sector_id);
-                } else {
-                    // If no sector assigned, show nothing
-                    $query->whereRaw('1 = 0');
-                }
-                break;
-            
-            default:
-                // For any other role, if they have sector_id, filter by sector
-                // Otherwise if they have city_id, filter by city
-                // Otherwise show nothing
-                if ($user->sector_id) {
-                    $query->where('sector_id', $user->sector_id);
-                } elseif ($user->city_id) {
-                    $query->where('city_id', $user->city_id);
-                } else {
-                    // If no location assigned, show nothing
-                    $query->whereRaw('1 = 0');
-                }
+        if (!empty($sectorIds)) {
+            $query->whereIn('sector_id', $sectorIds);
         }
+        elseif (!empty($cityIds)) {
+            $query->whereIn('city_id', $cityIds);
+        }
+
         return $query;
     }
 
@@ -267,59 +194,27 @@ trait LocationFilterTrait
      */
     public function filterHousesByLocation(Builder $query, $user): Builder
     {
-        if (!$user || !$user->role) {
+        if (!$user) {
             return $query;
         }
 
-        if ($user->city_id === null && $user->sector_id === null) {
-            return $query;
+        $ids = $this->getNormalizedLocationIds($user);
+        $cityIds = $ids['city_ids'];
+        $sectorIds = $ids['sector_ids'];
+
+        if (empty($cityIds) && empty($sectorIds)) {
+            $roleName = strtolower($user->role->role_name ?? '');
+            if (in_array($roleName, ['admin', 'director'])) {
+                return $query;
+            }
+            return $query->whereRaw('1 = 0');
         }
 
-        $roleName = strtolower($user->role->role_name ?? '');
-
-        switch ($roleName) {
-            case 'director':
-                break;
-
-            case 'admin':
-                // Admin sees all ONLY if no specific location is assigned
-                if ($user->sector_id) {
-                    $query->where('sector_id', $user->sector_id);
-                } elseif ($user->city_id) {
-                    $query->where('city_id', $user->city_id);
-                }
-                break;
-
-            case 'garrison_engineer':
-                // GE can see only their city's houses
-                if ($user->city_id) {
-                    $query->where('city_id', $user->city_id);
-                } else {
-                    // If no city assigned, show nothing
-                    $query->whereRaw('1 = 0');
-                }
-                break;
-
-            case 'complaint_center':
-            case 'department_staff':
-            case 'complaint officer':
-                // Can see only their sector's houses
-                if ($user->sector_id) {
-                    $query->where('sector_id', $user->sector_id);
-                } else {
-                    // If no sector assigned, show nothing
-                    $query->whereRaw('1 = 0');
-                }
-                break;
-            
-            default:
-                // For any other role, if they have city_id, filter by city
-                if ($user->city_id) {
-                    $query->where('city_id', $user->city_id);
-                } else {
-                    $query->whereRaw('1 = 0');
-                }
-                break;
+        if (!empty($sectorIds)) {
+            $query->whereIn('sector_id', $sectorIds);
+        }
+        elseif (!empty($cityIds)) {
+            $query->whereIn('city_id', $cityIds);
         }
 
         return $query;
@@ -332,98 +227,45 @@ trait LocationFilterTrait
      */
     public function filterUsersByLocation(Builder $query, $user): Builder
     {
-        if (!$user || !$user->role) {
-            return $query;
-        }
-
-        if ($user->city_id === null && $user->sector_id === null) {
+        if (!$user) {
             return $query;
         }
 
         $roleName = strtolower($user->role->role_name ?? '');
-
-        // Exclude higher authority roles for restricted users
-        $startQuery = function($q) {
-             // Exclude Director and Global Admins (those with admin role but no location are filtered by location check usually, but specific role exclusion is safer)
-             // Also exclude Garrison Engineer if the viewer is just a Complaint Center/Staff
-             $q->whereDoesntHave('role', function($rq) {
-                 $rq->whereIn('role_name', ['director']);
-             });
-        };
-
-        // If I am strictly a Sector-level user (Complaint Center/Staff), I shouldn't see GE or Admin
-        $excludeGeAndAdmin = function($q) {
-             $q->whereDoesntHave('role', function($rq) {
-                 $rq->whereIn('role_name', ['director', 'garrison_engineer', 'admin']);
-             });
-        };
-
-        switch ($roleName) {
-            case 'director':
-                break;
-
-            case 'admin':
-                // Restricted Admin
-                if ($user->sector_id || $user->city_id) {
-                    $startQuery($query);
-                    // Also exclude other 'admin' users? Usually yes, to prevent modifying peers.
-                    // Let's stick to the prompt: "cmes director" (likely meaning CMEs/Director/GEs). 
-                    // Assuming 'admin' role is high-level too if they are global. 
-                    // But if they are local admin, they appear in the list.
-                    // The prompt "apny sy higher authority" (Higher authority than themselves).
-                    
-                    if ($user->sector_id) {
-                        $query->where('sector_id', $user->sector_id);
-                        // If restricted to sector, assume they are low level admin
-                        $excludeGeAndAdmin($query);
-                    } elseif ($user->city_id) {
-                        $query->where('city_id', $user->city_id);
-                        $startQuery($query); // Exclude Director
-                    }
-                }
-                break;
-
-            case 'garrison_engineer':
-                // GE can see only their city's users
-                // GE shouldn't see Director
-                $startQuery($query);
-                
-                if ($user->city_id) {
-                    $query->where('city_id', $user->city_id);
-                } else {
-                    $query->whereRaw('1 = 0');
-                }
-                break;
-
-            case 'complaint_center':
-            case 'department_staff':
-            case 'staff':
-                // Can see only their sector's users
-                // Shouldn't see GE, Director, Admin
-                $excludeGeAndAdmin($query);
-
-                if ($user->sector_id) {
-                    $query->where('sector_id', $user->sector_id);
-                } else {
-                    $query->whereRaw('1 = 0');
-                }
-                break;
-            
-            default:
-                if ($user->sector_id) {
-                    $query->where('sector_id', $user->sector_id);
-                } elseif ($user->city_id) {
-                    $query->where('city_id', $user->city_id);
-                } else {
-                    $query->whereRaw('1 = 0');
-                }
-                break;
+        if ($roleName === 'admin') {
+            return $query;
         }
 
-        // Always ensure the user can see themselves, regardless of exclusions
-        if ($user) {
+        $ids = $this->getNormalizedLocationIds($user);
+        $cityIds = $ids['city_ids'];
+        $sectorIds = $ids['sector_ids'];
+
+        if (empty($cityIds) && empty($sectorIds)) {
+            if (in_array($roleName, ['admin', 'director'])) {
+                return $query;
+            }
+            $query->whereRaw('1 = 0');
             $query->orWhere('id', $user->id);
+            return $query;
         }
+
+        if (!empty($sectorIds)) {
+            $query->where(function($q) use ($sectorIds) {
+                foreach ($sectorIds as $sectorId) {
+                    $q->orWhereJsonContains('sector_ids', (int)$sectorId);
+                }
+            });
+        }
+        elseif (!empty($cityIds)) {
+            $query->where(function($q) use ($cityIds) {
+                foreach ($cityIds as $cityId) {
+                    $q->orWhereJsonContains('city_ids', (int)$cityId);
+                }
+            });
+        }
+
+        // Always ensure the user can see themselves
+        $query->orWhere('id', $user->id);
 
         return $query;
     }
@@ -433,91 +275,83 @@ trait LocationFilterTrait
      */
     public function filterFrontendUsersByLocation(Builder $query, $user): Builder
     {
-        if (!$user || !$user->role) {
-            return $query;
-        }
-
-        if ($user->city_id === null && $user->sector_id === null) {
+        if (!$user) {
             return $query;
         }
 
         $roleName = strtolower($user->role->role_name ?? '');
-        $cityId = $user->city_id ?? null;
-        $sectorId = $user->sector_id ?? null;
 
-        // Helper closure to apply filter and exclude Super/Higher Privileged Users
-        $applyFilter = function($q) use ($cityId, $sectorId) {
-            // Exclude users who have CME level access (Higher Authority)
-            // Assuming checking if JSON array is not empty/null for cme_ids
-            $q->where(function($qq) {
-                $qq->whereNull('cme_ids')
-                   ->orWhere('cme_ids', '[]')
-                   ->orWhere('cme_ids', ''); // Safety check
-            });
+        $ids = $this->getNormalizedLocationIds($user);
+        $cityIds = $ids['city_ids'];
+        $sectorIds = $ids['sector_ids'];
 
-            if ($sectorId) {
-                // If restricted to a sector, show users who have access to this sector
-                $q->where(function($subQ) use ($sectorId) {
-                   $subQ->whereJsonContains('node_ids', (string)$sectorId)
-                        ->orWhereJsonContains('node_ids', (int)$sectorId);
-                });
-            } elseif ($cityId) {
-                // If restricted to a city, show users who have access to this city
-                $q->where(function($subQ) use ($cityId) {
-                   $subQ->whereJsonContains('group_ids', (string)$cityId)
-                        ->orWhereJsonContains('group_ids', (int)$cityId);
-                });
+        // If no locations assigned, allow global access for Admins/Directors
+        if (empty($cityIds) && empty($sectorIds)) {
+            if (in_array($roleName, ['admin', 'director'])) {
+                return $query;
             }
-        };
+            return $query->whereRaw('1 = 0');
+        }
 
-        switch ($roleName) {
-            case 'director':
-                break;
-
-            case 'admin':
-                // Admin sees all ONLY if no specific location is assigned
-                if ($sectorId || $cityId) {
-                    $applyFilter($query);
-                }
-                break;
-
-            case 'garrison_engineer':
-                if ($cityId) {
-                   $query->where(function($subQ) use ($cityId) {
-                       $subQ->whereJsonContains('group_ids', (string)$cityId)
-                            ->orWhereJsonContains('group_ids', (int)$cityId);
-                   });
-                   // Exclude CME Access users? Maybe GE can see them? 
-                   // User said "baqi na hn jin ko sb priviliges hain" (those with all privileges shouldn't show).
-                   // Let's exclude CME level for GE too just in case.
-                   $query->where(function($qq) {
-                        $qq->whereNull('cme_ids')
-                           ->orWhere('cme_ids', '[]');
-                   });
-                } else {
-                   $query->whereRaw('1 = 0');
-                }
-                break;
-
-            case 'complaint_center':
-            case 'department_staff':
-            case 'staff':
-                if ($sectorId) {
-                   $applyFilter($query);
-                } else {
-                   $query->whereRaw('1 = 0');
-                }
-                break;
-            
-            default:
-                if ($sectorId || $cityId) {
-                    $applyFilter($query);
-                } else {
-                    $query->whereRaw('1 = 0');
-                }
-                break;
+        if (!empty($sectorIds)) {
+            $json = json_encode(array_map('intval', (array)$sectorIds));
+            $query->whereRaw("JSON_CONTAINS(?, node_ids)", [$json])
+                  ->whereRaw("JSON_LENGTH(node_ids) > 0");
+        }
+        elseif (!empty($cityIds)) {
+            $json = json_encode(array_map('intval', (array)$cityIds));
+            $query->whereRaw("JSON_CONTAINS(?, group_ids)", [$json])
+                  ->whereRaw("JSON_LENGTH(group_ids) > 0");
         }
 
         return $query;
+    }
+    public function filterCmesByLocation(Builder $query, $user): Builder
+    {
+        if (!$user) {
+            return $query;
+        }
+
+        $roleName = strtolower($user->role->role_name ?? '');
+
+        $ids = $this->getNormalizedLocationIds($user);
+        $cityIds = $ids['city_ids'];
+        $sectorIds = $ids['sector_ids'];
+
+        // If no locations assigned, return all CMEs for Admins/Directors
+        if (empty($cityIds) && empty($sectorIds)) {
+            if (in_array($roleName, ['admin', 'director'])) {
+                return $query;
+            }
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where(function ($q) use ($cityIds, $sectorIds) {
+            if (!empty($sectorIds)) {
+                $q->whereHas('sectors', function ($sq) use ($sectorIds) {
+                            $sq->whereIn('id', $sectorIds);
+                        }
+                        );
+                    }
+
+                    if (!empty($cityIds)) {
+                        $method = !empty($sectorIds) ? 'orWhereHas' : 'whereHas';
+                        $q->{ $method}('cities', function ($cq) use ($cityIds) {
+                            $cq->whereIn('id', $cityIds);
+                        }
+                        );
+                    }
+                });
+    }
+
+    /**
+     * Helper to get normalized location IDs from any user model
+     */
+    private function getNormalizedLocationIds($user): array
+    {
+        return [
+            'city_ids' => $user->city_ids ?? $user->group_ids ?? [],
+            'sector_ids' => $user->sector_ids ?? $user->node_ids ?? []
+        ];
     }
 }

@@ -110,18 +110,18 @@ class SpareController extends Controller
         $cities = $citiesQuery->orderBy('id', 'asc')->get();
         
         $sectors = collect();
-        // If user has city_id, show only sectors from that city
-        if ($user && $user->city_id) {
+        // If user has city_ids, show only sectors from that city
+        if ($user && !empty($user->city_ids)) {
             $sectors = Schema::hasTable('sectors')
-                ? Sector::where('city_id', $user->city_id)
+                ? Sector::whereIn('city_id', $user->city_ids)
                     ->where('status', 'active')
                     ->orderBy('name')
                     ->get()
                 : collect();
         }
         // Defaults for location-restricted users: preselect their city and sector
-        $defaultCityId = $user->city_id;
-        $defaultSectorId = $user->sector_id;
+        $defaultCityId = !empty($user->city_ids) ? $user->city_ids[0] : null;
+        $defaultSectorId = !empty($user->sector_ids) ? $user->sector_ids[0] : null;
         
         return view('admin.spares.create', compact('categories', 'cities', 'sectors', 'defaultCityId', 'defaultSectorId'));
     }
@@ -339,11 +339,11 @@ class SpareController extends Controller
         $cities = $citiesQuery->orderBy('id', 'asc')->get();
         
         $sectors = collect();
-        // If user has city_id or spare has city_id, show sectors from that city
-        $cityId = $user && $user->city_id ? $user->city_id : ($spare->city_id ?? null);
-        if ($cityId) {
+        // If user has city_ids or spare has city_id, show sectors from that city
+        $cityIds = $user && !empty($user->city_ids) ? $user->city_ids : ($spare->city_id ? [$spare->city_id] : null);
+        if ($cityIds) {
             $sectors = Schema::hasTable('sectors')
-                ? Sector::where('city_id', $cityId)
+                ? Sector::whereIn('city_id', $cityIds)
                     ->where('status', 'active')
                     ->orderBy('name')
                     ->get()

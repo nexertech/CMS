@@ -2077,7 +2077,7 @@
         const ctx3 = document.getElementById('complaintsByStatusChart').getContext('2d');
 
         // Calculate total from original data (including closed) for accurate total count
-        const totalComplaints = Object.values(complaintsByStatus).reduce((a, b) => a + b, 0);
+        const totalComplaints = Object.values(complaintsByStatus).reduce((a, b) => Number(a) + Number(b), 0);
 
         // Center text plugin for Chart.js
         const centerTextPlugin = {
@@ -2103,7 +2103,7 @@
                 const currentLabels = chart.data.labels || [];
                 const currentData = chart.data.datasets[0]?.data || [];
                 const currentColors = chart.data.datasets[0]?.backgroundColor || [];
-                const currentTotal = currentData.reduce((a, b) => a + b, 0);
+                const currentTotal = currentData.reduce((a, b) => Number(a) + Number(b), 0);
 
                 // Check if status filter is active
                 const statusFilter = document.getElementById('filterStatus')?.value;
@@ -2548,6 +2548,14 @@
                     if (data.stockConsumptionData && data.monthLabels) {
                         renderStockTable(data.stockConsumptionData, data.monthLabels);
                     }
+
+                    // Update CME Table
+                    if (data.cmeTableHtml) {
+                        const cmeTableContainer = document.getElementById('cmeTableContainer');
+                        if (cmeTableContainer) {
+                            cmeTableContainer.innerHTML = data.cmeTableHtml;
+                        }
+                    }
                 }
             })
             .catch(error => {
@@ -2783,6 +2791,18 @@
                     employeeLeastAssignedChart.data.labels = data.empLeastGraphLabels;
                 }
                 employeeLeastAssignedChart.update();
+            }
+
+            // Update CME Complaints Chart
+            if (data.cmeGraphData && typeof cmeComplaintsChart !== 'undefined' && cmeComplaintsChart) {
+                cmeComplaintsChart.data.datasets[0].data = data.cmeGraphData;
+                if (data.cmeResolvedData) {
+                    cmeComplaintsChart.data.datasets[1].data = data.cmeResolvedData;
+                }
+                if (data.cmeGraphLabels) {
+                    cmeComplaintsChart.data.labels = data.cmeGraphLabels;
+                }
+                cmeComplaintsChart.update();
             }
         }
 

@@ -21,11 +21,11 @@ class RegisteredDeviceController extends Controller
         $query = RegisteredDevice::with(['city', 'sector']);
 
         $user = Auth::user();
-        if ($user->city_id) {
-            $query->where('city_id', $user->city_id);
+        if (!empty($user->city_ids)) {
+            $query->whereIn('city_id', $user->city_ids);
         }
-        if ($user->sector_id) {
-            $query->where('sector_id', $user->sector_id);
+        if (!empty($user->sector_ids)) {
+            $query->whereIn('sector_id', $user->sector_ids);
         }
 
         if ($request->has('search') && $request->search) {
@@ -52,8 +52,8 @@ class RegisteredDeviceController extends Controller
         }
         $cities = $citiesQuery->orderBy('name')->get();
         
-        $defaultCityId = $user->city_id;
-        $defaultSectorId = $user->sector_id;
+        $defaultCityId = !empty($user->city_ids) ? $user->city_ids[0] : null;
+        $defaultSectorId = !empty($user->sector_ids) ? $user->sector_ids[0] : null;
         
         // Initial sectors if city is pre-determined
         $sectors = collect();
@@ -87,8 +87,8 @@ class RegisteredDeviceController extends Controller
         }
 
         // Use logged-in user's city and sector if they have them (for data isolation)
-        $cityId = $user->city_id ?? $request->city_id;
-        $sectorId = $user->sector_id ?? $request->sector_id;
+        $cityId = (!empty($user->city_ids) ? $user->city_ids[0] : null) ?? $request->city_id;
+        $sectorId = (!empty($user->sector_ids) ? $user->sector_ids[0] : null) ?? $request->sector_id;
 
         RegisteredDevice::create([
             'device_id' => $request->device_id,
@@ -155,8 +155,8 @@ class RegisteredDeviceController extends Controller
         }
 
         // Use logged-in user's city and sector if they have them (for data isolation)
-        $cityId = $user->city_id ?? $request->city_id;
-        $sectorId = $user->sector_id ?? $request->sector_id;
+        $cityId = (!empty($user->city_ids) ? $user->city_ids[0] : null) ?? $request->city_id;
+        $sectorId = (!empty($user->sector_ids) ? $user->sector_ids[0] : null) ?? $request->sector_id;
 
         $registeredDevice->update([
             'device_id' => $request->device_id,

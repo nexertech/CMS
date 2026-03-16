@@ -21,8 +21,8 @@ class User extends Authenticatable
         'email',
         'phone',
         'role_id',
-        'city_id',
-        'sector_id',
+        'city_ids',
+        'sector_ids',
         'status',
         'theme',
     ];
@@ -43,6 +43,8 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'status' => 'string',
+        'city_ids' => 'array',
+        'sector_ids' => 'array',
     ];
 
     /**
@@ -53,20 +55,24 @@ class User extends Authenticatable
         return $this->belongsTo(Role::class, 'role_id', 'id');
     }
 
+    // Original relations (city, sector) removed as they were replaced by JSON arrays
+    
     /**
-     * Get the city that owns the user.
+     * Get the cities assigned to the user.
      */
-    public function city(): BelongsTo
+    public function getCitiesAttribute()
     {
-        return $this->belongsTo(City::class, 'city_id', 'id');
+        if (empty($this->city_ids)) return collect();
+        return \App\Models\City::whereIn('id', $this->city_ids)->get();
     }
 
     /**
-     * Get the sector that owns the user.
+     * Get the sectors assigned to the user.
      */
-    public function sector(): BelongsTo
+    public function getSectorsAttribute()
     {
-        return $this->belongsTo(Sector::class, 'sector_id', 'id');
+        if (empty($this->sector_ids)) return collect();
+        return \App\Models\Sector::whereIn('id', $this->sector_ids)->get();
     }
 
     /**

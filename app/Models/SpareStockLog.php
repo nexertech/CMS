@@ -37,6 +37,14 @@ class SpareStockLog extends Model
     }
 
     /**
+     * Get the complaint associated with the stock log.
+     */
+    public function complaint(): BelongsTo
+    {
+        return $this->belongsTo(Complaint::class, 'reference_id', 'id');
+    }
+
+    /**
      * Get available change types
      */
     public static function getChangeTypes(): array

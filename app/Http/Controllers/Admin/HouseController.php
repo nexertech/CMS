@@ -98,8 +98,8 @@ class HouseController extends Controller
         }
         $cities = $citiesQuery->orderBy('name')->get();
         
-        $defaultCityId = $user->city_id;
-        $defaultSectorId = $user->sector_id;
+        $defaultCityId = !empty($user->city_ids) ? $user->city_ids[0] : null;
+        $defaultSectorId = !empty($user->sector_ids) ? $user->sector_ids[0] : null;
         
         return view('admin.houses.create', compact('cities', 'defaultCityId', 'defaultSectorId'));
     }

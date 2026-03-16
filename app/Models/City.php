@@ -18,11 +18,12 @@ class City extends Model
 
     /**
      * Get the users for this city.
+     * Note: This relationship is broken as users table now uses JSON array city_ids
      */
-    public function users(): HasMany
-    {
-        return $this->hasMany(User::class, 'city_id', 'id');
-    }
+    // public function users(): HasMany
+    // {
+    //     return $this->hasMany(User::class, 'city_id', 'id');
+    // }
 
     /**
      * Get the sectors for this city.

@@ -153,30 +153,38 @@ class SectorController extends Controller
      */
     public function getSectorsByCity(Request $request)
     {
-        $cityId = $request->query('city_id');
+        // Support both single city_id and array of city_ids
+        $cityIds = $request->input('city_id');
+        
+        if (!is_array($cityIds)) {
+            $cityIds = $cityIds ? explode(',', $cityIds) : [];
+        }
 
-        Log::info('getSectorsByCity called', ['city_id' => $cityId, 'user_id' => auth()->id()]);
+        Log::info('getSectorsByCity called', ['city_ids' => $cityIds, 'user_id' => auth()->id()]);
 
-        if (!$cityId) {
+        if (empty($cityIds)) {
             return response()->json([]);
         }
         
         $user = auth()->user();
 
-        $query = Sector::where('city_id', $cityId)
+        $query = Sector::whereIn('city_id', $cityIds)
             ->where('status', 'active');
             
         // Apply data isolation if user is logged in
         if ($user) {
             $sectorIds = $this->getUserSectorIds($user);
+            $roleName = strtolower($user->role->role_name ?? '');
             
             Log::info('getUserSectorIds result', [
-                'user_role' => $user->role->role_name ?? 'null',
-                'user_city' => $user->city_id,
+                'user_role' => $roleName,
+                'user_city' => $user->city_ids,
                 'sector_ids_result' => $sectorIds
             ]);
 
-            if ($sectorIds !== null) {
+            // If user is admin or director, they should see all sectors in these cities
+            if ($sectorIds !== null && !in_array($roleName, ['admin', 'director'])) {
+                // If user has specific sectors, only show those sectors from the requested cities
                 $query->whereIn('id', $sectorIds);
             }
         }

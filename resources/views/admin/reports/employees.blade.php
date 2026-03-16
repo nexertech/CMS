@@ -68,7 +68,7 @@
   <div class="col-md-4">
     <div class="card-glass text-center">
       <div class="card-body">
-        <h4 class="text-info mb-1">{{ $summary['top_performer']['employee']->name ?? 'N/A' }}</h4>
+        <h4 class="text-info mb-1">{{ optional($summary['top_performer']['employee'] ?? null)->name ?? 'N/A' }}</h4>
         <p class="text-muted mb-0">Top Performer</p>
       </div>
     </div>

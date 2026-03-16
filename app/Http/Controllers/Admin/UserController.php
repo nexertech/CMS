@@ -20,7 +20,7 @@ class UserController extends Controller
 
     public function __construct()
     {
-        // Middleware is applied in routes
+    // Middleware is applied in routes
     }
 
     /**
@@ -28,7 +28,7 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $query = User::with(['role', 'city', 'sector']);
+        $query = User::with(['role']);
 
         // Apply location-based filtering
         $this->filterUsersByLocation($query, Auth::user());
@@ -36,10 +36,10 @@ class UserController extends Controller
         // Search functionality
         if ($request->has('search') && $request->search) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('username', 'like', "%{$search}%")
-                  ->orWhere('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
@@ -55,8 +55,11 @@ class UserController extends Controller
 
         $users = $query->orderBy('id', 'asc')->paginate(15);
         $roles = Role::all();
+        
+        $totalCities = City::where('status', 'active')->count();
+        $totalSectors = Sector::where('status', 'active')->count();
 
-        return view('admin.users.index', compact('users', 'roles'));
+        return view('admin.users.index', compact('users', 'roles', 'totalCities', 'totalSectors'));
     }
 
     /**
@@ -69,16 +72,19 @@ class UserController extends Controller
 
         // Get cities based on user location privileges
         $cityIds = $this->getUserCityIds($user);
+        $roleName = strtolower($user->role->role_name ?? '');
+        
         $citiesQuery = City::where('status', 'active');
-        if ($cityIds !== null) {
+        // If user is admin or director, they should see all cities in management forms
+        if ($cityIds !== null && !in_array($roleName, ['admin', 'director'])) {
             $citiesQuery->whereIn('id', $cityIds);
         }
         $cities = $citiesQuery->orderBy('id', 'asc')->get();
 
         $sectors = collect(); // Will be populated dynamically based on selected city
-        
-        $defaultCityId = $user->city_id;
-        $defaultSectorId = $user->sector_id;
+
+        $defaultCityId = !empty($user->city_ids) ? $user->city_ids[0] : null;
+        $defaultSectorId = !empty($user->sector_ids) ? $user->sector_ids[0] : null;
 
         return view('admin.users.create', compact('roles', 'cities', 'sectors', 'defaultCityId', 'defaultSectorId'));
     }
@@ -88,6 +94,45 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        // Add sector_id manually from hidden value if disabled, otherwise array
+        $sectors = $request->sector_id;
+        if (empty($sectors) && $request->filled('sector_id_hidden_val')) {
+            $parsed = json_decode($request->sector_id_hidden_val, true);
+            if (is_array($parsed)) {
+                $sectors = $parsed;
+            }
+        }
+
+        $cities = $request->city_id;
+        if (is_string($cities)) {
+            $parsedCity = json_decode($cities, true);
+            if (is_array($parsedCity)) {
+                $cities = $parsedCity;
+            }
+            else {
+                $cities = [$cities];
+            }
+        }
+        if (is_string($sectors)) {
+            $parsedSector = json_decode($sectors, true);
+            if (is_array($parsedSector)) {
+                $sectors = $parsedSector;
+            }
+            else {
+                $sectors = [$sectors];
+            }
+        }
+
+        // Filter out any empty/null values
+        $cities = array_filter($cities ?? [], fn($v) => !is_null($v) && $v !== '');
+        $sectors = array_filter($sectors ?? [], fn($v) => !is_null($v) && $v !== '');
+
+        // Convert empty strings to null for city_id and sector_id before validation
+        $request->merge([
+            'city_id' => !empty($cities) ? array_values($cities) : null,
+            'sector_id' => !empty($sectors) ? array_values($sectors) : null,
+        ]);
+
         $validator = Validator::make($request->all(), [
             'username' => 'required|string|max:100|unique:users',
             'name' => 'nullable|string|max:100',
@@ -95,8 +140,8 @@ class UserController extends Controller
             'phone' => 'nullable|string|min:11|max:20',
             'password' => 'required|string|min:6|confirmed',
             'role_id' => 'required|exists:roles,id',
-            'city_id' => 'nullable|exists:cities,id',
-            'sector_id' => 'nullable|exists:sectors,id',
+            'city_id' => 'nullable|array',
+            'sector_id' => 'nullable|array',
             'status' => 'required|in:active,inactive',
         ]);
 
@@ -117,10 +162,24 @@ class UserController extends Controller
                 ->withInput();
         }
 
-        if (in_array($roleName, ['complaint_center', 'department_staff', 'admin']) && (!$request->city_id || !$request->sector_id)) {
+        if (in_array($roleName, ['complaint_center', 'department_staff']) && (!$request->city_id || !$request->sector_id)) {
             return redirect()->back()
                 ->withErrors(['city_id' => 'City and Sector are required for this role', 'sector_id' => 'City and Sector are required for this role'])
                 ->withInput();
+        }
+
+        // Determine what locations to save based on role
+        if ($roleName === 'director') {
+            $cities = null;
+            $sectors = null;
+        }
+
+        // Explicitly cast cities and sectors as array for JSON storage
+        if (isset($cities) && !is_array($cities)) {
+            $cities = [$cities];
+        }
+        if (isset($sectors) && !is_array($sectors)) {
+            $sectors = [$sectors];
         }
 
         $user = User::create([
@@ -130,8 +189,8 @@ class UserController extends Controller
             'phone' => $request->phone,
             'password' => Hash::make($request->password),
             'role_id' => $request->role_id,
-            'city_id' => $request->city_id,
-            'sector_id' => $request->sector_id,
+            'city_ids' => $cities ?: null,
+            'sector_ids' => $sectors ?: null,
             'status' => $request->status,
         ]);
 
@@ -145,11 +204,11 @@ class UserController extends Controller
     public function show(User $user)
     {
         if (request()->get('format') === 'html') {
-            $user->load(['role.rolePermissions', 'city', 'sector', 'slaRules']);
+            $user->load(['role.rolePermissions', 'slaRules']);
             return view('admin.users.show', compact('user'));
         }
 
-        $user->load(['role.rolePermissions', 'city', 'sector', 'slaRules']);
+        $user->load(['role.rolePermissions', 'slaRules']);
         return view('admin.users.show', compact('user'));
     }
 
@@ -159,24 +218,26 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $roles = Role::all();
-        
+
         // Filter cities based on logged-in user's permissions
         $loggedInUser = Auth::user();
         $cityIds = $this->getUserCityIds($loggedInUser);
+        $roleName = strtolower($loggedInUser->role->role_name ?? '');
         
         $citiesQuery = City::where('status', 'active');
-        if ($cityIds !== null) {
+        // If user is admin or director, they should see all cities in management forms
+        if ($cityIds !== null && !in_array($roleName, ['admin', 'director'])) {
             $citiesQuery->whereIn('id', $cityIds);
         }
         $cities = $citiesQuery->orderBy('id', 'asc')->get();
 
-        $sectors = $user->city_id 
-            ? Sector::where('city_id', $user->city_id)->where('status', 'active')->orderBy('id', 'asc')->get()
+        $sectors = !empty($user->city_ids)
+            ?Sector::whereIn('city_id', $user->city_ids)->where('status', 'active')->orderBy('id', 'asc')->get()
             : collect();
-        
-        $defaultCityId = $loggedInUser->city_id;
-        $defaultSectorId = $loggedInUser->sector_id;
-            
+
+        $defaultCityId = !empty($loggedInUser->city_ids) ? $loggedInUser->city_ids[0] : null;
+        $defaultSectorId = !empty($loggedInUser->sector_ids) ? $loggedInUser->sector_ids[0] : null;
+
         return view('admin.users.edit', compact('user', 'roles', 'cities', 'sectors', 'defaultCityId', 'defaultSectorId'));
     }
 
@@ -185,10 +246,43 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
+        // Add sector_id manually from hidden value if disabled, otherwise array
+        $sectors = $request->sector_id;
+        if (empty($sectors) && $request->filled('sector_id_hidden_val')) {
+            $parsed = json_decode($request->sector_id_hidden_val, true);
+            if (is_array($parsed)) {
+                $sectors = $parsed;
+            }
+        }
+
+        $cities = $request->city_id;
+        if (is_string($cities)) {
+            $parsedCity = json_decode($cities, true);
+            if (is_array($parsedCity)) {
+                $cities = $parsedCity;
+            }
+            else {
+                $cities = [$cities];
+            }
+        }
+        if (is_string($sectors)) {
+            $parsedSector = json_decode($sectors, true);
+            if (is_array($parsedSector)) {
+                $sectors = $parsedSector;
+            }
+            else {
+                $sectors = [$sectors];
+            }
+        }
+
+        // Filter out any empty/null values
+        $cities = array_filter($cities ?? [], fn($v) => !is_null($v) && $v !== '');
+        $sectors = array_filter($sectors ?? [], fn($v) => !is_null($v) && $v !== '');
+
         // Convert empty strings to null for city_id and sector_id before validation
         $request->merge([
-            'city_id' => $request->city_id ?: null,
-            'sector_id' => $request->sector_id ?: null,
+            'city_id' => !empty($cities) ? array_values($cities) : null,
+            'sector_id' => !empty($sectors) ? array_values($sectors) : null,
         ]);
 
         $validator = Validator::make($request->all(), [
@@ -198,13 +292,15 @@ class UserController extends Controller
             'phone' => 'nullable|string|min:11|max:20',
             'password' => 'nullable|string|min:6|confirmed',
             'role_id' => 'required|exists:roles,id',
-            'city_id' => 'nullable|exists:cities,id',
-            'sector_id' => 'nullable|exists:sectors,id',
+            'city_id' => 'nullable|array',
+            'sector_id' => 'nullable|array',
             'status' => 'required|in:active,inactive',
             'theme' => 'nullable|in:auto,light,dark',
         ]);
 
         if ($validator->fails()) {
+            // Temporary debug:
+            // dd($validator->errors()->all(), $request->all(), $sectors);
             return redirect()->back()
                 ->withErrors($validator)
                 ->withInput();
@@ -217,7 +313,7 @@ class UserController extends Controller
                 ->withErrors(['role_id' => 'Selected role does not exist'])
                 ->withInput();
         }
-        
+
         $roleName = strtolower($role->role_name ?? '');
 
         // Validate city/sector based on role
@@ -244,14 +340,14 @@ class UserController extends Controller
             ];
 
             // If role doesn't require location, clear city_id and sector_id
-            // If role doesn't require location, clear city_id and sector_id
             if ($roleName === 'director') {
-                $updateData['city_id'] = null;
-                $updateData['sector_id'] = null;
-            } else {
-                // Convert empty strings to null for city_id and sector_id
-                $updateData['city_id'] = $request->city_id ?: null;
-                $updateData['sector_id'] = $request->sector_id ?: null;
+                $updateData['city_ids'] = null;
+                $updateData['sector_ids'] = null;
+            }
+            else {
+                // Convert empty arrays to null
+                $updateData['city_ids'] = $request->city_id ?: null;
+                $updateData['sector_ids'] = $request->sector_id ?: null;
             }
 
             if ($request->filled('theme')) {
@@ -262,11 +358,20 @@ class UserController extends Controller
                 $updateData['password'] = Hash::make($request->password);
             }
 
+            // Explicitly cast cities and sectors as array for JSON storage
+            if (isset($updateData['city_ids']) && !is_array($updateData['city_ids'])) {
+                $updateData['city_ids'] = [$updateData['city_ids']];
+            }
+            if (isset($updateData['sector_ids']) && !is_array($updateData['sector_ids'])) {
+                $updateData['sector_ids'] = [$updateData['sector_ids']];
+            }
+
             $user->update($updateData);
 
             return redirect()->route('admin.users.index')
                 ->with('success', 'User updated successfully.');
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Error updating user: ' . $e->getMessage())
                 ->withInput();
@@ -314,7 +419,7 @@ class UserController extends Controller
         ]);
 
         $status = $user->status === 'active' ? 'activated' : 'deactivated';
-        
+
         return redirect()->back()
             ->with('success', "User {$status} successfully.");
     }
@@ -430,11 +535,11 @@ class UserController extends Controller
                 $validator = Validator::make($request->all(), [
                     'role_id' => 'required|exists:roles,id',
                 ]);
-                
+
                 if ($validator->fails()) {
                     return redirect()->back()->withErrors($validator);
                 }
-                
+
                 User::whereIn('id', $userIds)->update(['role_id' => $request->role_id]);
                 $message = 'Selected users role changed successfully.';
                 break;
@@ -443,9 +548,9 @@ class UserController extends Controller
                 // Check for related records before deletion
                 // Note: complaintLogs relationship is not functional since employees table doesn't have user_id
                 $usersWithRecords = User::whereIn('id', $userIds)
-                    ->where(function($q) {
-                        $q->whereHas('slaRules');
-                    })
+                    ->where(function ($q) {
+                    $q->whereHas('slaRules');
+                })
                     ->count();
 
                 if ($usersWithRecords > 0) {
@@ -471,10 +576,10 @@ class UserController extends Controller
         // Apply same filters as index
         if ($request->has('search') && $request->search) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('username', 'like', "%{$search}%")
-                  ->orWhere('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 

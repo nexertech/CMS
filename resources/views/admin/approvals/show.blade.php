@@ -630,7 +630,7 @@
                 @php
                   $geUser = null;
                   if ($complaint->city_id && $complaint->city) {
-                    $geUser = \App\Models\User::where('city_id', $complaint->city_id)
+                    $geUser = \App\Models\User::whereJsonContains('city_ids', (int)$complaint->city_id)
                       ->whereHas('role', function($q) {
                         $q->where('role_name', 'garrison_engineer');
                       })
