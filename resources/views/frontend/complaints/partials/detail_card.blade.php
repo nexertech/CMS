@@ -310,7 +310,33 @@
                     </div>
                 </div>
                 @endif
+
+                @php
+                    $performaType = null;
+                    if ($complaint->spareApprovals->first()) {
+                        $performaType = $complaint->spareApprovals->first()->performa_type;
+                    }
+                    if (!$performaType) {
+                        if (str_contains($complaint->status, 'work_performa')) $performaType = 'Work';
+                        elseif (str_contains($complaint->status, 'maint_performa')) $performaType = 'Maint';
+                        elseif (str_contains($complaint->status, 'work_priced_performa')) $performaType = 'Priced';
+                        elseif (str_contains($complaint->status, 'maint_priced_performa')) $performaType = 'Priced';
+                    }
+                @endphp
+
+                @if($performaType)
+                <div class="info-item">
+                    <div class="d-flex align-items-center">
+                        <i data-feather="file-text" class="me-3 text-muted"></i>
+                        <div class="w-100 d-flex justify-content-between">
+                            <span class="text-muted small text-uppercase">Performa Type:</span>
+                            <span class="fw-medium text-dark text-end">{{ ucfirst($performaType) }}</span>
+                        </div>
+                    </div>
+                </div>
+                @endif
             </div>
+
         </div>
 
         <!-- Authority & Stock Section -->

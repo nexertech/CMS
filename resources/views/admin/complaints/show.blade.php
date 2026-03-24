@@ -57,6 +57,28 @@
   $titleName = $complaint->complaintTitle->title ?? $complaint->title ?? 'N/A';
   $catDisplay = $complaint->getCategoryDisplayAttribute();
   $displayText = $catDisplay . ' - ' . $titleName;
+  
+  // Extract performa type
+  $approval = $complaint->spareApprovals->first();
+  $performaType = $approval?->performa_type ?? null;
+  // If no performa type on approval, check if complaint status indicates one
+  if (!$performaType && $complaint) {
+      if (in_array($complaint->status, ['work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa', 'product_na'])) {
+          $performaType = $complaint->status;
+      }
+  }
+  
+  if ($performaType === 'maint_performa') {
+    $performaTypeLabel = 'Maintenance Performa';
+  } elseif ($performaType === 'work_priced_performa') {
+    $performaTypeLabel = 'Work Priced';
+  } elseif ($performaType === 'maint_priced_performa') {
+    $performaTypeLabel = 'Maintenance Priced';
+  } elseif ($performaType === 'product_na') {
+    $performaTypeLabel = 'Product N/A';
+  } else {
+    $performaTypeLabel = $performaType ? ucwords(str_replace('_', ' ', $performaType)) : null;
+  }
 @endphp
 
 <!-- COMPLAINT DETAILS -->
@@ -207,6 +229,18 @@
           </div>
         </div>
       </div>
+      
+      @if($performaTypeLabel)
+      <div class="info-item mb-3">
+        <div class="d-flex align-items-start">
+          <i data-feather="file" class="me-3 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
+          <div class="flex-grow-1">
+            <div class="text-muted small mb-1" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Performa Type</div>
+            <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $performaTypeLabel }}</div>
+          </div>
+        </div>
+      </div>
+      @endif
       
       @if($complaint->priority)
       <div class="info-item mb-3">

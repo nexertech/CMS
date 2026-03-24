@@ -1648,7 +1648,6 @@ class ReportController extends Controller
 
         $user = Auth::user();
         $query = Employee::with([
-            'user',
             'assignedComplaints' => function ($q) use ($dateFromStart, $dateToEnd, $user) {
                 $q->whereBetween('created_at', [$dateFromStart, $dateToEnd]);
                 // Apply location filter to complaints - using whereHas on the relation
