@@ -39,7 +39,7 @@ class HomeController extends Controller
             return $query;
         }
 
-        $cityIds   = $scope['city_ids']   ?? [];
+        $cityIds = $scope['city_ids'] ?? [];
         $sectorIds = $scope['sector_ids'] ?? [];
 
         if (empty($cityIds) && empty($sectorIds)) {
@@ -62,19 +62,19 @@ class HomeController extends Controller
                     }
                 });
             })
-            // 2. OR Match via direct complaint columns (for complaints without a house)
-            ->orWhere(function ($cq) use ($cityIds, $sectorIds, $tablePrefix) {
-                $cq->whereNull($tablePrefix . '.house_id');
-                $applied = false;
-                if (!empty($sectorIds)) {
-                    $cq->whereIn($tablePrefix . '.sector_id', $sectorIds);
-                    $applied = true;
-                }
-                if (!empty($cityIds)) {
-                    $method = $applied ? 'orWhereIn' : 'whereIn';
-                    $cq->{$method}($tablePrefix . '.city_id', $cityIds);
-                }
-            });
+                // 2. OR Match via direct complaint columns (for complaints without a house)
+                ->orWhere(function ($cq) use ($cityIds, $sectorIds, $tablePrefix) {
+                    $cq->whereNull($tablePrefix . '.house_id');
+                    $applied = false;
+                    if (!empty($sectorIds)) {
+                        $cq->whereIn($tablePrefix . '.sector_id', $sectorIds);
+                        $applied = true;
+                    }
+                    if (!empty($cityIds)) {
+                        $method = $applied ? 'orWhereIn' : 'whereIn';
+                        $cq->{$method}($tablePrefix . '.city_id', $cityIds);
+                    }
+                });
         });
     }
 
@@ -369,7 +369,7 @@ class HomeController extends Controller
             if (is_numeric($category)) {
                 $complaintsQuery->where('complaints.category_id', $category);
             } else {
-                $complaintsQuery->whereHas('category', function($q) use ($category) {
+                $complaintsQuery->whereHas('category', function ($q) use ($category) {
                     $q->where('name', $category);
                 });
             }
@@ -598,13 +598,13 @@ class HomeController extends Controller
             ->selectRaw('complaints.status, COUNT(*) as count')
             ->groupBy('complaints.status')
             ->pluck('count', 'complaints.status')
-            ->map(fn($val) => (int)$val)
+            ->map(fn($val) => (int) $val)
             ->toArray();
 
         $complaintsByStatus = $statusCounts;
         if (isset($complaintsByStatus['new'])) {
-             $complaintsByStatus['unassigned'] = ($complaintsByStatus['unassigned'] ?? 0) + $complaintsByStatus['new'];
-             unset($complaintsByStatus['new']);
+            $complaintsByStatus['unassigned'] = ($complaintsByStatus['unassigned'] ?? 0) + $complaintsByStatus['new'];
+            unset($complaintsByStatus['new']);
         }
 
         // Resolution rate & average time
@@ -654,7 +654,7 @@ class HomeController extends Controller
         // dataset for dashboard complaint table
         // We only fetch a small subset for the initial load if NOT an AJAX request
         // AJAX requests for more data will be handled separately
-        $perPage = 20;
+        $perPage = 15;
         $page = $request->get('page', 1);
 
         $complaintsBase = (clone $complaintsQuery)
@@ -680,7 +680,7 @@ class HomeController extends Controller
                 ) as is_overdue_sql
             ")
             ->with([
-                'assignedEmployee:id,name', 
+                'assignedEmployee:id,name',
                 'house:id,house_no,address'
             ])
             ->orderBy('id', 'desc');
@@ -692,7 +692,7 @@ class HomeController extends Controller
             // Handle AJAX pagination/filtering for the complaints table if a status filter is provided or pagination
             $statusFilter = $request->get('status');
             $statusKey = ($statusFilter === 'all' || !$statusFilter) ? null : $statusFilter;
-            
+
             if ($statusKey) {
                 if ($statusKey === 'unassigned') {
                     $complaintsBase->where('complaints.status', 'new');
@@ -707,7 +707,7 @@ class HomeController extends Controller
 
             $paginatedComplaints = $complaintsBase->paginate($perPage);
             $dashboardComplaintsRaw = $paginatedComplaints->getCollection();
-            
+
             $paginationData = [
                 'current_page' => $paginatedComplaints->currentPage(),
                 'last_page' => $paginatedComplaints->lastPage(),
@@ -841,14 +841,16 @@ class HomeController extends Controller
                 $cityIdsForCmes = City::where('cme_id', $cmesId)->pluck('id')->toArray();
                 $sectorIdsForCmes = Sector::where(function ($sq) use ($cmesId, $cityIdsForCmes) {
                     $sq->where('cme_id', $cmesId);
-                    if (!empty($cityIdsForCmes)) $sq->orWhereIn('city_id', $cityIdsForCmes);
+                    if (!empty($cityIdsForCmes))
+                        $sq->orWhereIn('city_id', $cityIdsForCmes);
                 })->pluck('id')->toArray();
 
                 // Inclusive Filter (House OR Direct Complaint columns)
                 $q->where(function ($sub) use ($cityIdsForCmes, $sectorIdsForCmes, $tablePrefix) {
                     $sub->whereHas('house', function ($hq) use ($cityIdsForCmes, $sectorIdsForCmes) {
                         $hq->where(function ($subInner) use ($cityIdsForCmes, $sectorIdsForCmes) {
-                            if (!empty($cityIdsForCmes)) $subInner->whereIn('city_id', $cityIdsForCmes);
+                            if (!empty($cityIdsForCmes))
+                                $subInner->whereIn('city_id', $cityIdsForCmes);
                             if (!empty($sectorIdsForCmes)) {
                                 $method = !empty($cityIdsForCmes) ? 'orWhereIn' : 'whereIn';
                                 $subInner->{$method}('sector_id', $sectorIdsForCmes);
@@ -856,7 +858,8 @@ class HomeController extends Controller
                         });
                     })->orWhere(function ($cq) use ($cityIdsForCmes, $sectorIdsForCmes, $tablePrefix) {
                         $cq->whereNull($tablePrefix . '.house_id');
-                        if (!empty($cityIdsForCmes)) $cq->whereIn($tablePrefix . '.city_id', $cityIdsForCmes);
+                        if (!empty($cityIdsForCmes))
+                            $cq->whereIn($tablePrefix . '.city_id', $cityIdsForCmes);
                         if (!empty($sectorIdsForCmes)) {
                             $method = !empty($cityIdsForCmes) ? 'orWhereIn' : 'whereIn';
                             $cq->{$method}($tablePrefix . '.sector_id', $sectorIdsForCmes);
@@ -875,7 +878,7 @@ class HomeController extends Controller
                 if (is_numeric($category)) {
                     $q->where($tablePrefix ? $tablePrefix . '.category_id' : 'category_id', $category);
                 } else {
-                    $q->whereHas('category', function($subQ) use ($category) {
+                    $q->whereHas('category', function ($subQ) use ($category) {
                         $subQ->where('name', $category);
                     });
                 }
@@ -888,15 +891,33 @@ class HomeController extends Controller
             if ($effectiveDateRange) {
                 $now = now();
                 switch ($effectiveDateRange) {
-                    case 'yesterday': $q->whereDate($createdAtCol, $now->copy()->subDay()->toDateString()); break;
-                    case 'today': $q->whereDate($createdAtCol, $now->toDateString()); break;
-                    case 'this_week': $q->whereBetween($createdAtCol, [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()]); break;
-                    case 'last_week': $q->whereBetween($createdAtCol, [$now->copy()->subWeek()->startOfWeek(), $now->copy()->subWeek()->endOfWeek()]); break;
-                    case 'this_month': $q->whereMonth($createdAtCol, $now->month)->whereYear($createdAtCol, $now->year); break;
-                    case 'last_month': $q->whereMonth($createdAtCol, $now->copy()->subMonth()->month)->whereYear($createdAtCol, $now->copy()->subMonth()->year); break;
-                    case 'last_6_months': $q->where($createdAtCol, '>=', $now->copy()->subMonths(6)->startOfDay()); break;
-                    case 'this_year': $q->whereYear($createdAtCol, $now->year); break;
-                    case 'last_year': $q->whereYear($createdAtCol, $now->copy()->subYear()->year); break;
+                    case 'yesterday':
+                        $q->whereDate($createdAtCol, $now->copy()->subDay()->toDateString());
+                        break;
+                    case 'today':
+                        $q->whereDate($createdAtCol, $now->toDateString());
+                        break;
+                    case 'this_week':
+                        $q->whereBetween($createdAtCol, [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()]);
+                        break;
+                    case 'last_week':
+                        $q->whereBetween($createdAtCol, [$now->copy()->subWeek()->startOfWeek(), $now->copy()->subWeek()->endOfWeek()]);
+                        break;
+                    case 'this_month':
+                        $q->whereMonth($createdAtCol, $now->month)->whereYear($createdAtCol, $now->year);
+                        break;
+                    case 'last_month':
+                        $q->whereMonth($createdAtCol, $now->copy()->subMonth()->month)->whereYear($createdAtCol, $now->copy()->subMonth()->year);
+                        break;
+                    case 'last_6_months':
+                        $q->where($createdAtCol, '>=', $now->copy()->subMonths(6)->startOfDay());
+                        break;
+                    case 'this_year':
+                        $q->whereYear($createdAtCol, $now->year);
+                        break;
+                    case 'last_year':
+                        $q->whereYear($createdAtCol, $now->copy()->subYear()->year);
+                        break;
                     case 'custom':
                         if ($request->has('start_date') && $request->has('end_date')) {
                             $q->whereBetween($createdAtCol, [
@@ -911,7 +932,7 @@ class HomeController extends Controller
 
         // Efficiently fetch all rolling 12-month graph data in two queries
         $startDate = now()->startOfMonth()->subMonths(11);
-        
+
         $monthlyData = (clone $graphBaseQuery)
             ->where('complaints.created_at', '>=', $startDate)
             ->selectRaw("
@@ -938,7 +959,7 @@ class HomeController extends Controller
         $unauthorizedData = [];
         $performaData = [];
         $yearTdData = [];
-        
+
         // Cumulative sum for YearTD
         $currentCumulative = (clone $graphBaseQuery)
             ->whereYear('complaints.created_at', now()->year)
@@ -949,7 +970,7 @@ class HomeController extends Controller
             $date = now()->startOfMonth()->subMonths($i);
             $key = $date->year . '-' . $date->month;
             $monthLabels[] = $date->format('M');
-            
+
             $row = $monthlyData->get($key);
             $total = $row ? $row->total : 0;
             $addressed = $row ? $row->addressed : 0;
@@ -961,7 +982,7 @@ class HomeController extends Controller
             $resolvedVsEdData[] = $addressed;
             $unauthorizedData[] = $barak;
             $performaData[] = $performa;
-            
+
             // YearTD Cumulative logic (reset at year start)
             if ($date->month == 1) {
                 $currentCumulative = 0;
@@ -1091,7 +1112,7 @@ class HomeController extends Controller
         $cmeResolvedData = []; // New array for addressed complaints
 
         $cmeDateRange = $request->get('cme_date_range', 'all_time'); // specific filter or default to all_time
-        
+
         $years = collect(range(date('Y'), 2023))->unique()->values()->all();
 
         // Check if user has unrestricted access (all privileges)
@@ -1133,9 +1154,9 @@ class HomeController extends Controller
             $cmeStatsRaw = \App\Models\Complaint::leftJoin('houses', 'houses.id', '=', 'complaints.house_id')
                 ->where(function ($q) use ($cmeGroupCityIds) {
                     $q->whereIn('houses.city_id', $cmeGroupCityIds)
-                      ->orWhere(function ($cq) use ($cmeGroupCityIds) {
-                          $cq->whereNull('complaints.house_id')->whereIn('complaints.city_id', $cmeGroupCityIds);
-                      });
+                        ->orWhere(function ($cq) use ($cmeGroupCityIds) {
+                            $cq->whereNull('complaints.house_id')->whereIn('complaints.city_id', $cmeGroupCityIds);
+                        });
                 })
                 ->selectRaw('COALESCE(houses.city_id, complaints.city_id) as city_id, COUNT(*) as total, SUM(CASE WHEN complaints.status IN ("resolved", "closed") THEN 1 ELSE 0 END) as resolved');
 
@@ -1162,9 +1183,9 @@ class HomeController extends Controller
             $cmeStatsRaw = \App\Models\Complaint::leftJoin('houses', 'houses.id', '=', 'complaints.house_id')
                 ->where(function ($q) use ($cmeNodeSectorIds) {
                     $q->whereIn('houses.sector_id', $cmeNodeSectorIds)
-                      ->orWhere(function ($cq) use ($cmeNodeSectorIds) {
-                          $cq->whereNull('complaints.house_id')->whereIn('complaints.sector_id', $cmeNodeSectorIds);
-                      });
+                        ->orWhere(function ($cq) use ($cmeNodeSectorIds) {
+                            $cq->whereNull('complaints.house_id')->whereIn('complaints.sector_id', $cmeNodeSectorIds);
+                        });
                 })
                 ->selectRaw('COALESCE(houses.sector_id, complaints.sector_id) as sector_id, COUNT(*) as total, SUM(CASE WHEN complaints.status IN ("resolved", "closed") THEN 1 ELSE 0 END) as resolved');
 
@@ -1191,9 +1212,9 @@ class HomeController extends Controller
             $cmeStatsRaw = \App\Models\Complaint::leftJoin('houses', 'houses.id', '=', 'complaints.house_id')
                 ->where(function ($q) use ($cmeNodeOnlySectorIds) {
                     $q->whereIn('houses.sector_id', $cmeNodeOnlySectorIds)
-                      ->orWhere(function ($cq) use ($cmeNodeOnlySectorIds) {
-                          $cq->whereNull('complaints.house_id')->whereIn('complaints.sector_id', $cmeNodeOnlySectorIds);
-                      });
+                        ->orWhere(function ($cq) use ($cmeNodeOnlySectorIds) {
+                            $cq->whereNull('complaints.house_id')->whereIn('complaints.sector_id', $cmeNodeOnlySectorIds);
+                        });
                 })
                 ->selectRaw('COALESCE(houses.sector_id, complaints.sector_id) as sector_id, COUNT(*) as total, SUM(CASE WHEN complaints.status IN ("resolved", "closed") THEN 1 ELSE 0 END) as resolved');
 
@@ -1210,24 +1231,24 @@ class HomeController extends Controller
         } else {
             // Admin or Unrestricted: Show stats for all CMEs (Optimized grouped query)
             $cmeIds_list = $cmesList->pluck('id')->toArray();
-            
+
             $cmeStatsQuery = \App\Models\Complaint::leftJoin('houses', 'houses.id', '=', 'complaints.house_id')
-                ->leftJoin('cities', function($join) {
+                ->leftJoin('cities', function ($join) {
                     $join->on('houses.city_id', '=', 'cities.id')
-                         ->orOn('complaints.city_id', '=', 'cities.id');
+                        ->orOn('complaints.city_id', '=', 'cities.id');
                 })
-                ->leftJoin('sectors', function($join) {
+                ->leftJoin('sectors', function ($join) {
                     $join->on('houses.sector_id', '=', 'sectors.id')
-                         ->orOn('complaints.sector_id', '=', 'sectors.id');
+                        ->orOn('complaints.sector_id', '=', 'sectors.id');
                 })
                 ->selectRaw('
                     COALESCE(cities.cme_id, sectors.cme_id) as cme_id, 
                     COUNT(*) as total, 
                     SUM(CASE WHEN complaints.status IN ("resolved", "closed") THEN 1 ELSE 0 END) as resolved
                 ')
-                ->where(function($q) use ($cmeIds_list) {
+                ->where(function ($q) use ($cmeIds_list) {
                     $q->whereIn('cities.cme_id', $cmeIds_list)
-                      ->orWhereIn('sectors.cme_id', $cmeIds_list);
+                        ->orWhereIn('sectors.cme_id', $cmeIds_list);
                 })
                 ->groupBy(\DB::raw('COALESCE(cities.cme_id, sectors.cme_id)'));
 
@@ -1320,13 +1341,14 @@ class HomeController extends Controller
                 // Get oldest year from DB to build year rows
                 $oldestYear = \App\Models\Complaint::min(\DB::raw('YEAR(created_at)'));
                 $currentYear = now()->year;
-                if (!$oldestYear) $oldestYear = $currentYear;
+                if (!$oldestYear)
+                    $oldestYear = $currentYear;
                 for ($yr = $oldestYear; $yr <= $currentYear; $yr++) {
-                    $reportMonths[$yr] = ['label' => (string)$yr, 'year' => $yr, 'month' => null];
-                    $monthlyTableData[(string)$yr] = [];
+                    $reportMonths[$yr] = ['label' => (string) $yr, 'year' => $yr, 'month' => null];
+                    $monthlyTableData[(string) $yr] = [];
                 }
             } else {
-                $yearVal = (int)$cmeDateRange;
+                $yearVal = (int) $cmeDateRange;
                 for ($m = 1; $m <= 12; $m++) {
                     $label = date('F', mktime(0, 0, 0, $m, 1));
                     $reportMonths[] = ['label' => $label, 'year' => $yearVal, 'month' => $m];
@@ -1336,47 +1358,49 @@ class HomeController extends Controller
 
             // FETCHING ALL DATA IN ONE GO - OPTIMIZED
             $entityIds = $tableEntities->pluck('id')->toArray();
-            
+
             $tableQuery = \App\Models\Complaint::query();
             if ($entityType === 'cme') {
                 $allCityIds = \App\Models\City::whereIn('cme_id', $entityIds)->pluck('id')->toArray();
-                $tableQuery->where(function($q) use ($allCityIds, $entityIds) {
-                    $q->where(function($sq) use ($allCityIds) {
-                        if (!empty($allCityIds)) $sq->whereIn('houses.city_id', array_unique($allCityIds));
-                    })->orWhereIn('houses.sector_id', function($sq) use ($entityIds) {
+                $tableQuery->where(function ($q) use ($allCityIds, $entityIds) {
+                    $q->where(function ($sq) use ($allCityIds) {
+                        if (!empty($allCityIds))
+                            $sq->whereIn('houses.city_id', array_unique($allCityIds));
+                    })->orWhereIn('houses.sector_id', function ($sq) use ($entityIds) {
                         $sq->select('id')->from('sectors')->whereIn('cme_id', $entityIds);
-                    })->orWhere(function($cq) use ($allCityIds, $entityIds) {
+                    })->orWhere(function ($cq) use ($allCityIds, $entityIds) {
                         $cq->whereNull('complaints.house_id');
-                        $cq->where(function($inner) use ($allCityIds, $entityIds) {
-                            if (!empty($allCityIds)) $inner->whereIn('complaints.city_id', array_unique($allCityIds));
-                            $inner->orWhereIn('complaints.sector_id', function($isq) use ($entityIds) {
+                        $cq->where(function ($inner) use ($allCityIds, $entityIds) {
+                            if (!empty($allCityIds))
+                                $inner->whereIn('complaints.city_id', array_unique($allCityIds));
+                            $inner->orWhereIn('complaints.sector_id', function ($isq) use ($entityIds) {
                                 $isq->select('id')->from('sectors')->whereIn('cme_id', $entityIds);
                             });
                         });
                     });
                 });
             } elseif ($entityType === 'city') {
-                $tableQuery->where(function($q) use ($entityIds) {
+                $tableQuery->where(function ($q) use ($entityIds) {
                     $q->whereIn('houses.city_id', $entityIds)
-                      ->orWhereIn('houses.sector_id', function($sq) use ($entityIds) {
-                          $sq->select('id')->from('sectors')->whereIn('city_id', $entityIds);
-                      })
-                      ->orWhere(function($cq) use ($entityIds) {
-                          $cq->whereNull('complaints.house_id');
-                          $cq->where(function($inner) use ($entityIds) {
-                              $inner->whereIn('complaints.city_id', $entityIds)
-                                    ->orWhereIn('complaints.sector_id', function($isq) use ($entityIds) {
+                        ->orWhereIn('houses.sector_id', function ($sq) use ($entityIds) {
+                            $sq->select('id')->from('sectors')->whereIn('city_id', $entityIds);
+                        })
+                        ->orWhere(function ($cq) use ($entityIds) {
+                            $cq->whereNull('complaints.house_id');
+                            $cq->where(function ($inner) use ($entityIds) {
+                                $inner->whereIn('complaints.city_id', $entityIds)
+                                    ->orWhereIn('complaints.sector_id', function ($isq) use ($entityIds) {
                                         $isq->select('id')->from('sectors')->whereIn('city_id', $entityIds);
                                     });
-                          });
-                      });
+                            });
+                        });
                 });
             } else {
-                $tableQuery->where(function($q) use ($entityIds) {
+                $tableQuery->where(function ($q) use ($entityIds) {
                     $q->whereIn('houses.sector_id', $entityIds)
-                      ->orWhere(function($cq) use ($entityIds) {
-                          $cq->whereNull('complaints.house_id')->whereIn('complaints.sector_id', $entityIds);
-                      });
+                        ->orWhere(function ($cq) use ($entityIds) {
+                            $cq->whereNull('complaints.house_id')->whereIn('complaints.sector_id', $entityIds);
+                        });
                 });
             }
 
@@ -1386,19 +1410,19 @@ class HomeController extends Controller
             if ($isAllTime) {
                 // Group by year only (no month needed)
                 $allStats = $tableQuery->leftJoin('houses', 'complaints.house_id', '=', 'houses.id')
-                ->selectRaw('
+                    ->selectRaw('
                     COALESCE(houses.city_id, complaints.city_id) as city_id, 
                     COALESCE(houses.sector_id, complaints.sector_id) as sector_id, 
                     YEAR(complaints.created_at) as year,
                     COUNT(*) as total,
                     SUM(CASE WHEN complaints.status IN ("resolved", "closed") THEN 1 ELSE 0 END) as resolved
                 ')
-                ->groupBy(\DB::raw('COALESCE(houses.city_id, complaints.city_id)'), \DB::raw('COALESCE(houses.sector_id, complaints.sector_id)'), 'year')
-                ->get();
+                    ->groupBy(\DB::raw('COALESCE(houses.city_id, complaints.city_id)'), \DB::raw('COALESCE(houses.sector_id, complaints.sector_id)'), 'year')
+                    ->get();
             } else {
                 // Group by year+month for specific year
                 $allStats = $tableQuery->leftJoin('houses', 'complaints.house_id', '=', 'houses.id')
-                ->selectRaw('
+                    ->selectRaw('
                     COALESCE(houses.city_id, complaints.city_id) as city_id, 
                     COALESCE(houses.sector_id, complaints.sector_id) as sector_id, 
                     YEAR(complaints.created_at) as year, 
@@ -1406,8 +1430,8 @@ class HomeController extends Controller
                     COUNT(*) as total,
                     SUM(CASE WHEN complaints.status IN ("resolved", "closed") THEN 1 ELSE 0 END) as resolved
                 ')
-                ->groupBy(\DB::raw('COALESCE(houses.city_id, complaints.city_id)'), \DB::raw('COALESCE(houses.sector_id, complaints.sector_id)'), 'year', 'month')
-                ->get();
+                    ->groupBy(\DB::raw('COALESCE(houses.city_id, complaints.city_id)'), \DB::raw('COALESCE(houses.sector_id, complaints.sector_id)'), 'year', 'month')
+                    ->get();
             }
 
             // PRE-CALCULATE MAPPINGS FOR ACCURATE ATTRIBUTION
@@ -1422,7 +1446,7 @@ class HomeController extends Controller
             // PRE-INDEX ALL STATS FOR FASTER LOOKUP
             $indexedStats = [];
             foreach ($allStats as $stat) {
-                $timeKey = $isAllTime ? (string)$stat->year : $stat->year . '_' . $stat->month;
+                $timeKey = $isAllTime ? (string) $stat->year : $stat->year . '_' . $stat->month;
                 $entityKey = '';
                 if ($entityType === 'cme') {
                     if ($stat->city_id && isset($cityCmeMap[$stat->city_id])) {
@@ -1431,9 +1455,11 @@ class HomeController extends Controller
                         $entityKey = 'cme_' . $sectorCmeMap[$stat->sector_id];
                     }
                 } elseif ($entityType === 'city') {
-                    if ($stat->city_id) $entityKey = 'city_' . $stat->city_id;
+                    if ($stat->city_id)
+                        $entityKey = 'city_' . $stat->city_id;
                 } else {
-                    if ($stat->sector_id) $entityKey = 'sector_' . $stat->sector_id;
+                    if ($stat->sector_id)
+                        $entityKey = 'sector_' . $stat->sector_id;
                 }
 
                 if ($entityKey) {
@@ -1447,7 +1473,7 @@ class HomeController extends Controller
 
             // Map results using indexed data
             foreach ($reportMonths as $rm) {
-                $timeKey = $isAllTime ? (string)$rm['year'] : $rm['year'] . '_' . $rm['month'];
+                $timeKey = $isAllTime ? (string) $rm['year'] : $rm['year'] . '_' . $rm['month'];
                 foreach ($tableEntities as $entity) {
                     $entityKey = $entityType . '_' . $entity->id;
                     $combinedStat = $indexedStats[$timeKey][$entityKey] ?? ['total' => 0, 'resolved' => 0];
@@ -1608,7 +1634,9 @@ class HomeController extends Controller
     {
         $request->validate([
             'current_password' => 'required',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => 'required|string|min:8|confirmed|different:current_password',
+        ], [
+            'password.different' => 'The new password must be different from the current password.',
         ]);
 
         $user = Auth::guard('frontend')->user();
@@ -1682,7 +1710,7 @@ class HomeController extends Controller
                 'closed_at' => now(),
                 'resolved_at' => now(),
             ]);
-            
+
             // Log the status change
             \App\Models\ComplaintLog::create([
                 'complaint_id' => $complaint->id,
@@ -1749,9 +1777,9 @@ class HomeController extends Controller
     {
         $user = Auth::user();
         $locationScope = $this->getFrontendUserLocationScope($user);
-        
+
         $selectedYear = $request->get('year', 'all_time');
-        
+
         // Dashboard filters
         $filters = [
             'city_id' => $request->get('city_id'),
@@ -1759,7 +1787,7 @@ class HomeController extends Controller
             'cmes_id' => $request->get('cmes_id'),
             'date_range' => $request->get('date_range')
         ];
-        
+
         $monthLabels = [];
         if ($selectedYear === 'all_time') {
             for ($i = 11; $i >= 0; $i--) {
@@ -1799,7 +1827,7 @@ class HomeController extends Controller
         // Filter by category if provided
         if (!empty($dashboardFilters['category']) && $dashboardFilters['category'] !== 'all') {
             $cat = $dashboardFilters['category'];
-            $sparesListQuery->whereHas('category', function($q) use ($cat) {
+            $sparesListQuery->whereHas('category', function ($q) use ($cat) {
                 if (is_numeric($cat)) {
                     $q->where('id', $cat);
                 } else {
@@ -1863,7 +1891,7 @@ class HomeController extends Controller
             switch ($dashboardFilters['date_range']) {
                 case 'this_month':
                     $stockQuery->whereMonth('spare_stock_logs.created_at', $now->month)
-                               ->whereYear('spare_stock_logs.created_at', $now->year);
+                        ->whereYear('spare_stock_logs.created_at', $now->year);
                     break;
                 case 'last_6_months':
                     $stockQuery->where('spare_stock_logs.created_at', '>=', $now->copy()->subMonths(6)->startOfDay());
@@ -1924,7 +1952,7 @@ class HomeController extends Controller
             switch ($dashboardFilters['date_range']) {
                 case 'this_month':
                     $stockReceivedQuery->whereMonth('spare_stock_logs.created_at', $now->month)
-                                       ->whereYear('spare_stock_logs.created_at', $now->year);
+                        ->whereYear('spare_stock_logs.created_at', $now->year);
                     break;
                 case 'last_6_months':
                     $stockReceivedQuery->where('spare_stock_logs.created_at', '>=', $now->copy()->subMonths(6)->startOfDay());
@@ -1951,15 +1979,15 @@ class HomeController extends Controller
                 $d = now()->startOfMonth()->subMonths($i);
                 $reportMonths[] = [
                     'label' => $d->format('M'),
-                    'year' => (int)$d->year,
-                    'month' => (int)$d->month
+                    'year' => (int) $d->year,
+                    'month' => (int) $d->month
                 ];
             }
         } else {
             for ($m = 1; $m <= 12; $m++) {
                 $reportMonths[] = [
                     'label' => date('M', mktime(0, 0, 0, $m, 1)),
-                    'year' => (int)$year,
+                    'year' => (int) $year,
                     'month' => $m
                 ];
             }
@@ -1968,7 +1996,8 @@ class HomeController extends Controller
         // Limit to top 30 spares for dashboard performance
         $sparesProcessed = 0;
         foreach ($sparesList as $spare) {
-            if ($sparesProcessed >= 30) break;
+            if ($sparesProcessed >= 30)
+                break;
             $sparesProcessed++;
             $monthlyData = [];
             $monthlyReceivedData = [];
@@ -1997,12 +2026,12 @@ class HomeController extends Controller
             // If All Time is selected AND no specific dashboard time filter is applied, use the master counters from the Spare model
             // This ensures matches with Dashboard and avoids issues with missing log history
             $hasTimeFilter = !empty($dashboardFilters['date_range']) && $dashboardFilters['date_range'] !== 'all_time';
-            
+
             if ($year === 'all_time' && !$hasTimeFilter) {
                 $stockConsumptionData[$spare->item_name] = [
-                    'total_received' => (int)$spare->total_received_quantity,
-                    'total_used' => (int)$spare->issued_quantity,
-                    'current_stock' => (int)$spare->stock_quantity,
+                    'total_received' => (int) $spare->total_received_quantity,
+                    'total_used' => (int) $spare->issued_quantity,
+                    'current_stock' => (int) $spare->stock_quantity,
                     'monthly_data' => $monthlyData,
                     'monthly_received_data' => $monthlyReceivedData
                 ];
@@ -2012,7 +2041,7 @@ class HomeController extends Controller
                 $stockConsumptionData[$spare->item_name] = [
                     'total_received' => $windowTotalReceived,
                     'total_used' => $windowTotalIssued,
-                    'current_stock' => (int)$spare->stock_quantity, 
+                    'current_stock' => (int) $spare->stock_quantity,
                     'monthly_data' => $monthlyData,
                     'monthly_received_data' => $monthlyReceivedData
                 ];
@@ -2028,12 +2057,18 @@ class HomeController extends Controller
     public function getRatingScore($rating)
     {
         switch (strtolower($rating)) {
-            case 'excellent': return 5;
-            case 'good': return 4;
-            case 'satisfied': return 3;
-            case 'fair': return 2;
-            case 'poor': return 1;
-            default: return 0;
+            case 'excellent':
+                return 5;
+            case 'good':
+                return 4;
+            case 'satisfied':
+                return 3;
+            case 'fair':
+                return 2;
+            case 'poor':
+                return 1;
+            default:
+                return 0;
         }
     }
 
@@ -2043,7 +2078,8 @@ class HomeController extends Controller
     public function getCitiesByCmeAjax(Request $request)
     {
         $user = Auth::user();
-        if (!$user) return response()->json([]);
+        if (!$user)
+            return response()->json([]);
 
         $locationScope = $this->getFrontendUserLocationScope($user);
         $cmeId = $request->query('cme_id');
@@ -2079,7 +2115,8 @@ class HomeController extends Controller
     public function getSectorsByCityAjax(Request $request)
     {
         $user = Auth::user();
-        if (!$user) return response()->json([]);
+        if (!$user)
+            return response()->json([]);
 
         $locationScope = $this->getFrontendUserLocationScope($user);
         $cityId = $request->query('city_id');
