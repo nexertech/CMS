@@ -95,7 +95,7 @@ class ReportController extends Controller
         // Get aggregated complaint stats in one query
         $complaintStats = (clone $complaintsQuery)->selectRaw('
             COUNT(*) as total,
-            SUM(CASE WHEN complaints.status = "resolved" AND complaints.updated_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as resolved,
+            SUM(CASE WHEN complaints.status = "resolved" AND complaints.closed_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as resolved,
             SUM(CASE WHEN complaints.status != "resolved" THEN 1 ELSE 0 END) as pending
         ', [$startOfMonth, $now])->first();
 
@@ -335,7 +335,7 @@ class ReportController extends Controller
         // Consolidated stats in fewer queries
         $complaintStats = (clone $complaintsQuery)->selectRaw('
             SUM(CASE WHEN complaints.created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as total_this_month,
-            SUM(CASE WHEN complaints.status = "resolved" AND complaints.updated_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as resolved_this_month
+            SUM(CASE WHEN complaints.status = "resolved" AND complaints.closed_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as resolved_this_month
         ', [$startOfMonth, $now, $startOfMonth, $now])->first();
 
         $spareStats = (clone $sparesQuery)->selectRaw('
