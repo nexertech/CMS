@@ -60,7 +60,7 @@
         <div class="d-flex align-items-start">
           <i data-feather="map-pin" class="me-3 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
           <div class="flex-grow-1">
-            <div class="text-muted small mb-1" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">City / GE Group</div>
+            <div class="text-muted small mb-1" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">GE Group</div>
             <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">
               {{ $user->cities->pluck('name')->join(', ') ?: 'N/A' }}
             </div>
@@ -74,7 +74,7 @@
         <div class="d-flex align-items-start">
           <i data-feather="map" class="me-3 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
           <div class="flex-grow-1">
-            <div class="text-muted small mb-1" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Sector / GE Node</div>
+            <div class="text-muted small mb-1" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">GE Node</div>
             <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">
               {{ $user->sectors->pluck('name')->join(', ') ?: 'N/A' }}
             </div>

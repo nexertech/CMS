@@ -420,9 +420,6 @@
         }
       }
 
-      // Notification functionality
-      loadNotifications();
-      
       // Settings and Help buttons now link to actual pages
 
       // Sidebar toggle for mobile
@@ -637,81 +634,8 @@
         }
       });
 
-      // View all notifications
-      const viewAllNotifications = document.getElementById('viewAllNotifications');
-      if (viewAllNotifications) {
-        viewAllNotifications.addEventListener('click', function(e) {
-          e.preventDefault();
-          window.location.href = '{{ route("admin.notifications.index") }}';
-        });
-      }
+
     });
-
-    // Load notifications
-    function loadNotifications() {
-      fetch('/admin/notifications/api', { headers: { 'X-Requested-With': 'XMLHttpRequest' }})
-        .then(res => res.json())
-        .then(data => {
-          const list = data.notifications || [];
-          const unread = typeof data.unread === 'number' ? data.unread : (list.filter(n => !n.read).length);
-          updateNotificationCount(unread);
-          updateNotificationList(list);
-        })
-        .catch(() => {
-          // On error, show no notifications to avoid mock data
-          updateNotificationCount(0);
-          updateNotificationList([]);
-        });
-    }
-
-    // Update notification count
-    function updateNotificationCount(count) {
-      const countElement = document.getElementById('notificationCount');
-      const totalElement = document.getElementById('notificationTotal');
-      
-      if (countElement) {
-        countElement.textContent = count;
-        countElement.style.display = count > 0 ? 'inline' : 'none';
-      }
-      
-      if (totalElement) {
-        totalElement.textContent = count;
-      }
-    }
-
-    // Update notification list
-    function updateNotificationList(notifications) {
-      const listElement = document.getElementById('notificationList');
-      
-      if (notifications.length === 0) {
-        listElement.innerHTML = `
-          <div class="text-center py-3 text-muted">
-            <i data-feather="bell-off" class="feather-lg mb-2"></i>
-            <div>No notifications</div>
-          </div>
-        `;
-      } else {
-        listElement.innerHTML = notifications.map(notification => `
-          <a href="${notification.url || '#'}" class="dropdown-item notification-item">
-            <div class="d-flex align-items-start">
-              <div class="notification-icon me-3">
-                <i data-feather="${notification.icon || 'bell'}" class="text-${notification.type || 'primary'}"></i>
-              </div>
-              <div class="flex-grow-1">
-                <div class="notification-title">${notification.title}</div>
-                <div class="notification-message text-muted small">${notification.message}</div>
-                <div class="notification-time text-muted small">${notification.time}</div>
-              </div>
-            </div>
-          </a>
-        `).join('');
-      }
-      
-      feather.replace();
-    }
-
-    // Auto-refresh notifications every 30 seconds
-    setInterval(loadNotifications, 30000);
 
     // Auto-hide success messages after 3 seconds
     document.addEventListener('DOMContentLoaded', function() {

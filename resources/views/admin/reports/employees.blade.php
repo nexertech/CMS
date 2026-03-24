@@ -14,6 +14,9 @@
       <button class="btn btn-primary" onclick="window.print()">
         <i data-feather="printer" class="me-2"></i>Print
       </button>
+      <a href="{{ route('admin.reports.download', ['type' => 'employees', 'format' => 'excel'] + request()->query()) }}" class="btn btn-success">
+        <i data-feather="download" class="me-2"></i>Excel
+      </a>
       <a href="{{ route('admin.reports.index') }}" class="btn btn-outline-secondary">
         <i data-feather="arrow-left" class="me-2"></i>Back to Reports
       </a>

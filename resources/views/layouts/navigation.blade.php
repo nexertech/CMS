@@ -164,11 +164,7 @@
     border-color: rgba(59, 130, 246, 0.2);
   }
   
-  .notification-dropdown {
-    width: 320px;
-    max-height: 400px;
-    overflow-y: auto;
-  }
+
   
   .user-dropdown {
     width: 280px;
@@ -249,23 +245,7 @@
     color: #64748b !important;
   }
   
-  .theme-light .topbar .notification-dropdown {
-    background: #ffffff !important;
-    border: 1px solid rgba(0, 0, 0, 0.1) !important;
-  }
-  
-  .theme-light .topbar .notification-dropdown .dropdown-header {
-    color: #1e293b !important;
-  }
-  
-  .theme-light .topbar .notification-dropdown .dropdown-item {
-    color: #1e293b !important;
-  }
-  
-  .theme-light .topbar .notification-dropdown .dropdown-item:hover {
-    background: rgba(0, 0, 0, 0.05) !important;
-    color: #0f172a !important;
-  }
+
   
   .theme-light .topbar .badge {
     color: #ffffff !important;
@@ -346,23 +326,7 @@
     color: #9ca3af !important;
   }
   
-  .theme-night .topbar .notification-dropdown {
-    background: rgba(0, 0, 0, 0.95) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  }
-  
-  .theme-night .topbar .notification-dropdown .dropdown-header {
-    color: #e5e5e5 !important;
-  }
-  
-  .theme-night .topbar .notification-dropdown .dropdown-item {
-    color: #e5e5e5 !important;
-  }
-  
-  .theme-night .topbar .notification-dropdown .dropdown-item:hover {
-    background: rgba(255, 255, 255, 0.1) !important;
-    color: #ffffff !important;
-  }
+
   
   .theme-night .topbar .badge {
     color: #ffffff !important;
@@ -405,33 +369,7 @@
       <!-- Theme Toggle -->
       @include('components.theme-toggle')
 
-      <!-- Notifications -->
-      <div class="position-relative">
-        <button class="btn btn-outline-light position-relative" id="notificationBtn" data-bs-toggle="dropdown">
-          <i data-feather="bell"></i>
-          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notificationCount">
-            0
-          </span>
-        </button>
-        <div class="dropdown-menu dropdown-menu-end notification-dropdown">
-          <div class="dropdown-header">
-            <h6 class="mb-0">Notifications</h6>
-            <small class="text-muted">You have <span id="notificationTotal">0</span> new notifications</small>
-          </div>
-          <div class="dropdown-divider"></div>
-          <div id="notificationList">
-            <!-- Notifications will be loaded here -->
-            <div class="text-center py-3 text-muted">
-              <i data-feather="bell-off" class="feather-lg mb-2"></i>
-              <div>No notifications</div>
-            </div>
-          </div>
-          <div class="dropdown-divider"></div>
-          <a class="dropdown-item text-center" href="#" id="viewAllNotifications">
-            View all notifications
-          </a>
-        </div>
-      </div>
+
 
       <!-- User Profile Dropdown -->
       <div class="dropdown">
@@ -503,15 +441,3 @@
   </div>
 </div>
 
-<script>
-  // View all notifications link
-  document.addEventListener('DOMContentLoaded', function() {
-    const viewAllNotifications = document.getElementById('viewAllNotifications');
-    if (viewAllNotifications) {
-      viewAllNotifications.addEventListener('click', function(e) {
-        e.preventDefault();
-        window.location.href = '{{ route("admin.notifications.index") }}';
-      });
-    }
-  });
-</script>

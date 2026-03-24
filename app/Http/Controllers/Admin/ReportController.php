@@ -1314,8 +1314,8 @@ class ReportController extends Controller
         try {
             if ($format === 'pdf') {
                 return $this->exportToPDF($type, $data, $summary);
-            } elseif ($format === 'excel') {
-                return $this->exportToExcel($type, $data, $summary);
+            } elseif ($format === 'excel' || $format === 'csv') {
+                return $this->exportToCSV($type, $data, $summary);
             } else {
                 return $this->exportToJSON($type, $data, $summary);
             }
@@ -1422,39 +1422,95 @@ class ReportController extends Controller
     }
 
     /**
-     * Export report to PDF (legacy method for other reports)
+     * Export report to PDF
      */
     private function exportToPDF($type, $data, $summary)
     {
-        $filename = "{$type}_report_" . now()->format('Y-m-d_H-i-s') . '.pdf';
-
-        // For now, return JSON with download link
-        // In production, you would use a PDF library like DomPDF or TCPDF
-        return response()->json([
-            'message' => 'PDF export functionality will be implemented with a PDF library',
-            'filename' => $filename,
-            'data' => $data,
-            'summary' => $summary,
-            'download_url' => route('admin.reports.download', ['type' => $type, 'format' => 'pdf'])
-        ]);
+        // Use the existing browser-based printing views that the user has already optimized
+        // For server-side PDF generation, a library like dompdf would be required.
+        // For now, we provide the clean HTML view meant for PDF printing.
+        return view("admin.reports.{$type}", array_merge(['data' => $data, 'summary' => $summary], request()->all()));
     }
 
     /**
-     * Export report to Excel (legacy method for other reports)
+     * Export report to CSV (Excel compatible)
      */
-    private function exportToExcel($type, $data, $summary)
+    private function exportToCSV($type, $data, $summary)
     {
-        $filename = "{$type}_report_" . now()->format('Y-m-d_H-i-s') . '.xlsx';
+        $filename = "{$type}_report_" . now()->format('Y-m-d_H-i-s') . '.csv';
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
 
-        // For now, return JSON with download link
-        // In production, you would use a library like Laravel Excel
-        return response()->json([
-            'message' => 'Excel export functionality will be implemented with Laravel Excel',
-            'filename' => $filename,
-            'data' => $data,
-            'summary' => $summary,
-            'download_url' => route('admin.reports.download', ['type' => $type, 'format' => 'excel'])
-        ]);
+        $callback = function () use ($type, $data, $summary) {
+            $file = fopen('php://output', 'w');
+            
+            // Add UTF-8 BOM for Excel compatibility
+            fputs($file, $bom = chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            if ($type === 'complaints') {
+                fputcsv($file, ['Status', 'Count']);
+                $items = isset($data->data) ? $data->data : (isset($data['data']) ? $data['data'] : $data);
+                foreach ($items as $item) {
+                    $status = is_object($item) ? ($item->status ?? 'N/A') : ($item['status'] ?? 'N/A');
+                    $count = is_object($item) ? ($item->count ?? 0) : ($item['count'] ?? 0);
+                    fputcsv($file, [$status, $count]);
+                }
+            } elseif ($type === 'employees') {
+                fputcsv($file, ['#', 'Employee Name', 'Category', 'Designation', 'Total Complaints', 'Resolved', 'Resolution Rate']);
+                foreach ($data as $index => $emp) {
+                    $employee = $emp['employee'];
+                    fputcsv($file, [
+                        $index + 1,
+                        $employee->name ?? 'N/A',
+                        $employee->category->name ?? $employee->category ?? 'N/A',
+                        $employee->designation->name ?? $employee->designation ?? 'N/A',
+                        $emp['total_complaints'] ?? 0,
+                        $emp['resolved_complaints'] ?? 0,
+                        ($emp['resolution_rate'] ?? 0) . '%'
+                    ]);
+                }
+            } elseif ($type === 'spares') {
+                fputcsv($file, ['#', 'Item Name', 'Category', 'Total Received', 'Issued Quantity', 'Balance Quantity', 'Stock Status']);
+                foreach ($data as $index => $spare) {
+                    $item = $spare['spare'];
+                    fputcsv($file, [
+                        $index + 1,
+                        $item->item_name ?? 'N/A',
+                        $item->category->name ?? $item->category ?? 'N/A',
+                        $item->total_received_quantity ?? 0,
+                        $spare['total_used'] ?? 0,
+                        $spare['current_stock'] ?? 0,
+                        $spare['stock_status'] ?? 'N/A'
+                    ]);
+                }
+            } elseif ($type === 'financial') {
+                fputcsv($file, ['Category', 'Total Cost']);
+                if (isset($data['category_breakdown'])) {
+                    foreach ($data['category_breakdown'] as $cost) {
+                        fputcsv($file, [$cost->category, number_format($cost->total_cost, 2)]);
+                    }
+                }
+                fputcsv($file, ['Summary: Total Spare Costs', number_format($summary['total_spare_costs'] ?? 0, 2)]);
+            } elseif ($type === 'sla') {
+                fputcsv($file, ['Category', 'Total', 'Resolved', '< 24h', '24-48h', '> 48h', 'Avg Time (h)', 'Compliance %']);
+                foreach ($data as $row) {
+                    fputcsv($file, [
+                        $row['name'], $row['total'], $row['resolved'],
+                        $row['lt_24h'], $row['24_48h'], $row['gt_48h'],
+                        $row['avg_time'], ($row['compliance_rate'] ?? 0) . '%'
+                    ]);
+                }
+                fputcsv($file, []);
+                fputcsv($file, ['Global Avg Resolution Time', ($summary['avg_resolution_time'] ?? 0) . 'h']);
+                fputcsv($file, ['Global Compliance Rate', ($summary['compliance_rate'] ?? 0) . '%']);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     /**
@@ -1488,14 +1544,12 @@ class ReportController extends Controller
 
             if ($format === 'json') {
                 return $this->exportToJSON($type, $reportData['data'], $reportData['summary']);
+            } elseif ($format === 'excel' || $format === 'csv') {
+                return $this->exportToCSV($type, $reportData['data'], $reportData['summary']);
+            } elseif ($format === 'pdf') {
+                return $this->exportToPDF($type, $reportData['data'], $reportData['summary']);
             } else {
-                // For PDF and Excel, return a message with download instructions
-                return response()->json([
-                    'message' => "{$format} export functionality will be implemented with appropriate libraries",
-                    'type' => $type,
-                    'format' => $format,
-                    'data' => $reportData
-                ]);
+                return $this->exportToJSON($type, $reportData['data'], $reportData['summary']);
             }
         } catch (\Exception $e) {
             return response()->json([
@@ -1518,6 +1572,8 @@ class ReportController extends Controller
                 return $this->getSparesData($request);
             case 'financial':
                 return $this->getFinancialData($request);
+            case 'sla':
+                return $this->getSlaData($request);
             default:
                 throw new \Exception("Unknown report type: {$type}");
         }
@@ -1791,119 +1847,92 @@ class ReportController extends Controller
      */
     public function sla(Request $request)
     {
-        // Set default values if not provided
+        $reportData = $this->getSlaData($request);
+        $slaData = $reportData['data'];
+        $summary = $reportData['summary'];
         $dateFrom = $request->date_from ?? now()->subMonth()->format('Y-m-d');
         $dateTo = $request->date_to ?? now()->format('Y-m-d');
 
-        // Ensure dates are properly formatted and include time for full day coverage
+        return view('admin.reports.sla', compact('slaData', 'summary', 'dateFrom', 'dateTo'));
+    }
+
+    /**
+     * Get SLA report data
+     */
+    private function getSlaData(Request $request): array
+    {
+        // Set default values
+        $dateFrom = $request->get('date_from', now()->subMonth()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', now()->format('Y-m-d'));
         $dateFromStart = \Carbon\Carbon::parse($dateFrom)->startOfDay();
         $dateToEnd = \Carbon\Carbon::parse($dateTo)->endOfDay();
 
-        // Get user for location filtering
         $user = Auth::user();
+        $cmesId = $request->get('cmes_id');
 
-        // Get actual categories from ComplaintCategory table
+        // Get actual categories
         $actualCategories = \App\Models\ComplaintCategory::query()->where('status', 1)->orderBy('name')
-            ->pluck('name')
-            ->toArray();
+            ->pluck('name')->toArray();
 
-        $allCategories = $actualCategories;
-        sort($allCategories);
-
-        // Map categories for report
         $categories = [];
-        foreach ($allCategories as $cat) {
+        foreach ($actualCategories as $cat) {
             $key = strtolower(str_replace([' ', '&', '-', '(', ')'], ['_', '', '_', '', ''], $cat));
             $categories[$key] = $cat;
         }
 
-        // Base query for resolved complaints in date range
         $baseQuery = Complaint::query()->whereBetween('created_at', [$dateFromStart, $dateToEnd]);
-
-        // Apply location-based filtering
         $this->filterComplaintsByLocation($baseQuery, $user);
 
-        // Initialize report data structure
-        $slaData = [];
-        $categoryTotals = [];
-        $timeBuckets = ['lt_24h' => '< 24 Hours', '24_48h' => '24-48 Hours', 'gt_48h' => '> 48 Hours'];
-
-        $grandTotal = 0;
-        $totalResolved = 0;
-        $totalCompliant = 0;
-        $globalTotalHours = 0;
-        $globalResolvedCount = 0;
-
-        $cmesId = $request->cmes_id;
-        $categoryNameToId = \App\Models\ComplaintCategory::query()->where('status', 1)
-            ->pluck('id', 'name')->toArray();
-
-        // Optimized SLA data fetch
-        $slaQuery = (clone $baseQuery);
-        // Apply CMES filter if provided
         if ($cmesId) {
-            $slaQuery->where(function ($q) use ($cmesId) {
+            $baseQuery->where(function ($q) use ($cmesId) {
                 $q->whereHas('house', function ($hq) use ($cmesId) {
-                    $hq->whereHas('city', function ($ccq) use ($cmesId) {
-                        $ccq->where('cme_id', $cmesId); })
-                        ->orWhereHas('sector', function ($ssq) use ($cmesId) {
-                            $ssq->where('cme_id', $cmesId); });
+                    $hq->whereHas('city', function ($ccq) use ($cmesId) { $ccq->where('cme_id', $cmesId); })
+                       ->orWhereHas('sector', function ($ssq) use ($cmesId) { $ssq->where('cme_id', $cmesId); });
                 })->orWhere(function ($cq) use ($cmesId) {
                     $cq->whereNull('house_id')->where(function ($lq) use ($cmesId) {
-                        $lq->whereHas('city', function ($ccq) use ($cmesId) {
-                            $ccq->where('cme_id', $cmesId); })
-                            ->orWhereHas('sector', function ($ssq) use ($cmesId) {
-                                $ssq->where('cme_id', $cmesId); });
+                        $lq->whereHas('city', function ($ccq) use ($cmesId) { $ccq->where('cme_id', $cmesId); })
+                           ->orWhereHas('sector', function ($ssq) use ($cmesId) { $ssq->where('cme_id', $cmesId); });
                     });
                 });
             });
         }
 
-        $allSlaStats = $slaQuery->selectRaw('
+        $categoryNameToId = \App\Models\ComplaintCategory::query()->where('status', 1)->pluck('id', 'name')->toArray();
+        $allSlaStats = (clone $baseQuery)->selectRaw('
                 category_id,
                 COUNT(*) as total,
-                SUM(CASE WHEN status = "resolved" THEN 1 ELSE 0 END) as resolved_count,
-                SUM(CASE WHEN status = "resolved" AND TIMESTAMPDIFF(HOUR, created_at, updated_at) < 24 THEN 1 ELSE 0 END) as lt_24,
-                SUM(CASE WHEN status = "resolved" AND TIMESTAMPDIFF(HOUR, created_at, updated_at) BETWEEN 24 AND 48 THEN 1 ELSE 0 END) as bw_24_48,
-                SUM(CASE WHEN status = "resolved" AND TIMESTAMPDIFF(HOUR, created_at, updated_at) > 48 THEN 1 ELSE 0 END) as gt_48,
-                SUM(CASE WHEN status = "resolved" THEN TIMESTAMPDIFF(HOUR, created_at, updated_at) ELSE 0 END) as total_hours
-            ')
-            ->groupBy('category_id')
-            ->get()->keyBy('category_id');
+                SUM(CASE WHEN status IN ("resolved", "closed") THEN 1 ELSE 0 END) as resolved_count,
+                SUM(CASE WHEN status IN ("resolved", "closed") AND TIMESTAMPDIFF(HOUR, created_at, updated_at) < 24 THEN 1 ELSE 0 END) as lt_24,
+                SUM(CASE WHEN status IN ("resolved", "closed") AND TIMESTAMPDIFF(HOUR, created_at, updated_at) BETWEEN 24 AND 48 THEN 1 ELSE 0 END) as bw_24_48,
+                SUM(CASE WHEN status IN ("resolved", "closed") AND TIMESTAMPDIFF(HOUR, created_at, updated_at) > 48 THEN 1 ELSE 0 END) as gt_48,
+                SUM(CASE WHEN status IN ("resolved", "closed") THEN TIMESTAMPDIFF(HOUR, created_at, updated_at) ELSE 0 END) as total_hours
+            ')->groupBy('category_id')->get()->keyBy('category_id');
+
+        $slaData = [];
+        $grandTotal = $totalResolved = $totalCompliant = $globalTotalHours = $globalResolvedCount = 0;
 
         foreach ($categories as $catKey => $catName) {
             $catId = $categoryNameToId[$catName] ?? null;
             $stat = $allSlaStats->get($catId);
-
             $total = $stat->total ?? 0;
             $resolvedCount = $stat->resolved_count ?? 0;
-            $lt24 = $stat->lt_24 ?? 0;
-            $bw2448 = $stat->bw_24_48 ?? 0;
-            $gt48 = $stat->gt_48 ?? 0;
+            $lt24 = $stat->lt_24 ?? 0; $bw2448 = $stat->bw_24_48 ?? 0; $gt48 = $stat->gt_48 ?? 0;
             $totalHours = $stat->total_hours ?? 0;
-
             $avgTime = $resolvedCount > 0 ? round($totalHours / $resolvedCount, 1) : 0;
             $slaMet = $lt24 + $bw2448;
 
             $slaData[$catKey] = [
                 'name' => $catName,
-                'total' => $total,
-                'resolved' => $resolvedCount,
-                'lt_24h' => $lt24,
-                '24_48h' => $bw2448,
-                'gt_48h' => $gt48,
+                'total' => $total, 'resolved' => $resolvedCount,
+                'lt_24h' => $lt24, '24_48h' => $bw2448, 'gt_48h' => $gt48,
                 'avg_time' => $avgTime,
                 'compliance_rate' => $resolvedCount > 0 ? round(($slaMet / $resolvedCount) * 100, 1) : 0
             ];
 
-            $grandTotal += $total;
-            $totalResolved += $resolvedCount;
-            $totalCompliant += $slaMet;
-            $globalTotalHours += $totalHours;
-            $globalResolvedCount += $resolvedCount;
+            $grandTotal += $total; $totalResolved += $resolvedCount; $totalCompliant += $slaMet;
+            $globalTotalHours += $totalHours; $globalResolvedCount += $resolvedCount;
         }
 
-        // Summary Statistics
         $summary = [
             'total_complaints' => $grandTotal,
             'avg_resolution_time' => $globalResolvedCount > 0 ? round($globalTotalHours / $globalResolvedCount, 1) : 0,
@@ -1911,6 +1940,6 @@ class ReportController extends Controller
             'breached_count' => $globalResolvedCount - $totalCompliant
         ];
 
-        return view('admin.reports.sla', compact('slaData', 'summary', 'dateFrom', 'dateTo'));
+        return ['data' => $slaData, 'summary' => $summary];
     }
 }

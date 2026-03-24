@@ -171,6 +171,12 @@
             </div>
             <div class="col-auto">
               <label class="form-label small text-muted mb-1" style="font-size: 0.8rem;">&nbsp;</label>
+              <button type="button" class="btn btn-success btn-sm" onclick="downloadExcelReport()" style="font-size: 0.9rem; padding: 0.35rem 0.8rem;">
+                <i data-feather="download" class="me-1" style="width: 14px; height: 14px;"></i>Excel
+              </button>
+            </div>
+            <div class="col-auto">
+              <label class="form-label small text-muted mb-1" style="font-size: 0.8rem;">&nbsp;</label>
               <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetCustomReportForm()" style="font-size: 0.9rem; padding: 0.35rem 0.8rem;">
                 <i data-feather="refresh-cw" class="me-1" style="width: 14px; height: 14px;"></i>Reset
               </button>
@@ -315,6 +321,31 @@
       default:
         return baseUrl;
     }
+  }
+
+  function downloadExcelReport() {
+    const form = document.getElementById('customReportForm');
+    const formData = new FormData(form);
+    
+    const reportType = formData.get('report_type');
+    const dateFrom = formData.get('date_from');
+    const dateTo = formData.get('date_to');
+
+    if (!reportType || !dateFrom || !dateTo) {
+      showNotification('Please fill in all fields', 'error');
+      return;
+    }
+
+    const baseUrl = window.location.origin + '/admin/reports/download/';
+    const params = new URLSearchParams({
+      date_from: dateFrom,
+      date_to: dateTo
+    });
+    
+    const downloadUrl = `${baseUrl}${reportType}/excel?${params.toString()}`;
+    window.location.href = downloadUrl;
+    
+    showNotification('Excel report download started...', 'success');
   }
 
   

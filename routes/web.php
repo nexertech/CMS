@@ -83,9 +83,7 @@ Route::middleware(['auth', 'verified', AdminAccessMiddleware::class])
     Route::middleware(['permission:dashboard'])->group(function () {
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
     });
-    // Notifications
-    Route::get('/notifications', [AdminController::class, 'notificationsIndex'])->name('notifications.index');
-    Route::get('/notifications/api', [AdminController::class, 'getNotifications'])->name('notifications.api');
+
     Route::get('/dashboard/chart-data', [AdminDashboardController::class, 'getChartData'])->name('dashboard.chart-data');
     Route::get('/dashboard/real-time-updates', [AdminDashboardController::class, 'getRealTimeUpdates'])->name('dashboard.real-time-updates');
     
