@@ -854,6 +854,8 @@ class DashboardController extends Controller
     /**
      * Get SLA breaches
      */
+    private function getSlaBreaches()
+    {
         // Optimized query: Use a JOIN instead of a correlated subquery for 132k+ records
         return Complaint::whereIn('complaints.status', ['assigned', 'in_progress'])
             ->join('sla_rules', 'complaints.category_id', '=', 'sla_rules.category_id')
@@ -861,6 +863,7 @@ class DashboardController extends Controller
             ->whereNull('sla_rules.deleted_at')
             ->whereRaw("TIMESTAMPDIFF(HOUR, complaints.created_at, NOW()) > sla_rules.max_response_time")
             ->count();
+    }
 
     /**
      * Get dashboard chart data

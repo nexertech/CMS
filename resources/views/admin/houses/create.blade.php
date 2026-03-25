@@ -30,9 +30,9 @@
       </div>
       <div class="col-md-3">
         <div class="mb-3">
-          <label for="username" class="form-label text-white">Username <span class="text-danger">*</span></label>
+          <label for="username" class="form-label text-white">Username</label>
           <input type="text" class="form-control @error('username') is-invalid @enderror" 
-                 id="username" name="username" value="{{ old('username') }}" autocomplete="off" required>
+                 id="username" name="username" value="{{ old('username') }}" autocomplete="off">
           @error('username')
             <div class="invalid-feedback">{{ $message }}</div>
           @enderror
@@ -63,9 +63,9 @@
       </div>
       <div class="col-md-3">
         <div class="mb-3">
-          <label for="password" class="form-label text-white">Password <span class="text-danger">*</span></label>
+          <label for="password" class="form-label text-white">Password</label>
           <input type="password" class="form-control @error('password') is-invalid @enderror" 
-                 id="password" name="password" autocomplete="new-password" required minlength="8" placeholder="Minimum 8 characters">
+                 id="password" name="password" autocomplete="new-password" minlength="8" placeholder="Minimum 8 characters">
           @error('password')
             <div class="invalid-feedback">{{ $message }}</div>
           @enderror

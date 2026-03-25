@@ -150,7 +150,7 @@
                             <th style="width: 130px; text-align: left;">Addressed Time</th>
                             <th style="width: 100px;">House No.</th>
                             @if(!request('modal'))
-                                <th style="width: 120px;">Complainant Name</th>
+                                <th style="width: 120px;">Name</th>
                             @endif
                             <th style="width: 150px;">Address</th>
                             <th style="width: auto;">Nature & Type</th>

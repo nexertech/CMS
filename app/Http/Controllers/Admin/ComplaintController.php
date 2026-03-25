@@ -128,7 +128,7 @@ class ComplaintController extends Controller
         $query->with(['assignedEmployee', 'house', 'category', 'complaintTitle']) // Added relations
             ->reorder()
             ->orderBy('complaints.id', 'desc');
-        $complaints = $query->paginate(12)->withQueryString();
+        $complaints = $query->paginate(20)->withQueryString();
 
         // Filter employees by location
         $employeesQuery = Employee::where('status', 1);
@@ -175,7 +175,7 @@ class ComplaintController extends Controller
         }
 
         // Get houses filtered by location
-        $housesQuery = House::where('status', 1)->orderBy('username');
+        $housesQuery = House::where('status', 1)->orderBy('house_no');
         $this->filterHousesByLocation($housesQuery, $authUser);
         $houses = $housesQuery->get();
 
@@ -340,7 +340,7 @@ class ComplaintController extends Controller
         $defaultSectorId = $complaint->sector_id ?? $complaint->house?->sector_id ?? (!empty(Auth::user()->sector_ids) ? Auth::user()->sector_ids[0] : null);
 
         // Get houses filtered by location
-        $housesQuery = House::where('status', 1)->orderBy('username');
+        $housesQuery = House::where('status', 1)->orderBy('house_no');
         $this->filterHousesByLocation($housesQuery, Auth::user());
         $houses = $housesQuery->get();
 

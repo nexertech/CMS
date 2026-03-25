@@ -25,8 +25,16 @@ class ThemeController extends Controller
             Auth::user()->update(['theme' => $theme]);
         }
 
-        // Set cookie for persistence across sessions
-        $cookie = Cookie::make('theme', $theme, 60 * 24 * 365); // 1 year
+        // Set cookie for persistence across sessions (HttpOnly + Secure)
+        $cookie = Cookie::make(
+            'theme',          // name
+            $theme,           // value
+            60 * 24 * 365,    // minutes (1 year)
+            '/',              // path
+            null,             // domain
+            true,             // secure
+            true              // httpOnly
+        );
 
         return response()->json([
             'success' => true,

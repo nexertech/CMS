@@ -203,7 +203,7 @@
             <div class="d-flex justify-content-between align-items-start">
               <div class="flex-grow-1">
                 <div class="d-flex align-items-center mb-2">
-                  <h6 class="mb-0 text-white">#${item.id} - ${item.complainant_name}</h6>
+                  <h6 class="mb-0 text-white">#${item.id} - ${item.name || 'N/A'}</h6>
                   <span class="badge bg-${item.status === 'pending' ? 'warning' : item.status === 'approved' ? 'success' : 'danger'} ms-2">
                     ${item.status.charAt(0).toUpperCase() + item.status.slice(1)}
                   </span>
@@ -254,11 +254,10 @@
                     ${item.status.charAt(0).toUpperCase() + item.status.slice(1)}
                   </span>
                 </div>
-                <p class="text-muted small mb-2">${item.complainant_name}</p>
                 <div class="d-flex justify-content-between align-items-center">
                   <div>
-                    <div class="text-white fw-bold">-</div>
-                    <div class="text-muted small">${item.items_count} items</div>
+                    <div class="small text-muted">Name</div>
+                    <div class="fw-bold">${item.name || 'N/A'}</div>
                   </div>
                   <button class="btn btn-outline-info btn-sm" onclick="viewWorkflowDetails(${item.id})">
                     <i data-feather="eye"></i>
@@ -324,8 +323,8 @@
               <td><span class="badge bg-${approval.status === 'pending' ? 'warning' : approval.status === 'approved' ? 'success' : 'danger'}">${approval.status.charAt(0).toUpperCase() + approval.status.slice(1)}</span></td>
             </tr>
             <tr>
-              <td><strong>Client:</strong></td>
-              <td>${approval.complainant_name}</td>
+              <td><strong>Name:</strong></td>
+              <td>${approval.name || 'N/A'}</td>
             </tr>
             <tr>
               <td><strong>Requested By:</strong></td>

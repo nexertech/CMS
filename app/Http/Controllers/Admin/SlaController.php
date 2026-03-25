@@ -380,7 +380,7 @@ class SlaController extends Controller
             ->map(function($complaint) {
                 return [
                     'id' => $complaint->id,
-                    'complainant_name' => $complaint->house ? ($complaint->house->name ?? 'Deleted House') : 'Deleted House',
+                    'name' => $complaint->house ? ($complaint->house->name ?? 'Deleted House') : 'Deleted House',
                     'category' => $complaint->category,
                     'status' => $complaint->status,
                     'assigned_to' => $complaint->assignedEmployee ? $complaint->assignedEmployee->name : 'Unassigned',
@@ -449,7 +449,7 @@ class SlaController extends Controller
             ->map(function($complaint) {
                 return [
                     'complaint_id' => $complaint->id,
-                    'complainant_name' => $complaint->house ? ($complaint->house->name ?? 'Deleted House') : 'Deleted House',
+                    'name' => $complaint->house ? ($complaint->house->name ?? 'Deleted House') : 'Deleted House',
                     'category' => $complaint->category,
                     'assigned_to' => $complaint->assignedEmployee ? $complaint->assignedEmployee->name : 'Unassigned',
                     'hours_overdue' => $complaint->getHoursOverdue(),

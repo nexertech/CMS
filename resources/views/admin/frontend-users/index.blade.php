@@ -629,25 +629,40 @@
       const locationsList = document.getElementById('locationsList');
       let html = '';
 
-      if (!cities || cities.length === 0) {
+      if ((!cities || cities.length === 0) && (!allCmes || allCmes.length === 0)) {
         locationsList.innerHTML = '<div class="text-center py-5 text-muted">No data available.</div>';
         return;
       }
 
-      // Group cities by CME
+      // Group cities by CME, but ensure ALL active CMEs are included
       const cmeMap = {};
-      cities.forEach(city => {
-        const cmeId = city.cme_id || 'no-cme';
-        const cmeName = city.cme_name || 'N/A';
-        if (!cmeMap[cmeId]) {
-          cmeMap[cmeId] = {
-            id: cmeId,
-            name: cmeName,
+      
+      // First, initialize cmeMap with ALL available CMEs
+      if (allCmes && allCmes.length > 0) {
+        allCmes.forEach(cme => {
+          cmeMap[cme.id] = {
+            id: cme.id,
+            name: cme.name,
             cities: []
           };
-        }
-        cmeMap[cmeId].cities.push(city);
-      });
+        });
+      }
+
+      // Then distribute the cities into their respective CMEs
+      if (cities && cities.length > 0) {
+        cities.forEach(city => {
+          const cmeId = city.cme_id || 'no-cme';
+          const cmeName = city.cme_name || 'N/A';
+          if (!cmeMap[cmeId]) {
+            cmeMap[cmeId] = {
+              id: cmeId,
+              name: cmeName,
+              cities: []
+            };
+          }
+          cmeMap[cmeId].cities.push(city);
+        });
+      }
 
       html += '<div class="row">';
 

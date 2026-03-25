@@ -17,6 +17,11 @@ trait LocationFilterTrait
             return $query;
         }
 
+        $roleName = strtolower($user->role->role_name ?? '');
+        if (in_array($roleName, ['admin', 'director'])) {
+            return $query;
+        }
+
         $ids = $this->getNormalizedLocationIds($user);
         $cityIds = $ids['city_ids'];
         $sectorIds = $ids['sector_ids'];
@@ -61,6 +66,11 @@ trait LocationFilterTrait
     public function filterEmployeesByLocation(Builder $query, $user): Builder
     {
         if (!$user) {
+            return $query;
+        }
+
+        $roleName = strtolower($user->role->role_name ?? '');
+        if (in_array($roleName, ['admin', 'director'])) {
             return $query;
         }
 
@@ -167,6 +177,11 @@ trait LocationFilterTrait
             return $query;
         }
 
+        $roleName = strtolower($user->role->role_name ?? '');
+        if (in_array($roleName, ['admin', 'director'])) {
+            return $query;
+        }
+
         $ids = $this->getNormalizedLocationIds($user);
         $cityIds = $ids['city_ids'];
         $sectorIds = $ids['sector_ids'];
@@ -195,6 +210,11 @@ trait LocationFilterTrait
     public function filterHousesByLocation(Builder $query, $user): Builder
     {
         if (!$user) {
+            return $query;
+        }
+
+        $roleName = strtolower($user->role->role_name ?? '');
+        if (in_array($roleName, ['admin', 'director'])) {
             return $query;
         }
 
@@ -313,6 +333,9 @@ trait LocationFilterTrait
         }
 
         $roleName = strtolower($user->role->role_name ?? '');
+        if (in_array($roleName, ['admin', 'director'])) {
+            return $query;
+        }
 
         $ids = $this->getNormalizedLocationIds($user);
         $cityIds = $ids['city_ids'];

@@ -369,6 +369,17 @@ class FrontendUserController extends Controller
      */
     public function assignLocations(Request $request, FrontendUser $frontend_user)
     {
+        // Sanitize incoming arrays to remove any stale/deleted IDs
+        $validCmeIds = \App\Models\Cme::whereIn('id', $request->input('privilege_cme_ids', []))->pluck('id')->toArray();
+        $validCityIds = \App\Models\City::whereIn('id', $request->input('privilege_city_ids', []))->pluck('id')->toArray();
+        $validSectorIds = \App\Models\Sector::whereIn('id', $request->input('sector_ids', []))->pluck('id')->toArray();
+
+        $request->merge([
+            'privilege_cme_ids' => $validCmeIds,
+            'privilege_city_ids' => $validCityIds,
+            'sector_ids' => $validSectorIds,
+        ]);
+
         $validator = Validator::make($request->all(), [
             'privilege_cme_ids' => 'nullable|array',
             'privilege_cme_ids.*' => 'exists:cmes,id',

@@ -102,7 +102,9 @@ class HomeController extends Controller
 
         // Check for Unrestricted Access (Global Admin)
         // 1. Role-based check (if role_id exists)
-        $isAdminByRole = (isset($user->role_id) && $user->role_id === 1) || (method_exists($user, 'isAdmin') && $user->isAdmin());
+        $isAdminByRole = (isset($user->role_id) && $user->role_id === 1) || 
+                         (method_exists($user, 'isAdmin') && $user->isAdmin()) || 
+                         (isset($user->role) && in_array(strtolower($user->role->role_name), ['admin', 'director']));
 
         // 2. CME-based check (if they have all CMEs assigned, they are global)
         $hasAllCmes = false;
@@ -752,7 +754,7 @@ class HomeController extends Controller
                 'performa_label' => $performaType ? ucfirst(str_replace('_', ' ', $performaType)) : '-',
                 'category' => $complaint->category_display ?? 'N/A',
                 'designation' => $complaint->assignedEmployee->designation->name ?? 'N/A',
-                'complainant_name' => $house ? ($house->name ?? 'N/A') : 'N/A',
+                'name' => $house ? ($house->name ?? 'N/A') : 'N/A',
                 'house_no' => $house->house_no ?? 'N/A',
                 'address' => $house->address ?? 'N/A',
                 'phone' => $house->phone ?? '-',

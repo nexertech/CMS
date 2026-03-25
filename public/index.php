@@ -4,6 +4,11 @@
 header_remove('X-Powered-By');
 @header('X-Powered-By: ');
 
+// Fix: Ensure all cookies are HttpOnly, Secure, and SameSite at PHP level
+ini_set('session.cookie_httponly', 1);
+ini_set('session.cookie_secure', 1);
+ini_set('session.cookie_samesite', 'Lax');
+
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 

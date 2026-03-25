@@ -134,7 +134,7 @@ class ApprovalController extends Controller
             // Order by complaint ID (descending) - newest first
             $query->orderBy('complaints.id', 'desc');
 
-            $approvals = $query->paginate(15);
+            $approvals = $query->paginate(20);
 
             // Load relationships
             $approvals->load([
@@ -436,7 +436,7 @@ class ApprovalController extends Controller
                         'address' => $approval->complaint->house->address ?? null,
                         'phone' => $approval->complaint->house->phone ?? null,
                     ] : null,
-                    'complainant_name' => $approval->complaint->house ? ($approval->complaint->house->name ?? 'Deleted House') : 'Deleted House',
+                    'name' => $approval->complaint->house ? ($approval->complaint->house->name ?? 'Deleted House') : 'Deleted House',
                     'complaint_title' => $approval->complaint->title ?? 'N/A',
                     'requested_by_name' => $approval->requestedBy->name ?? 'N/A',
                     'approved_by_name' => $approval->approvedBy->name ?? null,

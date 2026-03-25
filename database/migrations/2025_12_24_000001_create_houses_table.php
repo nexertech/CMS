@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('houses', function (Blueprint $table) {
             $table->id();
-            $table->string('username', 150)->unique();
+            $table->string('username', 150)->unique()->nullable();
             $table->string('house_no', 150)->nullable();
-            $table->string('password');
+            $table->string('password')->nullable();
             $table->timestamp('password_updated_at')->nullable();
             $table->string('fcm_token', 255)->nullable();
             $table->string('name')->nullable();

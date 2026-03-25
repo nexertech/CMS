@@ -110,11 +110,11 @@ class HouseController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'username' => 'required|string|max:150|unique:houses,username',
+            'username' => 'nullable|string|max:150|unique:houses,username',
             'house_no' => 'required|string|max:150',
             'name' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:20',
-            'password' => 'required|string|min:8',
+            'password' => 'nullable|string|min:8',
             'city_id' => 'required|exists:cities,id',
             'sector_id' => 'required|exists:sectors,id',
             'address' => 'nullable|string|max:500',
@@ -233,7 +233,7 @@ class HouseController extends Controller
     public function update(Request $request, House $house)
     {
         $validator = Validator::make($request->all(), [
-            'username' => ['required', 'string', 'max:150', Rule::unique('houses')->ignore($house->id)],
+            'username' => ['nullable', 'string', 'max:150', Rule::unique('houses')->ignore($house->id)],
             'house_no' => 'required|string|max:150',
             'name' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:20',

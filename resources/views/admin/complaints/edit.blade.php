@@ -73,7 +73,7 @@
                                         data-name="{{ $house->name }}"
                                         data-phone="{{ $house->phone }}"
                                         {{ old('house_id', $complaint->house_id) == $house->id ? 'selected' : '' }}>
-                                    {{ $house->house_no }}
+                                    {{ $house->house_no }}{{ $house->name ? ' - ' . $house->name : '' }}
                                 </option>
                             @endforeach
                         </select>
@@ -84,8 +84,8 @@
                 </div>
                 <div class="col-md-3">
                     <div class="mb-3">
-                        <label for="complainant_name" class="form-label text-white">Complainant Name</label>
-                        <input type="text" class="form-control @error('complainant_name') is-invalid @enderror" id="complainant_name" name="complainant_name" value="{{ old('complainant_name', $complaint->house->name ?? '') }}" placeholder="Enter complainant name">
+                        <label for="complainant_name" class="form-label text-white">Name</label>
+                        <input type="text" class="form-control @error('complainant_name') is-invalid @enderror" id="complainant_name" name="complainant_name" value="{{ old('complainant_name', $complaint->house->name ?? '') }}" placeholder="Enter name">
                         @error('complainant_name')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror

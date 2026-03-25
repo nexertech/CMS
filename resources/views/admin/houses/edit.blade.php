@@ -28,9 +28,9 @@
         @enderror
       </div>
       <div class="col-md-3 mb-3">
-        <label for="username" class="form-label text-white">Username (for login) <span class="text-danger">*</span></label>
+        <label for="username" class="form-label text-white">Username (for login)</label>
         <input type="text" class="form-control @error('username') is-invalid @enderror" 
-                id="username" name="username" value="{{ old('username', $house->username) }}" autocomplete="off" placeholder="e.g., resident_101" required>
+                id="username" name="username" value="{{ old('username', $house->username) }}" autocomplete="off" placeholder="e.g., resident_101">
         @error('username')
           <div class="invalid-feedback">{{ $message }}</div>
         @enderror
