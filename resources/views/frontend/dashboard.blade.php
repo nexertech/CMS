@@ -1369,7 +1369,18 @@
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(response => response.text())
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        // If the response is HTML (like our custom error div), use it
+                        if (text.includes('<div')) {
+                            throw new Error(text);
+                        }
+                        throw new Error('Complaint not found or error loading details.');
+                    });
+                }
+                return response.text();
+            })
             .then(html => {
                 modalBody.innerHTML = html;
                 if(typeof feather !== 'undefined') {
@@ -1377,7 +1388,12 @@
                 }
             })
             .catch(error => {
-                modalBody.innerHTML = '<div class="p-8 text-center text-red-400 font-bold">Failed to load details. Please try again.</div>';
+                // If error message is the HTML we threw, use it directly
+                if (error.message.includes('<div')) {
+                    modalBody.innerHTML = error.message;
+                } else {
+                    modalBody.innerHTML = '<div class="p-8 text-center text-red-500 font-bold">Failed to load details. Please try again.</div>';
+                }
                 console.error('Error fetching complaint details:', error);
             });
         }
@@ -2669,47 +2685,47 @@
             // Update all stat boxes with correct IDs from the blade template
             if (stats.total_complaints !== undefined) {
                 const el = document.getElementById('stat-total-complaints');
-                if (el) el.textContent = formatNumberK(stats.total_complaints);
+                if (el) el.textContent = stats.total_complaints;
             }
             if (stats.in_progress !== undefined) {
                 const el = document.getElementById('stat-in-progress');
-                if (el) el.textContent = formatNumberK(stats.in_progress);
+                if (el) el.textContent = stats.in_progress;
             }
             if (stats.assigned !== undefined) {
                 const el = document.getElementById('stat-assigned');
-                if (el) el.textContent = formatNumberK(stats.assigned);
+                if (el) el.textContent = stats.assigned;
             }
             if (stats.addressed !== undefined) {
                 const el = document.getElementById('stat-addressed');
-                if (el) el.textContent = formatNumberK(stats.addressed);
+                if (el) el.textContent = stats.addressed;
             }
             if (stats.overdue_complaints !== undefined) {
                 const el = document.getElementById('stat-overdue-complaints');
-                if (el) el.textContent = formatNumberK(stats.overdue_complaints);
+                if (el) el.textContent = stats.overdue_complaints;
             }
             if (stats.work_performa !== undefined) {
                 const el = document.getElementById('stat-work-performa');
-                if (el) el.textContent = formatNumberK(stats.work_performa);
+                if (el) el.textContent = stats.work_performa;
             }
             if (stats.maint_performa !== undefined) {
                 const el = document.getElementById('stat-maint-performa');
-                if (el) el.textContent = formatNumberK(stats.maint_performa);
+                if (el) el.textContent = stats.maint_performa;
             }
             if (stats.un_authorized !== undefined) {
                 const el = document.getElementById('stat-un-authorized');
-                if (el) el.textContent = formatNumberK(stats.un_authorized);
+                if (el) el.textContent = stats.un_authorized;
             }
             if (stats.product !== undefined) {
                 const el = document.getElementById('stat-product');
-                if (el) el.textContent = formatNumberK(stats.product);
+                if (el) el.textContent = stats.product;
             }
             if (stats.pertains_to_ge_const_isld !== undefined) {
                 const el = document.getElementById('stat-pertains-ge');
-                if (el) el.textContent = formatNumberK(stats.pertains_to_ge_const_isld);
+                if (el) el.textContent = stats.pertains_to_ge_const_isld;
             }
             if (stats.barak_damages !== undefined) {
                 const el = document.getElementById('stat-barak-damages');
-                if (el) el.textContent = formatNumberK(stats.barak_damages);
+                if (el) el.textContent = stats.barak_damages;
             }
             
             // Update Resolution Rate

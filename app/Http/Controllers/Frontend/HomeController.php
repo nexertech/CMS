@@ -1660,7 +1660,11 @@ class HomeController extends Controller
      */
     public function feedback($id)
     {
-        $complaint = Complaint::with(['category', 'assignedEmployee.designation', 'house'])->findOrFail($id);
+        $complaint = Complaint::with(['category', 'assignedEmployee.designation', 'house'])->find($id);
+
+        if (!$complaint) {
+            abort(404, 'Complaint not found.');
+        }
 
         // If feedback already exists, show success message
         if (\App\Models\ComplaintFeedback::where('complaint_id', $id)->exists()) {
@@ -1678,7 +1682,11 @@ class HomeController extends Controller
      */
     public function submitFeedback(Request $request, $id)
     {
-        $complaint = Complaint::findOrFail($id);
+        $complaint = Complaint::find($id);
+
+        if (!$complaint) {
+            abort(404, 'Complaint not found.');
+        }
 
         // Check if feedback already exists
         if (\App\Models\ComplaintFeedback::where('complaint_id', $id)->exists()) {
@@ -1739,7 +1747,14 @@ class HomeController extends Controller
             'attachments',
             'spareApprovals',
             'feedback.enteredBy'
-        ])->findOrFail($id);
+        ])->find($id);
+
+        if (!$complaint) {
+            if ($request->ajax()) {
+                return response('<div class="p-8 text-center text-red-500 font-bold">Complaint not found. Please check the ID and try again.</div>', 404);
+            }
+            abort(404, 'Complaint not found.');
+        }
 
         // Check Access
         $user = Auth::user();
