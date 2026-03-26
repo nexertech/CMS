@@ -69,14 +69,19 @@ class DashboardController extends Controller
                     $citiesQuery->where('cme_id', $cmesId);
                 }
                 $cities = $citiesQuery->get();
-                // Load GE users for each city manually because the relationship is broken
-                if ($geRole) {
+                // OPTIMIZED: Batch load GE users for all cities in one query
+                if ($geRole && $cities->isNotEmpty()) {
+                    $cityIds = $cities->pluck('id')->toArray();
+                    $allGeUsers = User::where('role_id', $geRole->id)
+                        ->where('status', 1)
+                        ->get(); // Fetch all active GE users once
+                    
                     foreach ($cities as $city) {
-                        $geUsers = User::where('role_id', $geRole->id)
-                            ->where('status', 1)
-                            ->whereJsonContains('city_ids', (int)$city->id)
-                            ->get();
-                        $city->setRelation('users', $geUsers);
+                        $geUsersForCity = $allGeUsers->filter(function($u) use ($city) {
+                            $uCityIds = is_array($u->city_ids) ? $u->city_ids : (json_decode($u->city_ids, true) ?: []);
+                            return in_array($city->id, $uCityIds) || in_array((string)$city->id, $uCityIds);
+                        });
+                        $city->setRelation('users', $geUsersForCity);
                     }
                 }
             } else {
@@ -86,14 +91,19 @@ class DashboardController extends Controller
                     $citiesQuery->where('cme_id', $cmesId);
                 }
                 $cities = $citiesQuery->get();
-                // Load GE users for this city manually because the relationship is broken
-                if ($geRole) {
+                // OPTIMIZED: Batch load GE users for these cities
+                if ($geRole && $cities->isNotEmpty()) {
+                    $cityIds = $cities->pluck('id')->toArray();
+                    $allGeUsers = User::where('role_id', $geRole->id)
+                        ->where('status', 1)
+                        ->get();
+                    
                     foreach ($cities as $city) {
-                        $geUsers = User::where('role_id', $geRole->id)
-                            ->where('status', 1)
-                            ->whereJsonContains('city_ids', (int)$city->id)
-                            ->get();
-                        $city->setRelation('users', $geUsers);
+                        $geUsersForCity = $allGeUsers->filter(function($u) use ($city) {
+                            $uCityIds = is_array($u->city_ids) ? $u->city_ids : (json_decode($u->city_ids, true) ?: []);
+                            return in_array($city->id, $uCityIds) || in_array((string)$city->id, $uCityIds);
+                        });
+                        $city->setRelation('users', $geUsersForCity);
                     }
                 }
             }
@@ -321,19 +331,30 @@ class DashboardController extends Controller
         $complaintsByType = [];
         $complaintsByCategory = [];
 
-        foreach ($allCategories as $cat) {
-            $complaintsByTypeQuery = Complaint::query();
-            $this->filterComplaintsByLocation($complaintsByTypeQuery, $user);
-            $this->applyFilters($complaintsByTypeQuery, $cityId, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId);
-            $count = $complaintsByTypeQuery->where('category_id', $cat->id)->count();
+        // OPTIMIZED: Get complaints count by category in a single bulk query
+        $complaintsByType = [];
+        $complaintsByCategory = [];
+        
+        if ($allCategories->isNotEmpty()) {
+            $catCountQuery = Complaint::query();
+            $this->filterComplaintsByLocation($catCountQuery, $user);
+            $this->applyFilters($catCountQuery, $cityId, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId);
+            
+            $catCounts = $catCountQuery->selectRaw('category_id, COUNT(*) as aggregate')
+                ->whereIn('category_id', $allCategories->pluck('id'))
+                ->groupBy('category_id')
+                ->pluck('aggregate', 'category_id');
 
-            if ($count > 0) {
-                $complaintsByType[$cat->name] = $count;
+            foreach ($allCategories as $cat) {
+                $count = $catCounts[$cat->id] ?? 0;
+                if ($count > 0) {
+                    $complaintsByType[$cat->name] = $count;
+                }
+                $complaintsByCategory[$cat->id] = [
+                    'name' => $cat->name,
+                    'count' => $count,
+                ];
             }
-            $complaintsByCategory[$cat->id] = [
-                'name' => $cat->name,
-                'count' => $count,
-            ];
         }
 
         // Get employee performance with location filtering
@@ -794,12 +815,18 @@ class DashboardController extends Controller
         $breached = 0;
 
         if ($totalComplaints > 0) {
-            $timeDiff = $this->getTimeDiffInHours('created_at', 'updated_at');
+            $timeDiff = $this->getTimeDiffInHours('complaints.created_at', 'complaints.updated_at');
 
+            // OPTIMIZED: Use a LEFT JOIN on sla_rules instead of a correlated subquery per row
             $withinSla = Complaint::query()
-                ->where('created_at', '>=', now()->subDays(30))
-                ->whereIn('status', ['resolved', 'closed'])
-                ->whereRaw("{$timeDiff} <= COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE category_id = complaints.category_id AND status = 1), 999999)")
+                ->leftJoin('sla_rules', function($join) {
+                    $join->on('complaints.category_id', '=', 'sla_rules.category_id')
+                         ->where('sla_rules.status', '=', 1)
+                         ->whereNull('sla_rules.deleted_at');
+                })
+                ->where('complaints.created_at', '>=', now()->subDays(30))
+                ->whereIn('complaints.status', ['resolved', 'closed'])
+                ->whereRaw("{$timeDiff} <= COALESCE(sla_rules.max_resolution_time, 999999)")
                 ->count();
 
             $breached = $totalComplaints - $withinSla;
@@ -942,14 +969,18 @@ class DashboardController extends Controller
      */
     private function getSlaChartData($period)
     {
-        $timeDiff = $this->getTimeDiffInHours('created_at', 'updated_at');
+        $timeDiff = $this->getTimeDiffInHours('complaints.created_at', 'complaints.updated_at');
 
-        $data = Complaint::where('created_at', '>=', now()->subDays($period))
-            ->selectRaw("category, 
+        $data = Complaint::leftJoin('sla_rules', function($join) {
+                $join->on('complaints.category_id', '=', 'sla_rules.category_id')
+                     ->where('sla_rules.status', '=', 1);
+            })
+            ->where('complaints.created_at', '>=', now()->subDays($period))
+            ->selectRaw("complaints.category, 
                 COUNT(*) as total,
-                SUM(CASE WHEN {$timeDiff} <= COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE category_id = complaints.category_id AND status = 1), 999999) THEN 1 ELSE 0 END) as within_sla,
-                SUM(CASE WHEN {$timeDiff} > COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE category_id = complaints.category_id AND status = 1), 999999) THEN 1 ELSE 0 END) as breached")
-            ->groupBy('category')
+                SUM(CASE WHEN {$timeDiff} <= COALESCE(sla_rules.max_resolution_time, 999999) THEN 1 ELSE 0 END) as within_sla,
+                SUM(CASE WHEN {$timeDiff} > COALESCE(sla_rules.max_resolution_time, 999999) THEN 1 ELSE 0 END) as breached")
+            ->groupBy('complaints.category')
             ->get();
 
         return response()->json($data);

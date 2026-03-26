@@ -831,7 +831,7 @@ class ComplaintController extends Controller
                 SUM(CASE WHEN status = "product_na" THEN 1 ELSE 0 END) as product_na_count,
                 SUM(CASE WHEN status = "un_authorized" THEN 1 ELSE 0 END) as un_authorized_count,
                 SUM(CASE WHEN status = "pertains_to_ge_const_isld" THEN 1 ELSE 0 END) as pertains_to_ge_const_isld_count,
-                AVG(CASE WHEN status = "resolved" THEN TIMESTAMPDIFF(HOUR, created_at, updated_at) ELSE NULL END) as avg_resolution_time')
+                AVG(CASE WHEN status = "resolved" THEN TIMESTAMPDIFF(HOUR, complaints.created_at, complaints.updated_at) ELSE NULL END) as avg_resolution_time')
             ->groupBy('assigned_employee_id')
             ->with('assignedEmployee')
             ->get();
