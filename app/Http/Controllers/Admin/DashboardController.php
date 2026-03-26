@@ -55,12 +55,16 @@ class DashboardController extends Controller
                 ->orWhereRaw('LOWER(role_name) LIKE ?', ['%ge%']);
         })->first();
 
-        // Get cities for filter: Check user table - if city_ids is empty, user can see all cities
+        // Determine if user has global location access (Admin/Director)
+        $roleName = strtolower($user->role->role_name ?? '');
+        $hasGlobalAccess = in_array($roleName, ['admin', 'director']);
+
+        // Get cities for filter
         $cities = collect();
         if (Schema::hasTable('cities')) {
-            if (empty($user->city_ids)) {
-                // User has no city_ids assigned, can see all cities
-                $citiesQuery = City::where('status', 1)->orderBy('id', 'asc');
+            if ($hasGlobalAccess || empty($user->city_ids)) {
+                // User is admin/director OR has no city_ids assigned -> can see all active cities
+                $citiesQuery = City::where('status', 1)->orderBy('name', 'asc');
                 if ($cmesId) {
                     $citiesQuery->where('cme_id', $cmesId);
                 }
@@ -75,9 +79,9 @@ class DashboardController extends Controller
                         $city->setRelation('users', $geUsers);
                     }
                 }
-            } elseif (!empty($user->city_ids)) {
+            } else {
                 // User has city_ids assigned, sees only their cities
-                $citiesQuery = City::whereIn('id', $user->city_ids)->where('status', 1);
+                $citiesQuery = City::whereIn('id', $user->city_ids)->where('status', 1)->orderBy('name', 'asc');
                 if ($cmesId) {
                     $citiesQuery->where('cme_id', $cmesId);
                 }
@@ -98,30 +102,33 @@ class DashboardController extends Controller
         // Get sectors for filter
         $sectors = collect();
         if (Schema::hasTable('sectors')) {
-            $sectorsQuery = Sector::where('status', 1)->orderBy('id', 'asc');
-
-            // Start with user's sector restriction if applicable
-            if (!empty($user->sector_ids)) {
-                $sectorsQuery->whereIn('id', $user->sector_ids);
-            }
+            $sectorsQuery = Sector::where('status', 1)->orderBy('name', 'asc');
 
             // Always apply selected City filter (most specific - always takes priority)
             if ($cityId) {
                 $sectorsQuery->where('city_id', $cityId);
             } elseif ($cmesId) {
-                // No city selected, but CMES selected
-                // Get cities belonging to this CMES and filter sectors by those city IDs
+                // No city selected, but CMES selected -> Get cities belonging to this CMES
                 $cmeCityIds = City::where('cme_id', $cmesId)->pluck('id')->toArray();
                 if (!empty($cmeCityIds)) {
                     $sectorsQuery->whereIn('city_id', $cmeCityIds);
                 }
-                // Also restrict by user's assigned cities if applicable
-                if (!empty($user->city_ids)) {
+                // If not global admin, restrict to their specific cities within this CMES
+                if (!$hasGlobalAccess && !empty($user->city_ids)) {
                     $sectorsQuery->whereIn('city_id', $user->city_ids);
                 }
-            } elseif (!empty($user->city_ids)) {
-                // No CMES or city selected, but user is restricted to certain cities
-                $sectorsQuery->whereIn('city_id', $user->city_ids);
+            } else {
+                // No CMES or city selected
+                if (!$hasGlobalAccess) {
+                    // Start with user's sector restriction if applicable
+                    if (!empty($user->sector_ids)) {
+                        $sectorsQuery->whereIn('id', $user->sector_ids);
+                    }
+                    // Or restrict by user's assigned cities
+                    elseif (!empty($user->city_ids)) {
+                        $sectorsQuery->whereIn('city_id', $user->city_ids);
+                    }
+                }
             }
 
             $sectors = $sectorsQuery->get();

@@ -333,21 +333,36 @@ class HomeController extends Controller
 
                 if ($sectorId) {
                     if ($this->canAccessSector((int) $sectorId, $locationScope)) {
-                        // Filter by house's sector_id
-                        $complaintsQuery->whereHas('house', function ($hq) use ($sectorId) {
-                            $hq->where('sector_id', $sectorId);
+                        // Inclusive: house's sector_id OR direct complaint sector_id (for house-less)
+                        $complaintsQuery->where(function ($q) use ($sectorId) {
+                            $q->whereHas('house', function ($hq) use ($sectorId) {
+                                $hq->where('sector_id', $sectorId);
+                            })->orWhere(function ($cq) use ($sectorId) {
+                                $cq->whereNull('complaints.house_id')
+                                    ->where('complaints.sector_id', $sectorId);
+                            });
                         });
                     } else {
                         $complaintsQuery->whereRaw('1 = 0');
                     }
                 } else {
-                    // Inclusive GE Group filter via house: houses in this city OR its sectors
-                    $complaintsQuery->whereHas('house', function ($hq) use ($cityId, $sectorIdsForCity) {
-                        $hq->where(function ($q) use ($cityId, $sectorIdsForCity) {
-                            $q->where('city_id', $cityId);
-                            if (!empty($sectorIdsForCity)) {
-                                $q->orWhereIn('sector_id', $sectorIdsForCity);
-                            }
+                    // Inclusive GE Group filter: houses in this city/sectors OR house-less with direct city_id
+                    $complaintsQuery->where(function ($q) use ($cityId, $sectorIdsForCity) {
+                        $q->whereHas('house', function ($hq) use ($cityId, $sectorIdsForCity) {
+                            $hq->where(function ($sub) use ($cityId, $sectorIdsForCity) {
+                                $sub->where('city_id', $cityId);
+                                if (!empty($sectorIdsForCity)) {
+                                    $sub->orWhereIn('sector_id', $sectorIdsForCity);
+                                }
+                            });
+                        })->orWhere(function ($cq) use ($cityId, $sectorIdsForCity) {
+                            $cq->whereNull('complaints.house_id')
+                                ->where(function ($sub) use ($cityId, $sectorIdsForCity) {
+                                    $sub->where('complaints.city_id', $cityId);
+                                    if (!empty($sectorIdsForCity)) {
+                                        $sub->orWhereIn('complaints.sector_id', $sectorIdsForCity);
+                                    }
+                                });
                         });
                     });
                 }
@@ -356,9 +371,14 @@ class HomeController extends Controller
             }
         } elseif ($sectorId) {
             if ($this->canAccessSector((int) $sectorId, $locationScope)) {
-                // Filter by house's sector_id
-                $complaintsQuery->whereHas('house', function ($hq) use ($sectorId) {
-                    $hq->where('sector_id', $sectorId);
+                // Inclusive: house's sector_id OR direct complaint sector_id (for house-less)
+                $complaintsQuery->where(function ($q) use ($sectorId) {
+                    $q->whereHas('house', function ($hq) use ($sectorId) {
+                        $hq->where('sector_id', $sectorId);
+                    })->orWhere(function ($cq) use ($sectorId) {
+                        $cq->whereNull('complaints.house_id')
+                            ->where('complaints.sector_id', $sectorId);
+                    });
                 });
             } else {
                 $complaintsQuery->whereRaw('1 = 0');
@@ -462,13 +482,7 @@ class HomeController extends Controller
         }
 
         // Get filter options - filter based on user's location access
-        $geGroupsQuery = City::where(function ($q) {
-            $q->where('name', 'LIKE', '%GE%')
-                ->orWhere('name', 'LIKE', '%AGE%')
-                ->orWhere('name', 'LIKE', '%ge%')
-                ->orWhere('name', 'LIKE', '%age%');
-        })
-            ->where('status', 1);
+        $geGroupsQuery = City::where('status', 1);
 
         // If CMES selected, restrict GE groups to that CMES
         if ($cmesId) {
@@ -2108,13 +2122,7 @@ class HomeController extends Controller
         }
 
         $query = \App\Models\City::where('cme_id', $cmeId)
-            ->where('status', 1)
-            ->where(function ($q) {
-                $q->where('name', 'LIKE', '%GE%')
-                    ->orWhere('name', 'LIKE', '%AGE%')
-                    ->orWhere('name', 'LIKE', '%ge%')
-                    ->orWhere('name', 'LIKE', '%age%');
-            });
+            ->where('status', 1);
 
         // Apply privileges
         $accessibleCityIds = $this->getAccessibleCityIdsForDropdown($locationScope);

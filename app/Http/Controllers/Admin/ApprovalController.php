@@ -136,34 +136,28 @@ class ApprovalController extends Controller
 
             $approvals = $query->paginate(20);
 
-            // Load relationships
+            // Load relationships (optimized: removed unused requestedBy/approvedBy, added feedback)
             $approvals->load([
                 'house',
                 'assignedEmployee',
                 'spareParts.spare',
-                'spareApprovals.requestedBy',
-                'spareApprovals.approvedBy',
-                'spareApprovals.items.spare'
+                'spareApprovals.items.spare',
+                'feedback'
             ]);
 
-
-            // Check if each complaint has issued stock
-            foreach ($approvals as $complaint) {
-                $hasIssuedStock = \App\Models\SpareStockLog::where('reference_id', $complaint->id)
+            // Batch check if complaints have issued stock (replaces N+1 per-row query)
+            $complaintIds = $approvals->pluck('id')->toArray();
+            $complaintsWithStock = [];
+            if (!empty($complaintIds)) {
+                $complaintsWithStock = \App\Models\SpareStockLog::whereIn('reference_id', $complaintIds)
                     ->where('change_type', 'out')
-                    ->exists();
-                $complaint->has_issued_stock = $hasIssuedStock;
+                    ->distinct('reference_id')
+                    ->pluck('reference_id')
+                    ->toArray();
             }
-
-            // Get complaints with location filtering
-            $complaintsQuery = Complaint::pending()->with('house');
-            $this->filterComplaintsByLocation($complaintsQuery, $user);
-            $complaints = $complaintsQuery->get();
-
-            // Get employees with location filtering
-            $employeesQuery = Employee::query()->where('status', 1);
-            $this->filterEmployeesByLocation($employeesQuery, $user);
-            $employees = $employeesQuery->get();
+            foreach ($approvals as $complaint) {
+                $complaint->has_issued_stock = in_array($complaint->id, $complaintsWithStock);
+            }
 
             // Get categories for Nature filter - get from ComplaintCategory table if exists
             if (Schema::hasTable('complaint_categories')) {
@@ -251,7 +245,7 @@ class ApprovalController extends Controller
             // Handle AJAX requests - return only table and pagination
             if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
                 try {
-                    $html = view('admin.approvals.index', compact('approvals', 'complaints', 'employees', 'categories', 'statuses', 'statusesForFilter'))->render();
+                    $html = view('admin.approvals.index', compact('approvals', 'categories', 'statuses', 'statusesForFilter'))->render();
                     return response()->json([
                         'success' => true,
                         'html' => $html
@@ -269,7 +263,7 @@ class ApprovalController extends Controller
                 }
             }
 
-            return view('admin.approvals.index', compact('approvals', 'complaints', 'employees', 'categories', 'statuses', 'statusesForFilter'));
+            return view('admin.approvals.index', compact('approvals', 'categories', 'statuses', 'statusesForFilter'));
 
         }
         catch (\Exception $e) {

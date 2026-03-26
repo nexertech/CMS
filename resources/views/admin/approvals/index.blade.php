@@ -660,23 +660,12 @@
                       @php
                         $hasFeedback = false;
                         $feedbackId = null;
-                        // Safely check if feedback exists without triggering lazy loading errors
+                        // Use eager-loaded feedback relationship (no extra queries)
                         try {
-                          if ($complaint && $complaint->relationLoaded('feedback')) {
-                            $feedback = $complaint->getRelation('feedback');
-                            if ($feedback && $feedback->id) {
-                              $hasFeedback = true;
-                              $feedbackId = $feedback->id;
-                            }
-                          } else {
-                            // Use exists() method to check without loading the relationship
-                            $hasFeedback = \App\Models\ComplaintFeedback::where('complaint_id', $complaint->id)->exists();
-                            if ($hasFeedback) {
-                              $feedback = \App\Models\ComplaintFeedback::where('complaint_id', $complaint->id)->first();
-                              if ($feedback) {
-                                $feedbackId = $feedback->id;
-                              }
-                            }
+                          $feedback = $complaint->getRelation('feedback');
+                          if ($feedback && $feedback->id) {
+                            $hasFeedback = true;
+                            $feedbackId = $feedback->id;
                           }
                         } catch (\Exception $e) {
                           $hasFeedback = false;
