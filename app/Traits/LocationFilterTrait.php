@@ -17,8 +17,7 @@ trait LocationFilterTrait
             return $query;
         }
 
-        $roleName = strtolower($user->role->role_name ?? '');
-        if (in_array($roleName, ['admin', 'director'])) {
+        if ($this->hasGlobalAccess($user)) {
             return $query;
         }
 
@@ -27,8 +26,7 @@ trait LocationFilterTrait
         $sectorIds = $ids['sector_ids'];
 
         if (empty($cityIds) && empty($sectorIds)) {
-            $roleName = strtolower($user->role->role_name ?? '');
-            if (in_array($roleName, ['admin', 'director'])) {
+            if ($this->hasGlobalAccess($user)) {
                 return $query;
             }
             return $query->whereRaw('1 = 0');
@@ -69,8 +67,7 @@ trait LocationFilterTrait
             return $query;
         }
 
-        $roleName = strtolower($user->role->role_name ?? '');
-        if (in_array($roleName, ['admin', 'director'])) {
+        if ($this->hasGlobalAccess($user)) {
             return $query;
         }
 
@@ -79,8 +76,7 @@ trait LocationFilterTrait
         $sectorIds = $ids['sector_ids'];
 
         if (empty($cityIds) && empty($sectorIds)) {
-            $roleName = strtolower($user->role->role_name ?? '');
-            if (in_array($roleName, ['admin', 'director'])) {
+            if ($this->hasGlobalAccess($user)) {
                 return $query;
             }
             return $query->whereRaw('1 = 0');
@@ -97,12 +93,50 @@ trait LocationFilterTrait
     }
 
     /**
-     * Check if user can view all data (Director or Admin)
+     * Check if user can view all data (Global Access)
+     * This checks for Admin/Director roles OR if the user has no specific restrictions (assigned all)
+     */
+    public function hasGlobalAccess($user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        $roleName = strtolower($user->role->role_name ?? '');
+        
+        // 1. Check for traditionally global roles
+        if (in_array($roleName, ['admin', 'director'])) {
+            return true;
+        }
+
+        // 2. Check for "All" access via empty location restrictions for internal users
+        $ids = $this->getNormalizedLocationIds($user);
+        if (empty($ids['city_ids']) && empty($ids['sector_ids'])) {
+            // Internal users (Admin panel) with no restrictions have global access
+            if ($user instanceof \App\Models\User) {
+                return true;
+            }
+        }
+
+        // 3. Check if they have ALL cities/sectors assigned (Dynamic All Access)
+        static $totalCitiesCount = null;
+        if ($totalCitiesCount === null) {
+            $totalCitiesCount = \App\Models\City::where('status', 1)->count();
+        }
+
+        if ($totalCitiesCount > 0 && count($ids['city_ids']) >= $totalCitiesCount) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Alias for backward compatibility or clarity
      */
     public function canViewAllData($user): bool
     {
-        // No one can view all data automatically anymore unless they have all locations selected
-        return false;
+        return $this->hasGlobalAccess($user);
     }
 
     public function getUserCityIds($user): ?array
@@ -177,8 +211,7 @@ trait LocationFilterTrait
             return $query;
         }
 
-        $roleName = strtolower($user->role->role_name ?? '');
-        if (in_array($roleName, ['admin', 'director'])) {
+        if ($this->hasGlobalAccess($user)) {
             return $query;
         }
 
@@ -187,8 +220,7 @@ trait LocationFilterTrait
         $sectorIds = $ids['sector_ids'];
 
         if (empty($cityIds) && empty($sectorIds)) {
-            $roleName = strtolower($user->role->role_name ?? '');
-            if (in_array($roleName, ['admin', 'director'])) {
+            if ($this->hasGlobalAccess($user)) {
                 return $query;
             }
             return $query->whereRaw('1 = 0');
@@ -213,8 +245,7 @@ trait LocationFilterTrait
             return $query;
         }
 
-        $roleName = strtolower($user->role->role_name ?? '');
-        if (in_array($roleName, ['admin', 'director'])) {
+        if ($this->hasGlobalAccess($user)) {
             return $query;
         }
 
@@ -223,8 +254,7 @@ trait LocationFilterTrait
         $sectorIds = $ids['sector_ids'];
 
         if (empty($cityIds) && empty($sectorIds)) {
-            $roleName = strtolower($user->role->role_name ?? '');
-            if (in_array($roleName, ['admin', 'director'])) {
+            if ($this->hasGlobalAccess($user)) {
                 return $query;
             }
             return $query->whereRaw('1 = 0');
@@ -251,8 +281,7 @@ trait LocationFilterTrait
             return $query;
         }
 
-        $roleName = strtolower($user->role->role_name ?? '');
-        if ($roleName === 'admin') {
+        if ($this->hasGlobalAccess($user)) {
             return $query;
         }
 
@@ -261,7 +290,7 @@ trait LocationFilterTrait
         $sectorIds = $ids['sector_ids'];
 
         if (empty($cityIds) && empty($sectorIds)) {
-            if (in_array($roleName, ['admin', 'director'])) {
+            if ($this->hasGlobalAccess($user)) {
                 return $query;
             }
             $query->whereRaw('1 = 0');
@@ -299,7 +328,9 @@ trait LocationFilterTrait
             return $query;
         }
 
-        $roleName = strtolower($user->role->role_name ?? '');
+        if ($this->hasGlobalAccess($user)) {
+            return $query;
+        }
 
         $ids = $this->getNormalizedLocationIds($user);
         $cityIds = $ids['city_ids'];
@@ -307,7 +338,7 @@ trait LocationFilterTrait
 
         // If no locations assigned, allow global access for Admins/Directors
         if (empty($cityIds) && empty($sectorIds)) {
-            if (in_array($roleName, ['admin', 'director'])) {
+            if ($this->hasGlobalAccess($user)) {
                 return $query;
             }
             return $query->whereRaw('1 = 0');
@@ -332,8 +363,7 @@ trait LocationFilterTrait
             return $query;
         }
 
-        $roleName = strtolower($user->role->role_name ?? '');
-        if (in_array($roleName, ['admin', 'director'])) {
+        if ($this->hasGlobalAccess($user)) {
             return $query;
         }
 
@@ -341,9 +371,8 @@ trait LocationFilterTrait
         $cityIds = $ids['city_ids'];
         $sectorIds = $ids['sector_ids'];
 
-        // If no locations assigned, return all CMEs for Admins/Directors
         if (empty($cityIds) && empty($sectorIds)) {
-            if (in_array($roleName, ['admin', 'director'])) {
+            if ($this->hasGlobalAccess($user)) {
                 return $query;
             }
             return $query->whereRaw('1 = 0');

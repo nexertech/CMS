@@ -23,11 +23,19 @@ class ComplaintAttachment extends Model
     ];
 
     /**
+     * Get the original name from file path.
+     */
+    public function getOriginalNameAttribute(): string
+    {
+        return $this->attributes['original_name'] ?? basename($this->file_path);
+    }
+
+    /**
      * Get the complaint that owns the attachment.
      */
     public function complaint(): BelongsTo
     {
-        return $this->belongsTo(Complaint::class, 'complaint_id', 'id');
+        return $this->belongsTo(Complaint::class , 'complaint_id', 'id');
     }
 
     /**
@@ -63,14 +71,14 @@ class ComplaintAttachment extends Model
     public function getFileSizeHumanAttribute(): string
     {
         $bytes = $this->getFileSizeAttribute();
-        
+
         $units = ['B', 'KB', 'MB', 'GB'];
         $bytes = max($bytes, 0);
         $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
         $pow = min($pow, count($units) - 1);
-        
+
         $bytes /= (1 << (10 * $pow));
-        
+
         return round($bytes, 2) . ' ' . $units[$pow];
     }
 
@@ -115,9 +123,11 @@ class ComplaintAttachment extends Model
     {
         if ($this->isImage()) {
             return 'Image';
-        } elseif ($this->isDocument()) {
+        }
+        elseif ($this->isDocument()) {
             return 'Document';
-        } else {
+        }
+        else {
             return 'File';
         }
     }
@@ -129,9 +139,11 @@ class ComplaintAttachment extends Model
     {
         if ($this->isImage()) {
             return 'fas fa-image';
-        } elseif ($this->isDocument()) {
+        }
+        elseif ($this->isDocument()) {
             return 'fas fa-file-alt';
-        } else {
+        }
+        else {
             return 'fas fa-file';
         }
     }

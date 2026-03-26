@@ -47,7 +47,7 @@
                 </h5>
             </div>
             <div class="card-body">
-                <form action="{{ route('admin.complaints.store') }}" method="POST" autocomplete="off" novalidate>
+                <form action="{{ route('admin.complaints.store') }}" method="POST" enctype="multipart/form-data" autocomplete="off" novalidate>
                     @csrf
 
                     <div style="display: none;">
@@ -67,8 +67,8 @@
                                 <p class="mb-1 text-white" style="font-size: 14px; opacity: 0.95;">
                                     <strong>Ask politely:</strong> How may I assist you today? / آپ کی کیا مدد کر سکتا ہوں؟
                                 </p>
-                                <p class="mb-0 text-white" style="font-size: 13px; opacity: 0.85; font-style: italic;">
-                                    Remember to be courteous, patient, and professional while recording the complaint.
+                                <p class="mb-1 text-white" style="font-size: 14px; opacity: 0.95;">
+                                    <strong>Recording:</strong> be courteous, patient, and professional while recording the complaint. / شکایت درج کرتے وقت خوش اخلاقی، صبر اور پیشہ ورانہ مہارت کا مظاہرہ کریں۔
                                 </p>
                             </div>
                         </div>
@@ -295,6 +295,21 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label for="attachments" class="form-label text-white">
+                                <i data-feather="paperclip" class="me-1" style="width: 16px; height: 16px;"></i>Attachments
+                                <small class="text-light">(Max 5 files, 10MB each — jpg, png, pdf, doc)</small>
+                            </label>
+                            <input type="file" class="form-control @error('attachments.*') is-invalid @enderror"
+                                id="attachments" name="attachments[]" multiple
+                                accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
+                            @error('attachments.*')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
 

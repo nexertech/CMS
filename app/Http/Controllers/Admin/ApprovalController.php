@@ -82,7 +82,7 @@ class ApprovalController extends Controller
                 // Check if it's a performa_type filter (prefixed with 'performa_')
                 if (strpos($statusValue, 'performa_') === 0) {
                     $performaType = str_replace('performa_', '', $statusValue);
-                    $query->whereHas('spareApprovals', function($q) use ($performaType) {
+                    $query->whereHas('spareApprovals', function ($q) use ($performaType) {
                         $q->where('performa_type', $performaType);
                     });
                     // Exclude "Addressed" (resolved) complaints when filtering by performa_type
@@ -95,17 +95,17 @@ class ApprovalController extends Controller
                     $query->where('complaints.status', 'maint_priced_performa');
                 }
                 elseif ($statusValue === 'pending') {
-                    $query->whereHas('spareApprovals', function($q) {
+                    $query->whereHas('spareApprovals', function ($q) {
                         $q->where('status', 'pending');
                     });
                 }
                 elseif ($statusValue === 'approved') {
-                    $query->whereHas('spareApprovals', function($q) {
+                    $query->whereHas('spareApprovals', function ($q) {
                         $q->where('status', 'approved');
                     });
                 }
                 elseif ($statusValue === 'rejected') {
-                    $query->whereHas('spareApprovals', function($q) {
+                    $query->whereHas('spareApprovals', function ($q) {
                         $q->where('status', 'rejected');
                     });
                 }
@@ -119,11 +119,12 @@ class ApprovalController extends Controller
             if ($request->has('requested_by') && $request->requested_by) {
                 $employeeId = $request->requested_by;
                 $query->where(function ($q) use ($employeeId) {
-                    $q->whereHas('spareApprovals', function($sq) use ($employeeId) {
-                        $sq->where('requested_by', $employeeId);
-                    })
-                    ->orWhere('complaints.assigned_employee_id', $employeeId);
-                });
+                    $q->whereHas('spareApprovals', function ($sq) use ($employeeId) {
+                            $sq->where('requested_by', $employeeId);
+                        }
+                        )
+                            ->orWhere('complaints.assigned_employee_id', $employeeId);
+                    });
             }
 
             // Filter by complaint
@@ -1420,7 +1421,7 @@ class ApprovalController extends Controller
                 }
 
                 $requestedByEmployee = $complaint->assigned_employee_id
-                    ? Employee::find($complaint->assigned_employee_id)
+                    ?Employee::find($complaint->assigned_employee_id)
                     : $defaultEmployee;
 
                 if (!$requestedByEmployee) {
@@ -1450,4 +1451,3 @@ class ApprovalController extends Controller
         }
     }
 }
-

@@ -120,9 +120,20 @@ class DashboardController extends Controller
             } elseif ($cmesId) {
                 // No city selected, but CMES selected -> Get cities belonging to this CMES
                 $cmeCityIds = City::where('cme_id', $cmesId)->pluck('id')->toArray();
-                if (!empty($cmeCityIds)) {
-                    $sectorsQuery->whereIn('city_id', $cmeCityIds);
+                
+                $sectorsQuery->where(function($q) use ($cmesId, $cmeCityIds) {
+                    $q->where('cme_id', $cmesId);
+                    if (!empty($cmeCityIds)) {
+                        $q->orWhereIn('city_id', $cmeCityIds);
+                    }
+                });
+
+                // If no cities and no direct CME sectors, force empty result
+                $directCmeSectorsCount = Sector::where('cme_id', $cmesId)->count();
+                if (empty($cmeCityIds) && $directCmeSectorsCount === 0) {
+                    $sectorsQuery->whereRaw('1 = 0');
                 }
+
                 // If not global admin, restrict to their specific cities within this CMES
                 if (!$hasGlobalAccess && !empty($user->city_ids)) {
                     $sectorsQuery->whereIn('city_id', $user->city_ids);
@@ -659,33 +670,44 @@ class DashboardController extends Controller
         if ($cmesId) {
             try {
                 $cmeCityIds = City::where('cme_id', $cmesId)->pluck('id')->toArray();
-                $cmeSectorIds = Sector::where('cme_id', $cmesId)->pluck('id')->toArray();
+                $cmeSectorIds = Sector::where(function ($q) use ($cmesId, $cmeCityIds) {
+                    $q->where('cme_id', $cmesId);
+                    if (!empty($cmeCityIds)) {
+                        $q->orWhereIn('city_id', $cmeCityIds);
+                    }
+                })->pluck('id')->toArray();
 
-                $query->where(function ($q) use ($cmeCityIds, $cmeSectorIds) {
-                    // Match via house
-                    $q->whereHas('house', function ($hq) use ($cmeCityIds, $cmeSectorIds) {
-                        $hq->where(function ($sub) use ($cmeCityIds, $cmeSectorIds) {
-                            if (!empty($cmeCityIds)) {
-                                $sub->whereIn('city_id', $cmeCityIds);
-                            }
-                            if (!empty($cmeSectorIds)) {
-                                $sub->orWhereIn('sector_id', $cmeSectorIds);
-                            }
-                        });
-                    })
-                    // OR Match via direct complaint columns (for house-less complaints)
-                    ->orWhere(function ($cq) use ($cmeCityIds, $cmeSectorIds) {
-                        $cq->whereNull('complaints.house_id')
-                            ->where(function ($sub) use ($cmeCityIds, $cmeSectorIds) {
+                if (empty($cmeCityIds) && empty($cmeSectorIds)) {
+                    $query->whereRaw('1 = 0');
+                } else {
+                    $query->where(function ($q) use ($cmeCityIds, $cmeSectorIds) {
+                        // Match via house
+                        $q->whereHas('house', function ($hq) use ($cmeCityIds, $cmeSectorIds) {
+                            $hq->where(function ($sub) use ($cmeCityIds, $cmeSectorIds) {
                                 if (!empty($cmeCityIds)) {
-                                    $sub->whereIn('complaints.city_id', $cmeCityIds);
+                                    $sub->whereIn('city_id', $cmeCityIds);
                                 }
                                 if (!empty($cmeSectorIds)) {
-                                    $sub->orWhereIn('complaints.sector_id', $cmeSectorIds);
+                                    $method = !empty($cmeCityIds) ? 'orWhereIn' : 'whereIn';
+                                    $sub->{$method}('sector_id', $cmeSectorIds);
                                 }
                             });
+                        })
+                        // OR Match via direct complaint columns (for house-less complaints)
+                        ->orWhere(function ($cq) use ($cmeCityIds, $cmeSectorIds) {
+                            $cq->whereNull('complaints.house_id')
+                                ->where(function ($sub) use ($cmeCityIds, $cmeSectorIds) {
+                                    if (!empty($cmeCityIds)) {
+                                        $sub->whereIn('complaints.city_id', $cmeCityIds);
+                                    }
+                                    if (!empty($cmeSectorIds)) {
+                                        $method = !empty($cmeCityIds) ? 'orWhereIn' : 'whereIn';
+                                        $sub->{$method}('complaints.sector_id', $cmeSectorIds);
+                                    }
+                                });
+                        });
                     });
-                });
+                }
             } catch (\Exception $e) {
                 // If tables/columns don't exist or query fails, ignore CMES scoping
             }

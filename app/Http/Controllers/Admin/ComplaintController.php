@@ -257,11 +257,8 @@ class ComplaintController extends Controller
 
                     ComplaintAttachment::create([
                         'complaint_id' => $complaint->id,
-                        'filename' => $filename,
-                        'original_name' => $file->getClientOriginalName(),
                         'file_path' => $path,
-                        'file_size' => $file->getSize(),
-                        'mime_type' => $file->getMimeType(),
+                        'uploaded_at' => now(),
                     ]);
                 }
             }

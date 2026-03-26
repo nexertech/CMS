@@ -32,6 +32,7 @@ class HouseController extends Controller
             $query->where(function($q) use ($search) {
                 $q->where('username', 'like', "%{$search}%")
                   ->orWhere('house_no', 'like', "%{$search}%")
+                  ->orWhere('name', 'like', "%{$search}%")
                   ->orWhere('type', 'like', "%{$search}%")
                   ->orWhere('address', 'like', "%{$search}%");
             });

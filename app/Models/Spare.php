@@ -433,10 +433,11 @@ class Spare extends Model
             }
         }
         
-        // If no brand-specific stock found, use current brand
-        if (empty($brandsToLog) && $this->brand_id) {
+        // If no brand-specific stock found, always create a log entry
+        // Even if brand_id is null, we must still log the stock movement
+        if (empty($brandsToLog)) {
             $brandsToLog[] = [
-                'brand_id' => $this->brand_id,
+                'brand_id' => $this->brand_id, // may be null, that's OK
                 'quantity' => $quantity,
             ];
         }

@@ -4,16 +4,22 @@
 
 @section('content')
     <!-- PAGE HEADER -->
-    <div class="mb-4">
-        <div class="d-flex justify-content-between align-items-center">
+    <div class="mb-5 dashboard-header">
+        <div class="d-flex justify-content-between align-items-start mb-1">
             <div>
-                <h2 class="text-white mb-2">Complaints Management</h2>
-                <p class="text-light">Track and manage customer complaints</p>
+                <h2 class="text-white mb-0" style="font-size: 2.25rem; font-weight: 700; line-height: 1.2; margin-top: 0 !important;">Complaints Management</h2>
             </div>
-            <a href="{{ route('admin.complaints.create') }}" class="btn btn-outline-secondary">
-                <i data-feather="plus" class="me-2"></i>Add Complaint
+            @if(Auth::user() && Auth::user()->hasPermission('complaints'))
+            <a href="{{ route('admin.complaints.create') }}" class="btn d-flex align-items-center gap-2" 
+               style="background: #001f5b !important; color: #ffffff !important; font-weight: 700; font-size: 1.15rem; padding: 0.75rem 1.75rem; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; text-decoration: none; transition: all 0.3s ease; margin-top: 1px   !important;">
+                <i data-feather="plus-circle" style="width: 22px; height: 22px; color: #ffffff !important; stroke: #ffffff !important; stroke-width: 2.5px;"></i>
+                <span style="color: #ffffff !important;">Add Complaint</span>
             </a>
+            @endif
         </div>
+        <p class="text-light mb-0" style="margin-top: 0.5rem; padding-left: 0.5rem; font-size: 1.1rem; opacity: 0.85;">
+            Track and manage customer complaints
+        </p>
     </div>
 
     <!-- FILTERS -->
