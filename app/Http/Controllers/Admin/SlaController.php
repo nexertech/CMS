@@ -416,7 +416,7 @@ class SlaController extends Controller
             $withinSla = Complaint::where('category_id', $categoryId)
                 ->where('created_at', '>=', now()->subDays($period))
                 ->whereIn('status', ['resolved', 'closed'])
-                ->whereRaw('TIMESTAMPDIFF(HOUR, complaints.created_at, complaints.updated_at) <= COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE category_id = ? AND status = "active"), 999999)', [$categoryId])
+                ->whereRaw('TIMESTAMPDIFF(HOUR, complaints.created_at, complaints.updated_at) <= COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE category_id = ? AND priority = complaints.priority AND status = 1), 999999)', [$categoryId])
                 ->count();
 
             $performance[] = [
@@ -571,7 +571,7 @@ class SlaController extends Controller
     {
         return Complaint::where('created_at', '>=', now()->subDays($period))
             ->whereIn('status', ['resolved', 'closed'])
-            ->whereRaw('TIMESTAMPDIFF(HOUR, complaints.created_at, complaints.updated_at) <= COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE category_id = complaints.category_id AND status = "active"), 999999)')
+            ->whereRaw('TIMESTAMPDIFF(HOUR, complaints.created_at, complaints.updated_at) <= COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE category_id = complaints.category_id AND priority = complaints.priority AND status = 1), 999999)')
             ->count();
     }
 
@@ -582,7 +582,7 @@ class SlaController extends Controller
     {
         return Complaint::where('created_at', '>=', now()->subDays($period))
             ->whereIn('status', ['resolved', 'closed'])
-            ->whereRaw('TIMESTAMPDIFF(HOUR, complaints.created_at, complaints.updated_at) > COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE category_id = complaints.category_id AND status = "active"), 999999)')
+            ->whereRaw('TIMESTAMPDIFF(HOUR, complaints.created_at, complaints.updated_at) > COALESCE((SELECT MIN(max_resolution_time) FROM sla_rules WHERE category_id = complaints.category_id AND priority = complaints.priority AND status = 1), 999999)')
             ->count();
     }
 }

@@ -843,6 +843,7 @@ class DashboardController extends Controller
             $withinSla = Complaint::query()
                 ->leftJoin('sla_rules', function($join) {
                     $join->on('complaints.category_id', '=', 'sla_rules.category_id')
+                         ->on('complaints.priority', '=', 'sla_rules.priority')
                          ->where('sla_rules.status', '=', 1)
                          ->whereNull('sla_rules.deleted_at');
                 })
@@ -914,7 +915,10 @@ class DashboardController extends Controller
     {
         // Optimized query: Use a JOIN instead of a correlated subquery for 132k+ records
         return Complaint::whereIn('complaints.status', ['assigned', 'in_progress'])
-            ->join('sla_rules', 'complaints.category_id', '=', 'sla_rules.category_id')
+            ->join('sla_rules', function($join) {
+                $join->on('complaints.category_id', '=', 'sla_rules.category_id')
+                     ->on('complaints.priority', '=', 'sla_rules.priority');
+            })
             ->where('sla_rules.status', 1)
             ->whereNull('sla_rules.deleted_at')
             ->whereRaw("TIMESTAMPDIFF(HOUR, complaints.created_at, NOW()) > sla_rules.max_response_time")
@@ -995,6 +999,7 @@ class DashboardController extends Controller
 
         $data = Complaint::leftJoin('sla_rules', function($join) {
                 $join->on('complaints.category_id', '=', 'sla_rules.category_id')
+                     ->on('complaints.priority', '=', 'sla_rules.priority')
                      ->where('sla_rules.status', '=', 1);
             })
             ->where('complaints.created_at', '>=', now()->subDays($period))

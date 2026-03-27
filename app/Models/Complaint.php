@@ -383,7 +383,8 @@ class Complaint extends Model
      */
     public function slaRule()
     {
-        return $this->hasOne(SlaRule::class, 'category_id', 'category_id');
+        return $this->hasOne(SlaRule::class, 'category_id', 'category_id')
+                    ->whereColumn('priority', 'complaints.priority');
     }
 
     /**
@@ -604,6 +605,7 @@ class Complaint extends Model
         return $query->whereIn('complaints.status', ['new', 'assigned', 'in_progress'])
             ->join('sla_rules', function ($join) {
                 $join->on('complaints.category_id', '=', 'sla_rules.category_id')
+                     ->on('complaints.priority', '=', 'sla_rules.priority')
                     ->where('sla_rules.status', '=', 1)
                     ->whereNull('sla_rules.deleted_at');
             })

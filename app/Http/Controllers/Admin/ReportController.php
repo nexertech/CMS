@@ -378,7 +378,7 @@ class ReportController extends Controller
 
         // Get specifically compliant resolved complaints
         $compliantCount = (clone $query)->where('complaints.status', 'resolved')
-            ->whereHas('category.slaRule', function ($q) {
+            ->whereHas('slaRule', function ($q) {
                 $q->whereRaw('TIMESTAMPDIFF(HOUR, complaints.created_at, complaints.updated_at) <= sla_rules.max_resolution_time')
                     ->where('sla_rules.status', 1);
             })->count();

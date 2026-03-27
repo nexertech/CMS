@@ -28,14 +28,6 @@
         @enderror
       </div>
       <div class="col-md-3 mb-3">
-        <label for="username" class="form-label text-white">Username (for login)</label>
-        <input type="text" class="form-control @error('username') is-invalid @enderror" 
-                id="username" name="username" value="{{ old('username', $house->username) }}" autocomplete="off" placeholder="e.g., resident_101">
-        @error('username')
-          <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-      </div>
-      <div class="col-md-3 mb-3">
         <label for="type" class="form-label text-white">Type</label>
         <div id="typeDropdownContainer">
           <select class="form-select @error('type') is-invalid @enderror" id="typeSelect" onchange="checkType(this.value)">
@@ -54,6 +46,14 @@
         </div>
         @error('type')
           <div class="invalid-feedback d-block">{{ $message }}</div>
+        @enderror
+      </div>
+      <div class="col-md-3 mb-3">
+        <label for="username" class="form-label text-white">Username (for login)</label>
+        <input type="text" class="form-control @error('username') is-invalid @enderror" 
+                id="username" name="username" value="{{ old('username', $house->username) }}" autocomplete="off" placeholder="e.g., resident_101">
+        @error('username')
+          <div class="invalid-feedback">{{ $message }}</div>
         @enderror
       </div>
       <div class="col-md-3 mb-3">
