@@ -298,20 +298,6 @@
                         </div>
                     </div>
 
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <label for="attachments" class="form-label text-white">
-                                <i data-feather="paperclip" class="me-1" style="width: 16px; height: 16px;"></i>Attachments
-                                <small class="text-light">(Max 5 files, 10MB each — jpg, png, pdf, doc)</small>
-                            </label>
-                            <input type="file" class="form-control @error('attachments.*') is-invalid @enderror"
-                                id="attachments" name="attachments[]" multiple
-                                accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
-                            @error('attachments.*')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
 
                     <div class="d-flex justify-content-end gap-2">
                         <a href="{{ route('admin.complaints.index') }}" class="btn btn-outline-secondary">Cancel</a>

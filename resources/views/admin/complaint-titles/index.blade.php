@@ -85,7 +85,7 @@
             <th style="width:180px">Actions</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="titlesTableBody">
         @forelse($complaintTitles as $title)
           <tr>
             <td>{{ $title->id }}</td>
@@ -135,7 +135,7 @@
     </div>
 
     <!-- Pagination -->
-    <div class="d-flex justify-content-center mt-3">
+    <div class="d-flex justify-content-center mt-3" id="titlesPagination">
       {{ $complaintTitles->links() }}
     </div>
   </div>
@@ -207,6 +207,96 @@
         const modal = new bootstrap.Modal(document.getElementById('editModal'));
         modal.show();
       });
+    });
+
+    // AJAX Pagination and Search
+    function loadTitles(url = null) {
+      const titlesTableBody = document.getElementById('titlesTableBody');
+      const titlesPagination = document.getElementById('titlesPagination');
+      const footerContainer = document.getElementById('complaintTitlesTableFooter');
+
+      if (titlesTableBody) {
+        titlesTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4"><div class="spinner-border text-light" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
+      }
+
+      const fetchUrl = url || window.location.href;
+
+      fetch(fetchUrl, {
+        method: 'GET',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'text/html',
+        }
+      })
+      .then(response => response.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        const newTbody = doc.querySelector('#titlesTableBody');
+        const newPagination = doc.querySelector('#titlesPagination');
+        const newFooter = doc.querySelector('#complaintTitlesTableFooter');
+
+        if (newTbody && titlesTableBody) {
+          titlesTableBody.innerHTML = newTbody.innerHTML;
+          // Re-attach edit modal events
+          attachEditEvents();
+        }
+
+        if (newPagination && titlesPagination) {
+          titlesPagination.innerHTML = newPagination.innerHTML;
+        }
+
+        if (newFooter && footerContainer) {
+          footerContainer.innerHTML = newFooter.innerHTML;
+        }
+
+        feather.replace();
+
+        if (url) {
+          window.history.pushState({ path: url }, '', url);
+        }
+      })
+      .catch(error => {
+        console.error('Error loading titles:', error);
+        if (titlesTableBody) {
+          titlesTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-danger">Error loading data.</td></tr>';
+        }
+      });
+    }
+
+    function attachEditEvents() {
+      const editButtons = document.querySelectorAll('.edit-title-btn');
+      editButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+          const id = this.getAttribute('data-id');
+          const category = this.getAttribute('data-category');
+          const title = this.getAttribute('data-title');
+          const questions = this.getAttribute('data-questions');
+          
+          document.getElementById('editForm').action = '{{ url("admin/complaint-titles") }}/' + id;
+          document.getElementById('edit_category').value = category;
+          document.getElementById('edit_title').value = title;
+          document.getElementById('edit_questions').value = questions;
+          
+          const modal = new bootstrap.Modal(document.getElementById('editModal'));
+          modal.show();
+        });
+      });
+    }
+
+    // Handle pagination clicks
+    document.addEventListener('click', function(e) {
+      const paginationLink = e.target.closest('#titlesPagination a');
+      if (paginationLink && paginationLink.href && !paginationLink.href.includes('javascript:')) {
+        e.preventDefault();
+        loadTitles(paginationLink.href);
+      }
+    });
+
+    // Handle browser back/forward buttons
+    window.addEventListener('popstate', function(e) {
+      loadTitles(window.location.href);
     });
   });
 </script>

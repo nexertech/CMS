@@ -105,7 +105,7 @@ trait LocationFilterTrait
         $roleName = strtolower($user->role->role_name ?? '');
         
         // 1. Check for traditionally global roles
-        if (in_array($roleName, ['admin', 'director'])) {
+        if (in_array($roleName, ['admin', 'super admin', 'director'])) {
             return true;
         }
 

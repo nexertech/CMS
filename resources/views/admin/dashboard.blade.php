@@ -366,7 +366,7 @@
       <i data-feather="plus-circle" style="width: 22px; height: 22px; color: #ffffff !important; stroke: #ffffff !important; stroke-width: 2.5px;"></i>
       <span style="color: #ffffff !important;">Add Complaint</span>
     </a>
-    @endif
+    @endif  
   </div>
   <p class="text-light mb-0" style="margin-top: 0.25rem; padding-left: 2.5rem; font-size: 1.1rem; opacity: 0.85;">
     Real-time complaint management system

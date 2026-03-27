@@ -83,13 +83,6 @@ class Complaint extends Model
         return $this->belongsTo(Sector::class, 'sector_id', 'id');
     }
 
-    /**
-     * Get the attachments for the complaint.
-     */
-    public function attachments(): HasMany
-    {
-        return $this->hasMany(ComplaintAttachment::class, 'complaint_id', 'id');
-    }
 
     /**
      * Get the logs for the complaint.

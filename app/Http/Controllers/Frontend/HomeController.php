@@ -104,7 +104,7 @@ class HomeController extends Controller
         // 1. Role-based check (if role_id exists)
         $isAdminByRole = (isset($user->role_id) && $user->role_id === 1) || 
                          (method_exists($user, 'isAdmin') && $user->isAdmin()) || 
-                         (isset($user->role) && in_array(strtolower($user->role->role_name), ['admin', 'director']));
+                         (isset($user->role) && in_array(strtolower($user->role->role_name), ['admin', 'super admin', 'director']));
 
         // 2. CME-based check (if they have all CMEs assigned, they are global)
         $hasAllCmes = false;
@@ -1008,7 +1008,6 @@ class HomeController extends Controller
         }
 
         $employeePerformanceQuery = Employee::query();
-        $this->filterEmployeesByLocation($employeePerformanceQuery, $user);
         $this->applyFrontendLocationScope($employeePerformanceQuery, $locationScope);
 
         // Apply dynamic dashboard filters to Employee list
@@ -1018,7 +1017,11 @@ class HomeController extends Controller
             $employeePerformanceQuery->where('sector_id', $sectorId);
         } elseif ($cmesId) {
             $cityIdsForEmp = City::where('cme_id', $cmesId)->pluck('id')->toArray();
-            $employeePerformanceQuery->whereIn('city_id', $cityIdsForEmp);
+            $sectorIdsForEmp = Sector::where('cme_id', $cmesId)->orWhereIn('city_id', $cityIdsForEmp)->pluck('id')->toArray();
+            $employeePerformanceQuery->where(function ($q) use ($cityIdsForEmp, $sectorIdsForEmp) {
+                if (!empty($cityIdsForEmp)) $q->whereIn('city_id', $cityIdsForEmp);
+                if (!empty($sectorIdsForEmp)) $q->orWhereIn('sector_id', $sectorIdsForEmp);
+            });
         }
         $employeePerformance = $employeePerformanceQuery
             ->withCount([
@@ -1041,7 +1044,6 @@ class HomeController extends Controller
 
         // Get Employees with Least Assigned Complaints (Bottom 10)
         $employeeLeastAssignedQuery = Employee::query();
-        $this->filterEmployeesByLocation($employeeLeastAssignedQuery, $user);
         $this->applyFrontendLocationScope($employeeLeastAssignedQuery, $locationScope);
 
         // Apply dynamic dashboard filters to Employee list
@@ -1051,7 +1053,11 @@ class HomeController extends Controller
             $employeeLeastAssignedQuery->where('sector_id', $sectorId);
         } elseif ($cmesId) {
             $cityIdsForEmpLeast = City::where('cme_id', $cmesId)->pluck('id')->toArray();
-            $employeeLeastAssignedQuery->whereIn('city_id', $cityIdsForEmpLeast);
+            $sectorIdsForEmpLeast = Sector::where('cme_id', $cmesId)->orWhereIn('city_id', $cityIdsForEmpLeast)->pluck('id')->toArray();
+            $employeeLeastAssignedQuery->where(function ($q) use ($cityIdsForEmpLeast, $sectorIdsForEmpLeast) {
+                if (!empty($cityIdsForEmpLeast)) $q->whereIn('city_id', $cityIdsForEmpLeast);
+                if (!empty($sectorIdsForEmpLeast)) $q->orWhereIn('sector_id', $sectorIdsForEmpLeast);
+            });
         }
         $employeeLeastAssigned = $employeeLeastAssignedQuery
             ->withCount([

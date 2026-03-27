@@ -382,31 +382,6 @@
 </div>
 @endif
 
-@if($complaint->attachments->count() > 0)
-<div class="row mb-4">
-  <div class="col-12">
-    <div class="card-glass">
-      <div class="d-flex align-items-center mb-4" style="border-bottom: 2px solid rgba(59, 130, 246, 0.2); padding-bottom: 12px;">
-        <i data-feather="paperclip" class="me-2 text-primary" style="width: 20px; height: 20px;"></i>
-        <h5 class="text-white mb-0" style="font-size: 1.1rem; font-weight: 600;">Attachments</h5>
-      </div>
-      <div class="row">
-        @foreach($complaint->attachments as $attachment)
-        <div class="col-md-3 mb-3">
-          <div class="card-glass text-center" style="padding: 1rem;">
-            <i data-feather="file" class="mb-2 text-primary" style="width: 24px; height: 24px;"></i>
-            <p class="text-white small mb-2">{{ $attachment->original_name }}</p>
-            <a href="{{ Storage::url($attachment->file_path) }}" target="_blank" class="btn btn-outline-primary btn-sm">
-              View
-            </a>
-          </div>
-        </div>
-        @endforeach
-      </div>
-    </div>
-  </div>
-</div>
-@endif
 
 <!-- FEEDBACK SECTION -->
 @if($complaint->status == 'resolved' || $complaint->status == 'closed' || $complaint->feedback)

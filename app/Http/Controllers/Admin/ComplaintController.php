@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\Schema;
 use App\Models\House;
 use App\Models\SpareApprovalPerforma;
 use App\Models\SpareApprovalItem;
-use App\Models\ComplaintAttachment;
 use App\Models\ComplaintLog;
 use App\Traits\LocationFilterTrait;
 use Illuminate\Support\Facades\DB;
@@ -39,7 +38,7 @@ class ComplaintController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $query = Complaint::with(['assignedEmployee', 'city', 'sector', 'attachments', 'spareParts.spare', 'spareApprovals']);
+        $query = Complaint::with(['assignedEmployee', 'city', 'sector', 'spareParts.spare', 'spareApprovals']);
 
         // Apply location-based filtering
         $this->filterComplaintsByLocation($query, $user);
@@ -210,8 +209,6 @@ class ComplaintController extends Controller
             'availability_time' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'assigned_employee_id' => 'required|exists:employees,id',
-            'attachments' => 'nullable|array|max:5',
-            'attachments.*' => 'file|mimes:jpg,jpeg,png,pdf,doc,docx|max:10240',
             'city_id' => 'nullable|exists:cities,id',
             'sector_id' => 'nullable|exists:sectors,id',
             'house_id' => 'required|exists:houses,id',
@@ -249,20 +246,6 @@ class ComplaintController extends Controller
                 'status' => 'assigned',
             ]);
 
-            // ... (attachments and logs remain same) ...
-            if ($request->hasFile('attachments')) {
-                foreach ($request->file('attachments') as $file) {
-                    $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
-                    $path = $file->storeAs('complaint-attachments', $filename, 'public');
-
-                    ComplaintAttachment::create([
-                        'complaint_id' => $complaint->id,
-                        'file_path' => $path,
-                        'uploaded_at' => now(),
-                    ]);
-                }
-            }
-
             $currentEmployee = Employee::first();
             if ($currentEmployee) {
                 ComplaintLog::create([
@@ -291,7 +274,7 @@ class ComplaintController extends Controller
      */
     public function show(Complaint $complaint)
     {
-        $complaint->load(['assignedEmployee', 'city', 'sector', 'attachments', 'spareParts.spare', 'spareApprovals', 'logs.actionBy', 'category', 'complaintTitle']);
+        $complaint->load(['assignedEmployee', 'city', 'sector', 'spareParts.spare', 'spareApprovals', 'logs.actionBy', 'category', 'complaintTitle']);
         return view('admin.complaints.show', compact('complaint'));
     }
 
@@ -367,8 +350,6 @@ class ComplaintController extends Controller
             'availability_time' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'assigned_employee_id' => 'required|exists:employees,id',
-            'attachments' => 'nullable|array|max:5',
-            'attachments.*' => 'file|mimes:jpg,jpeg,png,pdf,doc,docx|max:10240',
             'spare_parts' => 'nullable|array',
             'spare_parts.0.spare_id' => 'nullable|exists:spares,id',
             'spare_parts.0.quantity' => 'nullable|integer|min:1',
@@ -462,23 +443,6 @@ class ComplaintController extends Controller
             } catch (\Exception $e) {
                 DB::rollBack();
                 return redirect()->back()->with('error', 'Failed to update product/quantity: ' . $e->getMessage())->withInput();
-            }
-        }
-
-        // Handle new file attachments
-        if ($request->hasFile('attachments')) {
-            foreach ($request->file('attachments') as $file) {
-                $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
-                $path = $file->storeAs('complaint-attachments', $filename, 'public');
-
-                ComplaintAttachment::create([
-                    'complaint_id' => $complaint->id,
-                    'filename' => $filename,
-                    'original_name' => $file->getClientOriginalName(),
-                    'file_path' => $path,
-                    'file_size' => $file->getSize(),
-                    'mime_type' => $file->getMimeType(),
-                ]);
             }
         }
 
