@@ -1766,7 +1766,7 @@ class HomeController extends Controller
             'sector',
             'category',
             'assignedEmployee.designation',
-            'attachments',
+            // 'attachments', (Removed as it does not exist on Complaint model)
             'spareApprovals',
             'feedback.enteredBy'
         ])->find($id);

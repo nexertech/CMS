@@ -43,8 +43,8 @@
   $currentStatusColor = $statusColors[$complaintStatus] ?? $statusColors['unassigned'];
   
   $category = $complaint->category_id ?? 'N/A';
-  $designation = $complaint->assignedEmployee->designation->name ?? $complaint->assignedEmployee->designation ?? 'N/A';
-  $titleName = $complaint->complaintTitle->title ?? $complaint->title ?? 'N/A';
+  $designation = $complaint->assignedEmployee?->designation?->name ?? $complaint->assignedEmployee?->designation ?? 'N/A';
+  $titleName = $complaint->complaintTitle?->title ?? $complaint->title ?? 'N/A';
   $catDisplay = $complaint->getCategoryDisplayAttribute();
   $displayText = $catDisplay . ' - ' . $titleName;
 @endphp
@@ -173,7 +173,7 @@
                         <i data-feather="user" class="me-3 text-muted"></i>
                         <div class="w-100 d-flex justify-content-between">
                             <span class="text-muted small text-uppercase">Name:</span>
-                            <span class="fw-medium text-dark text-end">{{ $complaint->house->name ?? 'N/A' }}</span>
+                            <span class="fw-medium text-dark text-end">{{ $complaint->house?->name ?? 'N/A' }}</span>
                         </div>
                     </div>
                 </div>
@@ -276,7 +276,7 @@
                         <i data-feather="user-check" class="me-3 text-muted"></i>
                          <div class="w-100 d-flex justify-content-between">
                             <span class="text-muted small text-uppercase">Assigned To:</span>
-                            <span class="fw-medium text-dark text-end">{{ $complaint->assignedEmployee->name ?? 'Unassigned' }} @if($complaint->assignedEmployee && $designation !== 'N/A') <span class="text-muted small">({{ $designation }})</span> @endif</span>
+                            <span class="fw-medium text-dark text-end">{{ $complaint->assignedEmployee?->name ?? 'Unassigned' }} @if($complaint->assignedEmployee && $designation !== 'N/A') <span class="text-muted small">({{ $designation }})</span> @endif</span>
                         </div>
                     </div>
                 </div>
@@ -383,7 +383,7 @@
                                 <tbody>
                                     @foreach($issuedStock as $stock)
                                     <tr>
-                                        <td class="p-2 small">{{ $stock->spare->item_name ?? 'N/A' }}</td>
+                                        <td class="p-2 small">{{ $stock->spare?->item_name ?? 'N/A' }}</td>
                                         <td class="p-2 small fw-bold">{{ $stock->quantity }}</td>
                                         <td class="p-2 small">{{ $stock->created_at ? $stock->created_at->timezone('Asia/Karachi')->format('M d, Y H:i') : '-' }}</td>
                                     </tr>
@@ -441,7 +441,7 @@
                                 @elseif($complaint->feedback->submitted_by)
                                     {{ $complaint->feedback->submitted_by }}
                                 @else
-                                    {{ $complaint->house->name ?? 'Complainant' }}
+                                    {{ $complaint->house?->name ?? 'Complainant' }}
                                 @endif
                             </span>
                             <span class="badge bg-secondary ms-2" style="font-size: 0.6rem; opacity: 0.8;">
