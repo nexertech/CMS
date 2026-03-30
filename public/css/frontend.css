@@ -40,6 +40,7 @@ body {
 
 .feature-card {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  will-change: transform;
 }
 
 .feature-card:hover {

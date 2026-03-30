@@ -3,6 +3,8 @@
 @section('title', 'Navy Complaint Management System - Login')
 
 @push('styles')
+<link rel="preload" as="image" href="{{ asset('assests/Background.jpg') }}" fetchpriority="high">
+<link rel="preload" as="image" href="{{ asset('assests/slider1.jpg') }}">
 <style>
   * {
     box-sizing: border-box;
@@ -434,7 +436,7 @@
     @guest('frontend')
     <div class="right-section">
         <div class="logo">
-            <img src="{{ asset('assests/logo.png') }}" alt="Pakistan Navy Emblem" style="width: 100px; height: 100px; object-fit: contain;" />
+            <img src="{{ asset('assests/logo.png') }}" alt="Pakistan Navy Emblem" width="100" height="100" style="width: 100px; height: 100px; object-fit: contain;" fetchpriority="high" />
         </div>
         <div class="heading">MES COMPLAINT MANAGEMENT SYSTEM</div>
         <p class="subtitle">Nice to see you again</p>
