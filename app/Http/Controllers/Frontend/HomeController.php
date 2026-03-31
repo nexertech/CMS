@@ -562,6 +562,7 @@ class HomeController extends Controller
             SUM(CASE WHEN complaints.status = 'resolved' THEN 1 ELSE 0 END) as addressed,
             SUM(CASE WHEN complaints.status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
             SUM(CASE WHEN complaints.status = 'assigned' THEN 1 ELSE 0 END) as assigned,
+            SUM(CASE WHEN complaints.status = 'closed' THEN 1 ELSE 0 END) as closed,
 
             SUM(CASE WHEN complaints.status = 'work_performa' THEN 1 ELSE 0 END) as work_performa,
             SUM(CASE WHEN complaints.status = 'maint_performa' THEN 1 ELSE 0 END) as maint_performa,
@@ -571,6 +572,12 @@ class HomeController extends Controller
             SUM(CASE WHEN complaints.status = 'product_na' THEN 1 ELSE 0 END) as product_na,
             SUM(CASE WHEN complaints.status = 'pertains_to_ge_const_isld' THEN 1 ELSE 0 END) as pertains_to_ge_const_isld,
             SUM(CASE WHEN complaints.status = 'barak_damages' THEN 1 ELSE 0 END) as barak_damages,
+            
+            SUM(CASE WHEN complaints.status IN ('new', 'assigned', 'in_progress') AND EXISTS(SELECT 1 FROM sla_rules WHERE sla_rules.category_id = complaints.category_id AND sla_rules.status = 1 AND sla_rules.deleted_at IS NULL AND complaints.created_at < DATE_SUB(NOW(), INTERVAL sla_rules.max_resolution_time HOUR)) THEN 1 ELSE 0 END) as overdue_count,
+
+            SUM(CASE WHEN complaints.status = 'resolved' AND complaints.closed_at IS NOT NULL THEN DATEDIFF(complaints.closed_at, complaints.created_at) ELSE 0 END) as resolution_total_days,
+            SUM(CASE WHEN complaints.status = 'resolved' AND complaints.closed_at IS NOT NULL THEN 1 ELSE 0 END) as resolution_count,
+
             SUM(CASE WHEN complaints.created_at >= ? THEN 1 ELSE 0 END) as today,
             SUM(CASE WHEN complaints.created_at >= ? THEN 1 ELSE 0 END) as this_month,
             SUM(CASE WHEN complaints.created_at >= ? AND complaints.created_at < ? THEN 1 ELSE 0 END) as last_month
@@ -579,43 +586,47 @@ class HomeController extends Controller
             $now->copy()->startOfMonth(),
             $now->copy()->subMonth()->startOfMonth(),
             $now->copy()->startOfMonth()
-        ])->get();
-
-        $statsDataAggregation = $statsData->first();
-
-        // Single query for overdue count to avoid another heavy operation
-        $overdueCount = (clone $complaintsQuery)->overdue()->count();
+        ])->first();
 
         $stats = [
-            'total_complaints' => $statsDataAggregation->total ?? 0,
-            'new_complaints' => $statsDataAggregation->new ?? 0,
-            'pending_complaints' => $statsDataAggregation->pending ?? 0,
-            'resolved_complaints' => $statsDataAggregation->addressed ?? 0,
-            'overdue_complaints' => $overdueCount,
-            'complaints_today' => $statsDataAggregation->today ?? 0,
-            'complaints_this_month' => $statsDataAggregation->this_month ?? 0,
-            'complaints_last_month' => $statsDataAggregation->last_month ?? 0,
-            'in_progress' => $statsDataAggregation->in_progress ?? 0,
-            'assigned' => $statsDataAggregation->assigned ?? 0,
+            'total_complaints' => $statsData->total ?? 0,
+            'new_complaints' => $statsData->new ?? 0,
+            'pending_complaints' => $statsData->pending ?? 0,
+            'resolved_complaints' => $statsData->addressed ?? 0,
+            'overdue_complaints' => $statsData->overdue_count ?? 0,
+            'complaints_today' => $statsData->today ?? 0,
+            'complaints_this_month' => $statsData->this_month ?? 0,
+            'complaints_last_month' => $statsData->last_month ?? 0,
+            'in_progress' => $statsData->in_progress ?? 0,
+            'assigned' => $statsData->assigned ?? 0,
 
-            'work_performa' => $statsDataAggregation->work_performa ?? 0,
-            'maint_performa' => $statsDataAggregation->maint_performa ?? 0,
-            'addressed' => $statsDataAggregation->addressed ?? 0,
-            'un_authorized' => $statsDataAggregation->un_authorized ?? 0,
-            'pertains_to_ge_const_isld' => $statsDataAggregation->pertains_to_ge_const_isld ?? 0,
-            'barak_damages' => $statsDataAggregation->barak_damages ?? 0,
-            'work_priced_performa' => $statsDataAggregation->work_priced_performa ?? 0,
-            'maint_priced_performa' => $statsDataAggregation->maint_priced_performa ?? 0,
-            'product' => $statsDataAggregation->product_na ?? 0,
+            'work_performa' => $statsData->work_performa ?? 0,
+            'maint_performa' => $statsData->maint_performa ?? 0,
+            'addressed' => $statsData->addressed ?? 0,
+            'un_authorized' => $statsData->un_authorized ?? 0,
+            'pertains_to_ge_const_isld' => $statsData->pertains_to_ge_const_isld ?? 0,
+            'barak_damages' => $statsData->barak_damages ?? 0,
+            'work_priced_performa' => $statsData->work_priced_performa ?? 0,
+            'maint_priced_performa' => $statsData->maint_priced_performa ?? 0,
+            'product' => $statsData->product_na ?? 0,
         ];
 
-        // Grouped query for status counts (Pie Chart)
-        $statusCounts = (clone $complaintsQuery)
-            ->selectRaw('complaints.status, COUNT(*) as count')
-            ->groupBy('complaints.status')
-            ->pluck('count', 'complaints.status')
-            ->map(fn($val) => (int) $val)
-            ->toArray();
+        // Grouped query for status counts (Pie Chart) replaced by fast array allocation
+        $statusCounts = array_filter([
+            'new' => (int) ($statsData->new ?? 0),
+            'assigned' => (int) ($statsData->assigned ?? 0),
+            'in_progress' => (int) ($statsData->in_progress ?? 0),
+            'resolved' => (int) ($statsData->addressed ?? 0),
+            'closed' => (int) ($statsData->closed ?? 0),
+            'work_performa' => (int) ($statsData->work_performa ?? 0),
+            'maint_performa' => (int) ($statsData->maint_performa ?? 0),
+            'work_priced_performa' => (int) ($statsData->work_priced_performa ?? 0),
+            'maint_priced_performa' => (int) ($statsData->maint_priced_performa ?? 0),
+            'un_authorized' => (int) ($statsData->un_authorized ?? 0),
+            'product_na' => (int) ($statsData->product_na ?? 0),
+            'pertains_to_ge_const_isld' => (int) ($statsData->pertains_to_ge_const_isld ?? 0),
+            'barak_damages' => (int) ($statsData->barak_damages ?? 0),
+        ]);
 
         $complaintsByStatus = $statusCounts;
         if (isset($complaintsByStatus['new'])) {
@@ -628,14 +639,8 @@ class HomeController extends Controller
         $resolvedComplaints = $stats['resolved_complaints'];
         $stats['resolution_rate'] = $totalComplaints > 0 ? round(($resolvedComplaints / $totalComplaints) * 100) : 0;
 
-        $resolvedWithTime = (clone $complaintsQuery)
-            ->where('complaints.status', 'resolved')
-            ->whereNotNull('closed_at')
-            ->selectRaw('SUM(DATEDIFF(closed_at, created_at)) as total_days, COUNT(*) as count')
-            ->first();
-
-        $stats['average_resolution_days'] = ($resolvedWithTime && $resolvedWithTime->count > 0)
-            ? round($resolvedWithTime->total_days / $resolvedWithTime->count)
+        $stats['average_resolution_days'] = ($statsData->resolution_count > 0)
+            ? round($statsData->resolution_total_days / $statsData->resolution_count)
             : 0;
 
         $page = request()->get('page', 1);
