@@ -1291,35 +1291,67 @@ class HomeController extends Controller
             }
         }
 
-        // Get Top 10 Products by Issued Quantity from SpareStockLog for accurate time filtering
-        $categoryUsageQuery = \App\Models\SpareStockLog::join('spares', 'spare_stock_logs.spare_id', '=', 'spares.id')
-            ->selectRaw('
-                spares.item_name,
-                SUM(CASE WHEN spare_stock_logs.change_type = "out" THEN spare_stock_logs.quantity ELSE 0 END) as total_used,
-                SUM(CASE WHEN spare_stock_logs.change_type = "in" THEN spare_stock_logs.quantity ELSE 0 END) as total_received
-            ')
-            ->whereNotNull('spares.item_name')
-            ->groupBy('spares.item_name')
-            ->orderByDesc('total_used')
-            ->limit(10);
-
-        // Apply Global Location Scoping (on joined spares table)
-        $this->applyFrontendLocationScope($categoryUsageQuery, $locationScope, 'spares.city_id', 'spares.sector_id');
-
-        // Apply dynamic dashboard filters to Products list
-        if ($cityId) {
-            $categoryUsageQuery->where('spares.city_id', $cityId);
-        } elseif ($sectorId) {
-            $categoryUsageQuery->where('spares.sector_id', $sectorId);
-        } elseif ($cmesId) {
-            $cityIdsForProducts = City::where('cme_id', $cmesId)->pluck('id')->toArray();
-            $categoryUsageQuery->whereIn('spares.city_id', $cityIdsForProducts);
-        }
-
-        // Apply date filter to SpareStockLog created_at column (year-based)
         $categoryDateRange = $request->get('category_date_range', 'all_time');
-        if ($categoryDateRange && $categoryDateRange !== 'all_time') {
-            $categoryUsageQuery->whereYear('spare_stock_logs.created_at', $categoryDateRange);
+
+        if ($categoryDateRange === 'all_time' || empty($categoryDateRange)) {
+            // Get Top 10 Products directly from Spares table for accurate all-time data
+            $categoryUsageQuery = \App\Models\Spare::selectRaw('
+                    item_name,
+                    SUM(issued_quantity) as total_used,
+                    SUM(total_received_quantity) as total_received
+                ')
+                ->whereNotNull('item_name')
+                ->groupBy('item_name')
+                ->orderByDesc('total_used')
+                ->limit(10);
+
+            // Apply Global Location Scoping
+            $this->applyFrontendLocationScope($categoryUsageQuery, $locationScope, 'city_id', 'sector_id');
+
+            // Apply dynamic dashboard filters to Products list
+            if ($cityId) {
+                $categoryUsageQuery->where('city_id', $cityId);
+            } elseif ($sectorId) {
+                $categoryUsageQuery->where('sector_id', $sectorId);
+            } elseif ($cmesId) {
+                $cityIdsForProducts = City::where('cme_id', $cmesId)->pluck('id')->toArray();
+                $categoryUsageQuery->whereIn('city_id', $cityIdsForProducts);
+            }
+        } else {
+            // Get Top 10 Products by Issued Quantity from SpareStockLog for accurate time filtering
+            $categoryUsageQuery = \App\Models\SpareStockLog::join('spares', 'spare_stock_logs.spare_id', '=', 'spares.id')
+                ->selectRaw('
+                    spares.item_name,
+                    SUM(CASE 
+                        WHEN spare_stock_logs.change_type = "out" THEN spare_stock_logs.quantity 
+                        WHEN spare_stock_logs.change_type = "in" AND (spare_stock_logs.remarks LIKE "%Return%" OR spare_stock_logs.remarks LIKE "%return%") THEN -spare_stock_logs.quantity
+                        ELSE 0 
+                    END) as total_used,
+                    SUM(CASE 
+                        WHEN spare_stock_logs.change_type = "in" AND (spare_stock_logs.remarks IS NULL OR (spare_stock_logs.remarks NOT LIKE "%Return%" AND spare_stock_logs.remarks NOT LIKE "%return%")) THEN spare_stock_logs.quantity 
+                        ELSE 0 
+                    END) as total_received
+                ')
+                ->whereNotNull('spares.item_name')
+                ->whereNull('spare_stock_logs.deleted_at')
+                ->whereNull('spares.deleted_at')
+                ->whereYear('spare_stock_logs.created_at', $categoryDateRange)
+                ->groupBy('spares.item_name')
+                ->orderByDesc('total_used')
+                ->limit(10);
+
+            // Apply Global Location Scoping (on joined spares table)
+            $this->applyFrontendLocationScope($categoryUsageQuery, $locationScope, 'spares.city_id', 'spares.sector_id');
+
+            // Apply dynamic dashboard filters to Products list
+            if ($cityId) {
+                $categoryUsageQuery->where('spares.city_id', $cityId);
+            } elseif ($sectorId) {
+                $categoryUsageQuery->where('spares.sector_id', $sectorId);
+            } elseif ($cmesId) {
+                $cityIdsForProducts = City::where('cme_id', $cmesId)->pluck('id')->toArray();
+                $categoryUsageQuery->whereIn('spares.city_id', $cityIdsForProducts);
+            }
         }
 
         $categoryUsageData = $categoryUsageQuery->get();
@@ -1897,10 +1929,23 @@ class HomeController extends Controller
                 spares.item_name,
                 YEAR(spare_stock_logs.created_at) as year,
                 MONTH(spare_stock_logs.created_at) as month,
-                SUM(spare_stock_logs.quantity) as total_qty
+                SUM(CASE 
+                    WHEN spare_stock_logs.change_type = "out" THEN spare_stock_logs.quantity 
+                    WHEN spare_stock_logs.change_type = "in" AND (spare_stock_logs.remarks LIKE "%Return%" OR spare_stock_logs.remarks LIKE "%return%") THEN -spare_stock_logs.quantity
+                    ELSE 0 
+                END) as total_qty
             ')
             ->join('spares', 'spare_stock_logs.spare_id', '=', 'spares.id')
-            ->where('spare_stock_logs.change_type', 'out')
+            ->where(function($q) {
+                $q->where('spare_stock_logs.change_type', 'out')
+                  ->orWhere(function($sq) {
+                      $sq->where('spare_stock_logs.change_type', 'in')
+                         ->where(function($rq) {
+                             $rq->where('spare_stock_logs.remarks', 'LIKE', '%Return%')
+                                ->orWhere('spare_stock_logs.remarks', 'LIKE', '%return%');
+                         });
+                  });
+            })
             ->whereNull('spare_stock_logs.deleted_at')
             ->whereNull('spares.deleted_at');
 
@@ -1962,6 +2007,13 @@ class HomeController extends Controller
             ')
             ->join('spares', 'spare_stock_logs.spare_id', '=', 'spares.id')
             ->where('spare_stock_logs.change_type', 'in')
+            ->where(function($q) {
+                $q->whereNull('spare_stock_logs.remarks')
+                  ->orWhere(function($rq) {
+                      $rq->where('spare_stock_logs.remarks', 'NOT LIKE', '%Return%')
+                         ->where('spare_stock_logs.remarks', 'NOT LIKE', '%return%');
+                  });
+            })
             ->whereNull('spare_stock_logs.deleted_at')
             ->whereNull('spares.deleted_at');
 

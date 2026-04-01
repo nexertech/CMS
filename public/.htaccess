@@ -2,6 +2,10 @@
     Header unset X-Powered-By
     Header always unset X-Powered-By
     Header set X-Content-Type-Options "nosniff"
+    
+    # Disable HTTP/3 (QUIC) advertisement to fix ERR_QUIC_PROTOCOL_ERROR
+    Header unset Alt-Svc
+    Header always unset Alt-Svc
 </IfModule>
 
 # Gzip compression
