@@ -960,7 +960,7 @@ class HomeController extends Controller
                 YEAR(complaints.created_at) as year,
                 MONTH(complaints.created_at) as month,
                 COUNT(*) as total,
-                SUM(CASE WHEN complaints.status = 'resolved' THEN 1 ELSE 0 END) as addressed,
+                SUM(CASE WHEN complaints.status IN ('resolved', 'closed') THEN 1 ELSE 0 END) as addressed,
                 SUM(CASE WHEN complaints.status = 'barak_damages' THEN 1 ELSE 0 END) as barak,
                 SUM(CASE WHEN complaints.status IN ('work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa') THEN 1 ELSE 0 END) as performa
             ")

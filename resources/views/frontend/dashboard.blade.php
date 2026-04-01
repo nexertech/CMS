@@ -2741,6 +2741,9 @@
             // Update Monthly Complaints Chart
             if (data.monthlyComplaints && monthlyComplaintsChart) {
                 monthlyComplaintsChart.data.datasets[0].data = data.monthlyComplaints;
+                if (data.resolvedVsEdData) {
+                    monthlyComplaintsChart.data.datasets[1].data = data.resolvedVsEdData;
+                }
                 monthlyComplaintsChart.data.labels = data.monthLabels;
                 monthlyComplaintsChart.update();
             }
