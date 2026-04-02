@@ -25,7 +25,12 @@
             <label for="password" class="form-label">
                 <i data-feather="lock" class="inline w-4 h-4 mr-2"></i>Password
             </label>
-            <input id="password" class="form-input" type="password" name="password" required autocomplete="current-password" placeholder="Enter your password" />
+            <div style="position: relative;">
+                <input id="password" class="form-input" type="password" name="password" required autocomplete="current-password" placeholder="Enter your password" style="padding-right: 40px;" />
+                <span id="togglePassword" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; z-index: 10;">
+                    <i data-feather="eye" style="width: 18px; height: 18px; color: #6c757d;"></i>
+                </span>
+            </div>
             @error('password')
                 <div class="error-message">{{ $message }}</div>
             @enderror
@@ -61,4 +66,29 @@
             </a>
         </div>
     </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleBtn = document.getElementById('togglePassword');
+            const passwordInput = document.getElementById('password');
+            
+            if (toggleBtn && passwordInput) {
+                toggleBtn.addEventListener('click', function() {
+                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    passwordInput.setAttribute('type', type);
+                    
+                    // Update the icon inside the span
+                    const icon = this.querySelector('i') || this.querySelector('svg');
+                    if (icon) {
+                        icon.setAttribute('data-feather', type === 'password' ? 'eye' : 'eye-off');
+                        
+                        // Re-initialize feather icons
+                        if (typeof feather !== 'undefined') {
+                            feather.replace();
+                        }
+                    }
+                });
+            }
+        });
+    </script>
 </x-guest-layout>

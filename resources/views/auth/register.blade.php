@@ -29,7 +29,12 @@
             <label for="password" class="form-label" style="margin-bottom: 0.375rem; font-size: 0.8125rem;">
                 <i data-feather="lock" class="inline w-3.5 h-3.5 mr-1.5"></i>Password
             </label>
-            <input id="password" class="form-input" type="password" name="password" required autocomplete="new-password" placeholder="Create a password" style="padding: 0.625rem 0.875rem; font-size: 0.875rem;" />
+            <div style="position: relative;">
+                <input id="password" class="form-input" type="password" name="password" required autocomplete="new-password" placeholder="Create a password" style="padding: 0.625rem 0.875rem; padding-right: 40px; font-size: 0.875rem;" />
+                <span class="toggle-password" data-target="password" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; z-index: 10;">
+                    <i data-feather="eye" style="width: 16px; height: 16px; color: #6c757d;"></i>
+                </span>
+            </div>
             @error('password')
                 <div class="error-message" style="margin-top: 0.375rem; font-size: 0.75rem;">{{ $message }}</div>
             @enderror
@@ -40,7 +45,12 @@
             <label for="password_confirmation" class="form-label" style="margin-bottom: 0.375rem; font-size: 0.8125rem;">
                 <i data-feather="lock" class="inline w-3.5 h-3.5 mr-1.5"></i>Confirm Password
             </label>
-            <input id="password_confirmation" class="form-input" type="password" name="password_confirmation" required autocomplete="new-password" placeholder="Confirm your password" style="padding: 0.625rem 0.875rem; font-size: 0.875rem;" />
+            <div style="position: relative;">
+                <input id="password_confirmation" class="form-input" type="password" name="password_confirmation" required autocomplete="new-password" placeholder="Confirm your password" style="padding: 0.625rem 0.875rem; padding-right: 40px; font-size: 0.875rem;" />
+                <span class="toggle-password" data-target="password_confirmation" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; z-index: 10;">
+                    <i data-feather="eye" style="width: 16px; height: 16px; color: #6c757d;"></i>
+                </span>
+            </div>
             @error('password_confirmation')
                 <div class="error-message" style="margin-top: 0.375rem; font-size: 0.75rem;">{{ $message }}</div>
             @enderror
@@ -62,4 +72,33 @@
             </a>
         </div>
     </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const togglers = document.querySelectorAll('.toggle-password');
+            
+            togglers.forEach(toggler => {
+                toggler.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-target');
+                    const input = document.getElementById(targetId);
+                    
+                    if (input) {
+                        const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+                        input.setAttribute('type', type);
+                        
+                        // Toggle icon inside the span container
+                        const icon = this.querySelector('i') || this.querySelector('svg');
+                        if (icon) {
+                            icon.setAttribute('data-feather', type === 'password' ? 'eye' : 'eye-off');
+                            
+                            // Refresh feather icons
+                            if (typeof feather !== 'undefined') {
+                                feather.replace();
+                            }
+                        }
+                    }
+                });
+            });
+        });
+    </script>
 </x-guest-layout>

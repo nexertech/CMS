@@ -458,8 +458,10 @@
                 <label>Password</label>
                 <div style="position: relative;">
                     <input type="password" name="password" id="password" placeholder="Enter password" required style="padding-right: 40px;" />
-                    <i data-feather="eye" id="togglePassword" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; width: 18px; height: 18px; color: #6c757d;"></i>
-          </div>
+                    <span id="togglePassword" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; z-index: 10;">
+                        <i data-feather="eye" style="width: 18px; height: 18px; color: #6c757d;"></i>
+                    </span>
+                  </div>
         </div>
         
             <div class="remember">
@@ -481,17 +483,23 @@
 <script>
   // Password toggle functionality
   document.addEventListener('DOMContentLoaded', function() {
-    const togglePassword = document.getElementById('togglePassword');
+    const toggleBtn = document.getElementById('togglePassword');
     const passwordInput = document.getElementById('password');
     
-    if (togglePassword && passwordInput) {
-      togglePassword.addEventListener('click', function() {
+    if (toggleBtn && passwordInput) {
+      toggleBtn.addEventListener('click', function() {
         const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
         passwordInput.setAttribute('type', type);
         
-        // Update icon
-        if (typeof feather !== 'undefined') {
-          feather.replace();
+        // Toggle the eye icon
+        const icon = this.querySelector('i') || this.querySelector('svg');
+        if (icon) {
+          icon.setAttribute('data-feather', type === 'password' ? 'eye' : 'eye-off');
+          
+          // Re-initialize feather icons if available
+          if (typeof feather !== 'undefined') {
+            feather.replace();
+          }
         }
       });
     }

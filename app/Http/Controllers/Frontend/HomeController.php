@@ -436,8 +436,46 @@ class HomeController extends Controller
             }
         }
 
-        // Capture base query for trend graphs (includes location and category but not status/date filters)
+        // Capture base query for trend graphs (includes location and category but not status filters)
+        // Date range IS applied so Monthly Complaints & Resolution Trend charts respect the selected date filter
         $graphBaseQuery = clone $complaintsQuery;
+
+        if ($dateRange && $dateRange !== 'all_time') {
+            $now = now();
+            switch ($dateRange) {
+                case 'yesterday':
+                    $graphBaseQuery->whereDate('complaints.created_at', $now->copy()->subDay()->toDateString());
+                    break;
+                case 'today':
+                    $graphBaseQuery->whereDate('complaints.created_at', $now->toDateString());
+                    break;
+                case 'this_week':
+                    $graphBaseQuery->whereBetween('complaints.created_at', [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()]);
+                    break;
+                case 'last_week':
+                    $graphBaseQuery->whereBetween('complaints.created_at', [$now->copy()->subWeek()->startOfWeek(), $now->copy()->subWeek()->endOfWeek()]);
+                    break;
+                case 'this_month':
+                    $graphBaseQuery->whereMonth('complaints.created_at', $now->month)
+                        ->whereYear('complaints.created_at', $now->year);
+                    break;
+                case 'last_month':
+                    $graphBaseQuery->whereMonth('complaints.created_at', $now->copy()->subMonth()->month)
+                        ->whereYear('complaints.created_at', $now->copy()->subMonth()->year);
+                    break;
+                case 'last_6_months':
+                    $graphBaseQuery->where('complaints.created_at', '>=', $now->copy()->subMonths(6)->startOfDay());
+                    break;
+                case 'custom':
+                    if ($request->has('start_date') && $request->has('end_date')) {
+                        $graphBaseQuery->whereBetween('complaints.created_at', [
+                            \Carbon\Carbon::parse($request->start_date)->startOfDay(),
+                            \Carbon\Carbon::parse($request->end_date)->endOfDay()
+                        ]);
+                    }
+                    break;
+            }
+        }
 
         if ($status && $status !== 'all') {
             $complaintsQuery->where('complaints.status', $status);
@@ -951,11 +989,62 @@ class HomeController extends Controller
             }
         };
 
-        // Efficiently fetch all rolling 12-month graph data in two queries
-        $startDate = now()->startOfMonth()->subMonths(11);
+        // Determine graph date window based on date range filter
+        // When a date range is active, the monthly chart should show months within that range
+        if ($dateRange && $dateRange !== 'all_time') {
+            $now = now();
+            switch ($dateRange) {
+                case 'yesterday':
+                    $graphStart = $now->copy()->subDay()->startOfMonth();
+                    $graphEnd = $now->copy()->subDay()->endOfMonth();
+                    break;
+                case 'today':
+                    $graphStart = $now->copy()->startOfMonth();
+                    $graphEnd = $now->copy()->endOfMonth();
+                    break;
+                case 'this_week':
+                    $graphStart = $now->copy()->startOfWeek()->startOfMonth();
+                    $graphEnd = $now->copy()->endOfWeek()->endOfMonth();
+                    break;
+                case 'last_week':
+                    $graphStart = $now->copy()->subWeek()->startOfWeek()->startOfMonth();
+                    $graphEnd = $now->copy()->subWeek()->endOfWeek()->endOfMonth();
+                    break;
+                case 'this_month':
+                    $graphStart = $now->copy()->startOfMonth();
+                    $graphEnd = $now->copy()->endOfMonth();
+                    break;
+                case 'last_month':
+                    $graphStart = $now->copy()->subMonth()->startOfMonth();
+                    $graphEnd = $now->copy()->subMonth()->endOfMonth();
+                    break;
+                case 'last_6_months':
+                    $graphStart = $now->copy()->subMonths(6)->startOfMonth();
+                    $graphEnd = $now->copy()->endOfMonth();
+                    break;
+                case 'custom':
+                    if ($request->has('start_date') && $request->has('end_date')) {
+                        $graphStart = \Carbon\Carbon::parse($request->start_date)->startOfMonth();
+                        $graphEnd = \Carbon\Carbon::parse($request->end_date)->endOfMonth();
+                    } else {
+                        $graphStart = $now->copy()->startOfMonth()->subMonths(11);
+                        $graphEnd = $now->copy()->endOfMonth();
+                    }
+                    break;
+                default:
+                    $graphStart = $now->copy()->startOfMonth()->subMonths(11);
+                    $graphEnd = $now->copy()->endOfMonth();
+            }
+        } else {
+            // Default: rolling 12-month window
+            $graphStart = now()->startOfMonth()->subMonths(11);
+            $graphEnd = now()->endOfMonth();
+        }
 
+        // Efficiently fetch monthly graph data within the computed window
         $monthlyData = (clone $graphBaseQuery)
-            ->where('complaints.created_at', '>=', $startDate)
+            ->where('complaints.created_at', '>=', $graphStart)
+            ->where('complaints.created_at', '<=', $graphEnd)
             ->selectRaw("
                 YEAR(complaints.created_at) as year,
                 MONTH(complaints.created_at) as month,
@@ -983,14 +1072,17 @@ class HomeController extends Controller
 
         // Cumulative sum for YearTD
         $currentCumulative = (clone $graphBaseQuery)
-            ->whereYear('complaints.created_at', now()->year)
-            ->whereMonth('complaints.created_at', '<', $startDate->month)
+            ->whereYear('complaints.created_at', $graphStart->year)
+            ->where('complaints.created_at', '<', $graphStart)
             ->count();
 
-        for ($i = 11; $i >= 0; $i--) {
-            $date = now()->startOfMonth()->subMonths($i);
-            $key = $date->year . '-' . $date->month;
-            $monthLabels[] = $date->format('M');
+        // Generate month labels and populate data for the computed window
+        $current = $graphStart->copy()->startOfMonth();
+        while ($current <= $graphEnd) {
+            $key = $current->year . '-' . $current->month;
+
+            // Show month name only (e.g. 'May', 'Jun')
+            $monthLabels[] = $current->format('M');
 
             $row = $monthlyData->get($key);
             $total = $row ? $row->total : 0;
@@ -1005,11 +1097,13 @@ class HomeController extends Controller
             $performaData[] = $performa;
 
             // YearTD Cumulative logic (reset at year start)
-            if ($date->month == 1) {
+            if ($current->month == 1) {
                 $currentCumulative = 0;
             }
             $currentCumulative += $total;
             $yearTdData[] = $currentCumulative;
+
+            $current->addMonth();
         }
 
         $employeePerformanceQuery = Employee::query();
@@ -1293,32 +1387,13 @@ class HomeController extends Controller
 
         $categoryDateRange = $request->get('category_date_range', 'all_time');
 
-        if ($categoryDateRange === 'all_time' || empty($categoryDateRange)) {
-            // Get Top 10 Products directly from Spares table for accurate all-time data
-            $categoryUsageQuery = \App\Models\Spare::selectRaw('
-                    item_name,
-                    SUM(issued_quantity) as total_used,
-                    SUM(total_received_quantity) as total_received
-                ')
-                ->whereNotNull('item_name')
-                ->groupBy('item_name')
-                ->orderByDesc('total_used')
-                ->limit(10);
+        // Determine if we need time-filtered product data.
+        // Priority: graph's own year filter (category_date_range) > main date_range > all_time
+        $productTimeFiltered = ($categoryDateRange !== 'all_time' && !empty($categoryDateRange))
+            || ($dateRange && $dateRange !== 'all_time');
 
-            // Apply Global Location Scoping
-            $this->applyFrontendLocationScope($categoryUsageQuery, $locationScope, 'city_id', 'sector_id');
-
-            // Apply dynamic dashboard filters to Products list
-            if ($cityId) {
-                $categoryUsageQuery->where('city_id', $cityId);
-            } elseif ($sectorId) {
-                $categoryUsageQuery->where('sector_id', $sectorId);
-            } elseif ($cmesId) {
-                $cityIdsForProducts = City::where('cme_id', $cmesId)->pluck('id')->toArray();
-                $categoryUsageQuery->whereIn('city_id', $cityIdsForProducts);
-            }
-        } else {
-            // Get Top 10 Products by Issued Quantity from SpareStockLog for accurate time filtering
+        if ($productTimeFiltered) {
+            // Use SpareStockLog for accurate time-filtered data
             $categoryUsageQuery = \App\Models\SpareStockLog::join('spares', 'spare_stock_logs.spare_id', '=', 'spares.id')
                 ->selectRaw('
                     spares.item_name,
@@ -1334,16 +1409,57 @@ class HomeController extends Controller
                 ')
                 ->whereNotNull('spares.item_name')
                 ->whereNull('spare_stock_logs.deleted_at')
-                ->whereNull('spares.deleted_at')
-                ->whereYear('spare_stock_logs.created_at', $categoryDateRange)
-                ->groupBy('spares.item_name')
+                ->whereNull('spares.deleted_at');
+
+            // Apply graph's own year filter first (highest priority)
+            if ($categoryDateRange !== 'all_time' && !empty($categoryDateRange)) {
+                $categoryUsageQuery->whereYear('spare_stock_logs.created_at', $categoryDateRange);
+            } elseif ($dateRange && $dateRange !== 'all_time') {
+                // Fall back to main date_range filter
+                $now = now();
+                switch ($dateRange) {
+                    case 'yesterday':
+                        $categoryUsageQuery->whereDate('spare_stock_logs.created_at', $now->copy()->subDay()->toDateString());
+                        break;
+                    case 'today':
+                        $categoryUsageQuery->whereDate('spare_stock_logs.created_at', $now->toDateString());
+                        break;
+                    case 'this_week':
+                        $categoryUsageQuery->whereBetween('spare_stock_logs.created_at', [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()]);
+                        break;
+                    case 'last_week':
+                        $categoryUsageQuery->whereBetween('spare_stock_logs.created_at', [$now->copy()->subWeek()->startOfWeek(), $now->copy()->subWeek()->endOfWeek()]);
+                        break;
+                    case 'this_month':
+                        $categoryUsageQuery->whereMonth('spare_stock_logs.created_at', $now->month)
+                            ->whereYear('spare_stock_logs.created_at', $now->year);
+                        break;
+                    case 'last_month':
+                        $categoryUsageQuery->whereMonth('spare_stock_logs.created_at', $now->copy()->subMonth()->month)
+                            ->whereYear('spare_stock_logs.created_at', $now->copy()->subMonth()->year);
+                        break;
+                    case 'last_6_months':
+                        $categoryUsageQuery->where('spare_stock_logs.created_at', '>=', $now->copy()->subMonths(6)->startOfDay());
+                        break;
+                    case 'custom':
+                        if ($request->has('start_date') && $request->has('end_date')) {
+                            $categoryUsageQuery->whereBetween('spare_stock_logs.created_at', [
+                                \Carbon\Carbon::parse($request->start_date)->startOfDay(),
+                                \Carbon\Carbon::parse($request->end_date)->endOfDay()
+                            ]);
+                        }
+                        break;
+                }
+            }
+
+            $categoryUsageQuery->groupBy('spares.item_name')
                 ->orderByDesc('total_used')
                 ->limit(10);
 
             // Apply Global Location Scoping (on joined spares table)
             $this->applyFrontendLocationScope($categoryUsageQuery, $locationScope, 'spares.city_id', 'spares.sector_id');
 
-            // Apply dynamic dashboard filters to Products list
+            // Apply dynamic dashboard filters
             if ($cityId) {
                 $categoryUsageQuery->where('spares.city_id', $cityId);
             } elseif ($sectorId) {
@@ -1351,6 +1467,30 @@ class HomeController extends Controller
             } elseif ($cmesId) {
                 $cityIdsForProducts = City::where('cme_id', $cmesId)->pluck('id')->toArray();
                 $categoryUsageQuery->whereIn('spares.city_id', $cityIdsForProducts);
+            }
+        } else {
+            // All-time with no date filter: use Spares master counters for best accuracy
+            $categoryUsageQuery = \App\Models\Spare::selectRaw('
+                    item_name,
+                    SUM(issued_quantity) as total_used,
+                    SUM(total_received_quantity) as total_received
+                ')
+                ->whereNotNull('item_name')
+                ->groupBy('item_name')
+                ->orderByDesc('total_used')
+                ->limit(10);
+
+            // Apply Global Location Scoping
+            $this->applyFrontendLocationScope($categoryUsageQuery, $locationScope, 'city_id', 'sector_id');
+
+            // Apply dynamic dashboard filters
+            if ($cityId) {
+                $categoryUsageQuery->where('city_id', $cityId);
+            } elseif ($sectorId) {
+                $categoryUsageQuery->where('sector_id', $sectorId);
+            } elseif ($cmesId) {
+                $cityIdsForProducts = City::where('cme_id', $cmesId)->pluck('id')->toArray();
+                $categoryUsageQuery->whereIn('city_id', $cityIdsForProducts);
             }
         }
 
