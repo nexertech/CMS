@@ -211,21 +211,19 @@ class ComplaintApiController extends Controller
         DB::beginTransaction();
         try {
 
-            // Create complaint without firing model events to avoid heavy listeners
-            $complaint = Complaint::withoutEvents(function () use ($titleId, $customTitle, $house, $categoryId, $request) {
-                return Complaint::create([
-                    'complaint_title_id' => $titleId,
-                    'title'              => $customTitle,
-                    'house_id'           => $house->id,
-                    'city_id'            => $house->city_id,
-                    'sector_id'          => $house->sector_id,
-                    'category_id'        => $categoryId,
-                    'priority'           => $request->priority ?? 'medium',
-                    'description'        => $request->description,
-                    'availability_time'  => $request->availability_time,
-                    'status'             => 'new',
-                ]);
-            });
+            // Create complaint WITH model events so SpareApprovalPerforma is created automatically
+            $complaint = Complaint::create([
+                'complaint_title_id' => $titleId,
+                'title'              => $customTitle,
+                'house_id'           => $house->id,
+                'city_id'            => $house->city_id,
+                'sector_id'          => $house->sector_id,
+                'category_id'        => $categoryId,
+                'priority'           => $request->priority ?? 'medium',
+                'description'        => $request->description,
+                'availability_time'  => $request->availability_time,
+                'status'             => 'new',
+            ]);
 
             ComplaintLog::create([
                 'complaint_id' => $complaint->id,
