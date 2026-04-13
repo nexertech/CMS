@@ -246,6 +246,7 @@ class FrontendUserController extends Controller
 
             if ($request->filled('password')) {
                 $updateData['password'] = Hash::make($request->password);
+                $updateData['password_updated_at'] = now();
             }
 
             $frontend_user->update($updateData);

@@ -64,7 +64,7 @@
           <th style="padding: 1px 3px; font-size: 0.68rem; white-space: nowrap;">Brand</th>
           <th style="padding: 1px 3px; font-size: 0.68rem; white-space: nowrap;">Code</th>
           <th style="padding: 1px 3px; font-size: 0.68rem; white-space: nowrap;">Category</th>
-          <th style="padding: 1px 3px; font-size: 0.68rem; white-space: nowrap;">Received</th>
+          <th style="padding: 1px 3px; font-size: 0.68rem; white-space: nowrap;">Stock In</th>
           <th style="padding: 1px 3px; font-size: 0.68rem; white-space: nowrap;">Issued</th>
           <th style="padding: 1px 3px; font-size: 0.68rem; white-space: nowrap;">Balance</th>
           <th style="padding: 1px 3px; font-size: 0.68rem; white-space: nowrap;">% Utilized</th>

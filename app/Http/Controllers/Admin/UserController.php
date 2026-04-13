@@ -356,6 +356,7 @@ class UserController extends Controller
 
             if ($request->filled('password')) {
                 $updateData['password'] = Hash::make($request->password);
+                $updateData['password_updated_at'] = now();
             }
 
             // Explicitly cast cities and sectors as array for JSON storage
@@ -439,7 +440,8 @@ class UserController extends Controller
         }
 
         $user->update([
-            'password' => Hash::make($request->password)
+            'password' => Hash::make($request->password),
+            'password_updated_at' => now()
         ]);
 
         return redirect()->back()

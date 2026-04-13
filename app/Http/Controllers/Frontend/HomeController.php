@@ -1846,6 +1846,11 @@ class HomeController extends Controller
             return back()->withErrors(['current_password' => 'The provided password does not match your current password.']);
         }
 
+        // Check if new password is the same as the old one
+        if (\Hash::check($request->password, $user->password)) {
+            return back()->withErrors(['password' => 'The new password cannot be the same as your current password. Please choose a different password for better security.']);
+        }
+
         $user->update([
             'password' => \Hash::make($request->password),
             'password_updated_at' => now(),
