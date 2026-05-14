@@ -26,19 +26,26 @@ class PasswordResetLinkController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'email' => ['required', 'email'],
+            'email' => ['required', 'string', 'email:rfc,dns', 'max:255'],
         ]);
 
-        // We will send the password reset link to this user. Once we have attempted
-        // to send the link, we will examine the response then see the message we
-        // need to show to the user. Finally, we'll send out a proper response.
-        $status = Password::sendResetLink(
-            $request->only('email')
+        // Explicitly extract as string to prevent array injection
+        $email = (string) $request->input('email');
+
+        // Apply rate limiting (e.g., 3 attempts per minute per IP) to prevent brute-force attacks
+        $executed = \Illuminate\Support\Facades\RateLimiter::attempt(
+            'send-password-reset:'.$request->ip(),
+            $perMinute = 3,
+            function() use ($email) {
+                Password::sendResetLink(['email' => $email]);
+            }
         );
 
-        return $status == Password::RESET_LINK_SENT
-                    ? back()->with('status', __($status))
-                    : back()->withInput($request->only('email'))
-                        ->withErrors(['email' => __($status)]);
+        if (! $executed) {
+            return back()->withErrors(['email' => __('Too many requests. Please try again later.')]);
+        }
+
+        // Return a generic response regardless of whether the email exists to prevent enumeration
+        return back()->with('status', __('If the email exists, a reset link has been sent.'));
     }
 }

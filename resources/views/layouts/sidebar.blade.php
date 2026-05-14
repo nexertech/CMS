@@ -14,7 +14,7 @@
   <link href="{{ asset('css/admin.css') }}" rel="stylesheet">
   
   <script src="https://cdn.jsdelivr.net/npm/feather-icons@4.29.2/dist/feather.min.js" integrity="sha384-qEqAs1VsN9WH2myXDbiP2wGGIttL9bMRZBKCl54ZnzpDlVqbYANP9vMaoT/wvQcf" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.41.0/dist/apexcharts.min.js" integrity="sha384-AZAR82W+ffd2z1uC1LxsIQlrDkg/m9b9EAIS8tBhEiN1GUmO+y7FerqaYyEh/ZPX" crossorigin="anonymous"></script>
   
   <!-- Error handling for missing scripts -->
   <script>

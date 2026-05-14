@@ -73,9 +73,9 @@ class RegisteredUserController extends Controller
                 'request_data' => $request->all()
             ]);
             
-            return redirect()->back()
+            return redirect()->route('register')
                 ->withErrors(['error' => 'Registration failed. Please try again.'])
-                ->withInput();
+                ->withInput($request->except(['password', 'password_confirmation']));
         }
     }
 }
