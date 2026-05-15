@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->append(\App\Http\Middleware\SecureHeaders::class);
+        $middleware->append(\App\Http\Middleware\SqlInjectionMitigation::class);
         $middleware->validateCsrfTokens(except: [
             'admin/logout',
             'admin/login',

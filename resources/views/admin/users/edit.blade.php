@@ -125,7 +125,7 @@
         <div class="col-md-6">
           <div class="mb-3">
             <label class="form-label text-white d-flex justify-content-between align-items-center mb-2">
-              <span>GE Groups</span>
+              <span>GE Groups <span class="text-danger">*</span></span>
               <div>
                 <button type="button" class="btn btn-sm btn-link text-info text-decoration-none p-0 me-2 js-select-all-cities" style="font-size: 0.75rem;">Select All</button>
                 <span class="badge bg-primary bg-opacity-75 rounded-pill js-city-count" style="font-size: 0.70rem;">0 Selected</span>
@@ -157,7 +157,7 @@
         <div class="col-md-6">
           <div class="mb-3">
             <label class="form-label text-white d-flex justify-content-between align-items-center mb-2">
-              <span>GE Nodes</span>
+              <span>GE Nodes <span class="text-danger">*</span></span>
               <div>
                 <button type="button" class="btn btn-sm btn-link text-info text-decoration-none p-0 me-2 js-select-all-sectors" style="font-size: 0.75rem;">Select All</button>
                 <span class="badge bg-info bg-opacity-75 rounded-pill js-sector-count" style="font-size: 0.70rem;">0 Selected</span>
@@ -257,183 +257,70 @@
 <script>
   feather.replace();
 
-  // Phone number input validation - only allow numbers
   document.addEventListener('DOMContentLoaded', function() {
     const phoneInput = document.getElementById('phone');
+    const cityCheckboxes = document.querySelectorAll('.city-checkbox');
+    const sectorContainer = document.getElementById('sectors_container');
+    const sectorHidden = document.getElementById('sector_id_hidden');
+    const roleSelect = document.getElementById('role_id');
+    const cityCountBadge = document.querySelector('.js-city-count');
+    const sectorCountBadge = document.querySelector('.js-sector-count');
+    const btnSelectAllCities = document.querySelector('.js-select-all-cities');
+    const btnSelectAllSectors = document.querySelector('.js-select-all-sectors');
+    const userForm = document.querySelector('form[action*="users"]');
+
+    let selectedSectors = {!! json_encode(old('sector_id', $user->sector_ids ?? [])) !!};
+    if (!Array.isArray(selectedSectors)) selectedSectors = [];
+    selectedSectors = selectedSectors.map(String);
+
+    // Phone validation
     if (phoneInput) {
       phoneInput.addEventListener('input', function(e) {
         this.value = this.value.replace(/[^0-9]/g, '');
       });
-      phoneInput.addEventListener('paste', function(e) {
-        e.preventDefault();
-        const pastedText = (e.clipboardData || window.clipboardData).getData('text');
-        const numbersOnly = pastedText.replace(/[^0-9]/g, '');
-        this.value = numbersOnly;
-      });
     }
-    
-    // Form validation - check phone number before submit
-    const userForm = document.querySelector('form[action*="users"]');
-    if (userForm) {
-      userForm.addEventListener('submit', function(e) {
-        const phoneValue = phoneInput ? phoneInput.value.trim() : '';
-        if (phoneValue && phoneValue.length < 11) {
-          e.preventDefault();
-          alert('Phone number must be at least 11 digits.');
-          if (phoneInput) phoneInput.focus();
-          return false;
+
+    function updateCardStyles() {
+      document.querySelectorAll('.custom-checkbox-card').forEach(card => {
+        const checkbox = card.querySelector('input[type="checkbox"]');
+        if (checkbox) {
+          if (checkbox.checked) {
+            card.classList.add('checked');
+          } else {
+            card.classList.remove('checked');
+          }
         }
       });
     }
-  });
 
-  // Dynamic sector loading based on checkboxes
-  const cityCheckboxes = document.querySelectorAll('.city-checkbox');
-  const container = document.querySelector('.location-container:has(.city-checkbox)');
-  const sectorContainer = document.getElementById('sectors_container');
-  const sectorHidden = document.getElementById('sector_id_hidden');
-  const roleSelect = document.getElementById('role_id');
-  const cityCountBadge = document.querySelector('.js-city-count');
-  const sectorCountBadge = document.querySelector('.js-sector-count');
+    function updateCityCount() {
+      const selectedCities = document.querySelectorAll('.city-checkbox:checked').length;
+      if (cityCountBadge) cityCountBadge.textContent = selectedCities + ' Selected';
+      updateCardStyles();
+    }
 
-  let selectedSectors = {!! json_encode(old('sector_id', $user->sector_ids ?? [])) !!};
-  if (!Array.isArray(selectedSectors)) selectedSectors = [];
-  selectedSectors = selectedSectors.map(String);
-
-  function syncSectorHidden() {
-    if (sectorHidden) {
+    function updateSectorCount() {
       const checkedSectorBoxes = document.querySelectorAll('.sector-checkbox:checked');
-      const values = Array.from(checkedSectorBoxes).map(cb => cb.value);
-      sectorHidden.value = JSON.stringify(values);
-      // Update our JS array with currently checked boxes, but we preserve ones from other cities?
-      // Actually, since we only see sectors for selected cities, if they uncheck a city, 
-      // the sectors disappear and are unchecked. So syncing the visible ones is correct.
-      selectedSectors = values;
+      const selectedSectorsCount = checkedSectorBoxes.length;
+      if (sectorCountBadge) sectorCountBadge.textContent = selectedSectorsCount + ' Selected';
+      updateCardStyles();
+      syncSectorHidden();
     }
-  }
 
-  function updateCardStyles() {
-    document.querySelectorAll('.custom-checkbox-card').forEach(card => {
-      const checkbox = card.querySelector('input[type="checkbox"]');
-      if (checkbox) {
-        if (checkbox.checked) {
-          card.classList.add('checked');
-        } else {
-          card.classList.remove('checked');
-        }
+    function syncSectorHidden() {
+      if (sectorHidden) {
+        const checkedSectorBoxes = document.querySelectorAll('.sector-checkbox:checked');
+        const values = Array.from(checkedSectorBoxes).map(cb => cb.value);
+        sectorHidden.value = JSON.stringify(values);
+        selectedSectors = values;
       }
-    });
-  }
-
-  function updateCityCount() {
-    const selectedCities = document.querySelectorAll('.city-checkbox:checked').length;
-    if (cityCountBadge) cityCountBadge.textContent = selectedCities + ' Selected';
-    updateCardStyles();
-  }
-
-  function updateSectorCount() {
-    const selectedSectors = document.querySelectorAll('.sector-checkbox:checked').length;
-    if (sectorCountBadge) sectorCountBadge.textContent = selectedSectors + ' Selected';
-    updateCardStyles();
-    syncSectorHidden();
-  }
-
-  // Attach event listener using document delegation for sectors
-  document.addEventListener('change', function(e) {
-    if (e.target.classList.contains('sector-checkbox')) {
-      updateSectorCount();
-      updateSelectAllButtons();
     }
-  });
 
-  const btnSelectAllCities = document.querySelector('.js-select-all-cities');
-  const btnSelectAllSectors = document.querySelector('.js-select-all-sectors');
-  
-  function updateSelectAllButtons() {
-    if (btnSelectAllCities) {
-       const cityBoxes = document.querySelectorAll('.city-checkbox:not(:disabled)');
-       const checkedCityBoxes = document.querySelectorAll('.city-checkbox:checked:not(:disabled)');
-       if (cityBoxes.length > 0 && cityBoxes.length === checkedCityBoxes.length) {
-          btnSelectAllCities.textContent = 'Deselect All';
-       } else {
-          btnSelectAllCities.textContent = 'Select All';
-       }
-    }
-    
-    if (btnSelectAllSectors) {
-       const sectorBoxes = document.querySelectorAll('.sector-checkbox:not(:disabled)');
-       const checkedSectorBoxes = document.querySelectorAll('.sector-checkbox:checked:not(:disabled)');
-       if (sectorBoxes.length > 0 && sectorBoxes.length === checkedSectorBoxes.length) {
-          btnSelectAllSectors.textContent = 'Deselect All';
-       } else {
-          btnSelectAllSectors.textContent = 'Select All';
-       }
-    }
-  }
-
-  if (btnSelectAllCities) {
-    btnSelectAllCities.addEventListener('click', function() {
-      const isSelectAll = this.textContent === 'Select All';
-      const boxes = document.querySelectorAll('.city-checkbox:not(:disabled)');
-      let changed = false;
-      boxes.forEach(cb => {
-        if (cb.checked !== isSelectAll) {
-          cb.checked = isSelectAll;
-          changed = true;
-        }
-      });
-      if (changed) {
-        updateCityCount();
-        // Trigger fetch sectors manually
-        if (typeof fetchSectors === 'function') {
-           if(boxes.length > 0) {
-             const event = new Event('change', { bubbles: true });
-             boxes[0].dispatchEvent(event);
-           }
-        }
-      }
-      updateSelectAllButtons();
-    });
-  }
-
-  if (btnSelectAllSectors) {
-    btnSelectAllSectors.addEventListener('click', function() {
-      const isSelectAll = this.textContent === 'Select All';
-      const boxes = document.querySelectorAll('.sector-checkbox:not(:disabled)');
-      let changed = false;
-      boxes.forEach(cb => {
-        if (cb.checked !== isSelectAll) {
-          cb.checked = isSelectAll;
-          changed = true;
-        }
-      });
-      if (changed) updateSectorCount();
-      updateSelectAllButtons();
-    });
-  }
-
-  if (cityCheckboxes.length > 0 && sectorContainer) {
     function fetchSectors() {
       const checkedCityBoxes = document.querySelectorAll('.city-checkbox:checked');
       const cityIds = Array.from(checkedCityBoxes).map(cb => cb.value);
-      const roleText = roleSelect ? roleSelect.options[roleSelect.selectedIndex].text.toLowerCase() : '';
       
       updateCityCount();
-
-      // Don't load sectors if role is GE
-      if (roleText.includes('garrison engineer') || roleText.includes('garrison_engineer')) {
-        sectorContainer.innerHTML = `
-          <div class="text-center py-4 text-primary h-100 d-flex flex-column justify-content-center align-items-center">
-            <i data-feather="check-circle" class="mb-2" style="width: 24px; height: 24px;"></i>
-            <span style="font-size: 0.85rem; font-weight: 500;">GE sees all sectors</span>
-          </div>
-        `;
-        feather.replace();
-        sectorCountBadge.textContent = 'All Selected';
-        if (container) container.style.opacity = '1';
-        if (sectorHidden) sectorHidden.value = "[]"; // Clear hidden field
-        return;
-      }
       
       if (cityIds.length === 0) {
         sectorContainer.innerHTML = `
@@ -444,7 +331,7 @@
         `;
         feather.replace();
         sectorCountBadge.textContent = '0 Selected';
-        syncSectorHidden(); // Clear hidden field
+        syncSectorHidden();
         return;
       }
 
@@ -454,12 +341,9 @@
           <span style="font-size: 0.85rem;">Loading nodes...</span>
         </div>
       `;
-
+      
       fetch(`{{ route('admin.sectors.by-city') }}?city_id=${cityIds.join(',')}`, {
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-          'Accept': 'application/json',
-        },
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
         credentials: 'same-origin'
       })
       .then(response => response.json())
@@ -468,7 +352,6 @@
           let html = '<div class="row g-2">';
           data.forEach(sector => {
             const isChecked = selectedSectors.includes(String(sector.id));
-            
             html += `
               <div class="col-sm-6">
                 <label class="custom-checkbox-card w-100 mb-0">
@@ -505,54 +388,77 @@
           </div>
         `;
         feather.replace();
-        syncSectorHidden(); // Sync hidden field on error
       });
     }
 
-    cityCheckboxes.forEach(cb => {
-      cb.addEventListener('change', fetchSectors);
+    function updateSelectAllButtons() {
+      if (btnSelectAllCities) {
+        const boxes = document.querySelectorAll('.city-checkbox:not(:disabled)');
+        const checked = document.querySelectorAll('.city-checkbox:checked:not(:disabled)');
+        btnSelectAllCities.textContent = (boxes.length > 0 && boxes.length === checked.length) ? 'Deselect All' : 'Select All';
+      }
+      if (btnSelectAllSectors) {
+        const boxes = document.querySelectorAll('.sector-checkbox:not(:disabled)');
+        const checked = document.querySelectorAll('.sector-checkbox:checked:not(:disabled)');
+        btnSelectAllSectors.textContent = (boxes.length > 0 && boxes.length === checked.length) ? 'Deselect All' : 'Select All';
+      }
+    }
+
+    cityCheckboxes.forEach(cb => cb.addEventListener('change', fetchSectors));
+
+    document.addEventListener('change', function(e) {
+      if (e.target.classList.contains('sector-checkbox')) {
+        updateSectorCount();
+        updateSelectAllButtons();
+      }
     });
 
-    // Handle role change - show/hide fields
-    if (roleSelect) {
-      roleSelect.addEventListener('change', function() {
-        const selectedOption = this.options[this.selectedIndex];
-        const roleText = selectedOption ? selectedOption.text.toLowerCase() : '';
+    if (btnSelectAllCities) {
+      btnSelectAllCities.addEventListener('click', function() {
+        const isSelectAll = this.textContent === 'Select All';
+        document.querySelectorAll('.city-checkbox:not(:disabled)').forEach(cb => cb.checked = isSelectAll);
+        fetchSectors();
+        updateSelectAllButtons();
+      });
+    }
+
+    if (btnSelectAllSectors) {
+      btnSelectAllSectors.addEventListener('click', function() {
+        const isSelectAll = this.textContent === 'Select All';
+        document.querySelectorAll('.sector-checkbox:not(:disabled)').forEach(cb => cb.checked = isSelectAll);
+        updateSectorCount();
+        updateSelectAllButtons();
+      });
+    }
+
+    if (userForm) {
+      userForm.addEventListener('submit', function(e) {
+        const phoneValue = phoneInput ? phoneInput.value.trim() : '';
+        if (phoneValue && phoneValue.length < 11) {
+          e.preventDefault();
+          alert('Phone number must be at least 11 digits.');
+          return false;
+        }
+
+        const checkedCities = document.querySelectorAll('.city-checkbox:checked');
+        const checkedSectors = document.querySelectorAll('.sector-checkbox:checked');
         
-        if (roleText.includes('director')) {
-          cityCheckboxes.forEach(cb => { cb.disabled = true; });
-          const cityContainer = document.querySelector('.location-container:has(.city-checkbox)') || document.querySelectorAll('.location-container')[0];
-          if (cityContainer) cityContainer.style.opacity = '0.5';
-          
-          sectorContainer.style.opacity = '0.5';
-          sectorContainer.innerHTML = `
-            <div class="text-center py-4 text-info h-100 d-flex flex-column justify-content-center align-items-center">
-              <i data-feather="globe" class="mb-2" style="width: 24px; height: 24px;"></i>
-              <span style="font-size: 0.85rem; font-weight: 500;">Director sees all</span>
-            </div>
-          `;
-          updateCityCount();
-          sectorCountBadge.textContent = 'All Selected';
-          syncSectorHidden();
-          feather.replace();
-        } else {
-          cityCheckboxes.forEach(cb => { cb.disabled = false; });
-          const cityContainer = document.querySelector('.location-container:has(.city-checkbox)') || document.querySelectorAll('.location-container')[0];
-          if (cityContainer) cityContainer.style.opacity = '1';
-          sectorContainer.style.opacity = '1';
-          fetchSectors();
+        if (checkedCities.length === 0) {
+          e.preventDefault();
+          alert('Please select at least one GE Group.');
+          return false;
+        }
+        
+        if (checkedSectors.length === 0) {
+          e.preventDefault();
+          alert('Please select at least one GE Node.');
+          return false;
         }
       });
-
-      // Trigger on page load if role is pre-selected
-      if (roleSelect.value) {
-        roleSelect.dispatchEvent(new Event('change'));
-      }
-    } else {
-      fetchSectors();
     }
-    
+
+    fetchSectors();
     updateSelectAllButtons();
-  }
+  });
 </script>
 @endpush

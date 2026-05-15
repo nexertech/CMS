@@ -659,23 +659,9 @@
 
 <!-- GE FEEDBACK OVERVIEW SECTION -->
 @php
-  $showGEFeedback = false;
-  $user = auth()->user();
-
-  // Role-based visibility logic:
-  // Allow: Director, Admin, Garrison Engineer (regardless of location assignments)
-  $userRole = $user->role ? strtolower($user->role->role_name) : '';
-  $isBigBoss = $userRole === 'director' || str_contains($userRole, 'admin'); 
-  $isGE = str_contains($userRole, 'garrison') || str_contains($userRole, 'ge');
-  
-  // Also fallback to original location check (no sector_id) for backward compatibility
-  // 1. If user's city_id AND sector_id are both null - show all
-  // 2. If user's city_id is set but sector_id is null - show city data
-  $hasNoSectorRestriction = (!$user->sector_id);
-
-  if ($isBigBoss || $isGE || $hasNoSectorRestriction) {
-    $showGEFeedback = true;
-  }
+  // GE Feedback Overview is now enabled for all users.
+  // Location-based filtering from the controller ensures users only see what they have access to.
+  $showGEFeedback = true;
 @endphp
 
 @if($showGEFeedback)

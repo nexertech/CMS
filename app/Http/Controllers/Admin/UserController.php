@@ -155,16 +155,18 @@ class UserController extends Controller
         $role = Role::find($request->role_id);
         $roleName = strtolower($role->role_name ?? '');
 
-        // Validate city/sector based on role
-        if ($roleName === 'garrison_engineer' && !$request->city_id) {
-            return redirect()->back()
-                ->withErrors(['city_id' => 'City is required for Garrison Engineer role'])
-                ->withInput();
+        // Validate city/sector
+        $errors = [];
+        if (!$request->city_id) {
+            $errors['city_id'] = 'GE Group (City) is required.';
+        }
+        if (!$request->sector_id) {
+            $errors['sector_id'] = 'GE Node (Sector) is required.';
         }
 
-        if (in_array($roleName, ['complaint_center', 'department_staff']) && (!$request->city_id || !$request->sector_id)) {
+        if (!empty($errors)) {
             return redirect()->back()
-                ->withErrors(['city_id' => 'City and Sector are required for this role', 'sector_id' => 'City and Sector are required for this role'])
+                ->withErrors($errors)
                 ->withInput();
         }
 
@@ -316,16 +318,18 @@ class UserController extends Controller
 
         $roleName = strtolower($role->role_name ?? '');
 
-        // Validate city/sector based on role
-        if ($roleName === 'garrison_engineer' && !$request->city_id) {
-            return redirect()->back()
-                ->withErrors(['city_id' => 'City is required for Garrison Engineer role'])
-                ->withInput();
+        // Validate city/sector
+        $errors = [];
+        if (!$request->city_id) {
+            $errors['city_id'] = 'GE Group (City) is required.';
+        }
+        if (!$request->sector_id) {
+            $errors['sector_id'] = 'GE Node (Sector) is required.';
         }
 
-        if (in_array($roleName, ['complaint_center', 'department_staff']) && (!$request->city_id || !$request->sector_id)) {
+        if (!empty($errors)) {
             return redirect()->back()
-                ->withErrors(['city_id' => 'City and Sector are required for this role', 'sector_id' => 'City and Sector are required for this role'])
+                ->withErrors($errors)
                 ->withInput();
         }
 

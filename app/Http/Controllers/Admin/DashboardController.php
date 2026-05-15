@@ -395,14 +395,9 @@ class DashboardController extends Controller
         // 1. If user's city_id AND sector_id are both null - show all data
         // 2. If user's city_id is set but sector_id is null - show only their city's data
         // 3. If user has sector_ids - they shouldn't see GE Feedback Overview
-        // Check if user has permission to see GE Feedback Overview
-        // Allow: Director, Admin, Garrison Engineer (regardless of location assignments)
-        $userRole = $user->role ? strtolower($user->role->role_name) : '';
-        $isBigBoss = $userRole === 'director' || str_contains($userRole, 'admin'); // Director or Admin
-        $isGE = str_contains($userRole, 'garrison') || str_contains($userRole, 'ge'); // GE
-        
-        // Also fallback to original location check (no sector_ids) for backward compatibility or other roles
-        $shouldShowGeProgress = $isBigBoss || $isGE || (empty($user->sector_ids));
+        // GE Feedback Overview is now enabled for all users.
+        // Location-based filtering will naturally restrict data to assigned groups/nodes.
+        $shouldShowGeProgress = true;
 
         // Always initialize geProgress array even if empty, so view can check permissions
         if ($shouldShowGeProgress) {
@@ -410,6 +405,11 @@ class DashboardController extends Controller
                 // Base query for cities
                 $geGroupsQuery = City::where('status', 1);
                 
+                // Filter by selected CMES if provided
+                if ($cmesId) {
+                    $geGroupsQuery->where('cme_id', $cmesId);
+                }
+
                 $effectiveCityId = $cityId ?: null;
                 $effectiveCityIds = empty($user->city_ids) ? [] : $user->city_ids;
 
