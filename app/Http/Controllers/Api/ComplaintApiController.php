@@ -61,7 +61,7 @@ class ComplaintApiController extends Controller
             ->map(function ($complaint) {
                 return [
                     'id' => $complaint->id,
-                    'cmp' => $complaint->cmp, // Verify if this accessor exists, otherwise ticket_number
+                    'cmp' => $complaint->ticket_number, // Fixed: provide ticket_number for cmp field
                     'ticket_number' => $complaint->ticket_number,
                     'category' => $complaint->category ? $complaint->category->name : 'Unknown',
                     'category_id' => $complaint->category_id,
@@ -172,9 +172,16 @@ class ComplaintApiController extends Controller
         $categoryInput = $request->category;
         $categoryId = null;
         if (is_numeric($categoryInput)) {
-            $categoryId = $categoryInput;
+            $catObj = DB::table('complaint_categories')->where('id', $categoryInput)->where('status', 1)->first();
+            $categoryId = $catObj ? $catObj->id : null;
         } else {
-            $catObj = DB::table('complaint_categories')->where('name', $categoryInput)->first();
+            $catObj = DB::table('complaint_categories')
+                ->where('status', 1)
+                ->where(function ($q) use ($categoryInput) {
+                    $q->where('name', $categoryInput)
+                      ->orWhere('app_name', $categoryInput);
+                })
+                ->first();
             $categoryId = $catObj ? $catObj->id : null;
         }
 
@@ -197,6 +204,7 @@ class ComplaintApiController extends Controller
             $titleObj = DB::table('complaint_titles')
                 ->where('title', $titleInput)
                 ->where('category_id', $categoryId)
+                ->whereNull('deleted_at')
                 ->first();
             
             if ($titleObj) {
@@ -262,7 +270,11 @@ class ComplaintApiController extends Controller
     public function categories()
 {
     $rows = DB::table('complaint_categories as c')
-        ->leftJoin('complaint_titles as t', 't.category_id', '=', 'c.id')
+        ->leftJoin('complaint_titles as t', function($join) {
+            $join->on('t.category_id', '=', 'c.id')
+                 ->whereNull('t.deleted_at');
+        })
+        ->where('c.status', 1)
         ->select(
             'c.id as cat_id',
             'c.name as cat_name',
@@ -301,7 +313,9 @@ class ComplaintApiController extends Controller
     public function titles(Request $request)
     {
         $query = DB::table('complaint_titles')
-            ->join('complaint_categories', 'complaint_titles.category_id', '=', 'complaint_categories.id');
+            ->join('complaint_categories', 'complaint_titles.category_id', '=', 'complaint_categories.id')
+            ->where('complaint_categories.status', 1)
+            ->whereNull('complaint_titles.deleted_at');
         
         if ($request->has('category')) {
             $categoryInput = $request->category;
@@ -333,7 +347,9 @@ class ComplaintApiController extends Controller
     {
         // Check if category is ID or Name
         $query = DB::table('complaint_titles')
-            ->join('complaint_categories', 'complaint_titles.category_id', '=', 'complaint_categories.id');
+            ->join('complaint_categories', 'complaint_titles.category_id', '=', 'complaint_categories.id')
+            ->where('complaint_categories.status', 1)
+            ->whereNull('complaint_titles.deleted_at');
 
         if (is_numeric($category)) {
              $query->where('complaint_titles.category_id', $category);

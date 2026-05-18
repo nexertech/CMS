@@ -86,9 +86,9 @@ class RegisteredDeviceController extends Controller
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        // Use logged-in user's city and sector if they have them (for data isolation)
-        $cityId = (!empty($user->city_ids) ? $user->city_ids[0] : null) ?? $request->city_id;
-        $sectorId = (!empty($user->sector_ids) ? $user->sector_ids[0] : null) ?? $request->sector_id;
+        // Priority: 1. Request Input (if selected), 2. User's scope (if restricted), 3. Null
+        $cityId = $request->city_id ?? (!empty($user->city_ids) ? $user->city_ids[0] : null);
+        $sectorId = $request->sector_id ?? (!empty($user->sector_ids) ? $user->sector_ids[0] : null);
 
         RegisteredDevice::create([
             'device_id' => $request->device_id,
@@ -154,9 +154,9 @@ class RegisteredDeviceController extends Controller
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        // Use logged-in user's city and sector if they have them (for data isolation)
-        $cityId = (!empty($user->city_ids) ? $user->city_ids[0] : null) ?? $request->city_id;
-        $sectorId = (!empty($user->sector_ids) ? $user->sector_ids[0] : null) ?? $request->sector_id;
+        // Priority: 1. Request Input (if selected), 2. User's scope (if restricted), 3. Null
+        $cityId = $request->city_id ?? (!empty($user->city_ids) ? $user->city_ids[0] : null);
+        $sectorId = $request->sector_id ?? (!empty($user->sector_ids) ? $user->sector_ids[0] : null);
 
         $registeredDevice->update([
             'device_id' => $request->device_id,

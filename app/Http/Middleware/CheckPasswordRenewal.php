@@ -20,8 +20,8 @@ class CheckPasswordRenewal
     {
         $user = Auth::user();
         
-        // Only check for frontend_users (web) and houses (API)
-        if (!$user || !($user instanceof \App\Models\FrontendUser || $user instanceof \App\Models\House)) {
+        // Only check for frontend_users (web)
+        if (!$user || !($user instanceof \App\Models\FrontendUser)) {
             return $next($request);
         }
 

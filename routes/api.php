@@ -77,7 +77,7 @@ Route::middleware('auth:sanctum')->get('/diagnostic/test-auth', function (Illumi
 });
 
 // Protected Routes (Require Token) - Switched to manual.auth to prevent crashes
-Route::middleware(['manual.auth', 'password.renewal'])->group(function () {
+Route::middleware(['manual.auth'])->group(function () {
     Route::post('/house/logout', [HouseAuthController::class, 'logout']);
     Route::post('/house/change-password', [HouseAuthController::class, 'changePassword']);
 
@@ -90,7 +90,7 @@ Route::middleware('manual.auth')->post('/complaints/register', [ComplaintApiCont
 
 // ... (debugging routes) ...
 
-Route::middleware(['manual.auth', 'password.renewal'])->group(function () {
+Route::middleware(['manual.auth'])->group(function () {
     Route::post('/complaints/{id}/feedback', [ComplaintApiController::class, 'feedback']); // Dynamic ID in URL
     Route::get('/complaints/{id}', [ComplaintApiController::class, 'show']); // Details
 
