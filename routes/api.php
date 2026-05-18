@@ -33,28 +33,31 @@ Route::get('/diagnostic/test-house', function () {
             'message' => 'Database loading works fine'
         ]);
     } catch (\Throwable $e) {
+        \Illuminate\Support\Facades\Log::error('Diagnostic Route Error: ' . $e->getMessage(), ['exception' => $e]);
         return response()->json([
             'status' => 'ERROR',
-            'message' => $e->getMessage(),
-            'file' => $e->getFile(),
-            'line' => $e->getLine()
+            'message' => 'An error occurred during diagnostic test.'
         ], 500);
     }
 });
 
-// Public Authentication Routes
-Route::post('/house/login', [HouseAuthController::class, 'login']);
+// Public Authentication Routes (Strict rate limiting: max 5 login attempts per minute)
+Route::middleware('throttle:5,1')->post('/house/login', [HouseAuthController::class, 'login']);
 
-// Device Management Routes
-Route::post('/check-device', [App\Http\Controllers\Api\DeviceController::class, 'checkDevice']);
-Route::post('/register-device', [App\Http\Controllers\Api\DeviceController::class, 'registerDevice']);
-Route::post('/get-device', [App\Http\Controllers\Api\DeviceController::class, 'getDevice']);
+// Device Management Routes (Rate limiting: max 30 requests per minute)
+Route::middleware('throttle:30,1')->group(function () {
+    Route::post('/check-device', [App\Http\Controllers\Api\DeviceController::class, 'checkDevice']);
+    Route::post('/register-device', [App\Http\Controllers\Api\DeviceController::class, 'registerDevice']);
+    Route::post('/get-device', [App\Http\Controllers\Api\DeviceController::class, 'getDevice']);
+});
 
-// Public Metadata Routes (No authentication required)
-Route::get('/categories', [ComplaintApiController::class, 'categories']);
-Route::get('/categories/{category}/titles', [ComplaintApiController::class, 'getTitlesByCategory']);
-Route::get('/titles', [ComplaintApiController::class, 'titles']);
-Route::get('/app/check-update', [AppVersionController::class, 'checkUpdate']);
+// Public Metadata Routes (Rate limiting: max 60 requests per minute)
+Route::middleware('throttle:60,1')->group(function () {
+    Route::get('/categories', [ComplaintApiController::class, 'categories']);
+    Route::get('/categories/{category}/titles', [ComplaintApiController::class, 'getTitlesByCategory']);
+    Route::get('/titles', [ComplaintApiController::class, 'titles']);
+    Route::get('/app/check-update', [AppVersionController::class, 'checkUpdate']);
+});
 
 // DIAGNOSTIC: Test Sanctum Auth (REMOVE AFTER DEBUGGING)
 Route::middleware('auth:sanctum')->get('/diagnostic/test-auth', function (Illuminate\Http\Request $request) {
@@ -67,17 +70,16 @@ Route::middleware('auth:sanctum')->get('/diagnostic/test-auth', function (Illumi
             'message' => 'Sanctum authentication works'
         ]);
     } catch (\Throwable $e) {
+        \Illuminate\Support\Facades\Log::error('Diagnostic Auth Error: ' . $e->getMessage(), ['exception' => $e]);
         return response()->json([
             'status' => 'AUTH_ERROR',
-            'message' => $e->getMessage(),
-            'file' => $e->getFile(),
-            'line' => $e->getLine()
+            'message' => 'Authentication diagnostic error.'
         ], 500);
     }
 });
 
-// Protected Routes (Require Token) - Switched to manual.auth to prevent crashes
-Route::middleware(['manual.auth'])->group(function () {
+// Protected Routes (Require Token & Rate Limited: max 60 requests per minute)
+Route::middleware(['manual.auth', 'throttle:60,1'])->group(function () {
     Route::post('/house/logout', [HouseAuthController::class, 'logout']);
     Route::post('/house/change-password', [HouseAuthController::class, 'changePassword']);
 
@@ -85,12 +87,12 @@ Route::middleware(['manual.auth'])->group(function () {
     Route::get('/complaints', [ComplaintApiController::class, 'index']); // Status/List
 });
 
-// FIXED: Use manual auth instead of Sanctum (which crashes PHP)
-Route::middleware('manual.auth')->post('/complaints/register', [ComplaintApiController::class, 'register']);
+// FIXED: Use manual auth and strict rate limiting (max 15 requests per minute for complaint submission)
+Route::middleware(['manual.auth', 'throttle:15,1'])->post('/complaints/register', [ComplaintApiController::class, 'register']);
 
 // ... (debugging routes) ...
 
-Route::middleware(['manual.auth'])->group(function () {
+Route::middleware(['manual.auth', 'throttle:60,1'])->group(function () {
     Route::post('/complaints/{id}/feedback', [ComplaintApiController::class, 'feedback']); // Dynamic ID in URL
     Route::get('/complaints/{id}', [ComplaintApiController::class, 'show']); // Details
 
