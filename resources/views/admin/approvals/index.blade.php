@@ -641,9 +641,9 @@
                         <i data-feather="edit" style="width: 12px; height: 12px;"></i>
                       </button>
                     @endif
-                    @if($complaintStatus == 'resolved' || $complaintStatus == 'closed')
+                    @if(empty($complaint->assigned_employee_id) || $complaintStatus == 'unassigned' || $complaintStatus == 'resolved' || $complaintStatus == 'closed')
                       <button type="button" class="btn btn-outline-secondary btn-sm add-stock-btn"
-                        title="Stock cannot be issued" data-approval-id="{{ $approval->id ?? '' }}" data-category="{{ $category }}"
+                        title="{{ (empty($complaint->assigned_employee_id) || $complaintStatus == 'unassigned') ? 'Assign an employee first to issue stock' : 'Stock cannot be issued' }}" data-approval-id="{{ $approval->id ?? '' }}" data-category="{{ $category }}"
                         disabled style="padding: 1px 3px; cursor: not-allowed; opacity: 1 !important;">
                         <i data-feather="plus-circle" style="width: 12px; height: 12px;"></i>
                       </button>
