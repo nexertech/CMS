@@ -497,8 +497,16 @@ class ComplaintController extends Controller
         }
 
         if ($request->filled('redirect_to')) {
-            return redirect($request->redirect_to)
-                ->with('success', 'Complaint updated successfully.');
+            $redirectTo = $request->redirect_to;
+            
+            // Security: Only allow internal redirects to prevent Open Redirect attacks
+            // Must be a relative path starting with '/' and not containing backslashes (which browsers can convert to slashes)
+            if (is_string($redirectTo) && str_starts_with($redirectTo, '/') && !str_starts_with($redirectTo, '//') && !str_contains($redirectTo, '\\')) {
+                return redirect($redirectTo)
+                    ->with('success', 'Complaint updated successfully.');
+            }
+            
+            // If redirect_to is not a safe internal path, fall through to default redirect
         }
 
         return redirect()->route('admin.complaints.index')
