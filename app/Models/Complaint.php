@@ -93,6 +93,14 @@ class Complaint extends Model
     }
 
     /**
+     * Get the attachments for the complaint.
+     */
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(ComplaintAttachment::class, 'complaint_id', 'id');
+    }
+
+    /**
      * Get the spare parts used for the complaint.
      */
     public function spareParts(): HasMany
