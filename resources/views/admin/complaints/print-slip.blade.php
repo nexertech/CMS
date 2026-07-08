@@ -33,16 +33,15 @@
             padding: 0;
             color: var(--primary-color);
             background: white;
-            line-height: 1.3;
-            font-size: 10.5px;
+            line-height: 1.25;
+            font-size: 8.5px;
         }
 
         .container {
-            max-width: 800px;
-            /* A4 width approx */
+            width: 580px;
             margin: 0 auto;
             background: white;
-            padding: 10px 20px;
+            padding: 5px 12px;
         }
 
         /* Header */
@@ -50,23 +49,23 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            padding-bottom: 8px;
-            border-bottom: 2px solid var(--primary-color);
-            margin-bottom: 12px;
+            padding-bottom: 4px;
+            border-bottom: 1.5px solid var(--primary-color);
+            margin-bottom: 8px;
         }
 
         .brand-section h1 {
             margin: 0;
-            font-size: 16px;
+            font-size: 11.5px;
             font-weight: 700;
             letter-spacing: -0.5px;
             text-transform: uppercase;
         }
 
         .brand-section p {
-            margin: 3px 0 0;
+            margin: 2px 0 0;
             color: var(--secondary-color);
-            font-size: 11px;
+            font-size: 8px;
         }
 
         .meta-section {
@@ -74,16 +73,16 @@
         }
 
         .meta-section .slip-title {
-            font-size: 13px;
+            font-size: 9.5px;
             font-weight: 600;
             color: var(--secondary-color);
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 3px;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
         }
 
         .meta-section .date {
-            font-size: 11px;
+            font-size: 8px;
             color: var(--secondary-color);
         }
 
@@ -91,19 +90,40 @@
         .grid-2 {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 12px;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .grid-2 > div {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .grid-2 .description-box {
+            flex: 1;
+        }
+
+        .assignment-banner {
+            display: flex;
+            justify-content: space-between;
+            background: var(--bg-light);
+            border: 1px solid var(--border-color);
+            padding: 4px 8px;
+            border-radius: 0;
+            margin-bottom: 8px;
+            font-size: 8.5px;
+            color: var(--primary-color);
         }
 
         .section-title {
-            font-size: 10px;
+            font-size: 8px;
             font-weight: 700;
             text-transform: uppercase;
             color: var(--secondary-color);
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             border-bottom: 1px solid var(--border-color);
-            padding-bottom: 3px;
-            letter-spacing: 0.5px;
+            padding-bottom: 2px;
+            letter-spacing: 0.3px;
         }
 
         /* Data Tables */
@@ -113,29 +133,29 @@
         }
 
         .data-table td {
-            padding: 4px 0;
+            padding: 2px 0;
             vertical-align: top;
         }
 
         .label {
-            width: 90px;
+            width: 75px;
             font-weight: 500;
             color: var(--secondary-color);
-            font-size: 11px;
+            font-size: 8.5px;
         }
 
         .value {
             font-weight: 600;
             color: var(--primary-color);
-            font-size: 11px;
+            font-size: 8.5px;
         }
 
         /* Badges */
         .badge {
             display: inline-block;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 9px;
+            padding: 1px 4px;
+            border-radius: 0;
+            font-size: 7.5px;
             font-weight: 600;
             text-transform: uppercase;
         }
@@ -188,67 +208,67 @@
         /* Description Box */
         .description-box {
             background: var(--bg-light);
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            padding: 10px;
-            margin-bottom: 10px;
+            border: 1px dashed #94a3b8;
+            border-radius: 0;
+            padding: 6px;
+            margin-bottom: 6px;
         }
 
         .description-box p {
             margin: 0;
             white-space: pre-line;
-            font-size: 11px;
+            font-size: 8.5px;
         }
 
         /* Comments Section - Inside Feedback */
         .comments-section {
-            margin-bottom: 10px;
-            padding-bottom: 10px;
+            margin-bottom: 6px;
+            padding-bottom: 6px;
             border-bottom: 1px solid var(--border-color);
         }
 
         .comments-header {
-            font-size: 9px;
+            font-size: 8px;
             font-weight: 600;
             text-transform: uppercase;
             color: var(--secondary-color);
-            margin-bottom: 5px;
+            margin-bottom: 3px;
             letter-spacing: 0.3px;
         }
 
         .comments-box {
-            min-height: 40px;
+            min-height: 25px;
             border: 1px dashed var(--border-color);
-            border-radius: 3px;
-            padding: 6px;
+            border-radius: 0;
+            padding: 4px;
             background: var(--bg-light);
-            font-size: 10px;
+            font-size: 8px;
             color: var(--secondary-color);
         }
 
         /* Feedback Section - Professional Scan Look - Compact */
         .feedback-container {
-            border: 2px dashed var(--border-color);
-            border-radius: 5px;
-            padding: 10px;
-            margin-top: 10px;
+            border: 1.5px dashed var(--border-color);
+            border-radius: 0;
+            padding: 6px;
+            margin-top: 6px;
             page-break-inside: avoid;
         }
 
         .feedback-header {
             text-align: center;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
         }
 
         .feedback-header h3 {
             margin: 0 0 2px;
-            font-size: 12px;
+            font-size: 9.5px;
             font-weight: 700;
         }
 
         .feedback-header p {
             margin: 0;
-            font-size: 9px;
+            font-size: 8px;
             color: var(--secondary-color);
         }
 
@@ -256,57 +276,57 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 20px;
+            gap: 12px;
         }
 
         /* Manual Feedback Side */
         .manual-feedback {
-            flex: 2;
+            flex: 2.2;
         }
 
         .rating-options {
             display: flex;
             justify-content: space-around;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
 
         .rating-box {
             text-align: center;
-            padding: 5px;
+            padding: 2px;
             border: 1px solid transparent;
         }
 
         .circle-checkbox {
-            width: 20px;
-            height: 20px;
-            border: 2px solid var(--primary-color);
-            border-radius: 50%;
-            margin: 0 auto 5px;
+            width: 12px;
+            height: 12px;
+            border: 1.5px solid var(--primary-color);
+            border-radius: 0;
+            margin: 0 auto 3px;
             transition: all 0.2s;
         }
 
         .rating-label {
             display: block;
-            font-size: 10px;
+            font-size: 8px;
             font-weight: 600;
             text-transform: uppercase;
         }
 
         .emoji-icon {
-            width: 24px;
-            height: 24px;
-            margin-bottom: 3px;
+            width: 16px;
+            height: 16px;
+            margin-bottom: 2px;
             fill: none;
             stroke: var(--primary-color);
-            stroke-width: 2;
+            stroke-width: 1.5;
             stroke-linecap: round;
             stroke-linejoin: round;
         }
 
         /* Signature Line */
         .signature-area {
-            margin-top: 8px;
-            padding-top: 8px;
+            margin-top: 6px;
+            padding-top: 6px;
             border-top: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
@@ -314,11 +334,11 @@
         }
 
         .sign-line {
-            width: 150px;
+            width: 110px;
             border-bottom: 1px dashed #333;
             text-align: center;
-            font-size: 10px;
-            padding-bottom: 3px;
+            font-size: 8px;
+            padding-bottom: 2px;
             color: var(--secondary-color);
         }
 
@@ -327,44 +347,44 @@
             flex: 1;
             text-align: center;
             border-left: 1px solid var(--border-color);
-            padding-left: 20px;
+            padding-left: 10px;
         }
 
         .qr-box {
             background: white;
-            padding: 8px;
+            padding: 4px;
             display: inline-block;
             border: 1px solid var(--border-color);
-            border-radius: 4px;
+            border-radius: 0;
         }
 
         .qr-box img {
             display: block;
-            width: 70px;
-            height: 70px;
+            width: 80px;
+            height: 80px;
         }
 
         .qr-label {
-            font-size: 9px;
+            font-size: 8px;
             font-weight: 500;
             color: var(--secondary-color);
-            margin-top: 4px;
+            margin-top: 3px;
             display: block;
         }
 
         /* Footer */
         .footer {
-            margin-top: 20px;
+            margin-top: 10px;
             text-align: center;
-            font-size: 10px;
+            font-size: 8px;
             color: var(--secondary-color);
             border-top: 1px solid var(--border-color);
-            padding-top: 10px;
+            padding-top: 5px;
         }
 
         @media print {
             @page {
-                margin: 0.5cm;
+                margin: 0.3cm;
             }
 
             body {
@@ -372,9 +392,10 @@
             }
 
             .container {
-                width: 100%;
-                max-width: none;
-                padding: 20px;
+                width: 580px;
+                max-width: 580px;
+                padding: 4px 0;
+                margin: 0 auto;
             }
 
             .no-print {
@@ -400,8 +421,8 @@
         <div class="header">
             <div class="brand-section">
                 <!-- Branding: Could use an img tag here if user has a logo file -->
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-color);">
                         <path
                             d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
@@ -418,7 +439,15 @@
             </div>
         </div>
 
-        <!-- 2 Column Layout -->
+        <!-- Assignment Info Banner -->
+        <div class="assignment-banner">
+            <span><strong>Assigned Technician:</strong> {{ $complaint->assignedEmployee->name ?? 'Unassigned' }} @if($complaint->assignedEmployee && $complaint->assignedEmployee->designation) ({{ $complaint->assignedEmployee->designation->name ?? $complaint->assignedEmployee->designation }}) @endif</span>
+            @if($complaint->assignedEmployee && $complaint->assignedEmployee->phone)
+                <span><strong>Contact:</strong> {{ $complaint->assignedEmployee->phone }}</span>
+            @endif
+        </div>
+
+        <!-- 2 Column Layout (Client & Request Details) -->
         <div class="grid-2">
             <!-- Left: Client Info -->
             <div>
@@ -465,10 +494,10 @@
                 <table class="data-table">
                     <tr>
                         <td class="label">Complaint #</td>
-                        <td class="value" style="font-size: 16px;">#{{ $complaint->id }}</td>
+                        <td class="value" style="font-size: 11px;">#{{ $complaint->id }}</td>
                     </tr>
                     <tr>
-                        <td class="label">Nature & Type:</td>
+                        <td class="label">Nature/Type:</td>
                         <td class="value">{{ ucfirst($complaint->getCategoryDisplayAttribute()) . ' - ' . ($complaint->complaintTitle->title ?? $complaint->title ?? 'N/A') }}</td>
                     </tr>
                     <tr>
@@ -494,46 +523,28 @@
                     <tr>
                         <td class="label">Date:</td>
                         <td class="value">{{ $complaint->created_at->timezone('Asia/Karachi')->format('M d, Y') }}<br><span
-                                style="font-size: 11px; font-weight: normal; color: #666;">{{ $complaint->created_at->timezone('Asia/Karachi')->format('H:i') }}</span>
+                                style="font-size: 8px; font-weight: normal; color: #666;">{{ $complaint->created_at->timezone('Asia/Karachi')->format('H:i') }}</span>
                         </td>
                     </tr>
                 </table>
             </div>
         </div>
 
-        <!-- Assignment Info -->
-        <div
-            style="margin-bottom: 15px; border: 1px solid var(--border-color); padding: 10px; border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
+        <!-- Description & Remarks Side by Side -->
+        <div class="grid-2" style="margin-bottom: 6px;">
             <div>
-                <div class="label" style="width: auto; margin-bottom: 2px;">Assigned Technician:</div>
-                <div class="value" style="font-size: 15px;">
-                    {{ $complaint->assignedEmployee->name ?? 'Unassigned' }}
-                    @if($complaint->assignedEmployee && $complaint->assignedEmployee->designation)
-                        <span style="font-weight: 400; color: var(--secondary-color);"> -
-                            {{ $complaint->assignedEmployee->designation->name ?? $complaint->assignedEmployee->designation ?? 'N/A' }}</span>
-                    @endif
+                <div class="section-title">Problem Description</div>
+                <div class="description-box" style="margin-bottom: 0; min-height: 48px;">
+                    <p>{{ $complaint->description ?: 'No detailed description provided.' }}</p>
                 </div>
             </div>
-            @if($complaint->assignedEmployee && $complaint->assignedEmployee->phone)
-                <div>
-                    <div class="label" style="width: auto; margin-bottom: 2px;">Contact:</div>
-                    <div class="value">{{ $complaint->assignedEmployee->phone }}</div>
+            <div>
+                <div class="section-title">Technician Remarks / Work Done</div>
+                <div class="description-box" style="margin-bottom: 0; min-height: 48px;">
+                    <div style="border-bottom: 1px dotted var(--border-color); margin-top: 12px;"></div>
+                    <div style="border-bottom: 1px dotted var(--border-color); margin-top: 12px;"></div>
                 </div>
-            @endif
-        </div>
-
-        <!-- Description -->
-        <div class="section-title">Problem Description</div>
-        <div class="description-box">
-            <p>{{ $complaint->description ?: 'No detailed description provided.' }}</p>
-        </div>
-
-        <!-- Technician Remarks -->
-        <div class="section-title">Technician Remarks / Work Done</div>
-        <div class="description-box" style="min-height: 60px; border: 1px dashed var(--secondary-color);">
-            <div style="border-bottom: 1px dotted var(--border-color); margin-top: 15px;"></div>
-            <div style="border-bottom: 1px dotted var(--border-color); margin-top: 15px;"></div>
-            <div style="border-bottom: 1px dotted var(--border-color); margin-top: 15px;"></div>
+            </div>
         </div>
 
         <!-- Feedback & Closing Section -->
@@ -556,7 +567,7 @@
                                 <line x1="15" y1="9" x2="15.01" y2="9"></line>
                             </svg>
                             <label class="rating-label" style="color: #15803d;">Excellent</label>
-                            <div class="circle-checkbox" style="margin-top: 5px;"></div>
+                            <div class="circle-checkbox" style="margin-top: 3px;"></div>
                         </div>
 
                         <!-- Good -->
@@ -568,7 +579,7 @@
                                 <line x1="15" y1="9" x2="15.01" y2="9"></line>
                             </svg>
                             <label class="rating-label" style="color: #2563eb;">Good</label>
-                            <div class="circle-checkbox" style="margin-top: 5px;"></div>
+                            <div class="circle-checkbox" style="margin-top: 3px;"></div>
                         </div>
 
                         <!-- Satisfied -->
@@ -580,7 +591,7 @@
                                 <line x1="15" y1="9" x2="15.01" y2="9"></line>
                             </svg>
                             <label class="rating-label" style="color: #0ea5e9;">Satisfied</label>
-                            <div class="circle-checkbox" style="margin-top: 5px;"></div>
+                            <div class="circle-checkbox" style="margin-top: 3px;"></div>
                         </div>
 
                         <!-- Fair -->
@@ -592,7 +603,7 @@
                                 <line x1="15" y1="9" x2="15.01" y2="9"></line>
                             </svg>
                             <label class="rating-label" style="color: #ca8a04;">Fair</label>
-                            <div class="circle-checkbox" style="margin-top: 5px;"></div>
+                            <div class="circle-checkbox" style="margin-top: 3px;"></div>
                         </div>
 
                         <!-- Poor -->
@@ -604,7 +615,7 @@
                                 <line x1="15" y1="9" x2="15.01" y2="9"></line>
                             </svg>
                             <label class="rating-label" style="color: #b91c1c;">Poor</label>
-                            <div class="circle-checkbox" style="margin-top: 5px;"></div>
+                            <div class="circle-checkbox" style="margin-top: 3px;"></div>
                         </div>
                     </div>
 
@@ -625,7 +636,7 @@
                 <!-- Digital Feedback -->
                 <div class="qr-section">
                     <div class="qr-box">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ route('frontend.feedback', $complaint->id) }}"
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={{ route('frontend.feedback', $complaint->id) }}"
                             alt="Scan for Feedback">
                     </div>
                     <span class="qr-label">Scan for Digital Feedback</span>

@@ -1864,7 +1864,7 @@ class HomeController extends Controller
      */
     public function feedback($id)
     {
-        $complaint = Complaint::with(['category', 'assignedEmployee.designation', 'house'])->find($id);
+        $complaint = Complaint::with(['category', 'assignedEmployee.designation', 'house', 'complaintTitle'])->find($id);
 
         if (!$complaint) {
             abort(404, 'Complaint not found.');
@@ -1896,6 +1896,12 @@ class HomeController extends Controller
         if (\App\Models\ComplaintFeedback::where('complaint_id', $id)->exists()) {
             return redirect()->route('frontend.feedback', $id)
                 ->with('error', 'Feedback already submitted for this complaint.');
+        }
+
+        // Enforce that feedback can only be submitted for resolved/closed complaints
+        if (!in_array($complaint->status, ['resolved', 'closed'])) {
+            return redirect()->route('frontend.feedback', $id)
+                ->with('error', 'Feedback can only be submitted once the complaint is Addressed (Resolved).');
         }
 
         $request->validate([
