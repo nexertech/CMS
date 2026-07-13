@@ -369,9 +369,9 @@
         <div class="absolute inset-0 bg-blue-900 bg-opacity-40"></div>
         <!-- Filters -->
         <div class="absolute top-40 p-2 flex flex-nowrap items-end gap-1 filters-container"
-            style="left:3%; width: auto; max-width: 95%; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(3px); border-radius: 4px; overflow-x: auto; z-index: 100;">
+            style="left:3%; width: auto; max-width: 95%; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(3px); border-radius: 4px; overflow: visible; z-index: 100;">
             <div style="flex: 0 1 170px; min-width: 120px;" class="filter-item">
-                <label for="filterCMES" class="block text-white mb-1"
+                <label class="block text-white mb-1"
                     style="font-size: 0.95rem; font-weight: 700;">CMES</label>
                 @php
                     $darkColors = ['#60a5fa', '#4ade80', '#fb923d', '#1e3a8a', '#1b9a87ff', '#f87171', '#818cf8', '#c084fc', '#94a3b8', '#fbbf24'];
@@ -382,82 +382,98 @@
                             $cmeColorMap[$cme->id] = $darkColors[$index % count($darkColors)];
                         }
                     }
+                    $selectedCmesIds = is_array(request('cmes_id')) ? request('cmes_id') : (request('cmes_id') ? [request('cmes_id')] : (isset($cmesId) ? (is_array($cmesId) ? $cmesId : [$cmesId]) : []));
                 @endphp
-                <select id="filterCMES" name="cmes_id" class="p-1.5 border filter-select transition-colors duration-300"
-                    style="font-size: 0.85rem; width: 100%; border-radius: 4px; font-weight: bold; height: 38px;" aria-label="Select CMES"
-                    title="Select CMES">
-                    <option value="" style="background: white; color: #374151;">Select CMES</option>
-                    @if(isset($cmesList) && $cmesList->count() > 0)
-                        @foreach($cmesList as $index => $cme)
-                            @php 
-                                $color = $darkColors[$index % count($darkColors)];
-                                if(isset($cmesId) && $cmesId == $cme->id) $cmesColor = $color;
-                            @endphp
-                            <option value="{{ $cme->id }}" 
-                                style="background: {{ $color }}; color: #ffffff;"
-                                {{ (isset($cmesId) && $cmesId == $cme->id) ? 'selected' : '' }}>
-                                {{ $cme->name }}
-                            </option>
-                        @endforeach
-                    @endif
-                </select>
+                <div class="dropdown filter-dropdown-wrapper" style="width: 100%;">
+                    <button class="btn btn-sm text-start filter-select" type="button" id="cmesDropdownBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="font-size: 0.85rem; height: 38px; line-height: 1.5; padding: 0.375rem 2.25rem 0.375rem 0.75rem; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; background-color: #ffffff; border: 1px solid #ced4da; width: 100%; border-radius: 4px; font-weight: bold; background-image: url('data:image/svg+xml,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3e%3cpath fill=%27none%27 stroke=%27%23343a40%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%272%27 d=%27M2 5l6 6 6-6%27/%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 16px 12px;">
+                        Select CMES
+                    </button>
+                    <ul class="dropdown-menu p-2" aria-labelledby="cmesDropdownBtn" style="max-height: 250px; overflow-y: auto; font-size: 0.8rem; min-width: 200px; background-color: #ffffff; border: 1px solid #ced4da;">
+                        @if(isset($cmesList) && $cmesList->count() > 0)
+                            @foreach($cmesList as $index => $cme)
+                                @php $color = $darkColors[$index % count($darkColors)]; @endphp
+                                <li class="p-1">
+                                    <div class="form-check">
+                                        <input class="form-check-input cmes-checkbox" type="checkbox" value="{{ $cme->id }}" id="fe_cmes_cb_{{ $cme->id }}" name="cmes_id[]" data-color="{{ $color }}" {{ in_array($cme->id, $selectedCmesIds) ? 'checked' : '' }} onchange="handleFeCmesCheckboxChange(); updateFeDropdownButtonText('cmesDropdownBtn', 'cmes_id[]', 'Select CMES');">
+                                        <label class="form-check-label w-100 cursor-pointer" for="fe_cmes_cb_{{ $cme->id }}" style="color: {{ $color }}; font-weight: 600;">{{ $cme->name }}</label>
+                                    </div>
+                                </li>
+                            @endforeach
+                        @endif
+                    </ul>
+                </div>
             </div>
             <div style="flex: 0 1 150px; min-width: 120px;" class="filter-item">
-                <label for="filterCity" class="block text-white mb-1"
+                <label class="block text-white mb-1"
                     style="font-size: 0.95rem; font-weight: 700;">GE</label>
-                <select id="filterCity" name="city_id" class="p-1.5 border filter-select transition-colors duration-300"
-                    style="font-size: 0.85rem; width: 100%; border-radius: 4px; font-weight: bold; height: 38px; {!! $cmesColor ? "background-color: $cmesColor; color: #ffffff;" : "" !!}" aria-label="Select GE"
-                    title="Select GE">
-                    <option value="" style="background: white; color: #374151;">Select GE</option>
-                    @foreach($geGroups as $ge)
-                        @php 
-                            $bg = $cmeColorMap[$ge->cme_id] ?? '#ffffff';
-                            $fg = isset($cmeColorMap[$ge->cme_id]) ? '#ffffff' : '#374151';
-                        @endphp
-                        <option value="{{ $ge->id }}" {{ $cityId == $ge->id ? 'selected' : '' }}
-                            style="background-color: {{ $bg }}; color: {{ $fg }};">
-                            {{ $ge->name }}
-                        </option>
-                    @endforeach
-                </select>
+                @php
+                    $selectedCityIds = is_array(request('city_id')) ? request('city_id') : (request('city_id') ? [request('city_id')] : (isset($cityId) ? (is_array($cityId) ? $cityId : [$cityId]) : []));
+                @endphp
+                <div class="dropdown filter-dropdown-wrapper" style="width: 100%;">
+                    <button class="btn btn-sm text-start filter-select" type="button" id="cityDropdownBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="font-size: 0.85rem; height: 38px; line-height: 1.5; padding: 0.375rem 2.25rem 0.375rem 0.75rem; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; background-color: #ffffff; border: 1px solid #ced4da; width: 100%; border-radius: 4px; font-weight: bold; background-image: url('data:image/svg+xml,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3e%3cpath fill=%27none%27 stroke=%27%23343a40%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%272%27 d=%27M2 5l6 6 6-6%27/%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 16px 12px;">
+                        Select GE
+                    </button>
+                    <ul class="dropdown-menu p-2" id="cityDropdownList" aria-labelledby="cityDropdownBtn" style="max-height: 250px; overflow-y: auto; font-size: 0.8rem; min-width: 200px; background-color: #ffffff; border: 1px solid #ced4da;">
+                        @foreach($geGroups as $ge)
+                            @php
+                                $cmeColor = $cmeColorMap[$ge->cme_id] ?? '#1f2937';
+                            @endphp
+                            <li class="p-1 city-item" data-cme-id="{{ $ge->cme_id }}">
+                                <div class="form-check">
+                                    <input class="form-check-input city-checkbox" type="checkbox" value="{{ $ge->id }}" id="fe_city_cb_{{ $ge->id }}" name="city_id[]" data-cme-id="{{ $ge->cme_id }}" {{ in_array($ge->id, $selectedCityIds) ? 'checked' : '' }} onchange="handleFeCityCheckboxChange(); updateFeDropdownButtonText('cityDropdownBtn', 'city_id[]', 'Select GE');">
+                                    <label class="form-check-label w-100 cursor-pointer" for="fe_city_cb_{{ $ge->id }}" style="color: {{ $cmeColor }}; font-weight: 600;">{{ $ge->name }}</label>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
             </div>
             <div style="flex: 0 1 150px; min-width: 120px;" class="filter-item">
-                <label for="filterSector" class="block text-white mb-1" style="font-size: 0.95rem; font-weight: 700;">GE
+                <label class="block text-white mb-1" style="font-size: 0.95rem; font-weight: 700;">GE
                     Nodes</label>
-                <select id="filterSector" name="sector_id" class="p-1.5 border filter-select transition-colors duration-300"
-                    style="font-size: 0.85rem; width: 100%; border-radius: 4px; font-weight: bold; height: 38px; {!! $cmesColor ? "background-color: $cmesColor; color: #ffffff;" : "" !!}"
-                    aria-label="Select GE Nodes" title="Select GE Nodes">
-                    <option value="" style="background: white; color: #374151;">Select GE Nodes</option>
-                    @foreach($geNodes as $node)
-                        @php 
-                            // Try to find parent CME ID from city relation or direct property
-                            $parentId = $node->city->cme_id ?? $node->cme_id ?? null;
-                            $bg = $parentId && isset($cmeColorMap[$parentId]) ? $cmeColorMap[$parentId] : '#ffffff';
-                            $fg = $parentId && isset($cmeColorMap[$parentId]) ? '#ffffff' : '#374151';
-                        @endphp
-                        <option value="{{ $node->id }}" {{ $sectorId == $node->id ? 'selected' : '' }}
-                            style="background-color: {{ $bg }}; color: {{ $fg }};">
-                            {{ $node->name }}
-                        </option>
-                    @endforeach
-                </select>
-                @if($cmesColor)
-                <style>
-                    #filterCMES, #filterCity, #filterSector { background-color: {{ $cmesColor }} !important; color: #ffffff !important; }
-                </style>
-                @endif
+                @php
+                    $selectedSectorIds = is_array(request('sector_id')) ? request('sector_id') : (request('sector_id') ? [request('sector_id')] : (isset($sectorId) ? (is_array($sectorId) ? $sectorId : [$sectorId]) : []));
+                @endphp
+                <div class="dropdown filter-dropdown-wrapper" style="width: 100%;">
+                    <button class="btn btn-sm text-start filter-select" type="button" id="sectorDropdownBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="font-size: 0.85rem; height: 38px; line-height: 1.5; padding: 0.375rem 2.25rem 0.375rem 0.75rem; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; background-color: #ffffff; border: 1px solid #ced4da; width: 100%; border-radius: 4px; font-weight: bold; background-image: url('data:image/svg+xml,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3e%3cpath fill=%27none%27 stroke=%27%23343a40%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%272%27 d=%27M2 5l6 6 6-6%27/%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 16px 12px;">
+                        Select GE Nodes
+                    </button>
+                    <ul class="dropdown-menu p-2" id="sectorDropdownList" aria-labelledby="sectorDropdownBtn" style="max-height: 250px; overflow-y: auto; font-size: 0.8rem; min-width: 200px; background-color: #ffffff; border: 1px solid #ced4da;">
+                        @foreach($geNodes as $node)
+                            @php
+                                $cmeColor = $cmeColorMap[$node->cme_id] ?? '#1f2937';
+                            @endphp
+                            <li class="p-1 sector-item" data-city-id="{{ $node->city_id }}" data-cme-id="{{ $node->cme_id }}">
+                                <div class="form-check">
+                                    <input class="form-check-input sector-checkbox" type="checkbox" value="{{ $node->id }}" id="fe_sector_cb_{{ $node->id }}" name="sector_id[]" data-city-id="{{ $node->city_id }}" data-cme-id="{{ $node->cme_id }}" {{ in_array($node->id, $selectedSectorIds) ? 'checked' : '' }} onchange="updateFeDropdownButtonText('sectorDropdownBtn', 'sector_id[]', 'Select GE Nodes');">
+                                    <label class="form-check-label w-100 cursor-pointer" for="fe_sector_cb_{{ $node->id }}" style="color: {{ $cmeColor }}; font-weight: 600;">{{ $node->name }}</label>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
             </div>
             <div style="flex: 0 1 150px; min-width: 120px;" class="filter-item">
-                <label for="filterCategory" class="block text-white mb-1"
+                <label class="block text-white mb-1"
                     style="font-size: 0.95rem; font-weight: 700;">Category</label>
-                <select id="filterCategory" name="category" class="p-1.5 border filter-select"
-                    style="font-size: 0.85rem; width: 100%; border-radius: 4px; font-weight: bold; height: 38px;"
-                    aria-label="Select Complaints Category" title="Select Complaints Category">
-                    <option value="all">Select Category</option>
-                    @foreach($categories as $cat)
-                        <option value="{{ $cat->name }}" {{ $category == $cat->name ? 'selected' : '' }}>{{ $cat->name }}</option>
-                    @endforeach
-                </select>
+                @php
+                    $selectedCategories = is_array(request('category')) ? request('category') : (request('category') && request('category') !== 'all' ? [request('category')] : (isset($category) && $category && $category !== 'all' ? (is_array($category) ? $category : [$category]) : []));
+                @endphp
+                <div class="dropdown filter-dropdown-wrapper" style="width: 100%;">
+                    <button class="btn btn-sm text-start filter-select" type="button" id="categoryDropdownBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="font-size: 0.85rem; height: 38px; line-height: 1.5; padding: 0.375rem 2.25rem 0.375rem 0.75rem; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; background-color: #ffffff; border: 1px solid #ced4da; width: 100%; border-radius: 4px; font-weight: bold; background-image: url('data:image/svg+xml,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3e%3cpath fill=%27none%27 stroke=%27%23343a40%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%272%27 d=%27M2 5l6 6 6-6%27/%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 16px 12px;">
+                        Select Category
+                    </button>
+                    <ul class="dropdown-menu p-2" aria-labelledby="categoryDropdownBtn" style="max-height: 250px; overflow-y: auto; font-size: 0.8rem; min-width: 200px; background-color: #ffffff; border: 1px solid #ced4da;">
+                        @foreach($categories as $cat)
+                            <li class="p-1">
+                                <div class="form-check">
+                                    <input class="form-check-input category-checkbox" type="checkbox" value="{{ $cat->name }}" id="fe_cat_cb_{{ Str::slug($cat->name) }}" name="category[]" {{ in_array($cat->name, $selectedCategories) ? 'checked' : '' }} onchange="updateFeDropdownButtonText('categoryDropdownBtn', 'category[]', 'Select Category');">
+                                    <label class="form-check-label w-100 cursor-pointer text-dark" for="fe_cat_cb_{{ Str::slug($cat->name) }}">{{ $cat->name }}</label>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
             </div>
             <div style="flex: 0 1 150px; min-width: 120px;" class="filter-item">
                 <label for="filterDateRange" class="block text-white mb-1" style="font-size: 0.95rem; font-weight: 700;">Date
@@ -514,6 +530,13 @@
                         class="px-2 border bg-blue-600 hover:bg-blue-700 text-white font-bold whitespace-nowrap flex items-center justify-center"
                         style="font-size: 0.9rem; width: 100%; border-radius: 4px; height: 38px;">GO</button>
                 </div>
+            </div>
+            <div class="filter-item" style="flex: 0 0 70px; min-width: 0;">
+                <label class="block text-white mb-1"
+                    style="font-size: 0.90rem; font-weight: 700; visibility: hidden;">&nbsp;</label>
+                <button id="applyFiltersBtn" onclick="applyFilters()"
+                    class="px-2 border bg-blue-600 hover:bg-blue-700 text-white font-bold whitespace-nowrap flex items-center justify-center"
+                    style="font-size: 0.9rem; width: 100%; border-radius: 4px; height: 38px;">Apply</button>
             </div>
             <div class="filter-item" style="flex: 0 0 70px; min-width: 0;">
                 <label class="block text-white mb-1"
@@ -1130,6 +1153,13 @@
         let activeStatusKey = null;
         let currentPage = 1;
         const pageSize = 15;
+
+        // Expose functions globally for inline HTML events
+        window.updateFeDropdownButtonText = updateFeDropdownButtonText;
+        window.handleFeCmesCheckboxChange = handleFeCmesCheckboxChange;
+        window.handleFeCityCheckboxChange = handleFeCityCheckboxChange;
+        window.applyFilters = applyFilters;
+
 
         const statusBadgeColors = {
             unassigned: '#000000',             // Black for unassigned
@@ -2311,18 +2341,87 @@
 
 
 
-        // Filter functionality
-        const filterSelects = document.querySelectorAll('.filter-select');
-        const resetBtn = document.getElementById('resetFilters');
+        // --- Multiselect Checkbox Dropdown Helper Functions ---
+        function updateFeDropdownButtonText(buttonId, checkboxName, defaultText) {
+            const btn = document.getElementById(buttonId);
+            if (!btn) return;
+            const checked = document.querySelectorAll('input[name="' + checkboxName + '"]:checked');
+            if (checked.length === 0) {
+                btn.textContent = defaultText;
+            } else if (checked.length === 1) {
+                const label = checked[0].closest('.form-check')?.querySelector('.form-check-label');
+                btn.textContent = label ? label.textContent.trim() : '1 Selected';
+            } else {
+                btn.textContent = checked.length + ' Selected';
+            }
+        }
 
-        // Handle filter changes
-        // Handle filter changes (Skip Date Range as it has custom logic)
-        filterSelects.forEach(select => {
-            if (select.id === 'filterDateRange') return; 
-            select.addEventListener('change', function() {
-                applyFilters();
+        function handleFeCmesCheckboxChange() {
+            const checkedCmes = Array.from(document.querySelectorAll('.cmes-checkbox:checked')).map(cb => cb.value);
+            const cityItems = document.querySelectorAll('#cityDropdownList .city-item');
+            cityItems.forEach(item => {
+                const cmeId = item.getAttribute('data-cme-id');
+                if (checkedCmes.length === 0 || checkedCmes.includes(cmeId)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                    const cb = item.querySelector('.city-checkbox');
+                    if (cb && cb.checked) {
+                        cb.checked = false;
+                        cb.dispatchEvent(new Event('change'));
+                    }
+                }
+            });
+            updateFeDropdownButtonText('cityDropdownBtn', 'city_id[]', 'Select GE');
+            handleFeCityCheckboxChange();
+        }
+
+        function handleFeCityCheckboxChange() {
+            const checkedCities = Array.from(document.querySelectorAll('.city-checkbox:checked')).map(cb => cb.value);
+            const visibleCityIds = Array.from(document.querySelectorAll('#cityDropdownList .city-item'))
+                .filter(item => item.style.display !== 'none')
+                .map(item => item.querySelector('.city-checkbox').value);
+
+            const sectorItems = document.querySelectorAll('#sectorDropdownList .sector-item');
+            sectorItems.forEach(item => {
+                const cityId = item.getAttribute('data-city-id');
+                const isVisible = checkedCities.length > 0 
+                    ? checkedCities.includes(cityId)
+                    : visibleCityIds.includes(cityId);
+
+                if (isVisible) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                    const cb = item.querySelector('.sector-checkbox');
+                    if (cb && cb.checked) {
+                        cb.checked = false;
+                        cb.dispatchEvent(new Event('change'));
+                    }
+                }
+            });
+            updateFeDropdownButtonText('sectorDropdownBtn', 'sector_id[]', 'Select GE Nodes');
+        }
+
+        // Initialize dropdown button texts and cascading on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateFeDropdownButtonText('cmesDropdownBtn', 'cmes_id[]', 'Select CMES');
+            updateFeDropdownButtonText('cityDropdownBtn', 'city_id[]', 'Select GE');
+            updateFeDropdownButtonText('sectorDropdownBtn', 'sector_id[]', 'Select GE Nodes');
+            updateFeDropdownButtonText('categoryDropdownBtn', 'category[]', 'Select Category');
+            handleFeCmesCheckboxChange();
+            handleFeCityCheckboxChange();
+
+            // Auto-apply filters when a dropdown is closed
+            document.querySelectorAll('.filter-dropdown-wrapper').forEach(dropdownEl => {
+                dropdownEl.addEventListener('hidden.bs.dropdown', function () {
+                    applyFilters();
+                });
             });
         });
+
+        // Filter functionality
+        const resetBtn = document.getElementById('resetFilters');
 
         // Handle Date Range changes specifically
         const filterDateRange = document.getElementById('filterDateRange');
@@ -2330,8 +2429,6 @@
         const applyCustomDateBtn = document.getElementById('applyCustomDate');
 
         if (filterDateRange) {
-            const filtersContainer = document.querySelector('.filters-container');
-            
             filterDateRange.addEventListener('change', function() {
                 if (this.value === 'custom') {
                     if (customDateRangeContainer) customDateRangeContainer.style.display = 'flex';
@@ -2365,130 +2462,38 @@
         // Export cmeColorMap for JavaScript use
         const cmeColorMap = @json($cmeColorMap ?? []);
 
-        // Handle CMES change to update GE Groups and GE Nodes
-        const filterCMES = document.getElementById('filterCMES');
-        if (filterCMES) {
-            filterCMES.addEventListener('change', function() {
-                const cmesId = this.value;
-                const citySelect = document.getElementById('filterCity');
-                const sectorSelect = document.getElementById('filterSector');
-
-                // Update styling of the dropdowns if a color is associated with this CMES
-                const color = cmeColorMap[cmesId] || '';
-                [filterCMES, citySelect, sectorSelect].forEach(el => {
-                    if (el) {
-                        el.style.backgroundColor = color;
-                        el.style.color = color ? '#ffffff' : '';
-                    }
-                });
-
-                // Clear downstream dropdowns
-                if (citySelect) {
-                    citySelect.innerHTML = '<option value="" style="background: white; color: #374151;">Select GE</option>';
-                    citySelect.disabled = !cmesId;
-                }
-                if (sectorSelect) {
-                    sectorSelect.innerHTML = '<option value="" style="background: white; color: #374151;">Select GE Nodes</option>';
-                    sectorSelect.disabled = true;
-                }
-
-                if (cmesId) {
-                    // Fetch cities for this CMES (respects privileges and naming filters)
-                    fetch('{{ route("frontend.dashboard.cities-by-cmes") }}?cme_id=' + cmesId)
-                        .then(response => response.json())
-                        .then(cities => {
-                            if (citySelect) {
-                                cities.forEach(city => {
-                                    const option = document.createElement('option');
-                                    option.value = city.id;
-                                    option.textContent = city.name;
-                                    option.style.backgroundColor = color || 'white';
-                                    option.style.color = color ? '#ffffff' : '#374151';
-                                    citySelect.appendChild(option);
-                                });
-                                citySelect.disabled = false;
-                            }
-                            applyFilters();
-                        })
-                        .catch(error => {
-                            console.error('Error fetching cities:', error);
-                            applyFilters();
-                        });
-                } else {
-                    applyFilters();
-                }
-            });
-        }
-
-        // Handle GE change to update GE Nodes
-        const filterCity = document.getElementById('filterCity');
-        if (filterCity) {
-            filterCity.addEventListener('change', function() {
-                const cityId = this.value;
-                const sectorSelect = document.getElementById('filterSector');
-                const cmesId = document.getElementById('filterCMES') ? document.getElementById('filterCMES').value : null;
-
-                // Color for the new options
-                const color = cmeColorMap[cmesId] || '';
-
-                // Clear GE Nodes dropdown
-                if (sectorSelect) {
-                    sectorSelect.innerHTML = '<option value="" style="background: white; color: #374151;">Select GE Nodes</option>';
-                    sectorSelect.disabled = !cityId;
-                }
-
-                if (cityId) {
-                    // Fetch sectors for this city (respects privileges)
-                    fetch('{{ route("frontend.dashboard.sectors-by-city") }}?city_id=' + cityId)
-                        .then(response => response.json())
-                        .then(sectors => {
-                            if (sectorSelect) {
-                                sectors.forEach(sector => {
-                                    const option = document.createElement('option');
-                                    option.value = sector.id;
-                                    option.textContent = sector.name;
-                                    option.style.backgroundColor = color || 'white';
-                                    option.style.color = color ? '#ffffff' : '#374151';
-                                    sectorSelect.appendChild(option);
-                                });
-                                sectorSelect.disabled = false;
-                            }
-                            applyFilters();
-                        })
-                        .catch(error => {
-                            console.error('Error fetching sectors:', error);
-                            applyFilters();
-                        });
-                } else {
-                    applyFilters();
-                }
-            });
-        }
-
-
-
         // Reset filters
         resetBtn.addEventListener('click', function() {
             window.location.href = '{{ route("frontend.dashboard") }}';
         });
 
         function applyFilters() {
-            const cityId = document.getElementById('filterCity') ? document.getElementById('filterCity').value : null;
-            const sectorId = document.getElementById('filterSector') ? document.getElementById('filterSector').value : null;
-            const category = document.getElementById('filterCategory') ? document.getElementById('filterCategory').value : null;
-            const status = document.getElementById('filterStatus') ? document.getElementById('filterStatus').value : null;
+            const params = new URLSearchParams();
+
+            // Append multiple values for cmes_id
+            document.querySelectorAll('.cmes-checkbox:checked').forEach(cb => {
+                params.append('cmes_id[]', cb.value);
+            });
+
+            // Append multiple values for city_id
+            document.querySelectorAll('.city-checkbox:checked').forEach(cb => {
+                params.append('city_id[]', cb.value);
+            });
+
+            // Append multiple values for sector_id
+            document.querySelectorAll('.sector-checkbox:checked').forEach(cb => {
+                params.append('sector_id[]', cb.value);
+            });
+
+            // Append multiple values for category
+            document.querySelectorAll('.category-checkbox:checked').forEach(cb => {
+                params.append('category[]', cb.value);
+            });
+
             const dateRange = document.getElementById('filterDateRange') ? document.getElementById('filterDateRange').value : null;
-            const cmesId = document.getElementById('filterCMES') ? document.getElementById('filterCMES').value : null;
-            
             const startDate = document.getElementById('startDate') ? document.getElementById('startDate').value : null;
             const endDate = document.getElementById('endDate') ? document.getElementById('endDate').value : null;
 
-            const params = new URLSearchParams();
-            if (cmesId) params.append('cmes_id', cmesId);
-            if (cityId) params.append('city_id', cityId);
-            if (sectorId) params.append('sector_id', sectorId);
-            if (category && category !== 'all') params.append('category', category);
-            if (status && status !== 'all') params.append('status', status);
             if (dateRange) {
                 params.append('date_range', dateRange);
                 if (dateRange === 'custom' && startDate && endDate) {
@@ -2545,13 +2550,18 @@
                     const viewAllProductsLink = document.getElementById('viewAllProductsLink');
                     if (viewAllProductsLink) {
                         const linkParams = new URLSearchParams();
-                        if (cmesId) linkParams.append('cmes_id', cmesId);
-                        if (cityId) linkParams.append('city_id', cityId);
-                        if (sectorId) linkParams.append('sector_id', sectorId);
+                        document.querySelectorAll('.cmes-checkbox:checked').forEach(cb => linkParams.append('cmes_id[]', cb.value));
+                        document.querySelectorAll('.city-checkbox:checked').forEach(cb => linkParams.append('city_id[]', cb.value));
+                        document.querySelectorAll('.sector-checkbox:checked').forEach(cb => linkParams.append('sector_id[]', cb.value));
+                        const dateRange = document.getElementById('filterDateRange') ? document.getElementById('filterDateRange').value : null;
                         if (dateRange) linkParams.append('date_range', dateRange);
-                        if (dateRange === 'custom' && startDate && endDate) {
-                            linkParams.append('start_date', startDate);
-                            linkParams.append('end_date', endDate);
+                        if (dateRange === 'custom') {
+                            const startDate = document.getElementById('startDate') ? document.getElementById('startDate').value : null;
+                            const endDate = document.getElementById('endDate') ? document.getElementById('endDate').value : null;
+                            if (startDate && endDate) {
+                                linkParams.append('start_date', startDate);
+                                linkParams.append('end_date', endDate);
+                            }
                         }
                         
                         viewAllProductsLink.href = '{{ route("frontend.stock.all") }}?' + linkParams.toString();

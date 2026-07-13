@@ -133,15 +133,22 @@
                 <div class="col-md-4">
                     <div class="mb-3">
                         <label for="complaint_title_id" class="form-label text-white">Complaint Type <span class="text-danger">*</span></label>
-                        <select class="form-select @error('complaint_title_id') is-invalid @enderror" 
-                                id="title" name="complaint_title_id" required 
-                                data-prev="{{ old('complaint_title_id', $complaint->complaint_title_id) }}"
-                                data-custom="{{ old('title_other', $complaint->title) }}">
-                            <option value="">Select Category First</option>
-                        </select>
-                        <input type="text" class="form-control mt-2 @error('title_other') is-invalid @enderror"
-                                id="title_other" name="title_other" placeholder="Enter custom title..."
-                                style="display: none;" value="{{ old('title_other', $complaint->title) }}">
+                        <div id="titleDropdownContainer">
+                            <select class="form-select @error('complaint_title_id') is-invalid @enderror" 
+                                    id="title" name="complaint_title_id" required 
+                                    data-prev="{{ old('complaint_title_id', $complaint->complaint_title_id) }}"
+                                    data-custom="{{ old('title_other', $complaint->title) }}">
+                                <option value="">Select Category First</option>
+                            </select>
+                        </div>
+                        <div id="titleInputContainer" style="display: none; position: relative;">
+                            <input type="text" class="form-control mt-2 @error('title_other') is-invalid @enderror"
+                                    id="title_other" name="title_other" placeholder="Enter custom title..."
+                                    value="{{ old('title_other', $complaint->title) }}">
+                            <button type="button" class="btn btn-sm btn-link text-white position-absolute end-0 top-0 mt-3 me-1" id="btn_back_to_select" title="Back to dropdown">
+                                <i data-feather="corner-up-left" style="width: 14px; height: 14px;"></i>
+                            </button>
+                        </div>
                         @error('complaint_title_id')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror

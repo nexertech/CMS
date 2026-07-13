@@ -10,17 +10,41 @@ window.initializeComplaintForm = function(root = document) {
 
     function handleTitleChange() {
         if (!titleSelect || !titleOtherInput) return;
+        const titleDropdownContainer = root.querySelector('#titleDropdownContainer');
+        const titleInputContainer = root.querySelector('#titleInputContainer');
+
         if (titleSelect.value === 'other') {
+            if (titleDropdownContainer) titleDropdownContainer.style.display = 'none';
+            if (titleInputContainer) titleInputContainer.style.display = 'block';
             titleOtherInput.style.display = 'block';
             titleOtherInput.required = true;
+            titleSelect.removeAttribute('required');
+            setTimeout(() => titleOtherInput.focus(), 100);
+            if (typeof feather !== 'undefined') feather.replace();
         } else {
+            if (titleDropdownContainer) titleDropdownContainer.style.display = 'block';
+            if (titleInputContainer) titleInputContainer.style.display = 'none';
             titleOtherInput.style.display = 'none';
             titleOtherInput.required = false;
+            titleSelect.required = true;
         }
     }
 
     if (titleSelect) {
         titleSelect.addEventListener('change', handleTitleChange);
+    }
+
+    const btnBackToSelect = root.querySelector('#btn_back_to_select');
+    if (btnBackToSelect) {
+        btnBackToSelect.addEventListener('click', function() {
+            if (titleSelect) {
+                titleSelect.value = '';
+                handleTitleChange();
+            }
+            if (titleOtherInput) {
+                titleOtherInput.value = '';
+            }
+        });
     }
 
     function filterEmployees() {

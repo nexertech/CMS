@@ -106,11 +106,11 @@
               </label>
               <select class="form-select @error('overall_rating') is-invalid @enderror" name="overall_rating" required>
                 <option value="">Select Rating</option>
-                <option value="excellent" {{ old('overall_rating') == 'excellent' ? 'selected' : '' }}>Excellent ⭐⭐⭐⭐⭐</option>
-                <option value="good" {{ old('overall_rating') == 'good' ? 'selected' : '' }}>Good ⭐⭐⭐⭐</option>
-                <option value="satisfied" {{ old('overall_rating') == 'satisfied' ? 'selected' : '' }}>Satisfied ⭐⭐⭐</option>
-                <option value="fair" {{ old('overall_rating') == 'fair' ? 'selected' : '' }}>Fair ⭐⭐</option>
-                <option value="poor" {{ old('overall_rating') == 'poor' ? 'selected' : '' }}>Poor ⭐</option>
+                <option value="excellent" {{ old('overall_rating') == 'excellent' ? 'selected' : '' }}>⭐⭐⭐⭐⭐</option>
+                <option value="good" {{ old('overall_rating') == 'good' ? 'selected' : '' }}>⭐⭐⭐⭐</option>
+                <option value="satisfied" {{ old('overall_rating') == 'satisfied' ? 'selected' : '' }}>⭐⭐⭐</option>
+                <option value="fair" {{ old('overall_rating') == 'fair' ? 'selected' : '' }}>⭐⭐</option>
+                <option value="poor" {{ old('overall_rating') == 'poor' ? 'selected' : '' }}>⭐</option>
               </select>
               @error('overall_rating')
                 <div class="invalid-feedback">{{ $message }}</div>

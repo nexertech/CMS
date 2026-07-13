@@ -454,10 +454,6 @@
                 <div class="section-title">Client Information</div>
                 <table class="data-table">
                     <tr>
-                        <td class="label">Name:</td>
-                        <td class="value">{{ $complaint->house->name ?? 'N/A' }}</td>
-                    </tr>
-                    <tr>
                         <td class="label">House No:</td>
                         <td class="value">{{ $complaint->house->house_no ?? 'N/A' }}</td>
                     </tr>
@@ -485,6 +481,29 @@
                             <td class="value">{{ $complaint->sector->name }}</td>
                         </tr>
                     @endif
+                    <tr>
+                        <td class="label">Nature/Type:</td>
+                        <td class="value">{{ ucfirst($complaint->getCategoryDisplayAttribute()) . ' - ' . ($complaint->complaintTitle->title ?? $complaint->title ?? 'N/A') }}</td>
+                    </tr>
+                    @php
+                        $createdLog = $complaint->logs->where('action', 'created')->first();
+                        $registeredBy = null;
+                        if ($createdLog) {
+                            if (str_contains($createdLog->remarks, 'created by ')) {
+                                $registeredBy = str_replace('Complaint created by ', '', $createdLog->remarks);
+                            } elseif (str_contains($createdLog->remarks, 'registered via App by ')) {
+                                $registeredBy = str_replace('Complaint registered via App by ', '', $createdLog->remarks);
+                            } else {
+                                $registeredBy = $createdLog->action_by ? 'Staff' : null;
+                            }
+                        }
+                    @endphp
+                    @if($registeredBy)
+                        <tr>
+                            <td class="label">Registered By:</td>
+                            <td class="value">{{ $registeredBy }}</td>
+                        </tr>
+                    @endif
                 </table>
             </div>
 
@@ -495,10 +514,6 @@
                     <tr>
                         <td class="label">Complaint #</td>
                         <td class="value" style="font-size: 11px;">#{{ $complaint->id }}</td>
-                    </tr>
-                    <tr>
-                        <td class="label">Nature/Type:</td>
-                        <td class="value">{{ ucfirst($complaint->getCategoryDisplayAttribute()) . ' - ' . ($complaint->complaintTitle->title ?? $complaint->title ?? 'N/A') }}</td>
                     </tr>
                     <tr>
                         <td class="label">Priority:</td>
@@ -522,28 +537,22 @@
                     </tr>
                     <tr>
                         <td class="label">Date:</td>
-                        <td class="value">{{ $complaint->created_at->timezone('Asia/Karachi')->format('M d, Y') }}<br><span
-                                style="font-size: 8px; font-weight: normal; color: #666;">{{ $complaint->created_at->timezone('Asia/Karachi')->format('H:i') }}</span>
-                        </td>
+                        <td class="value">{{ $complaint->created_at->timezone('Asia/Karachi')->format('M d, Y H:i') }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Description:</td>
+                        <td class="value" style="font-weight: 500; white-space: pre-line;">{{ $complaint->description ?: 'No detailed description provided.' }}</td>
                     </tr>
                 </table>
             </div>
         </div>
 
-        <!-- Description & Remarks Side by Side -->
-        <div class="grid-2" style="margin-bottom: 6px;">
-            <div>
-                <div class="section-title">Problem Description</div>
-                <div class="description-box" style="margin-bottom: 0; min-height: 48px;">
-                    <p>{{ $complaint->description ?: 'No detailed description provided.' }}</p>
-                </div>
-            </div>
-            <div>
-                <div class="section-title">Technician Remarks / Work Done</div>
-                <div class="description-box" style="margin-bottom: 0; min-height: 48px;">
-                    <div style="border-bottom: 1px dotted var(--border-color); margin-top: 12px;"></div>
-                    <div style="border-bottom: 1px dotted var(--border-color); margin-top: 12px;"></div>
-                </div>
+        <!-- Technical Remarks / Work Done (Full Width) -->
+        <div style="margin-bottom: 6px;">
+            <div class="section-title">Technician Remarks / Work Done</div>
+            <div class="description-box" style="margin-bottom: 0; min-height: 48px;">
+                <div style="border-bottom: 1px dotted var(--border-color); margin-top: 12px;"></div>
+                <div style="border-bottom: 1px dotted var(--border-color); margin-top: 12px;"></div>
             </div>
         </div>
 
@@ -558,18 +567,6 @@
                 <!-- Manual Feedback -->
                 <div class="manual-feedback">
                     <div class="rating-options">
-                        <!-- Excellent -->
-                        <div class="rating-box">
-                            <svg class="emoji-icon" viewBox="0 0 24 24" style="stroke: #15803d;">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
-                                <line x1="9" y1="9" x2="9.01" y2="9"></line>
-                                <line x1="15" y1="9" x2="15.01" y2="9"></line>
-                            </svg>
-                            <label class="rating-label" style="color: #15803d;">Excellent</label>
-                            <div class="circle-checkbox" style="margin-top: 3px;"></div>
-                        </div>
-
                         <!-- Good -->
                         <div class="rating-box">
                             <svg class="emoji-icon" viewBox="0 0 24 24" style="stroke: #2563eb;">
@@ -591,18 +588,6 @@
                                 <line x1="15" y1="9" x2="15.01" y2="9"></line>
                             </svg>
                             <label class="rating-label" style="color: #0ea5e9;">Satisfied</label>
-                            <div class="circle-checkbox" style="margin-top: 3px;"></div>
-                        </div>
-
-                        <!-- Fair -->
-                        <div class="rating-box">
-                            <svg class="emoji-icon" viewBox="0 0 24 24" style="stroke: #ca8a04;">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="8" y1="15" x2="16" y2="15"></line>
-                                <line x1="9" y1="9" x2="9.01" y2="9"></line>
-                                <line x1="15" y1="9" x2="15.01" y2="9"></line>
-                            </svg>
-                            <label class="rating-label" style="color: #ca8a04;">Fair</label>
                             <div class="circle-checkbox" style="margin-top: 3px;"></div>
                         </div>
 

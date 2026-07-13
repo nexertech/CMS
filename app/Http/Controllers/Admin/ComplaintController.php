@@ -80,25 +80,124 @@ class ComplaintController extends Controller
             $query->overdue();
         }
 
-        // Filter by status
+        // Filter by status (single value) or complaint_status (array from dashboard)
         if ($request->has('status') && $request->status) {
             $statusValue = $request->status;
 
-            // Handle work_priced_performa and maint_priced_performa filters
-            // Prefix with complaints. to avoid ambiguity
             if ($statusValue === 'work_priced_performa') {
                 $query->where('complaints.status', 'work_priced_performa');
             } elseif ($statusValue === 'maint_priced_performa') {
                 $query->where('complaints.status', 'maint_priced_performa');
+            } elseif ($statusValue === 'work_performa') {
+                $query->where(function ($q) {
+                    $q->where('complaints.status', 'work_performa')
+                        ->orWhere(function ($subQ) {
+                            $subQ->where('complaints.status', 'in_progress')
+                                ->whereHas('spareApprovals', function ($approvalQ) {
+                                    $approvalQ->where('performa_type', 'work_performa');
+                                });
+                        });
+                });
+            } elseif ($statusValue === 'maint_performa') {
+                $query->where(function ($q) {
+                    $q->where('complaints.status', 'maint_performa')
+                        ->orWhere(function ($subQ) {
+                            $subQ->where('complaints.status', 'in_progress')
+                                ->whereHas('spareApprovals', function ($approvalQ) {
+                                    $approvalQ->where('performa_type', 'maint_performa');
+                                });
+                        });
+                });
+            } elseif ($statusValue === 'product_na') {
+                $query->where(function ($q) {
+                    $q->where('complaints.status', 'product_na')
+                        ->orWhere(function ($subQ) {
+                            $subQ->where('complaints.status', 'in_progress')
+                                ->whereHas('spareApprovals', function ($approvalQ) {
+                                    $approvalQ->where('performa_type', 'product_na');
+                                });
+                        });
+                });
             } else {
-                // For other statuses, use direct filter
                 $query->where('complaints.status', $statusValue);
             }
+        } elseif ($request->has('complaint_status') && $request->complaint_status) {
+            $statusList = is_array($request->complaint_status) ? $request->complaint_status : [$request->complaint_status];
+            
+            $query->where(function ($q) use ($statusList) {
+                $first = true;
+                foreach ($statusList as $status) {
+                    $clause = $first ? 'where' : 'orWhere';
+                    $first = false;
+                    
+                    if ($status === 'work_priced_performa') {
+                        $q->{$clause}('complaints.status', 'work_priced_performa');
+                    } elseif ($status === 'maint_priced_performa') {
+                        $q->{$clause}('complaints.status', 'maint_priced_performa');
+                    } elseif ($status === 'work_performa') {
+                        $q->{$clause}(function ($subQ) {
+                            $subQ->where('complaints.status', 'work_performa')
+                                ->orWhere(function ($subQ2) {
+                                    $subQ2->where('complaints.status', 'in_progress')
+                                        ->whereHas('spareApprovals', function ($approvalQ) {
+                                            $approvalQ->where('performa_type', 'work_performa');
+                                        });
+                                });
+                        });
+                    } elseif ($status === 'maint_performa') {
+                        $q->{$clause}(function ($subQ) {
+                            $subQ->where('complaints.status', 'maint_performa')
+                                ->orWhere(function ($subQ2) {
+                                    $subQ2->where('complaints.status', 'in_progress')
+                                        ->whereHas('spareApprovals', function ($approvalQ) {
+                                            $approvalQ->where('performa_type', 'maint_performa');
+                                        });
+                                });
+                        });
+                    } elseif ($status === 'product_na') {
+                        $q->{$clause}(function ($subQ) {
+                            $subQ->where('complaints.status', 'product_na')
+                                ->orWhere(function ($subQ2) {
+                                    $subQ2->where('complaints.status', 'in_progress')
+                                        ->whereHas('spareApprovals', function ($approvalQ) {
+                                            $approvalQ->where('performa_type', 'product_na');
+                                        });
+                                });
+                        });
+                    } else {
+                        $q->{$clause}('complaints.status', $status);
+                    }
+                }
+            });
         }
 
-        // Filter by category
+        // Filter by approval status (through spareApprovals relationship)
+        if ($request->has('approval_status') && $request->approval_status) {
+            $approvalStatus = $request->approval_status;
+            $query->whereHas('spareApprovals', function ($q) use ($approvalStatus) {
+                $q->where('status', $approvalStatus);
+            });
+        }
+
+        // Filter by category (handles both numeric ID and string name, supports array)
         if ($request->has('category') && $request->category) {
-            $query->where('complaints.category_id', $request->category); // Updated to use ID
+            $category = $request->category;
+            $categoriesArray = is_array($category) ? $category : [$category];
+            $numericCategoryIds = array_filter($categoriesArray, 'is_numeric');
+            $stringCategoryNames = array_filter($categoriesArray, function($val) {
+                return !is_numeric($val);
+            });
+            
+            $query->where(function($q) use ($numericCategoryIds, $stringCategoryNames) {
+                if (!empty($numericCategoryIds)) {
+                    $q->whereIn('complaints.category_id', $numericCategoryIds);
+                }
+                if (!empty($stringCategoryNames)) {
+                    $q->orWhereHas('category', function($subQ) use ($stringCategoryNames) {
+                        $subQ->whereIn('name', $stringCategoryNames);
+                    });
+                }
+            });
         }
 
         // Filter by priority
@@ -111,9 +210,131 @@ class ComplaintController extends Controller
             $query->where('complaints.assigned_employee_id', $request->assigned_employee_id);
         }
 
+        // Filter by city_id (GE)
+        if ($request->has('city_id') && $request->city_id) {
+            $cityId = $request->city_id;
+            $cityIds = is_array($cityId) ? $cityId : [$cityId];
+            $sectorIdsForCity = Sector::whereIn('city_id', $cityIds)->pluck('id')->toArray();
+            $query->where(function ($q) use ($cityIds, $sectorIdsForCity) {
+                $q->whereHas('house', function ($hq) use ($cityIds, $sectorIdsForCity) {
+                    $hq->where(function ($sub) use ($cityIds, $sectorIdsForCity) {
+                        $sub->whereIn('city_id', $cityIds);
+                        if (!empty($sectorIdsForCity)) {
+                            $sub->orWhereIn('sector_id', $sectorIdsForCity);
+                        }
+                    });
+                })
+                ->orWhere(function ($cq) use ($cityIds, $sectorIdsForCity) {
+                    $cq->whereNull('complaints.house_id')
+                        ->where(function ($sub) use ($cityIds, $sectorIdsForCity) {
+                            $sub->whereIn('complaints.city_id', $cityIds);
+                            if (!empty($sectorIdsForCity)) {
+                                $sub->orWhereIn('complaints.sector_id', $sectorIdsForCity);
+                            }
+                        });
+                });
+            });
+        }
 
+        // Filter by sector_id (GE Nodes)
+        if ($request->has('sector_id') && $request->sector_id) {
+            $sectorId = $request->sector_id;
+            $sectorIds = is_array($sectorId) ? $sectorId : [$sectorId];
+            $query->where(function ($q) use ($sectorIds) {
+                $q->whereHas('house', function ($hq) use ($sectorIds) {
+                    $hq->whereIn('sector_id', $sectorIds);
+                })->orWhere(function ($cq) use ($sectorIds) {
+                    $cq->whereNull('complaints.house_id')->whereIn('complaints.sector_id', $sectorIds);
+                });
+            });
+        }
 
-        // Filter by date range
+        // Filter by CMES (cmes_id)
+        if ($request->has('cmes_id') && $request->cmes_id) {
+            $cmesId = $request->cmes_id;
+            $cmesIds = is_array($cmesId) ? $cmesId : [$cmesId];
+            try {
+                $cmeCityIds = City::whereIn('cme_id', $cmesIds)->pluck('id')->toArray();
+                $cmeSectorIds = Sector::where(function ($q) use ($cmesIds, $cmeCityIds) {
+                    $q->whereIn('cme_id', $cmesIds);
+                    if (!empty($cmeCityIds)) {
+                        $q->orWhereIn('city_id', $cmeCityIds);
+                    }
+                })->pluck('id')->toArray();
+
+                if (empty($cmeCityIds) && empty($cmeSectorIds)) {
+                    $query->whereRaw('1 = 0');
+                } else {
+                    $query->where(function ($q) use ($cmeCityIds, $cmeSectorIds) {
+                        $q->whereHas('house', function ($hq) use ($cmeCityIds, $cmeSectorIds) {
+                            $hq->where(function ($sub) use ($cmeCityIds, $cmeSectorIds) {
+                                if (!empty($cmeCityIds)) {
+                                    $sub->whereIn('city_id', $cmeCityIds);
+                                }
+                                if (!empty($cmeSectorIds)) {
+                                    $method = !empty($cmeCityIds) ? 'orWhereIn' : 'whereIn';
+                                    $sub->{$method}('sector_id', $cmeSectorIds);
+                                }
+                            });
+                        })
+                        ->orWhere(function ($cq) use ($cmeCityIds, $cmeSectorIds) {
+                            $cq->whereNull('complaints.house_id')
+                                ->where(function ($sub) use ($cmeCityIds, $cmeSectorIds) {
+                                    if (!empty($cmeCityIds)) {
+                                        $sub->whereIn('complaints.city_id', $cmeCityIds);
+                                    }
+                                    if (!empty($cmeSectorIds)) {
+                                        $method = !empty($cmeCityIds) ? 'orWhereIn' : 'whereIn';
+                                        $sub->{$method}('complaints.sector_id', $cmeSectorIds);
+                                    }
+                                });
+                        });
+                    });
+                }
+            } catch (\Exception $e) {
+                // Ignore CMES scoping if fails
+            }
+        }
+
+        // Filter by date range (from dashboard)
+        if ($request->has('date_range') && $request->date_range) {
+            $dateRange = $request->date_range;
+            $now = now();
+            switch ($dateRange) {
+                case 'yesterday':
+                    $query->whereDate('complaints.created_at', $now->copy()->subDay()->toDateString());
+                    break;
+                case 'today':
+                    $query->whereDate('complaints.created_at', $now->toDateString());
+                    break;
+                case 'this_week':
+                    $query->whereBetween('complaints.created_at', [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()]);
+                    break;
+                case 'last_week':
+                    $query->whereBetween('complaints.created_at', [$now->copy()->subWeek()->startOfWeek(), $now->copy()->subWeek()->endOfWeek()]);
+                    break;
+                case 'this_month':
+                    $query->whereMonth('complaints.created_at', $now->month)
+                        ->whereYear('complaints.created_at', $now->year);
+                    break;
+                case 'last_month':
+                    $query->whereMonth('complaints.created_at', $now->copy()->subMonth()->month)
+                        ->whereYear('complaints.created_at', $now->copy()->subMonth()->year);
+                    break;
+                case 'last_6_months':
+                    $query->where('complaints.created_at', '>=', $now->copy()->subMonths(6)->startOfDay());
+                    break;
+                case 'custom':
+                    $startDate = $request->input('start_date');
+                    $endDate = $request->input('end_date');
+                    if ($startDate && $endDate) {
+                        $query->whereBetween('complaints.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+                    }
+                    break;
+            }
+        }
+
+        // Filter by date range (direct date_from/date_to from index view)
         if ($request->has('date_from') && $request->date_from) {
             $query->whereDate('complaints.created_at', '>=', $request->date_from);
         }
@@ -127,6 +348,28 @@ class ComplaintController extends Controller
         $query->with(['assignedEmployee', 'house', 'category', 'complaintTitle']) // Added relations
             ->reorder()
             ->orderBy('complaints.id', 'desc');
+        if ($request->has('export_all')) {
+            $exportComplaints = $query->get()->map(function($complaint) {
+                $displayStatus = ($complaint->status === 'new') ? 'assigned' : $complaint->status;
+                $statusText = $displayStatus === 'resolved' ? 'Addressed' : $complaint->getStatusDisplayAttribute();
+
+                return [
+                    'id' => (int)$complaint->id,
+                    'created_at' => $complaint->created_at ? $complaint->created_at->format('M d, Y H:i') : '-',
+                    'closed_at' => $complaint->closed_at ? $complaint->closed_at->format('M d, Y H:i') : ($complaint->resolved_at ? $complaint->resolved_at->format('M d, Y H:i') : '-'),
+                    'house_no' => $complaint->house->house_no ?? 'N/A',
+                    'status' => $statusText,
+                    'category' => $complaint->getCategoryDisplayAttribute(),
+                    'type' => $complaint->complaintTitle->name ?? ($complaint->category->name ?? 'N/A'),
+                    'priority' => $complaint->getPriorityDisplayAttribute() ?? 'N/A',
+                ];
+            });
+
+            return response()->json([
+                'complaints' => $exportComplaints
+            ]);
+        }
+
         $complaints = $query->paginate(20)->withQueryString();
 
         // Filter employees by location
@@ -248,11 +491,12 @@ class ComplaintController extends Controller
 
             $currentEmployee = Employee::first();
             if ($currentEmployee) {
+                $creatorName = auth()->user()->name ?? auth()->user()->username ?? 'Staff';
                 ComplaintLog::create([
                     'complaint_id' => $complaint->id,
                     'action_by' => $currentEmployee->id,
                     'action' => 'created',
-                    'remarks' => 'Complaint created',
+                    'remarks' => 'Complaint created by ' . $creatorName,
                 ]);
             }
 
@@ -811,7 +1055,7 @@ class ComplaintController extends Controller
      */
     public function printSlip(Complaint $complaint)
     {
-        $complaint->load(['assignedEmployee.designation', 'attachments', 'house', 'category', 'city', 'sector']);
+        $complaint->load(['assignedEmployee.designation', 'attachments', 'house', 'category', 'city', 'sector', 'logs.actionBy']);
 
         return view('admin.complaints.print-slip', compact('complaint'));
     }

@@ -46,6 +46,8 @@ class DashboardController extends Controller
         $approvalStatus = $request->input('approval_status');
         $complaintStatus = $request->input('complaint_status');
         $dateRange = $request->input('date_range');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
 
         // Get GE role for loading users - try multiple variations
         $geRole = \App\Models\Role::where(function ($q) {
@@ -59,19 +61,15 @@ class DashboardController extends Controller
         $roleName = strtolower($user->role->role_name ?? '');
         $hasGlobalAccess = in_array($roleName, ['admin', 'director']);
 
-        // Get cities for filter
+        // Get cities for filter (not restricted by active cmes_id filter in database query, so JS can filter dynamically)
         $cities = collect();
         if (Schema::hasTable('cities')) {
             if ($hasGlobalAccess || empty($user->city_ids)) {
                 // User is admin/director OR has no city_ids assigned -> can see all active cities
                 $citiesQuery = City::where('status', 1)->orderBy('name', 'asc');
-                if ($cmesId) {
-                    $citiesQuery->where('cme_id', $cmesId);
-                }
                 $cities = $citiesQuery->get();
                 // OPTIMIZED: Batch load GE users for all cities in one query
                 if ($geRole && $cities->isNotEmpty()) {
-                    $cityIds = $cities->pluck('id')->toArray();
                     $allGeUsers = User::where('role_id', $geRole->id)
                         ->where('status', 1)
                         ->get(); // Fetch all active GE users once
@@ -87,13 +85,9 @@ class DashboardController extends Controller
             } else {
                 // User has city_ids assigned, sees only their cities
                 $citiesQuery = City::whereIn('id', $user->city_ids)->where('status', 1)->orderBy('name', 'asc');
-                if ($cmesId) {
-                    $citiesQuery->where('cme_id', $cmesId);
-                }
                 $cities = $citiesQuery->get();
                 // OPTIMIZED: Batch load GE users for these cities
                 if ($geRole && $cities->isNotEmpty()) {
-                    $cityIds = $cities->pluck('id')->toArray();
                     $allGeUsers = User::where('role_id', $geRole->id)
                         ->where('status', 1)
                         ->get();
@@ -109,49 +103,17 @@ class DashboardController extends Controller
             }
         }
 
-        // Get sectors for filter
+        // Get sectors for filter (only restricted by user's assigned sectors/cities, JS filters them dynamically)
         $sectors = collect();
         if (Schema::hasTable('sectors')) {
             $sectorsQuery = Sector::where('status', 1)->orderBy('name', 'asc');
-
-            // Always apply selected City filter (most specific - always takes priority)
-            if ($cityId) {
-                $sectorsQuery->where('city_id', $cityId);
-            } elseif ($cmesId) {
-                // No city selected, but CMES selected -> Get cities belonging to this CMES
-                $cmeCityIds = City::where('cme_id', $cmesId)->pluck('id')->toArray();
-                
-                $sectorsQuery->where(function($q) use ($cmesId, $cmeCityIds) {
-                    $q->where('cme_id', $cmesId);
-                    if (!empty($cmeCityIds)) {
-                        $q->orWhereIn('city_id', $cmeCityIds);
-                    }
-                });
-
-                // If no cities and no direct CME sectors, force empty result
-                $directCmeSectorsCount = Sector::where('cme_id', $cmesId)->count();
-                if (empty($cmeCityIds) && $directCmeSectorsCount === 0) {
-                    $sectorsQuery->whereRaw('1 = 0');
-                }
-
-                // If not global admin, restrict to their specific cities within this CMES
-                if (!$hasGlobalAccess && !empty($user->city_ids)) {
+            if (!$hasGlobalAccess) {
+                if (!empty($user->sector_ids)) {
+                    $sectorsQuery->whereIn('id', $user->sector_ids);
+                } elseif (!empty($user->city_ids)) {
                     $sectorsQuery->whereIn('city_id', $user->city_ids);
                 }
-            } else {
-                // No CMES or city selected
-                if (!$hasGlobalAccess) {
-                    // Start with user's sector restriction if applicable
-                    if (!empty($user->sector_ids)) {
-                        $sectorsQuery->whereIn('id', $user->sector_ids);
-                    }
-                    // Or restrict by user's assigned cities
-                    elseif (!empty($user->city_ids)) {
-                        $sectorsQuery->whereIn('city_id', $user->city_ids);
-                    }
-                }
             }
-
             $sectors = $sectorsQuery->get();
         }
 
@@ -526,7 +488,9 @@ class DashboardController extends Controller
             'geProgress'
             ,
             'cmesList',
-            'cmesId'
+            'cmesId',
+            'startDate',
+            'endDate'
         ));
     }
 
@@ -537,22 +501,23 @@ class DashboardController extends Controller
     {
         // Filter by city - inclusive: check house's city_id OR if its sector belongs to this city
         if ($cityId) {
-            $sectorIdsForCity = Sector::where('city_id', $cityId)->pluck('id')->toArray();
-            $query->where(function ($q) use ($cityId, $sectorIdsForCity) {
+            $cityIds = is_array($cityId) ? $cityId : [$cityId];
+            $sectorIdsForCity = Sector::whereIn('city_id', $cityIds)->pluck('id')->toArray();
+            $query->where(function ($q) use ($cityIds, $sectorIdsForCity) {
                 // Match via house
-                $q->whereHas('house', function ($hq) use ($cityId, $sectorIdsForCity) {
-                    $hq->where(function ($sub) use ($cityId, $sectorIdsForCity) {
-                        $sub->where('city_id', $cityId);
+                $q->whereHas('house', function ($hq) use ($cityIds, $sectorIdsForCity) {
+                    $hq->where(function ($sub) use ($cityIds, $sectorIdsForCity) {
+                        $sub->whereIn('city_id', $cityIds);
                         if (!empty($sectorIdsForCity)) {
                             $sub->orWhereIn('sector_id', $sectorIdsForCity);
                         }
                     });
                 })
                 // OR Match via direct complaint columns (for house-less complaints)
-                ->orWhere(function ($cq) use ($cityId, $sectorIdsForCity) {
+                ->orWhere(function ($cq) use ($cityIds, $sectorIdsForCity) {
                     $cq->whereNull('complaints.house_id')
-                        ->where(function ($sub) use ($cityId, $sectorIdsForCity) {
-                            $sub->where('complaints.city_id', $cityId);
+                        ->where(function ($sub) use ($cityIds, $sectorIdsForCity) {
+                            $sub->whereIn('complaints.city_id', $cityIds);
                             if (!empty($sectorIdsForCity)) {
                                 $sub->orWhereIn('complaints.sector_id', $sectorIdsForCity);
                             }
@@ -563,24 +528,35 @@ class DashboardController extends Controller
 
         // Filter by sector - use house's sector_id or direct sector_id
         if ($sectorId) {
-            $query->where(function ($q) use ($sectorId) {
-                $q->whereHas('house', function ($hq) use ($sectorId) {
-                    $hq->where('sector_id', $sectorId);
-                })->orWhere(function ($cq) use ($sectorId) {
-                    $cq->whereNull('complaints.house_id')->where('complaints.sector_id', $sectorId);
+            $sectorIds = is_array($sectorId) ? $sectorId : [$sectorId];
+            $query->where(function ($q) use ($sectorIds) {
+                $q->whereHas('house', function ($hq) use ($sectorIds) {
+                    $hq->whereIn('sector_id', $sectorIds);
+                })->orWhere(function ($cq) use ($sectorIds) {
+                    $cq->whereNull('complaints.house_id')->whereIn('complaints.sector_id', $sectorIds);
                 });
             });
         }
 
-        // Filter by category
+        // Filter by category (supports array of categories)
         if ($category) {
-            if (is_numeric($category)) {
-                $query->where('complaints.category_id', $category);
-            } else {
-                $query->whereHas('category', function($q) use ($category) {
-                    $q->where('name', $category);
-                });
-            }
+            $categoriesArray = is_array($category) ? $category : [$category];
+            // Split numeric vs string category names
+            $numericCategoryIds = array_filter($categoriesArray, 'is_numeric');
+            $stringCategoryNames = array_filter($categoriesArray, function($val) {
+                return !is_numeric($val);
+            });
+            
+            $query->where(function($q) use ($numericCategoryIds, $stringCategoryNames) {
+                if (!empty($numericCategoryIds)) {
+                    $q->whereIn('complaints.category_id', $numericCategoryIds);
+                }
+                if (!empty($stringCategoryNames)) {
+                    $q->orWhereHas('category', function($subQ) use ($stringCategoryNames) {
+                        $subQ->whereIn('name', $stringCategoryNames);
+                    });
+                }
+            });
         }
 
         // Filter by approval status (through spareApprovals relationship)
@@ -590,50 +566,55 @@ class DashboardController extends Controller
             });
         }
 
-        // Filter by complaint status
+        // Filter by complaint status (supports array of statuses)
         if ($complaintStatus) {
-            // Handle special performa statuses - work_performa and maint_performa
-            if ($complaintStatus === 'work_priced_performa') {
-                $query->where('complaints.status', 'work_priced_performa');
-            } elseif ($complaintStatus === 'maint_priced_performa') {
-                $query->where('complaints.status', 'maint_priced_performa');
-            } elseif ($complaintStatus === 'work_performa') {
-                // Match complaints with work_performa status OR in_progress with work_performa performa_type
-                $query->where(function ($q) {
-                    $q->where('complaints.status', 'work_performa')
-                        ->orWhere(function ($subQ) {
-                            $subQ->where('complaints.status', 'in_progress')
-                                ->whereHas('spareApprovals', function ($approvalQ) {
-                                    $approvalQ->where('performa_type', 'work_performa');
+            $statusList = is_array($complaintStatus) ? $complaintStatus : [$complaintStatus];
+            
+            $query->where(function ($q) use ($statusList) {
+                $first = true;
+                foreach ($statusList as $status) {
+                    $clause = $first ? 'where' : 'orWhere';
+                    $first = false;
+                    
+                    if ($status === 'work_priced_performa') {
+                        $q->{$clause}('complaints.status', 'work_priced_performa');
+                    } elseif ($status === 'maint_priced_performa') {
+                        $q->{$clause}('complaints.status', 'maint_priced_performa');
+                    } elseif ($status === 'work_performa') {
+                        $q->{$clause}(function ($subQ) {
+                            $subQ->where('complaints.status', 'work_performa')
+                                ->orWhere(function ($subQ2) {
+                                    $subQ2->where('complaints.status', 'in_progress')
+                                        ->whereHas('spareApprovals', function ($approvalQ) {
+                                            $approvalQ->where('performa_type', 'work_performa');
+                                        });
                                 });
                         });
-                });
-            } elseif ($complaintStatus === 'maint_performa') {
-                // Match complaints with maint_performa status OR in_progress with maint_performa performa_type
-                $query->where(function ($q) {
-                    $q->where('complaints.status', 'maint_performa')
-                        ->orWhere(function ($subQ) {
-                            $subQ->where('complaints.status', 'in_progress')
-                                ->whereHas('spareApprovals', function ($approvalQ) {
-                                    $approvalQ->where('performa_type', 'maint_performa');
+                    } elseif ($status === 'maint_performa') {
+                        $q->{$clause}(function ($subQ) {
+                            $subQ->where('complaints.status', 'maint_performa')
+                                ->orWhere(function ($subQ2) {
+                                    $subQ2->where('complaints.status', 'in_progress')
+                                        ->whereHas('spareApprovals', function ($approvalQ) {
+                                            $approvalQ->where('performa_type', 'maint_performa');
+                                        });
                                 });
                         });
-                });
-            } elseif ($complaintStatus === 'product_na') {
-                // Match product_na status OR in_progress with product_na performa_type
-                $query->where(function ($q) {
-                    $q->where('complaints.status', 'product_na')
-                        ->orWhere(function ($subQ) {
-                            $subQ->where('complaints.status', 'in_progress')
-                                ->whereHas('spareApprovals', function ($approvalQ) {
-                                    $approvalQ->where('performa_type', 'product_na');
+                    } elseif ($status === 'product_na') {
+                        $q->{$clause}(function ($subQ) {
+                            $subQ->where('complaints.status', 'product_na')
+                                ->orWhere(function ($subQ2) {
+                                    $subQ2->where('complaints.status', 'in_progress')
+                                        ->whereHas('spareApprovals', function ($approvalQ) {
+                                            $approvalQ->where('performa_type', 'product_na');
+                                        });
                                 });
                         });
-                });
-            } else {
-                // For other statuses, filter by actual status
-                $query->where('complaints.status', $complaintStatus);
-            }
+                    } else {
+                        $q->{$clause}('complaints.status', $status);
+                    }
+                }
+            });
         }
 
         // Filter by date range
@@ -663,14 +644,22 @@ class DashboardController extends Controller
                 case 'last_6_months':
                     $query->where('complaints.created_at', '>=', $now->copy()->subMonths(6)->startOfDay());
                     break;
+                case 'custom':
+                    $startDate = request('start_date');
+                    $endDate = request('end_date');
+                    if ($startDate && $endDate) {
+                        $query->whereBetween('complaints.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+                    }
+                    break;
             }
         }
         // Filter by CMES (cmes_id) - restrict by house's city or sector belonging to selected CMES
         if ($cmesId) {
+            $cmesIds = is_array($cmesId) ? $cmesId : [$cmesId];
             try {
-                $cmeCityIds = City::where('cme_id', $cmesId)->pluck('id')->toArray();
-                $cmeSectorIds = Sector::where(function ($q) use ($cmesId, $cmeCityIds) {
-                    $q->where('cme_id', $cmesId);
+                $cmeCityIds = City::whereIn('cme_id', $cmesIds)->pluck('id')->toArray();
+                $cmeSectorIds = Sector::where(function ($q) use ($cmesIds, $cmeCityIds) {
+                    $q->whereIn('cme_id', $cmesIds);
                     if (!empty($cmeCityIds)) {
                         $q->orWhereIn('city_id', $cmeCityIds);
                     }
@@ -734,23 +723,34 @@ class DashboardController extends Controller
         $employeesQuery = Employee::query();
         $this->filterEmployeesByLocation($employeesQuery, $user);
 
-        // Filter employees by selected filters based on their assigned complaints
+        // Filter employees by selected filters based on their assigned complaints (supports array of categories)
         if ($category) {
-            $employeesQuery->whereHas('assignedComplaints', function ($q) use ($category) {
-                if (is_numeric($category)) {
-                    $q->where('category_id', $category);
-                } else {
-                    $q->whereHas('category', function($subQ) use ($category) {
-                        $subQ->where('name', $category);
-                    });
-                }
+            $categoriesArray = is_array($category) ? $category : [$category];
+            $numericCategoryIds = array_filter($categoriesArray, 'is_numeric');
+            $stringCategoryNames = array_filter($categoriesArray, function($val) {
+                return !is_numeric($val);
+            });
+
+            $employeesQuery->whereHas('assignedComplaints', function ($q) use ($numericCategoryIds, $stringCategoryNames) {
+                $q->where(function($sub) use ($numericCategoryIds, $stringCategoryNames) {
+                    if (!empty($numericCategoryIds)) {
+                        $sub->whereIn('complaints.category_id', $numericCategoryIds);
+                    }
+                    if (!empty($stringCategoryNames)) {
+                        $sub->orWhereHas('category', function($subQ) use ($stringCategoryNames) {
+                            $subQ->whereIn('name', $stringCategoryNames);
+                        });
+                    }
+                });
             });
         }
         if ($cityId) {
-            $employeesQuery->where('city_id', $cityId);
+            $cityIds = is_array($cityId) ? $cityId : [$cityId];
+            $employeesQuery->whereIn('city_id', $cityIds);
         }
         if ($sectorId) {
-            $employeesQuery->where('sector_id', $sectorId);
+            $sectorIds = is_array($sectorId) ? $sectorId : [$sectorId];
+            $employeesQuery->whereIn('sector_id', $sectorIds);
         }
 
         $sparesQuery = Spare::query();

@@ -104,11 +104,11 @@
                         <select class="form-select" name="status" onchange="submitComplaintsFilters()"
                             style="font-size: 0.9rem; width: 140px;">
                             <option value="" {{ request('status') ? '' : 'selected' }}>All</option>
-                            <option value="new" {{ request('status') == 'new' ? 'selected' : '' }}>New</option>
+                            <option value="new" {{ request('status') == 'new' ? 'selected' : '' }}>Unassigned</option>
                             <option value="assigned" {{ request('status') == 'assigned' ? 'selected' : '' }}>Assigned</option>
                             <option value="in_progress" {{ request('status') == 'in_progress' ? 'selected' : '' }}>In Progress
                             </option>
-                            <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>Resolved</option>
+                            <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>Addressed</option>
                             <option value="work_performa" {{ request('status') == 'work_performa' ? 'selected' : '' }}>Work
                                 Performa</option>
                             <option value="maint_performa" {{ request('status') == 'maint_performa' ? 'selected' : '' }}>
@@ -157,8 +157,13 @@
                             @if(!request('modal'))
                                 <th style="width: 120px;">Name</th>
                             @endif
-                            <th style="width: 150px;">Address</th>
-                            <th style="width: auto;">Nature & Type</th>
+                            @if(!request('modal'))
+                                <th style="width: 150px;">Address</th>
+                            @else
+                                <th style="width: 150px;">Status</th>
+                            @endif
+                            <th style="width: auto;">Nature</th>
+                            <th style="width: auto;">Type</th>
                             <th style="width: 100px;">Priority</th>
                             <th style="width: 80px;">Actions</th>
                         </tr>
@@ -182,15 +187,56 @@
                                 @if(!request('modal'))
                                     <td style="white-space: nowrap;">{{ $complaint->house->name ?? 'N/A' }}</td>
                                 @endif
-                                <td>{{ $complaint->house->address ?? 'N/A' }}</td>
+                                @if(!request('modal'))
+                                    <td>{{ $complaint->house->address ?? 'N/A' }}</td>
+                                @else
+                                    <td>
+                                        @php
+                                            $status = $complaint->status ?? 'unassigned';
+                                            $statusColorMap = [
+                                                'unassigned' => ['bg' => '#000000', 'border' => '#333333'],
+                                                'new' => ['bg' => '#000000', 'border' => '#333333'],
+                                                'assigned' => ['bg' => '#16a34a', 'border' => '#15803d'],
+                                                'in_progress' => ['bg' => '#dd4040', 'border' => '#b13030'],
+                                                'resolved' => ['bg' => '#475569', 'border' => '#334155'],
+                                                'work_performa' => ['bg' => '#3b82f6', 'border' => '#2563eb'],
+                                                'maint_performa' => ['bg' => '#eab308', 'border' => '#ca8a04'],
+                                                'work_priced_performa' => ['bg' => '#9333ea', 'border' => '#7e22ce'],
+                                                'maint_priced_performa' => ['bg' => '#ea580c', 'border' => '#c2410c'],
+                                                'product_na' => ['bg' => '#f97316', 'border' => '#ea580c'],
+                                                'un_authorized' => ['bg' => '#ec4899', 'border' => '#db2777'],
+                                                'barak_damages' => ['bg' => '#808000', 'border' => '#6b6b00'],
+                                                'closed' => ['bg' => '#6b7280', 'border' => '#4b5563'],
+                                            ];
+                                            $c = $statusColorMap[$status] ?? ['bg' => '#64748b', 'border' => '#475569'];
+                                            
+                                            $statusLabelMap = [
+                                                'unassigned' => 'Unassigned',
+                                                'new' => 'Unassigned',
+                                                'assigned' => 'Assigned',
+                                                'in_progress' => 'In Progress',
+                                                'resolved' => 'Addressed',
+                                                'work_performa' => 'Work Performa',
+                                                'maint_performa' => 'Maint Performa',
+                                                'work_priced_performa' => 'Work Priced',
+                                                'maint_priced_performa' => 'Maint Priced',
+                                                'product_na' => 'Product NA',
+                                                'un_authorized' => 'Un-Authorized',
+                                                'barak_damages' => 'Barak Damages',
+                                                'closed' => 'Closed',
+                                            ];
+                                            $label = $statusLabelMap[$status] ?? ucfirst(str_replace('_', ' ', $status));
+                                        @endphp
+                                        <span class="badge badge-status-label" style="background-color: {{ $c['bg'] }} !important; color: #ffffff !important; border: 1px solid {{ $c['border'] }} !important; font-size: 10px !important; font-weight: 600 !important; border-radius: 6px !important; display: inline-block !important; padding: 4px 8px !important; white-space: nowrap !important;">
+                                            {{ $label }}
+                                        </span>
+                                    </td>
+                                @endif
                                 <td style="width: auto;">
-                                    @php
-                                        $catName = $complaint->category->name ?? $complaint->category ?? 'Uncategorized';
-                                        $titleName = $complaint->complaintTitle->title ?? $complaint->title ?? 'N/A';
-                                    @endphp
-                                    <div style="white-space: normal; min-width: 180px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;" title="{{ ucfirst($catName) . ' - ' . $titleName }}">
-                                        {{ ucfirst($catName) . ' - ' . $titleName }}
-                                    </div>
+                                    {{ ucfirst($complaint->category->name ?? $complaint->category ?? 'Uncategorized') }}
+                                </td>
+                                <td style="width: auto;">
+                                    {{ $complaint->complaintTitle->title ?? $complaint->title ?? 'N/A' }}
                                 </td>
                                 <td>
                                     @php

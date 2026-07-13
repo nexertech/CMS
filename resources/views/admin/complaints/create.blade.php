@@ -202,13 +202,20 @@
                             <div class="mb-3">
                                 <label for="complaint_title_id" class="form-label text-white">Complaint Type <span
                                         class="text-danger">*</span></label>
-                                <select class="form-select @error('complaint_title_id') is-invalid @enderror" id="title"
-                                    name="complaint_title_id" autocomplete="off" required data-prev="{{ old('complaint_title_id') }}">
-                                    <option value="">Select Category First</option>
-                                </select>
-                                <input type="text" class="form-select @error('title') is-invalid @enderror"
-                                    id="title_other" name="title_other" placeholder="Enter custom title..."
-                                    style="display: none;" value="{{ old('title_other') }}">
+                                <div id="titleDropdownContainer">
+                                    <select class="form-select @error('complaint_title_id') is-invalid @enderror" id="title"
+                                        name="complaint_title_id" autocomplete="off" required data-prev="{{ old('complaint_title_id') }}">
+                                        <option value="">Select Category First</option>
+                                    </select>
+                                </div>
+                                <div id="titleInputContainer" style="display: none; position: relative;">
+                                    <input type="text" class="form-control @error('title_other') is-invalid @enderror"
+                                        id="title_other" name="title_other" placeholder="Enter custom title..."
+                                        value="{{ old('title_other') }}">
+                                    <button type="button" class="btn btn-sm btn-link text-white position-absolute end-0 top-0 mt-1 me-1" id="btn_back_to_select" title="Back to dropdown">
+                                        <i data-feather="corner-up-left" style="width: 14px; height: 14px;"></i>
+                                    </button>
+                                </div>
                                 {{-- <small class="text-muted">Select category above to see complaint titles</small> --}}
                                 @error('complaint_title_id')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -592,19 +599,24 @@
                 const selectedValue = titleSelect.value;
                 const questionsContainer = document.getElementById('fixed-questions-container');
                 const questionsText = document.getElementById('fixed-questions-text');
+                const titleDropdownContainer = document.getElementById('titleDropdownContainer');
+                const titleInputContainer = document.getElementById('titleInputContainer');
 
                 // Reset questions
                 if (questionsContainer) questionsContainer.style.display = 'none';
                 if (questionsText) questionsText.textContent = '';
 
                 if (selectedValue === 'other') {
-                    titleSelect.style.display = 'none';
+                    if (titleDropdownContainer) titleDropdownContainer.style.display = 'none';
+                    if (titleInputContainer) titleInputContainer.style.display = 'block';
                     titleOtherInput.style.display = 'block';
                     titleOtherInput.required = true;
                     titleSelect.removeAttribute('required');
                     setTimeout(() => titleOtherInput.focus(), 100);
+                    if (typeof feather !== 'undefined') feather.replace();
                 } else {
-                    titleSelect.style.display = 'block';
+                    if (titleDropdownContainer) titleDropdownContainer.style.display = 'block';
+                    if (titleInputContainer) titleInputContainer.style.display = 'none';
                     titleOtherInput.style.display = 'none';
                     titleOtherInput.required = false;
                     titleSelect.required = true;
@@ -620,6 +632,19 @@
                         if(typeof feather !== 'undefined') feather.replace();
                     }
                 }
+            }
+
+            const btnBackToSelect = document.getElementById('btn_back_to_select');
+            if (btnBackToSelect) {
+                btnBackToSelect.addEventListener('click', function() {
+                    if (titleSelect) {
+                        titleSelect.value = '';
+                        handleTitleChange();
+                    }
+                    if (titleOtherInput) {
+                        titleOtherInput.value = '';
+                    }
+                });
             }
 
             // 3. Event Listeners

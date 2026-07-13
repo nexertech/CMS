@@ -32,6 +32,14 @@
       white-space: nowrap !important; /* Keep headers single line if possible */
   }
 
+  /* Force Date and Addressed Time columns to stay on a single line */
+  #complaintsListModal table th:nth-child(2),
+  #complaintsListModal table td:nth-child(2),
+  #complaintsListModal table th:nth-child(3),
+  #complaintsListModal table td:nth-child(3) {
+      white-space: nowrap !important;
+  }
+
   /* Override badge sizes in modal */
   #complaintsListModal .badge,
   #complaintsListModal .status-badge,
@@ -44,7 +52,18 @@
       text-align: center !important;
       white-space: nowrap !important;
       overflow: hidden !important;
-      text-overflow: ellipsis !important;
+  }
+
+  /* Specific override for Status badge to allow full text display */
+  #complaintsListModal .badge-status-label {
+      width: 115px !important;
+      min-width: 115px !important;
+      max-width: 115px !important;
+      padding: 3px 0 !important;
+      font-size: 0.65rem !important;
+      text-overflow: clip !important;
+      overflow: hidden !important;
+      display: inline-block !important;
   }
 
   /* Ensure the priority column centers its content */
@@ -390,84 +409,133 @@
 <div class="mb-5 d-flex justify-content-center">
   <div class="filter-box" style="display: inline-block; width: fit-content;">
     <form id="dashboardFiltersForm" method="GET" action="{{ route('admin.dashboard') }}">
-      <div class="row g-2 align-items-end">
+      <div class="row g-2 align-items-end flex-nowrap">
         @if($showCityFilter)
         @if(isset($cmesList) && $cmesList->count() > 0)
         <div class="col-auto">
           <label class="form-label mb-1" style="font-size: 0.8rem !important; color: #1e293b !important; font-weight: 700 !important;">CMES</label>
-          <select class="form-select" id="cmesFilter" name="cmes_id" style="font-size: 0.8rem; width: 155px;">
-            <option value="">Select CMES</option>
-            @foreach($cmesList as $cme)
-              <option value="{{ $cme->id }}" {{ (request('cmes_id') == $cme->id || (isset($cmesId) && $cmesId == $cme->id)) ? 'selected' : '' }}>{{ $cme->name }}</option>
-            @endforeach
-          </select>
+          <div class="dropdown filter-dropdown-wrapper" style="width: 150px;">
+            <button class="btn btn-light btn-sm form-select text-start" type="button" id="cmesDropdownBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="font-size: 0.85rem !important; height: 38px !important; line-height: 1.5 !important; padding: 0.375rem 2.25rem 0.375rem 0.75rem !important; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; background-color: #ffffff; border: 1px solid #ced4da; width: 100%;">
+              Select CMES
+            </button>
+            <ul class="dropdown-menu p-2" aria-labelledby="cmesDropdownBtn" style="max-height: 250px; overflow-y: auto; font-size: 0.8rem; min-width: 200px; background-color: #ffffff !important; border: 1px solid #ced4da;">
+              @php
+                $selectedCmesIds = is_array(request('cmes_id')) ? request('cmes_id') : (request('cmes_id') ? [request('cmes_id')] : (isset($cmesId) ? (is_array($cmesId) ? $cmesId : [$cmesId]) : []));
+              @endphp
+              @foreach($cmesList as $cme)
+                <li class="p-1">
+                  <div class="form-check">
+                    <input class="form-check-input cmes-checkbox" type="checkbox" value="{{ $cme->id }}" id="cme_cb_{{ $cme->id }}" name="cmes_id[]" {{ in_array($cme->id, $selectedCmesIds) ? 'checked' : '' }} onchange="updateDropdownButtonText('cmesDropdownBtn', 'cmes_id[]', 'Select CMES'); handleCmesCheckboxChange();">
+                    <label class="form-check-label w-100 cursor-pointer text-dark" for="cme_cb_{{ $cme->id }}">{{ $cme->name }}</label>
+                  </div>
+                </li>
+              @endforeach
+            </ul>
+          </div>
         </div>
         @endif
         <div class="col-auto" id="cityFilterContainer">
           <label class="form-label mb-1" style="font-size: 0.8rem !important; color: #1e293b !important; font-weight: 700 !important;">GE</label>
-          <select class="form-select" id="cityFilter" name="city_id" style="font-size: 0.8rem; width: 155px; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;">
-            <option value="">Select GE</option>
-            @if($cities && $cities->count() > 0)
-              @foreach($cities as $city)
-                @php
-                  $geUser = $city->users->where('role_id', $geRole->id ?? null)->where('status', 1)->first();
-                  $displayName = $city->name;
-                  if ($geUser) {
-                    if ($geUser->name) {
-                      $displayName = $geUser->name . ' - ' . $city->name;
-                    } elseif ($geUser->username) {
-                      $displayName = $geUser->username . ' - ' . $city->name;
-                    }
-                  }
-                @endphp
-                <option value="{{ $city->id }}" {{ (request('city_id') == $city->id || $cityId == $city->id) ? 'selected' : '' }}>{{ $displayName }}</option>
-              @endforeach
-            @endif
-          </select>
+          <div class="dropdown filter-dropdown-wrapper" style="width: 150px;">
+            <button class="btn btn-light btn-sm form-select text-start" type="button" id="cityDropdownBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="font-size: 0.85rem !important; height: 38px !important; line-height: 1.5 !important; padding: 0.375rem 2.25rem 0.375rem 0.75rem !important; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; background-color: #ffffff; border: 1px solid #ced4da; width: 100%;">
+              Select GE
+            </button>
+            <ul class="dropdown-menu p-2" id="cityDropdownList" aria-labelledby="cityDropdownBtn" style="max-height: 250px; overflow-y: auto; font-size: 0.8rem; min-width: 220px; background-color: #ffffff !important; border: 1px solid #ced4da;">
+              @php
+                $selectedCityIds = is_array(request('city_id')) ? request('city_id') : (request('city_id') ? [request('city_id')] : (isset($cityId) ? (is_array($cityId) ? $cityId : [$cityId]) : []));
+              @endphp
+              @if($cities && $cities->count() > 0)
+                @foreach($cities as $city)
+                  <li class="p-1 city-item" data-cme-id="{{ $city->cme_id }}">
+                    <div class="form-check">
+                      <input class="form-check-input city-checkbox" type="checkbox" value="{{ $city->id }}" id="city_cb_{{ $city->id }}" name="city_id[]" {{ in_array($city->id, $selectedCityIds) ? 'checked' : '' }} onchange="updateDropdownButtonText('cityDropdownBtn', 'city_id[]', 'Select GE'); handleCityCheckboxChange();">
+                      <label class="form-check-label w-100 cursor-pointer text-dark" for="city_cb_{{ $city->id }}">{{ $city->name }}</label>
+                    </div>
+                  </li>
+                @endforeach
+              @endif
+            </ul>
+          </div>
         </div>
         @endif
 
         @if($showSectorFilter)
         <div class="col-auto">
           <label class="form-label mb-1" style="font-size: 0.8rem !important; color: #1e293b !important; font-weight: 700 !important;">GE Nodes</label>
-          <select class="form-select" id="sectorFilter" name="sector_id" style="font-size: 0.8rem; width: 155px; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;">
-            <option value="">Select GE Nodes</option>
-            @if($sectors && $sectors->count() > 0)
-              @foreach($sectors as $sector)
-                <option value="{{ $sector->id }}" {{ (request('sector_id') == $sector->id || $sectorId == $sector->id) ? 'selected' : '' }}>{{ $sector->name }}</option>
-              @endforeach
-            @endif
-          </select>
+          <div class="dropdown filter-dropdown-wrapper" style="width: 150px;">
+            <button class="btn btn-light btn-sm form-select text-start" type="button" id="sectorDropdownBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="font-size: 0.85rem !important; height: 38px !important; line-height: 1.5 !important; padding: 0.375rem 2.25rem 0.375rem 0.75rem !important; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; background-color: #ffffff; border: 1px solid #ced4da; width: 100%;">
+              Select GE Nodes
+            </button>
+            <ul class="dropdown-menu p-2" id="sectorDropdownList" aria-labelledby="sectorDropdownBtn" style="max-height: 250px; overflow-y: auto; font-size: 0.8rem; min-width: 200px; background-color: #ffffff !important; border: 1px solid #ced4da;">
+              @php
+                $selectedSectorIds = is_array(request('sector_id')) ? request('sector_id') : (request('sector_id') ? [request('sector_id')] : (isset($sectorId) ? (is_array($sectorId) ? $sectorId : [$sectorId]) : []));
+              @endphp
+              @if($sectors && $sectors->count() > 0)
+                @foreach($sectors as $sector)
+                  <li class="p-1 sector-item" data-city-id="{{ $sector->city_id }}" data-cme-id="{{ $sector->cme_id }}">
+                    <div class="form-check">
+                      <input class="form-check-input sector-checkbox" type="checkbox" value="{{ $sector->id }}" id="sector_cb_{{ $sector->id }}" name="sector_id[]" {{ in_array($sector->id, $selectedSectorIds) ? 'checked' : '' }} onchange="updateDropdownButtonText('sectorDropdownBtn', 'sector_id[]', 'Select GE Nodes')">
+                      <label class="form-check-label w-100 cursor-pointer text-dark" for="sector_cb_{{ $sector->id }}">{{ $sector->name }}</label>
+                    </div>
+                  </li>
+                @endforeach
+              @endif
+            </ul>
+          </div>
         </div>
         @endif
 
         <div class="col-auto">
           <label class="form-label mb-1" style="font-size: 0.8rem !important; color: #1e293b !important; font-weight: 700 !important;">Category</label>
-          <select class="form-select" id="categoryFilter" name="category" style="font-size: 0.8rem; width: 155px; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;">
-            <option value="">Select Category</option>
-            @if($categories && $categories->count() > 0)
-              @foreach($categories as $cat)
-                <option value="{{ $cat }}" {{ (request('category') == $cat || $category == $cat) ? 'selected' : '' }}>{{ ucfirst($cat) }}</option>
-              @endforeach
-            @endif
-          </select>
+          <div class="dropdown filter-dropdown-wrapper" style="width: 150px;">
+            <button class="btn btn-light btn-sm form-select text-start" type="button" id="categoryDropdownBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="font-size: 0.85rem !important; height: 38px !important; line-height: 1.5 !important; padding: 0.375rem 2.25rem 0.375rem 0.75rem !important; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; background-color: #ffffff; border: 1px solid #ced4da; width: 100%;">
+              Select Category
+            </button>
+            <ul class="dropdown-menu p-2" aria-labelledby="categoryDropdownBtn" style="max-height: 250px; overflow-y: auto; font-size: 0.8rem; min-width: 200px; background-color: #ffffff !important; border: 1px solid #ced4da;">
+              @php
+                $selectedCategories = is_array(request('category')) ? request('category') : (request('category') ? [request('category')] : (isset($category) ? (is_array($category) ? $category : [$category]) : []));
+              @endphp
+              @if($categories && $categories->count() > 0)
+                @foreach($categories as $cat)
+                  <li class="p-1">
+                    <div class="form-check">
+                      <input class="form-check-input category-checkbox" type="checkbox" value="{{ $cat }}" id="cat_cb_{{ Str::slug($cat) }}" name="category[]" {{ in_array($cat, $selectedCategories) ? 'checked' : '' }} onchange="updateDropdownButtonText('categoryDropdownBtn', 'category[]', 'Select Category');">
+                      <label class="form-check-label w-100 cursor-pointer text-dark" for="cat_cb_{{ Str::slug($cat) }}">{{ ucfirst($cat) }}</label>
+                    </div>
+                  </li>
+                @endforeach
+              @endif
+            </ul>
+          </div>
         </div>
 
         @if(isset($complaintStatuses) && count($complaintStatuses) > 0)
         <div class="col-auto">
           <label class="form-label mb-1" style="font-size: 0.8rem !important; color: #1e293b !important; font-weight: 700 !important;">Status</label>
-          <select class="form-select" id="complaintStatusFilter" name="complaint_status" style="font-size: 0.8rem; width: 155px; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;">
-            <option value="">Select Status</option>
-            @foreach($complaintStatuses as $statusKey => $statusLabel)
-              <option value="{{ $statusKey }}" {{ (request('complaint_status') == $statusKey || $complaintStatus == $statusKey) ? 'selected' : '' }}>{{ $statusLabel }}</option>
-            @endforeach
-          </select>
+          <div class="dropdown filter-dropdown-wrapper" style="width: 150px;">
+            <button class="btn btn-light btn-sm form-select text-start" type="button" id="complaintStatusDropdownBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="font-size: 0.85rem !important; height: 38px !important; line-height: 1.5 !important; padding: 0.375rem 2.25rem 0.375rem 0.75rem !important; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; background-color: #ffffff; border: 1px solid #ced4da; width: 100%;">
+              Select Status
+            </button>
+            <ul class="dropdown-menu p-2" aria-labelledby="complaintStatusDropdownBtn" style="max-height: 250px; overflow-y: auto; font-size: 0.8rem; min-width: 200px; background-color: #ffffff !important; border: 1px solid #ced4da;">
+              @php
+                $selectedStatuses = is_array(request('complaint_status')) ? request('complaint_status') : (request('complaint_status') ? [request('complaint_status')] : (isset($complaintStatus) ? (is_array($complaintStatus) ? $complaintStatus : [$complaintStatus]) : []));
+              @endphp
+              @foreach($complaintStatuses as $statusKey => $statusLabel)
+                <li class="p-1">
+                  <div class="form-check">
+                    <input class="form-check-input status-checkbox" type="checkbox" value="{{ $statusKey }}" id="status_cb_{{ $statusKey }}" name="complaint_status[]" {{ in_array($statusKey, $selectedStatuses) ? 'checked' : '' }} onchange="updateDropdownButtonText('complaintStatusDropdownBtn', 'complaint_status[]', 'Select Status');">
+                    <label class="form-check-label w-100 cursor-pointer text-dark" for="status_cb_{{ $statusKey }}">{{ $statusLabel }}</label>
+                  </div>
+                </li>
+              @endforeach
+            </ul>
+          </div>
         </div>
         @endif
 
-        <div class="col-auto">
+        <div class="col-auto position-relative">
           <label class="form-label mb-1" style="font-size: 0.8rem !important; color: #1e293b !important; font-weight: 700 !important;">Date Range</label>
-          <select class="form-select" id="dateRangeFilter" name="date_range" style="font-size: 0.8rem; width: 155px; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;">
+          <select class="form-select" id="dateRangeFilter" name="date_range" style="font-size: 0.85rem !important; height: 38px !important; width: 150px !important; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-color: #ffffff !important; border: 1px solid #ced4da !important; color: #334155 !important;">
             <option value="">Select Date Range</option>
             <option value="yesterday" {{ (request('date_range') == 'yesterday' || $dateRange == 'yesterday') ? 'selected' : '' }}>Yesterday</option>
             <option value="today" {{ (request('date_range') == 'today' || $dateRange == 'today') ? 'selected' : '' }}>Today</option>
@@ -476,14 +544,44 @@
             <option value="this_month" {{ (request('date_range') == 'this_month' || $dateRange == 'this_month') ? 'selected' : '' }}>This Month</option>
             <option value="last_month" {{ (request('date_range') == 'last_month' || $dateRange == 'last_month') ? 'selected' : '' }}>Last Month</option>
             <option value="last_6_months" {{ (request('date_range') == 'last_6_months' || $dateRange == 'last_6_months') ? 'selected' : '' }}>Last 6 Months</option>
+            <option value="custom" {{ (request('date_range') == 'custom' || $dateRange == 'custom') ? 'selected' : '' }}>Custom Range</option>
           </select>
+
+          <!-- Custom Date Range Inputs (Floating absolute card) -->
+          <div id="customDateRangeContainer" class="card p-3 shadow-lg" style="display: none; position: absolute; top: 100%; right: 0; z-index: 1050; min-width: 320px; background-color: #ffffff; border: 1px solid #ced4da; margin-top: 5px; border-radius: 6px;">
+            <div class="d-flex flex-column gap-2 text-dark">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="fw-bold text-dark" style="font-size: 0.85rem;">Custom Range</span>
+                <button type="button" class="btn-close" onclick="closeCustomDateContainer()" style="font-size: 0.65rem;"></button>
+              </div>
+              <div class="d-flex gap-2">
+                <div class="flex-grow-1">
+                  <label class="form-label mb-1 small text-muted">Start Date</label>
+                  <input type="date" class="form-control form-control-sm" id="startDate" name="start_date" style="font-size: 0.85rem; height: 35px; border: 1px solid #ced4da;" value="{{ request('start_date') }}">
+                </div>
+                <div class="flex-grow-1">
+                  <label class="form-label mb-1 small text-muted">End Date</label>
+                  <input type="date" class="form-control form-control-sm" id="endDate" name="end_date" style="font-size: 0.85rem; height: 35px; border: 1px solid #ced4da;" value="{{ request('end_date') }}">
+                </div>
+              </div>
+              <button type="button" class="btn btn-primary btn-sm w-100 text-white mt-1" id="applyCustomDate" style="background-color: #001f5b; border-color: #001f5b; font-weight: 600; height: 35px; border-radius: 4px;">Apply Range</button>
+            </div>
+          </div>
         </div>
 
-        <div class="col-auto">
-          <label class="form-label small text-muted mb-1" style="font-size: 0.7rem;">&nbsp;</label>
-          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetDashboardFilters()" style="font-size: 0.8rem; padding: 0.4rem 1rem;">
-            <i data-feather="refresh-cw" class="me-1" style="width: 14px; height: 14px;"></i>Reset
-          </button>
+        <div class="col-auto d-flex gap-1">
+          <div>
+            <label class="form-label small text-muted mb-1" style="font-size: 0.7rem; display: block;">&nbsp;</label>
+            <button type="button" class="btn btn-primary btn-sm text-white d-flex align-items-center justify-content-center" onclick="applyDashboardFilters()" style="font-size: 0.85rem; height: 38px; padding: 0 1.25rem; background-color: #001f5b; border-color: #001f5b; font-weight: bold; border-radius: 6px;">
+              <i data-feather="filter" class="me-1" style="width: 14px; height: 14px;"></i>Apply
+            </button>
+          </div>
+          <div>
+            <label class="form-label small text-muted mb-1" style="font-size: 0.7rem; display: block;">&nbsp;</label>
+            <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center" onclick="resetDashboardFilters()" style="font-size: 0.85rem; height: 38px; padding: 0 1.25rem; border-radius: 6px;">
+              <i data-feather="refresh-cw" class="me-1" style="width: 14px; height: 14px;"></i>Reset
+            </button>
+          </div>
         </div>
       </div>
     </form>
@@ -863,25 +961,31 @@
 <div class="modal fade" id="complaintsListModal" tabindex="-1" aria-labelledby="complaintsListModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content card-glass" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); border: 1px solid rgba(59, 130, 246, 0.3);">
-            <div class="modal-header" style="border-bottom: 2px solid rgba(59, 130, 246, 0.2);">
+            <div class="modal-header d-flex justify-content-between align-items-center" style="border-bottom: 2px solid rgba(59, 130, 246, 0.2);">
                 <h5 class="modal-title text-white" id="complaintsListModalLabel">
                     <i data-feather="list" class="me-2"></i>Complaints
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="background-color: rgba(255, 255, 255, 0.2); border-radius: 4px; padding: 0.5rem !important; opacity: 1 !important; filter: invert(1); background-size: 1.5em;"></button>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-success btn-sm d-inline-flex align-items-center text-white" onclick="exportModalToExcel()" style="background-color: #16a34a; border-color: #15803d; font-weight: 600; padding: 0 6px !important; font-size: 0.65rem !important; height: 24px !important; line-height: 1 !important; border-radius: 0px !important; border: 1px solid #15803d; color: #ffffff !important; margin: 0;">
+                        <i data-feather="download" class="me-1" style="width: 12px; height: 12px;"></i> Export to Excel
+                    </button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="background-color: rgba(255, 255, 255, 0.2); border-radius: 0px !important; padding: 0 !important; opacity: 1 !important; filter: invert(1); background-size: 0.8em; width: 24px !important; height: 24px !important; margin: 0; border: none;"></button>
+                </div>
             </div>
             <div class="modal-body p-0">
                 <div class="table-responsive-xl">
                     <table class="table table-dark table-sm table-compact mb-0" style="width: 100%; border-collapse: collapse;">
                         <thead>
                             <tr>
-                                <th style="width: 10%;">CMP-ID</th>
-                                <th style="width: 12%;">Reg. Date</th>
-                                <th style="width: 12%; text-align: left;">Addr. Time</th>
-                                <th style="width: 10%;">House</th>
-                                <th style="width: 20%;">Address</th>
-                                <th style="width: 21%;">Nature & Type</th>
+                                <th style="width: 5%;">CMP-ID</th>
+                                <th style="width: 15%;">Reg. Date</th>
+                                <th style="width: 15%; text-align: left;">Addr. Time</th>
+                                <th style="width: 8%;">House</th>
+                                <th style="width: 15%;">Status</th>
+                                <th style="width: 14%;">Nature</th>
+                                <th style="width: 15%;">Type</th>
                                 <th style="width: 8%;">Priority</th>
-                                <th style="width: 7%;">Act</th>
+                                <th style="width: 5%;">Act</th>
                             </tr>
                         </thead>
                         <tbody id="modalComplaintsTableBody">
@@ -1661,30 +1765,128 @@
         .catch(error => console.error('Error updating dashboard:', error));
     }, 300000); // 5 minutes
 
+    // Dropdown Helper Functions for Multiselect Dropdowns
+    function updateDropdownButtonText(dropdownId, checkboxName, defaultText) {
+      const btn = document.getElementById(dropdownId);
+      if (!btn) return;
+      const checkboxes = document.querySelectorAll(`input[name="${checkboxName}"]`);
+      const checked = Array.from(checkboxes).filter(cb => cb.checked);
+      
+      if (checked.length === 0) {
+        btn.innerText = defaultText;
+      } else if (checked.length === 1) {
+        const label = document.querySelector(`label[for="${checked[0].id}"]`);
+        btn.innerText = label ? label.innerText.trim() : checked[0].value;
+      } else {
+        btn.innerText = `${checked.length} Selected`;
+      }
+    }
+
+    function handleCmesCheckboxChange() {
+      const checkedCmes = Array.from(document.querySelectorAll('.cmes-checkbox:checked')).map(cb => cb.value);
+      const cityItems = document.querySelectorAll('#cityDropdownList .city-item');
+      
+      cityItems.forEach(item => {
+        const cmeId = item.getAttribute('data-cme-id');
+        if (checkedCmes.length === 0 || checkedCmes.includes(cmeId)) {
+          item.style.display = 'block';
+        } else {
+          item.style.display = 'none';
+          const cb = item.querySelector('.city-checkbox');
+          if (cb && cb.checked) {
+            cb.checked = false;
+            cb.dispatchEvent(new Event('change'));
+          }
+        }
+      });
+      updateDropdownButtonText('cityDropdownBtn', 'city_id[]', 'Select GE');
+      handleCityCheckboxChange();
+    }
+
+    function handleCityCheckboxChange() {
+      const checkedCities = Array.from(document.querySelectorAll('.city-checkbox:checked')).map(cb => cb.value);
+      const visibleCityIds = Array.from(document.querySelectorAll('#cityDropdownList .city-item'))
+        .filter(item => item.style.display !== 'none')
+        .map(item => item.querySelector('.city-checkbox').value);
+
+      const sectorItems = document.querySelectorAll('#sectorDropdownList .sector-item');
+      
+      sectorItems.forEach(item => {
+        const cityId = item.getAttribute('data-city-id');
+        const isVisible = checkedCities.length > 0
+          ? checkedCities.includes(cityId)
+          : visibleCityIds.includes(cityId);
+
+        if (isVisible) {
+          item.style.display = 'block';
+        } else {
+          item.style.display = 'none';
+          const cb = item.querySelector('.sector-checkbox');
+          if (cb && cb.checked) {
+            cb.checked = false;
+            cb.dispatchEvent(new Event('change'));
+          }
+        }
+      });
+      updateDropdownButtonText('sectorDropdownBtn', 'sector_id[]', 'Select GE Nodes');
+    }
+
+    // Run updates on DOM load
+    document.addEventListener('DOMContentLoaded', function() {
+      updateDropdownButtonText('cmesDropdownBtn', 'cmes_id[]', 'Select CMES');
+      updateDropdownButtonText('cityDropdownBtn', 'city_id[]', 'Select GE');
+      updateDropdownButtonText('sectorDropdownBtn', 'sector_id[]', 'Select GE Nodes');
+      updateDropdownButtonText('categoryDropdownBtn', 'category[]', 'Select Category');
+      updateDropdownButtonText('complaintStatusDropdownBtn', 'complaint_status[]', 'Select Status');
+      handleCmesCheckboxChange();
+      handleCityCheckboxChange();
+    });
+
     // Dashboard Filters Functions
     function applyDashboardFilters() {
-      const form = document.getElementById('dashboardFiltersForm');
-      const formData = new FormData(form);
       const params = new URLSearchParams();
 
-      // Add filter values to params
-      if (formData.get('cmes_id')) {
-        params.append('cmes_id', formData.get('cmes_id'));
-      }
-      if (formData.get('city_id')) {
-        params.append('city_id', formData.get('city_id'));
-      }
-      if (formData.get('sector_id')) {
-        params.append('sector_id', formData.get('sector_id'));
-      }
-      if (formData.get('category')) {
-        params.append('category', formData.get('category'));
-      }
-      if (formData.get('complaint_status')) {
-        params.append('complaint_status', formData.get('complaint_status'));
-      }
-      if (formData.get('date_range')) {
-        params.append('date_range', formData.get('date_range'));
+      // Append multiple values for cmes_id
+      const checkedCmes = document.querySelectorAll('.cmes-checkbox:checked');
+      checkedCmes.forEach(cb => {
+        params.append('cmes_id[]', cb.value);
+      });
+
+      // Append multiple values for city_id
+      const checkedCities = document.querySelectorAll('.city-checkbox:checked');
+      checkedCities.forEach(cb => {
+        params.append('city_id[]', cb.value);
+      });
+
+      // Append multiple values for sector_id
+      const checkedSectors = document.querySelectorAll('.sector-checkbox:checked');
+      checkedSectors.forEach(cb => {
+        params.append('sector_id[]', cb.value);
+      });
+
+      // Append multiple values for category
+      const checkedCategories = document.querySelectorAll('.category-checkbox:checked');
+      checkedCategories.forEach(cb => {
+        params.append('category[]', cb.value);
+      });
+
+      // Append multiple values for complaint_status
+      const checkedStatuses = document.querySelectorAll('.status-checkbox:checked');
+      checkedStatuses.forEach(cb => {
+        params.append('complaint_status[]', cb.value);
+      });
+
+      const dateRangeFilter = document.getElementById('dateRangeFilter');
+      if (dateRangeFilter && dateRangeFilter.value) {
+        params.append('date_range', dateRangeFilter.value);
+        if (dateRangeFilter.value === 'custom') {
+          const start = document.getElementById('startDate').value;
+          const end = document.getElementById('endDate').value;
+          if (start && end) {
+            params.append('start_date', start);
+            params.append('end_date', end);
+          }
+        }
       }
 
       // Reload dashboard with filters
@@ -1695,128 +1897,45 @@
       window.location.href = '{{ route("admin.dashboard") }}';
     }
 
-    // Dynamic sector loading for Director when city changes and auto-apply filters
-    const cityFilter = document.getElementById('cityFilter');
-    const sectorFilter = document.getElementById('sectorFilter');
-    const categoryFilter = document.getElementById('categoryFilter');
-
-    // Keep GE filter visible at all times - don't hide it
-    // @if($user && !$user->city_id)
-    // const cityFilterContainer = document.getElementById('cityFilterContainer');
-    // if (cityFilterContainer && cityFilter) {
-    //   const selectedCityId = cityFilter.value;
-    //   if (selectedCityId && selectedCityId !== '') {
-    //     cityFilterContainer.style.display = 'none';
-    //   }
-    // }
-    // @endif
-
-    // Auto-apply filters on change (like other modules)
-    if (cityFilter) {
-      cityFilter.addEventListener('change', function() {
-        @if($user && !$user->city_id)
-        // User can see all cities: Load sectors dynamically when city changes
-        const cityId = this.value;
-
-        // Keep GE filter visible at all times - don't hide it
-        // const cityFilterContainer = document.getElementById('cityFilterContainer');
-        // if (cityFilterContainer) {
-        //   if (cityId && cityId !== '') {
-        //     cityFilterContainer.style.display = 'none';
-        //   } else {
-        //     cityFilterContainer.style.display = 'block';
-        //   }
-        // }
-
-        if (sectorFilter) {
-          sectorFilter.innerHTML = '<option value="">Loading GE Nodes...</option>';
-          sectorFilter.disabled = true;
-
-          if (cityId) {
-            // Fetch sectors for selected city
-            fetch(`{{ route('admin.sectors.by-city') }}?city_id=${cityId}`, {
-              headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json',
-              },
-              credentials: 'same-origin'
-            })
-            .then(response => response.json())
-            .then(data => {
-              sectorFilter.innerHTML = '<option value="">All GE Nodes</option>';
-              const sectors = Array.isArray(data) ? data : (data.sectors || []);
-              if (sectors && sectors.length > 0) {
-                sectors.forEach(function(sector) {
-                  const option = document.createElement('option');
-                  option.value = sector.id;
-                  option.textContent = sector.name;
-                  sectorFilter.appendChild(option);
-                });
-              }
-              sectorFilter.disabled = false;
-              // Auto-apply filters after loading GE Nodes
-              applyDashboardFilters();
-            })
-            .catch(error => {
-              console.error('Error loading GE Nodes:', error);
-              sectorFilter.innerHTML = '<option value="">All GE Nodes</option>';
-              sectorFilter.disabled = false;
-              // Auto-apply filters even on error
-              applyDashboardFilters();
-            });
-          } else {
-            // Show all GE Nodes if no city selected (Director) - reload page to get all GE Nodes
-            sectorFilter.innerHTML = '<option value="">All GE Nodes</option>';
-            sectorFilter.disabled = false;
-            // Auto-apply filters
-            applyDashboardFilters();
-          }
-        } else {
-          // Auto-apply filters when city changes
-          applyDashboardFilters();
-        }
-        @else
-        // For GE: Auto-apply filters when city changes
-        applyDashboardFilters();
-        @endif
-      });
-    }
-
-    // Auto-apply filters when sector changes
-    if (sectorFilter) {
-      sectorFilter.addEventListener('change', function() {
-        applyDashboardFilters();
-      });
-    }
-
-    // Auto-apply filters when category changes
-    if (categoryFilter) {
-      categoryFilter.addEventListener('change', function() {
-        applyDashboardFilters();
-      });
-    }
-
-    // Auto-apply filters when complaint status changes
-    const complaintStatusFilter = document.getElementById('complaintStatusFilter');
-    if (complaintStatusFilter) {
-      complaintStatusFilter.addEventListener('change', function() {
-        applyDashboardFilters();
-      });
-    }
-
-    // Auto-apply filters when date range changes
+    // Auto-apply filters when date range changes or show custom inputs
     const dateRangeFilter = document.getElementById('dateRangeFilter');
+    const customDateRangeContainer = document.getElementById('customDateRangeContainer');
+    const applyCustomDateBtn = document.getElementById('applyCustomDate');
+
     if (dateRangeFilter) {
       dateRangeFilter.addEventListener('change', function() {
-        applyDashboardFilters();
+        if (this.value === 'custom') {
+          if (customDateRangeContainer) customDateRangeContainer.style.display = 'block';
+        } else {
+          if (customDateRangeContainer) customDateRangeContainer.style.display = 'none';
+          applyDashboardFilters();
+        }
+      });
+
+      // Toggle display on click when the value is custom so user can open it again
+      dateRangeFilter.addEventListener('click', function() {
+        if (this.value === 'custom') {
+          if (customDateRangeContainer && customDateRangeContainer.style.display === 'none') {
+            customDateRangeContainer.style.display = 'block';
+          }
+        }
       });
     }
 
-    // CMES filter change
-    const cmesFilter = document.getElementById('cmesFilter');
-    if (cmesFilter) {
-      cmesFilter.addEventListener('change', function() {
-        // Clear city/sector selection if desired, or let server handle dependent lists
+    // Define close helper for the custom range card
+    window.closeCustomDateContainer = function() {
+      const container = document.getElementById('customDateRangeContainer');
+      if (container) container.style.display = 'none';
+    };
+
+    if (applyCustomDateBtn) {
+      applyCustomDateBtn.addEventListener('click', function() {
+        const start = document.getElementById('startDate').value;
+        const end = document.getElementById('endDate').value;
+        if (!start || !end) {
+          alert('Please select both Start and End dates.');
+          return;
+        }
         applyDashboardFilters();
       });
     }
@@ -1942,27 +2061,36 @@
     // --- Added for Dashboard Popup ---
     window.showComplaintsModal = function(param) {
         const modalElement = document.getElementById('complaintsListModal');
+        modalElement.dataset.activeParam = param;
         const modal = new bootstrap.Modal(modalElement);
         const titleEl = document.getElementById('complaintsListModalLabel');
         const tbody = document.getElementById('modalComplaintsTableBody');
         const paginationContainer = document.getElementById('modalPaginationContainer');
 
-        let url = "{{ route('admin.complaints.index') }}?modal=1";
+        // Parse current window location search parameters to pass active dashboard filters
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('modal', '1');
+        urlParams.delete('page'); // Clear page number so modal starts at page 1
+
         let title = 'Complaints';
 
         // Map params to titles and query params
         if (param === 'all') {
             title = 'Total Complaints';
+            urlParams.delete('status');
         } else if (param === 'overdue') {
             title = 'Overdue Complaints';
-            url += '&filter=overdue';
+            urlParams.set('filter', 'overdue');
+            urlParams.delete('status');
         } else {
             title = formatTitle(param) + ' Complaints';
-            url += '&status=' + param;
+            urlParams.set('status', param);
         }
 
+        let url = "{{ route('admin.complaints.index') }}?" + urlParams.toString();
+
         titleEl.innerHTML = `<i data-feather="list" class="me-2"></i>${title}`;
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
         paginationContainer.innerHTML = '';
         
         // Add blur effect
@@ -1997,7 +2125,7 @@
                 // Initialize icons
                 feather.replace();
             } else {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">No complaints found.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4">No complaints found.</td></tr>';
             }
 
             if (newPagination) {
@@ -2010,7 +2138,7 @@
                         e.preventDefault();
                         const href = this.getAttribute('href');
                         if (href) {
-                            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
+                            tbody.innerHTML = '<tr><td colspan="9" class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
                             fetch(href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                                 .then(res => res.text())
                                 .then(pageHtml => {
@@ -2028,9 +2156,99 @@
         })
         .catch(err => {
             console.error(err);
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-danger">Error loading data.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-danger">Error loading data.</td></tr>';
         });
-    }
+    };
+
+    // Client-side Excel (CSV) exporter for modal table
+    window.exportModalToExcel = function() {
+        const modalElement = document.getElementById('complaintsListModal');
+        if (!modalElement) return;
+
+        const btn = document.querySelector('#complaintsListModal button[onclick="exportModalToExcel()"]');
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Exporting...';
+
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('export_all', '1');
+
+        const param = modalElement.dataset.activeParam || 'all';
+        if (param === 'all') {
+            urlParams.delete('status');
+        } else if (param === 'overdue') {
+            urlParams.set('filter', 'overdue');
+            urlParams.delete('status');
+        } else {
+            urlParams.set('status', param);
+        }
+
+        const url = "{{ route('admin.complaints.index') }}?" + urlParams.toString();
+
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+
+            if (!data || !data.complaints || data.complaints.length === 0) {
+                alert('No complaints found to export.');
+                return;
+            }
+
+            const modalTitle = document.getElementById('complaintsListModalLabel').textContent.trim() || 'Complaints';
+
+            // Build CSV content with UTF-8 BOM
+            let csvContent = '\uFEFF'; // Add BOM for Excel UTF-8 support
+            
+            // Header Row
+            csvContent += 'CMP-ID,Reg. Date,Addr. Time,House,Status,Nature,Type,Priority\r\n';
+
+            // Helper to escape values and wrap in Excel formula to force left-alignment
+            const fmt = (val) => {
+                const cleanVal = String(val || '').replace(/"/g, '""');
+                return '"=""' + cleanVal + '"""';
+            };
+
+            data.complaints.forEach(row => {
+                const cmpIdText = 'CMP-' + String(row.id).padStart(4, '0');
+                let rowData = [
+                    fmt(cmpIdText),
+                    fmt(row.created_at || '-'),
+                    fmt(row.closed_at || '-'),
+                    fmt(row.house_no || 'N/A'),
+                    fmt(row.status || '-'),
+                    fmt(row.category || '-'),
+                    fmt(row.type || '-'),
+                    fmt(row.priority || '-')
+                ];
+                csvContent += rowData.join(',') + '\r\n';
+            });
+
+            // Create Blob and trigger download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const downloadUrl = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            const dateStr = new Date().toISOString().slice(0, 10);
+            
+            link.setAttribute('href', downloadUrl);
+            link.setAttribute('download', modalTitle.replace(/\s+/g, '_') + '_' + dateStr + '.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        })
+        .catch(err => {
+            console.error(err);
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+            alert('Error exporting data. Please try again.');
+        });
+    };
 
     function formatTitle(str) {
         return str.split('_')

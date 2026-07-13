@@ -310,7 +310,7 @@ class HomeController extends Controller
         $user = Auth::user();
         $locationScope = $this->getFrontendUserLocationScope($user);
 
-        // Get filter parameters (including CMES)
+        // Get filter parameters (including CMES) - support arrays for multiselect
         $cmesId = $request->get('cmes_id');
         $cityId = $request->get('city_id');
         $sectorId = $request->get('sector_id');
@@ -318,90 +318,114 @@ class HomeController extends Controller
         $status = $request->get('status');
         $dateRange = $request->get('date_range', 'all_time');
 
+        // Normalize to arrays for multiselect support
+        $cmesIds = is_array($cmesId) ? array_filter($cmesId) : ($cmesId ? [$cmesId] : []);
+        $cityIds = is_array($cityId) ? array_filter($cityId) : ($cityId ? [$cityId] : []);
+        $sectorIds = is_array($sectorId) ? array_filter($sectorId) : ($sectorId ? [$sectorId] : []);
+        $categoryFilters = is_array($category) ? array_filter($category) : ($category && $category !== 'all' ? [$category] : []);
+
         // Build base query with filters
         $complaintsQuery = Complaint::query();
 
         // Apply location filtering based on GE Group (city_id) and GE Node (sector_id) selections
         $hasRestrictions = !empty($locationScope['restricted']);
 
-        if ($cityId) {
-            if ($this->canAccessCity((int) $cityId, $locationScope)) {
-                $allowedSectors = $this->getPermittedSectorsForCity((int) $cityId, $locationScope);
-                $sectorIdsForCity = empty($allowedSectors)
-                    ? \App\Models\Sector::where('city_id', $cityId)->pluck('id')->toArray()
-                    : $allowedSectors;
+        if (!empty($cityIds)) {
+            // Filter accessible city IDs
+            $accessibleCityIds = array_filter($cityIds, function($cid) use ($locationScope) {
+                return $this->canAccessCity((int) $cid, $locationScope);
+            });
 
-                if ($sectorId) {
-                    if ($this->canAccessSector((int) $sectorId, $locationScope)) {
-                        // Inclusive: house's sector_id OR direct complaint sector_id (for house-less)
-                        $complaintsQuery->where(function ($q) use ($sectorId) {
-                            $q->whereHas('house', function ($hq) use ($sectorId) {
-                                $hq->where('sector_id', $sectorId);
-                            })->orWhere(function ($cq) use ($sectorId) {
+            if (empty($accessibleCityIds)) {
+                $complaintsQuery->whereRaw('1 = 0');
+            } else {
+                // Collect all sector IDs for the selected cities
+                $allSectorIdsForCities = [];
+                foreach ($accessibleCityIds as $cid) {
+                    $allowed = $this->getPermittedSectorsForCity((int) $cid, $locationScope);
+                    $sids = empty($allowed) ? \App\Models\Sector::where('city_id', $cid)->pluck('id')->toArray() : $allowed;
+                    $allSectorIdsForCities = array_merge($allSectorIdsForCities, $sids);
+                }
+
+                if (!empty($sectorIds)) {
+                    // Filter accessible sector IDs
+                    $accessibleSectorIds = array_filter($sectorIds, function($sid) use ($locationScope) {
+                        return $this->canAccessSector((int) $sid, $locationScope);
+                    });
+                    if (empty($accessibleSectorIds)) {
+                        $complaintsQuery->whereRaw('1 = 0');
+                    } else {
+                        $complaintsQuery->where(function ($q) use ($accessibleSectorIds) {
+                            $q->whereHas('house', function ($hq) use ($accessibleSectorIds) {
+                                $hq->whereIn('sector_id', $accessibleSectorIds);
+                            })->orWhere(function ($cq) use ($accessibleSectorIds) {
                                 $cq->whereNull('complaints.house_id')
-                                    ->where('complaints.sector_id', $sectorId);
+                                    ->whereIn('complaints.sector_id', $accessibleSectorIds);
                             });
                         });
-                    } else {
-                        $complaintsQuery->whereRaw('1 = 0');
                     }
                 } else {
-                    // Inclusive GE Group filter: houses in this city/sectors OR house-less with direct city_id
-                    $complaintsQuery->where(function ($q) use ($cityId, $sectorIdsForCity) {
-                        $q->whereHas('house', function ($hq) use ($cityId, $sectorIdsForCity) {
-                            $hq->where(function ($sub) use ($cityId, $sectorIdsForCity) {
-                                $sub->where('city_id', $cityId);
-                                if (!empty($sectorIdsForCity)) {
-                                    $sub->orWhereIn('sector_id', $sectorIdsForCity);
+                    // Filter by all sectors in selected cities
+                    $complaintsQuery->where(function ($q) use ($accessibleCityIds, $allSectorIdsForCities) {
+                        $q->whereHas('house', function ($hq) use ($accessibleCityIds, $allSectorIdsForCities) {
+                            $hq->where(function ($sub) use ($accessibleCityIds, $allSectorIdsForCities) {
+                                $sub->whereIn('city_id', $accessibleCityIds);
+                                if (!empty($allSectorIdsForCities)) {
+                                    $sub->orWhereIn('sector_id', $allSectorIdsForCities);
                                 }
                             });
-                        })->orWhere(function ($cq) use ($cityId, $sectorIdsForCity) {
+                        })->orWhere(function ($cq) use ($accessibleCityIds, $allSectorIdsForCities) {
                             $cq->whereNull('complaints.house_id')
-                                ->where(function ($sub) use ($cityId, $sectorIdsForCity) {
-                                    $sub->where('complaints.city_id', $cityId);
-                                    if (!empty($sectorIdsForCity)) {
-                                        $sub->orWhereIn('complaints.sector_id', $sectorIdsForCity);
+                                ->where(function ($sub) use ($accessibleCityIds, $allSectorIdsForCities) {
+                                    $sub->whereIn('complaints.city_id', $accessibleCityIds);
+                                    if (!empty($allSectorIdsForCities)) {
+                                        $sub->orWhereIn('complaints.sector_id', $allSectorIdsForCities);
                                     }
                                 });
                         });
                     });
                 }
-            } else {
-                $complaintsQuery->whereRaw('1 = 0');
             }
-        } elseif ($sectorId) {
-            if ($this->canAccessSector((int) $sectorId, $locationScope)) {
-                // Inclusive: house's sector_id OR direct complaint sector_id (for house-less)
-                $complaintsQuery->where(function ($q) use ($sectorId) {
-                    $q->whereHas('house', function ($hq) use ($sectorId) {
-                        $hq->where('sector_id', $sectorId);
-                    })->orWhere(function ($cq) use ($sectorId) {
+        } elseif (!empty($sectorIds)) {
+            $accessibleSectorIds = array_filter($sectorIds, function($sid) use ($locationScope) {
+                return $this->canAccessSector((int) $sid, $locationScope);
+            });
+            if (empty($accessibleSectorIds)) {
+                $complaintsQuery->whereRaw('1 = 0');
+            } else {
+                $complaintsQuery->where(function ($q) use ($accessibleSectorIds) {
+                    $q->whereHas('house', function ($hq) use ($accessibleSectorIds) {
+                        $hq->whereIn('sector_id', $accessibleSectorIds);
+                    })->orWhere(function ($cq) use ($accessibleSectorIds) {
                         $cq->whereNull('complaints.house_id')
-                            ->where('complaints.sector_id', $sectorId);
+                            ->whereIn('complaints.sector_id', $accessibleSectorIds);
                     });
                 });
-            } else {
-                $complaintsQuery->whereRaw('1 = 0');
             }
         } elseif ($hasRestrictions) {
             $this->filterComplaintsByLocationForFrontend($complaintsQuery, $user, $locationScope);
         }
 
-        if ($category && $category !== 'all') {
-            if (is_numeric($category)) {
-                $complaintsQuery->where('complaints.category_id', $category);
-            } else {
-                $complaintsQuery->whereHas('category', function ($q) use ($category) {
-                    $q->where('name', $category);
-                });
-            }
+        if (!empty($categoryFilters)) {
+            $numericCats = array_filter($categoryFilters, 'is_numeric');
+            $stringCats = array_filter($categoryFilters, function($v) { return !is_numeric($v); });
+            $complaintsQuery->where(function($q) use ($numericCats, $stringCats) {
+                if (!empty($numericCats)) {
+                    $q->whereIn('complaints.category_id', $numericCats);
+                }
+                if (!empty($stringCats)) {
+                    $q->orWhereHas('category', function ($subQ) use ($stringCats) {
+                        $subQ->whereIn('name', $stringCats);
+                    });
+                }
+            });
         }
 
         // Apply CMES filter (Inclusive: CME Cities OR CME Sectors) - Apply BEFORE cloning for graph base
-        if ($cmesId) {
-            $cityIdsForCmes = City::where('cme_id', $cmesId)->pluck('id')->toArray();
-            $sectorIdsForCmes = Sector::where(function ($q) use ($cmesId, $cityIdsForCmes) {
-                $q->where('cme_id', $cmesId);
+        if (!empty($cmesIds)) {
+            $cityIdsForCmes = City::whereIn('cme_id', $cmesIds)->pluck('id')->toArray();
+            $sectorIdsForCmes = Sector::where(function ($q) use ($cmesIds, $cityIdsForCmes) {
+                $q->whereIn('cme_id', $cmesIds);
                 if (!empty($cityIdsForCmes)) {
                     $q->orWhereIn('city_id', $cityIdsForCmes);
                 }
@@ -477,9 +501,7 @@ class HomeController extends Controller
             }
         }
 
-        if ($status && $status !== 'all') {
-            $complaintsQuery->where('complaints.status', $status);
-        }
+        // status is not a general filter on frontend, so we don't apply it to the main complaintsQuery here
 
         // Filter by date range
         if ($dateRange) {
@@ -519,15 +541,10 @@ class HomeController extends Controller
             }
         }
 
-        // Get filter options - filter based on user's location access
+        // Get filter options - load ALL permitted options (JS handles cascading via data-cme-id / data-city-id)
         $geGroupsQuery = City::where('status', 1);
 
-        // If CMES selected, restrict GE groups to that CMES
-        if ($cmesId) {
-            $geGroupsQuery->where('cme_id', $cmesId);
-        }
-
-        // Apply location restrictions (ALWAYS, even if CMES is selected)
+        // Apply location restrictions (ALWAYS)
         $accessibleCityIds = $this->getAccessibleCityIdsForDropdown($locationScope);
         if (!empty($accessibleCityIds)) {
             $geGroupsQuery->whereIn('id', $accessibleCityIds);
@@ -540,19 +557,7 @@ class HomeController extends Controller
 
         $geNodesQuery = Sector::where('status', 1);
 
-        // If CMES selected, show only nodes belonging to cities of that CMES
-        if ($cmesId) {
-            $cityIdsForCmes = City::where('cme_id', $cmesId)->pluck('id')->toArray();
-            $geNodesQuery->where(function ($q) use ($cityIdsForCmes, $cmesId) {
-                if (!empty($cityIdsForCmes)) {
-                    $q->whereIn('city_id', $cityIdsForCmes);
-                }
-                // Also include sectors that have cme_id set directly
-                $q->orWhere('cme_id', $cmesId);
-            });
-        }
-
-        // Apply location filter to GE Nodes dropdown based on user's location (ALWAYS, even if CMES is selected)
+        // Apply location filter to GE Nodes dropdown based on user's location
         if (!empty($locationScope['restricted'])) {
             if (!empty($locationScope['sector_ids'])) {
                 $geNodesQuery->whereIn('id', $locationScope['sector_ids']);
@@ -564,11 +569,6 @@ class HomeController extends Controller
                 // Restricted user but no assigned sectors/cities -> show nothing
                 $geNodesQuery->whereRaw('1 = 0');
             }
-        }
-
-        // Apply manual city filter if provided (for when user selects a GE Group)
-        if ($cityId) {
-            $geNodesQuery->where('city_id', $cityId);
         }
 
         $geNodes = $geNodesQuery->orderBy('name')->get();
@@ -740,26 +740,60 @@ class HomeController extends Controller
             ])
             ->orderBy('id', 'desc');
 
+        // Filter by status for the complaints list table (both AJAX and initial load)
+        $statusFilter = $request->get('status');
+        $statusKey = ($statusFilter === 'all' || !$statusFilter) ? null : $statusFilter;
+
+        if ($statusKey) {
+            if ($statusKey === 'unassigned') {
+                $complaintsBase->where('complaints.status', 'new');
+            } elseif ($statusKey === 'resolved') {
+                $complaintsBase->where('complaints.status', 'resolved');
+            } elseif ($statusKey === 'overdue') {
+                $complaintsBase->overdue();
+            } elseif ($statusKey === 'work_priced_performa') {
+                $complaintsBase->where('complaints.status', 'work_priced_performa');
+            } elseif ($statusKey === 'maint_priced_performa') {
+                $complaintsBase->where('complaints.status', 'maint_priced_performa');
+            } elseif ($statusKey === 'work_performa') {
+                $complaintsBase->where(function ($q) {
+                    $q->where('complaints.status', 'work_performa')
+                        ->orWhere(function ($subQ) {
+                            $subQ->where('complaints.status', 'in_progress')
+                                ->whereHas('spareApprovals', function ($approvalQ) {
+                                    $approvalQ->where('performa_type', 'work_performa');
+                                });
+                        });
+                });
+            } elseif ($statusKey === 'maint_performa') {
+                $complaintsBase->where(function ($q) {
+                    $q->where('complaints.status', 'maint_performa')
+                        ->orWhere(function ($subQ) {
+                            $subQ->where('complaints.status', 'in_progress')
+                                ->whereHas('spareApprovals', function ($approvalQ) {
+                                    $approvalQ->where('performa_type', 'maint_performa');
+                                });
+                        });
+                });
+            } elseif ($statusKey === 'product_na') {
+                $complaintsBase->where(function ($q) {
+                    $q->where('complaints.status', 'product_na')
+                        ->orWhere(function ($subQ) {
+                            $subQ->where('complaints.status', 'in_progress')
+                                ->whereHas('spareApprovals', function ($approvalQ) {
+                                    $approvalQ->where('performa_type', 'product_na');
+                                });
+                        });
+                });
+            } else {
+                $complaintsBase->where('complaints.status', $statusKey);
+            }
+        }
+
         // Initialize pagination data for AJAX response
         $paginationData = null;
 
         if ($request->ajax()) {
-            // Handle AJAX pagination/filtering for the complaints table if a status filter is provided or pagination
-            $statusFilter = $request->get('status');
-            $statusKey = ($statusFilter === 'all' || !$statusFilter) ? null : $statusFilter;
-
-            if ($statusKey) {
-                if ($statusKey === 'unassigned') {
-                    $complaintsBase->where('complaints.status', 'new');
-                } elseif ($statusKey === 'resolved') {
-                    $complaintsBase->where('complaints.status', 'resolved');
-                } elseif ($statusKey === 'overdue') {
-                    $complaintsBase->overdue();
-                } else {
-                    $complaintsBase->where('complaints.status', $statusKey);
-                }
-            }
-
             $paginatedComplaints = $complaintsBase->paginate($perPage);
             $dashboardComplaintsRaw = $paginatedComplaints->getCollection();
 
@@ -823,7 +857,7 @@ class HomeController extends Controller
         $monthlyComplaints = [];
         $monthLabels = [];
 
-        $applyGlobalFilters = function ($q, $dateRangeOverride = null, $tablePrefix = 'complaints') use ($request, $category, $status, $dateRange, $cmesId, $cityId, $sectorId, $locationScope, $user, $self) {
+        $applyGlobalFilters = function ($q, $dateRangeOverride = null, $tablePrefix = 'complaints') use ($request, $categoryFilters, $dateRange, $cmesIds, $cityIds, $sectorIds, $locationScope, $user, $self) {
             // Qualify columns with table prefix to avoid ambiguity in joined queries
             $cityCol = $tablePrefix ? $tablePrefix . '.city_id' : 'city_id';
             $sectorCol = $tablePrefix ? $tablePrefix . '.sector_id' : 'sector_id';
@@ -831,71 +865,79 @@ class HomeController extends Controller
             $categoryCol = $tablePrefix ? $tablePrefix . '.category' : 'category';
             $createdAtCol = $tablePrefix ? $tablePrefix . '.created_at' : 'created_at';
 
-            // Priority 1: Direct GE Group (city) / Node (sector) filters
-            if ($cityId) {
-                if ($self->canAccessCity((int) $cityId, $locationScope)) {
-                    $allowedSectors = $self->getPermittedSectorsForCity((int) $cityId, $locationScope);
-                    $sectorIdsForCity = empty($allowedSectors)
-                        ? \App\Models\Sector::where('city_id', $cityId)->pluck('id')->toArray()
-                        : $allowedSectors;
+            // Priority 1: Direct GE Group (city) / Node (sector) filters (array-based)
+            if (!empty($cityIds)) {
+                $accessibleCityIds = array_filter($cityIds, function($cid) use ($self, $locationScope) {
+                    return $self->canAccessCity((int) $cid, $locationScope);
+                });
+                if (empty($accessibleCityIds)) {
+                    $q->whereRaw('1 = 0');
+                } else {
+                    $allSectorIdsForCities = [];
+                    foreach ($accessibleCityIds as $cid) {
+                        $allowed = $self->getPermittedSectorsForCity((int) $cid, $locationScope);
+                        $sids = empty($allowed) ? \App\Models\Sector::where('city_id', $cid)->pluck('id')->toArray() : $allowed;
+                        $allSectorIdsForCities = array_merge($allSectorIdsForCities, $sids);
+                    }
 
-                    if ($sectorId) {
-                        if ($self->canAccessSector((int) $sectorId, $locationScope)) {
-                            // Inclusive sector filter
-                            $q->where(function ($sub) use ($sectorId, $tablePrefix) {
-                                $sub->whereHas('house', function ($hq) use ($sectorId) {
-                                    $hq->where('houses.sector_id', $sectorId);
-                                })->orWhere(function ($cq) use ($sectorId, $tablePrefix) {
-                                    $cq->whereNull($tablePrefix . '.house_id')->where($tablePrefix . '.sector_id', $sectorId);
+                    if (!empty($sectorIds)) {
+                        $accessibleSectorIds = array_filter($sectorIds, function($sid) use ($self, $locationScope) {
+                            return $self->canAccessSector((int) $sid, $locationScope);
+                        });
+                        if (empty($accessibleSectorIds)) {
+                            $q->whereRaw('1 = 0');
+                        } else {
+                            $q->where(function ($sub) use ($accessibleSectorIds, $tablePrefix) {
+                                $sub->whereHas('house', function ($hq) use ($accessibleSectorIds) {
+                                    $hq->whereIn('houses.sector_id', $accessibleSectorIds);
+                                })->orWhere(function ($cq) use ($accessibleSectorIds, $tablePrefix) {
+                                    $cq->whereNull($tablePrefix . '.house_id')->whereIn($tablePrefix . '.sector_id', $accessibleSectorIds);
                                 });
                             });
-                        } else {
-                            $q->whereRaw('1 = 0');
                         }
                     } else {
-                        // Inclusive GE Group filter
-                        $q->where(function ($sub) use ($cityId, $sectorIdsForCity, $tablePrefix) {
-                            $sub->whereHas('house', function ($hq) use ($cityId, $sectorIdsForCity) {
-                                $hq->where(function ($query) use ($cityId, $sectorIdsForCity) {
-                                    $query->where('houses.city_id', $cityId);
-                                    if (!empty($sectorIdsForCity)) {
-                                        $query->orWhereIn('houses.sector_id', $sectorIdsForCity);
+                        $q->where(function ($sub) use ($accessibleCityIds, $allSectorIdsForCities, $tablePrefix) {
+                            $sub->whereHas('house', function ($hq) use ($accessibleCityIds, $allSectorIdsForCities) {
+                                $hq->where(function ($query) use ($accessibleCityIds, $allSectorIdsForCities) {
+                                    $query->whereIn('houses.city_id', $accessibleCityIds);
+                                    if (!empty($allSectorIdsForCities)) {
+                                        $query->orWhereIn('houses.sector_id', $allSectorIdsForCities);
                                     }
                                 });
-                            })->orWhere(function ($cq) use ($cityId, $sectorIdsForCity, $tablePrefix) {
+                            })->orWhere(function ($cq) use ($accessibleCityIds, $allSectorIdsForCities, $tablePrefix) {
                                 $cq->whereNull($tablePrefix . '.house_id');
-                                $cq->where(function ($inner) use ($cityId, $sectorIdsForCity, $tablePrefix) {
-                                    $inner->where($tablePrefix . '.city_id', $cityId);
-                                    if (!empty($sectorIdsForCity)) {
-                                        $inner->orWhereIn($tablePrefix . '.sector_id', $sectorIdsForCity);
+                                $cq->where(function ($inner) use ($accessibleCityIds, $allSectorIdsForCities, $tablePrefix) {
+                                    $inner->whereIn($tablePrefix . '.city_id', $accessibleCityIds);
+                                    if (!empty($allSectorIdsForCities)) {
+                                        $inner->orWhereIn($tablePrefix . '.sector_id', $allSectorIdsForCities);
                                     }
                                 });
                             });
                         });
                     }
-                } else {
-                    $q->whereRaw('1 = 0');
                 }
-            } elseif ($sectorId) {
-                if ($self->canAccessSector((int) $sectorId, $locationScope)) {
-                    // Inclusive sector filter
-                    $q->where(function ($sub) use ($sectorId, $tablePrefix) {
-                        $sub->whereHas('house', function ($hq) use ($sectorId) {
-                            $hq->where('houses.sector_id', $sectorId);
-                        })->orWhere(function ($cq) use ($sectorId, $tablePrefix) {
-                            $cq->whereNull($tablePrefix . '.house_id')->where($tablePrefix . '.sector_id', $sectorId);
+            } elseif (!empty($sectorIds)) {
+                $accessibleSectorIds = array_filter($sectorIds, function($sid) use ($self, $locationScope) {
+                    return $self->canAccessSector((int) $sid, $locationScope);
+                });
+                if (empty($accessibleSectorIds)) {
+                    $q->whereRaw('1 = 0');
+                } else {
+                    $q->where(function ($sub) use ($accessibleSectorIds, $tablePrefix) {
+                        $sub->whereHas('house', function ($hq) use ($accessibleSectorIds) {
+                            $hq->whereIn('houses.sector_id', $accessibleSectorIds);
+                        })->orWhere(function ($cq) use ($accessibleSectorIds, $tablePrefix) {
+                            $cq->whereNull($tablePrefix . '.house_id')->whereIn($tablePrefix . '.sector_id', $accessibleSectorIds);
                         });
                     });
-                } else {
-                    $q->whereRaw('1 = 0');
                 }
             }
 
-            // Priority 2: CMES Filter (Always apply if set, inclusive)
-            if ($cmesId) {
-                $cityIdsForCmes = City::where('cme_id', $cmesId)->pluck('id')->toArray();
-                $sectorIdsForCmes = Sector::where(function ($sq) use ($cmesId, $cityIdsForCmes) {
-                    $sq->where('cme_id', $cmesId);
+            // Priority 2: CMES Filter (Always apply if set, inclusive) - array-based
+            if (!empty($cmesIds)) {
+                $cityIdsForCmes = City::whereIn('cme_id', $cmesIds)->pluck('id')->toArray();
+                $sectorIdsForCmes = Sector::where(function ($sq) use ($cmesIds, $cityIdsForCmes) {
+                    $sq->whereIn('cme_id', $cmesIds);
                     if (!empty($cityIdsForCmes))
                         $sq->orWhereIn('city_id', $cityIdsForCmes);
                 })->pluck('id')->toArray();
@@ -924,22 +966,24 @@ class HomeController extends Controller
             }
 
             // Priority 3: Default Location Scope (if not manual)
-            if (!$cityId && !$sectorId && !$cmesId && !empty($locationScope['restricted'])) {
+            if (empty($cityIds) && empty($sectorIds) && empty($cmesIds) && !empty($locationScope['restricted'])) {
                 $self->applyFrontendHouseBasedScope($q, $locationScope, $tablePrefix);
             }
 
-            // Global Metadata Filters
-            if ($category && $category !== 'all') {
-                if (is_numeric($category)) {
-                    $q->where($tablePrefix ? $tablePrefix . '.category_id' : 'category_id', $category);
-                } else {
-                    $q->whereHas('category', function ($subQ) use ($category) {
-                        $subQ->where('name', $category);
-                    });
-                }
-            }
-            if ($status && $status !== 'all') {
-                $q->where($statusCol, $status);
+            // Global Metadata Filters (array-based category)
+            if (!empty($categoryFilters)) {
+                $numericCats = array_filter($categoryFilters, 'is_numeric');
+                $stringCats = array_filter($categoryFilters, function($v) { return !is_numeric($v); });
+                $q->where(function($catQ) use ($numericCats, $stringCats, $tablePrefix) {
+                    if (!empty($numericCats)) {
+                        $catQ->whereIn($tablePrefix ? $tablePrefix . '.category_id' : 'category_id', $numericCats);
+                    }
+                    if (!empty($stringCats)) {
+                        $catQ->orWhereHas('category', function ($subQ) use ($stringCats) {
+                            $subQ->whereIn('name', $stringCats);
+                        });
+                    }
+                });
             }
 
             $effectiveDateRange = $dateRangeOverride ?? $dateRange;
