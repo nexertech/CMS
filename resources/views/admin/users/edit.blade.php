@@ -16,7 +16,25 @@
 <!-- EDIT USER FORM -->
 <div class="card-glass">
   <div class="card-body">
-    <form action="{{ route('admin.users.update', $user) }}" method="POST">
+    {{-- Server-side validation errors alert --}}
+    @if($errors->any())
+    <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert" style="background: rgba(220, 53, 69, 0.15); border: 1px solid rgba(220, 53, 69, 0.4); border-radius: 8px;">
+      <div class="d-flex align-items-start">
+        <i data-feather="alert-circle" class="me-2 mt-1 flex-shrink-0" style="width: 20px; height: 20px; color: #ff6b6b;"></i>
+        <div>
+          <strong class="text-danger">Please fix the following errors:</strong>
+          <ul class="mb-0 mt-2" style="padding-left: 1.2rem;">
+            @foreach($errors->all() as $error)
+              <li class="text-danger" style="font-size: 0.9rem;">{{ $error }}</li>
+            @endforeach
+          </ul>
+        </div>
+      </div>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    @endif
+
+    <form action="{{ route('admin.users.update', $user) }}" method="POST" id="editUserForm" novalidate>
       @csrf
       @method('PUT')
       
@@ -431,27 +449,90 @@
       });
     }
 
+    // Show validation error popup
+    function showValidationAlert(errors) {
+      // Remove any existing validation alert
+      const existingAlert = document.getElementById('js-validation-alert');
+      if (existingAlert) existingAlert.remove();
+
+      const alertDiv = document.createElement('div');
+      alertDiv.id = 'js-validation-alert';
+      alertDiv.className = 'alert alert-danger alert-dismissible fade show mb-4';
+      alertDiv.setAttribute('role', 'alert');
+      alertDiv.style.cssText = 'background: rgba(220, 53, 69, 0.15); border: 1px solid rgba(220, 53, 69, 0.4); border-radius: 8px; animation: slideDown 0.3s ease;';
+      
+      let errorList = errors.map(err => `<li class="text-danger" style="font-size: 0.9rem;">${err}</li>`).join('');
+      alertDiv.innerHTML = `
+        <div class="d-flex align-items-start">
+          <i data-feather="alert-circle" class="me-2 mt-1 flex-shrink-0" style="width: 20px; height: 20px; color: #ff6b6b;"></i>
+          <div>
+            <strong class="text-danger">Please fix the following errors:</strong>
+            <ul class="mb-0 mt-2" style="padding-left: 1.2rem;">${errorList}</ul>
+          </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+      `;
+
+      const cardBody = document.querySelector('.card-body');
+      const form = document.getElementById('editUserForm');
+      cardBody.insertBefore(alertDiv, form);
+      feather.replace();
+      alertDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // Comprehensive form validation
     if (userForm) {
       userForm.addEventListener('submit', function(e) {
-        const phoneValue = phoneInput ? phoneInput.value.trim() : '';
-        if (phoneValue && phoneValue.length < 11) {
-          e.preventDefault();
-          alert('Phone number must be at least 11 digits.');
-          return false;
+        const errors = [];
+        
+        // Username validation
+        const usernameValue = document.getElementById('username').value.trim();
+        if (!usernameValue) {
+          errors.push('Username is required.');
         }
 
-        const checkedCities = document.querySelectorAll('.city-checkbox:checked');
-        const checkedSectors = document.querySelectorAll('.sector-checkbox:checked');
+        // Role validation
+        const roleValue = document.getElementById('role_id').value;
+        if (!roleValue) {
+          errors.push('Role is required. Please select a role.');
+        }
+
+        // Password validation (only if password field has value in edit mode)
+        const passwordValue = document.getElementById('password').value;
+        const confirmPasswordValue = document.getElementById('password_confirmation').value;
         
-        if (checkedCities.length === 0) {
-          e.preventDefault();
-          alert('Please select at least one GE Group.');
-          return false;
+        if (passwordValue && passwordValue.length < 6) {
+          errors.push('Password must be at least 6 characters long.');
         }
         
+        if (passwordValue && !confirmPasswordValue) {
+          errors.push('Please confirm your password.');
+        } else if (passwordValue && confirmPasswordValue && passwordValue !== confirmPasswordValue) {
+          errors.push('Password and Confirm Password do not match.');
+        }
+
+        // Phone validation
+        const phoneValue = phoneInput ? phoneInput.value.trim() : '';
+        if (phoneValue && phoneValue.length < 11) {
+          errors.push('Phone number must be at least 11 digits.');
+        }
+
+        // GE Groups validation
+        const checkedCities = document.querySelectorAll('.city-checkbox:checked');
+        if (checkedCities.length === 0) {
+          errors.push('Please select at least one GE Group.');
+        }
+        
+        // GE Nodes validation
+        const checkedSectors = document.querySelectorAll('.sector-checkbox:checked');
         if (checkedSectors.length === 0) {
+          errors.push('Please select at least one GE Node.');
+        }
+
+        // If there are errors, prevent form submission and show alert
+        if (errors.length > 0) {
           e.preventDefault();
-          alert('Please select at least one GE Node.');
+          showValidationAlert(errors);
           return false;
         }
       });
