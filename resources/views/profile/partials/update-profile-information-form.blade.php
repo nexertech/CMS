@@ -12,21 +12,31 @@
         @method('patch')
 
         <div class="mb-3">
-            <label for="name" class="form-label text-white">Name</label>
-            <input type="text" class="form-control" id="name" name="name" 
-                   value="{{ old('name', $user->name) }}" required autofocus autocomplete="name"
-                   style="background: rgba(255,255,255,0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #fff;">
+            <label for="name" class="form-label text-white fw-semibold">Name</label>
+            <input type="text" class="form-control profile-form-control" id="name" name="name" 
+                   value="{{ old('name', $user->name) }}" required autofocus autocomplete="name">
             @error('name')
                 <div class="text-danger small mt-1">{{ $message }}</div>
             @enderror
         </div>
 
         <div class="mb-3">
-            <label for="email" class="form-label text-white">Email</label>
-            <input type="email" class="form-control" id="email" name="email" 
-                   value="{{ old('email', $user->email) }}" required autocomplete="username"
-                   style="background: rgba(255,255,255,0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #fff;">
+            <label for="email" class="form-label text-white fw-semibold">Email</label>
+            <input type="email" class="form-control profile-form-control" id="email" name="email" 
+                   value="{{ old('email', $user->email) }}" required autocomplete="username">
             @error('email')
+                <div class="text-danger small mt-1">{{ $message }}</div>
+            @enderror
+        </div>
+
+        <div class="mb-3">
+            <label for="phone" class="form-label text-white fw-semibold">Phone Number</label>
+            <input type="tel" class="form-control profile-form-control" id="phone" name="phone" 
+                   value="{{ old('phone', $user->phone) }}" autocomplete="tel"
+                   pattern="[0-9]*" inputmode="numeric" 
+                   onkeypress="return event.charCode >= 48 && event.charCode <= 57"
+                   placeholder="Enter your phone number">
+            @error('phone')
                 <div class="text-danger small mt-1">{{ $message }}</div>
             @enderror
 

@@ -287,7 +287,7 @@ class TestReportDataSeeder extends Seeder
                 'client_id' => $client3->id,
                 'category' => $categories[array_rand($categories)],
                 'department' => $departments[array_rand($departments)],
-                'description' => 'Pertains to GE (N) Const Isld - maintenance required',
+                'description' => 'Work priced performa - maintenance required',
                 'status' => $statuses[array_rand($statuses)],
                 'assigned_employee_id' => $employees->id,
                 'priority' => $priorities[array_rand($priorities)],

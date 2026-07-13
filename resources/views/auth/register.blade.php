@@ -30,7 +30,7 @@
                 <i data-feather="lock" class="inline w-3.5 h-3.5 mr-1.5"></i>Password
             </label>
             <div style="position: relative;">
-                <input id="password" class="form-input" type="password" name="password" required autocomplete="new-password" placeholder="Create a password" style="padding: 0.625rem 0.875rem; padding-right: 40px; font-size: 0.875rem;" />
+                <input id="password" class="form-input" type="password" name="password" required autocomplete="new-password" placeholder="Create a password (min 8 characters)" style="padding: 0.625rem 0.875rem; padding-right: 40px; font-size: 0.875rem;" />
                 <span class="toggle-password" data-target="password" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; z-index: 10;">
                     <i data-feather="eye" style="width: 16px; height: 16px; color: #6c757d;"></i>
                 </span>
@@ -99,6 +99,51 @@
                     }
                 });
             });
+
+            // Form validation
+            const registerForm = document.querySelector('form[action*="register"]');
+            if (registerForm) {
+                registerForm.setAttribute('novalidate', '');
+
+                registerForm.addEventListener('submit', function(e) {
+                    const errors = [];
+                    
+                    const username = document.getElementById('username').value.trim();
+                    const email = document.getElementById('email').value.trim();
+                    const password = document.getElementById('password').value;
+                    const passwordConfirmation = document.getElementById('password_confirmation').value;
+
+                    if (!username) {
+                        errors.push('Username is required.');
+                    }
+                    if (!email) {
+                        errors.push('Email address is required.');
+                    }
+                    if (!password) {
+                        errors.push('Password is required.');
+                    } else if (password.length < 8) {
+                        errors.push('Password must be at least 8 characters long.');
+                    }
+                    if (password && password !== passwordConfirmation) {
+                        errors.push('Password and Confirm Password do not match.');
+                    }
+
+                    if (errors.length > 0) {
+                        e.preventDefault();
+                        alert("Validation Errors:\n\n- " + errors.join("\n- "));
+                        return false;
+                    }
+                });
+            }
+
+            // Show server-side validation errors in popup if any
+            @if($errors->any())
+                const serverErrors = [];
+                @foreach($errors->all() as $error)
+                    serverErrors.push("{!! addslashes($error) !!}");
+                @endforeach
+                alert("Validation Errors:\n\n- " + serverErrors.join("\n- "));
+            @endif
         });
     </script>
 </x-guest-layout>

@@ -406,16 +406,14 @@
               <i data-feather="user" class="me-2"></i>Profile
             </a>
           </li>
+          @if(auth()->user() && strtolower(auth()->user()->role->role_name ?? '') === 'admin')
           <li>
             <a class="dropdown-item" href="{{ route('admin.settings.index') }}">
               <i data-feather="settings" class="me-2"></i>Settings
             </a>
           </li>
-          <li>
-            <a class="dropdown-item" href="{{ route('password.edit') }}">
-              <i data-feather="lock" class="me-2"></i>Change Password
-            </a>
-          </li>
+          @endif
+
           <li>
             <a class="dropdown-item" href="{{ route('admin.help.index') }}">
               <i data-feather="help-circle" class="me-2"></i>Help & Support

@@ -76,7 +76,6 @@
               'maint_priced_performa' => 'Maintenance Performa Priced',
               'product_na' => 'Product N/A',
               'un_authorized' => 'Un-Authorized',
-              'pertains_to_ge_const_isld' => 'Pertains to GE(N) Const Isld',
             ];
           @endphp
           @foreach($reportData as $rowKey => $row)

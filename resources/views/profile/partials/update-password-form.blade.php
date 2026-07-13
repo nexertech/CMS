@@ -8,30 +8,27 @@
         @method('put')
 
         <div class="mb-3">
-            <label for="update_password_current_password" class="form-label text-white">Current Password</label>
-            <input type="password" class="form-control" id="update_password_current_password" 
-                   name="current_password" autocomplete="current-password"
-                   style="background: rgba(255,255,255,0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #fff;">
+            <label for="update_password_current_password" class="form-label text-white fw-semibold">Current Password</label>
+            <input type="password" class="form-control profile-form-control" id="update_password_current_password" 
+                   name="current_password" autocomplete="current-password">
             @error('current_password', 'updatePassword')
                 <div class="text-danger small mt-1">{{ $message }}</div>
             @enderror
         </div>
 
         <div class="mb-3">
-            <label for="update_password_password" class="form-label text-white">New Password</label>
-            <input type="password" class="form-control" id="update_password_password" 
-                   name="password" autocomplete="new-password"
-                   style="background: rgba(255,255,255,0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #fff;">
+            <label for="update_password_password" class="form-label text-white fw-semibold">New Password</label>
+            <input type="password" class="form-control profile-form-control" id="update_password_password" 
+                   name="password" autocomplete="new-password">
             @error('password', 'updatePassword')
                 <div class="text-danger small mt-1">{{ $message }}</div>
             @enderror
         </div>
 
         <div class="mb-3">
-            <label for="update_password_password_confirmation" class="form-label text-white">Confirm Password</label>
-            <input type="password" class="form-control" id="update_password_password_confirmation" 
-                   name="password_confirmation" autocomplete="new-password"
-                   style="background: rgba(255,255,255,0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #fff;">
+            <label for="update_password_password_confirmation" class="form-label text-white fw-semibold">Confirm Password</label>
+            <input type="password" class="form-control profile-form-control" id="update_password_password_confirmation" 
+                   name="password_confirmation" autocomplete="new-password">
             @error('password_confirmation', 'updatePassword')
                 <div class="text-danger small mt-1">{{ $message }}</div>
             @enderror

@@ -182,7 +182,6 @@ class ApprovalController extends Controller
                 'maint_priced_performa' => 'Maint Priced',
                 'product_na' => 'Product N/A',
                 'un_authorized' => 'Un-Authorized',
-                'pertains_to_ge_const_isld' => 'Pertains to GE(N) Const Isld',
                 'barak_damages' => 'Barak Damages',
             ];
 
@@ -1202,7 +1201,7 @@ class ApprovalController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'status' => 'required|in:new,assigned,in_progress,resolved,work_performa,maint_performa,work_priced_performa,maint_priced_performa,product_na,un_authorized,pertains_to_ge_const_isld,barak_damages',
+            'status' => 'required|in:new,assigned,in_progress,resolved,work_performa,maint_performa,work_priced_performa,maint_priced_performa,product_na,un_authorized,barak_damages',
             'notes' => 'nullable|string',
             'remarks' => 'nullable|string',
         ]);
@@ -1234,9 +1233,9 @@ class ApprovalController extends Controller
         $approval = $complaint->spareApprovals()->first() ?? null;
         $statusToUse = $request->status;
 
-        // If status is resolved, work_priced_performa, maint_priced_performa, un_authorized, or pertains_to_ge_const_isld, 
+        // If status is resolved, work_priced_performa, maint_priced_performa, or un_authorized, 
         // use it directly without checking performa_type
-        if (!in_array($request->status, ['resolved', 'work_priced_performa', 'maint_priced_performa', 'un_authorized', 'pertains_to_ge_const_isld'])) {
+        if (!in_array($request->status, ['resolved', 'work_priced_performa', 'maint_priced_performa', 'un_authorized'])) {
             if ($approval && $approval->performa_type) {
                 // If performa_type is set, use it to determine status (ID format)
                 if ($approval->performa_type === 'work_performa') {

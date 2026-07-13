@@ -592,14 +592,14 @@
   </div>
 
   <div class="col-md-2 col-lg-2">
-    <div class="stat-card" onclick="showComplaintsModal('pertains_to_ge_const_isld')" style="cursor: pointer; background: linear-gradient(135deg, #05cbee 0%, #05bfee 100%) !important;">
+    <div class="stat-card" onclick="showComplaintsModal('work_priced_performa')" style="cursor: pointer; background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%) !important;">
       <div class="d-flex align-items-center justify-content-between">
         <div class="flex-grow-1">
-          <div class="stat-number">{{ $stats['pertains_to_ge_const_isld'] ?? 0 }}</div>
-          <div class="stat-label">Pertains to GE/Const/Isld</div>
+          <div class="stat-number">{{ $stats['work_priced_performa'] ?? 0 }}</div>
+          <div class="stat-label">Work Performa Priced</div>
         </div>
         <div class="stat-icon">
-          <i data-feather="map-pin" class="feather-lg"></i>
+          <i data-feather="dollar-sign" class="feather-lg"></i>
         </div>
       </div>
     </div>
@@ -966,13 +966,8 @@
                   $displayStatus = ($complaint->status === 'new') ? 'assigned' : $complaint->status;
                   $fullStatusText = $complaint->getStatusDisplayAttribute();
                   $shortStatusText = $fullStatusText;
-                  $hoverText = $fullStatusText;
-
-                  // Set short text and hover text for specific statuses
-                  if($displayStatus === 'pertains_to_ge_const_isld') {
-                    $shortStatusText = 'Pertains to GE';
-                    $hoverText = $fullStatusText;
-                  } elseif($displayStatus === 'maint_priced_performa') {
+                  $hoverText = $fullStatusText;                  // Set short text and hover text for specific statuses
+                  if($displayStatus === 'maint_priced_performa') {
                     $shortStatusText = 'Maint Priced';
                     $hoverText = $fullStatusText;
                   }
@@ -999,8 +994,6 @@
                   <span class="status-badge status-{{ $displayStatus }}" style="background-color: #ec5454 !important; color: #ffffff !important; border-color: #b13030 !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; width: 120px !important; text-align: center !important;" title="{{ $hoverText }}">{{ $shortStatusText }}</span>
                 @elseif($displayStatus === 'un_authorized')
                   <span class="status-badge status-{{ $displayStatus }}" style="background-color: #ec4899 !important; color: #ffffff !important; border-color: #db2777 !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; width: 120px !important; text-align: center !important;" title="{{ $fullStatusText }}">{{ $fullStatusText }}</span>
-                @elseif($displayStatus === 'pertains_to_ge_const_isld')
-                  <span class="status-badge status-{{ $displayStatus }}" style="background-color: #06b6d4 !important; color: #ffffff !important; border-color: #0891b2 !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; width: 120px !important; text-align: center !important;" title="{{ $hoverText }}">{{ $shortStatusText }}</span>
                 @elseif($displayStatus === 'product_na')
                   <span class="status-badge status-{{ $displayStatus }}" style="background-color: #ec5454 !important; color: #ffffff !important; border-color: #b13030 !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; width: 120px !important; text-align: center !important;" title="{{ $fullStatusText }}">{{ $fullStatusText }}</span>
                 @elseif($displayStatus === 'closed')
@@ -1211,7 +1204,6 @@
       'maint_priced_performa' => '#ea580c', // Orange Red
       'product_na' => '#f97316', // Orange
       'un_authorized' => '#ec4899', // Pink
-      'pertains_to_ge_const_isld' => '#06b6d4', // Aqua/Cyan
     ];
 
     // All possible statuses from approvals page (in order)
@@ -1226,7 +1218,6 @@
       'maint_priced_performa',
       'product_na',
       'un_authorized',
-      'pertains_to_ge_const_isld'
     ];
 
     // Ensure we preserve the order of statuses and include all possible statuses
@@ -1264,8 +1255,6 @@
         return 'Product N/A';
       } elseif ($status === 'un_authorized') {
         return 'Un-Authorized';
-      } elseif ($status === 'pertains_to_ge_const_isld') {
-        return 'Pertains to GE(N) Const Isld';
       } elseif ($status === 'in_progress') {
         return 'In Progress';
       }

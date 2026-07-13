@@ -124,7 +124,7 @@
           <div class="mb-3">
             <label for="password" class="form-label text-white">New Password</label>
             <input type="password" class="form-control @error('password') is-invalid @enderror"
-                   id="password" name="password">
+                   id="password" name="password" placeholder="Minimum 8 characters">
             <div class="form-text text-muted">Leave blank to keep current password</div>
             @error('password')
               <div class="invalid-feedback">{{ $message }}</div>
@@ -175,19 +175,57 @@
       });
     }
 
-    // Form validation - check phone number before submit
+    // Form validation
     const userForm = document.querySelector('form[action*="frontend-users"]');
     if (userForm) {
+      // Add novalidate to form to prevent default browser tooltips
+      userForm.setAttribute('novalidate', '');
+
       userForm.addEventListener('submit', function(e) {
+        const errors = [];
+
+        // Username
+        const usernameValue = document.getElementById('username').value.trim();
+        if (!usernameValue) {
+          errors.push('Username is required.');
+        }
+
+        // Password (only if entered)
+        const passwordValue = document.getElementById('password').value;
+        const confirmPasswordValue = document.getElementById('password_confirmation').value;
+        
+        if (passwordValue && passwordValue.length < 8) {
+          errors.push('Password must be at least 8 characters long.');
+        }
+
+        if (passwordValue && !confirmPasswordValue) {
+          errors.push('Please confirm your password.');
+        } else if (passwordValue && confirmPasswordValue && passwordValue !== confirmPasswordValue) {
+          errors.push('Password and Confirm Password do not match.');
+        }
+
+        // Phone validation
         const phoneValue = phoneInput ? phoneInput.value.trim() : '';
         if (phoneValue && phoneValue.length < 11) {
+          errors.push('Phone number must be at least 11 digits.');
+        }
+
+        if (errors.length > 0) {
           e.preventDefault();
-          alert('Phone number must be at least 11 digits.');
-          if (phoneInput) phoneInput.focus();
+          alert("Validation Errors:\n\n- " + errors.join("\n- "));
           return false;
         }
       });
     }
+
+    // Show server-side validation errors in popup if any
+    @if($errors->any())
+      const serverErrors = [];
+      @foreach($errors->all() as $error)
+        serverErrors.push("{!! addslashes($error) !!}");
+      @endforeach
+      alert("Validation Errors:\n\n- " + serverErrors.join("\n- "));
+    @endif
   });
 </script>
 

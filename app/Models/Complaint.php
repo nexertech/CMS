@@ -176,7 +176,6 @@ class Complaint extends Model
             'maint_priced_performa' => 'Maintenance Performa Priced',
             'product_na' => 'Product N/A',
             'un_authorized' => 'Un-Authorized',
-            'pertains_to_ge_const_isld' => 'GE Const Isld',
             'barak_damages' => 'Barak Damages',
         ];
     }

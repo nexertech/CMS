@@ -583,7 +583,7 @@ class ComplaintController extends Controller
     public function updateStatus(Request $request, Complaint $complaint)
     {
         $validator = Validator::make($request->all(), [
-            'status' => 'required|in:new,assigned,in_progress,resolved,work_performa,maint_performa,work_priced_performa,maint_priced_performa,product_na,un_authorized,pertains_to_ge_const_isld,barak_damages',
+            'status' => 'required|in:new,assigned,in_progress,resolved,work_performa,maint_performa,work_priced_performa,maint_priced_performa,product_na,un_authorized,barak_damages',
             'notes' => 'nullable|string',
             'remarks' => 'nullable|string',
         ]);
@@ -730,7 +730,6 @@ class ComplaintController extends Controller
             'maint_priced_performa' => Complaint::where('created_at', '>=', now()->subDays($period))->where('status', 'maint_priced_performa')->count(),
             'product_na' => Complaint::where('created_at', '>=', now()->subDays($period))->where('status', 'product_na')->count(),
             'un_authorized' => Complaint::where('created_at', '>=', now()->subDays($period))->where('status', 'un_authorized')->count(),
-            'pertains_to_ge_const_isld' => Complaint::where('created_at', '>=', now()->subDays($period))->where('status', 'pertains_to_ge_const_isld')->count(),
             'overdue' => Complaint::overdue()->count(),
         ];
 
@@ -799,7 +798,6 @@ class ComplaintController extends Controller
                 SUM(CASE WHEN status = "maint_priced_performa" THEN 1 ELSE 0 END) as maint_priced_performa_count,
                 SUM(CASE WHEN status = "product_na" THEN 1 ELSE 0 END) as product_na_count,
                 SUM(CASE WHEN status = "un_authorized" THEN 1 ELSE 0 END) as un_authorized_count,
-                SUM(CASE WHEN status = "pertains_to_ge_const_isld" THEN 1 ELSE 0 END) as pertains_to_ge_const_isld_count,
                 AVG(CASE WHEN status = "resolved" THEN TIMESTAMPDIFF(HOUR, complaints.created_at, complaints.updated_at) ELSE NULL END) as avg_resolution_time')
             ->groupBy('assigned_employee_id')
             ->with('assignedEmployee')
@@ -856,7 +854,7 @@ class ComplaintController extends Controller
 
             case 'change_status':
                 $validator = Validator::make($request->all(), [
-                    'status' => 'required|in:new,assigned,in_progress,resolved,work_priced_performa,maint_priced_performa,product_na,un_authorized,pertains_to_ge_const_isld',
+                    'status' => 'required|in:new,assigned,in_progress,resolved,work_priced_performa,maint_priced_performa,product_na,un_authorized',
                 ]);
 
                 if ($validator->fails()) {

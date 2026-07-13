@@ -100,7 +100,6 @@
               <option value="product_na" {{ request('status') == 'product_na' ? 'selected' : '' }}>Product N/A</option>
               <option value="un_authorized" {{ request('status') == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
               </option>
-              <option value="pertains_to_ge_const_isld" {{ request('status') == 'pertains_to_ge_const_isld' ? 'selected' : '' }}>Pertains to GE(N) Const Isld</option>
               <option value="barak_damages" {{ request('status') == 'barak_damages' ? 'selected' : '' }}>Barak Damages
               </option>
               <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
@@ -214,7 +213,6 @@
                   'maint_priced_performa' => ['bg' => '#ea580c', 'text' => '#ffffff', 'border' => '#c2410c'], // Dark Orange (matching badge)
                   'product_na' => ['bg' => '#f97316', 'text' => '#ffffff', 'border' => '#c2410c'], // Orange (for status column)
                   'un_authorized' => ['bg' => '#ec4899', 'text' => '#ffffff', 'border' => '#db2777'], // Pink
-                  'pertains_to_ge_const_isld' => ['bg' => '#06b6d4', 'text' => '#ffffff', 'border' => '#0891b2'], // Aqua/Cyan
                   'barak_damages' => ['bg' => '#808000', 'text' => '#ffffff', 'border' => '#666600'], // Olive (matching Users card)
                   'assigned' => ['bg' => '#16a34a', 'text' => '#ffffff', 'border' => '#15803d'], // Green
                   'unassigned' => ['bg' => '#000000', 'text' => '#ffffff', 'border' => '#333333'], // Black
@@ -380,7 +378,6 @@
                           </option>
                           <option value="un_authorized" {{ $displayStatusForSelect == 'un_authorized' ? 'selected' : '' }}>
                             Un-Authorized</option>
-                          <option value="pertains_to_ge_const_isld" {{ $displayStatusForSelect == 'pertains_to_ge_const_isld' ? 'selected' : '' }}>Pertains to GE(N) Const Isld</option>
                           <option value="barak_damages" {{ $displayStatusForSelect == 'barak_damages' ? 'selected' : '' }}>Barak
                             Damages</option>
                         @endif
@@ -419,7 +416,6 @@
                           <option value="product_na" {{ $complaintStatus == 'product_na' ? 'selected' : '' }}>Product N/A</option>
                           <option value="un_authorized" {{ $complaintStatus == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
                           </option>
-                          <option value="pertains_to_ge_const_isld" {{ $complaintStatus == 'pertains_to_ge_const_isld' ? 'selected' : '' }}>Pertains to GE(N) Const Isld</option>
                           <option value="barak_damages" {{ $complaintStatus == 'barak_damages' ? 'selected' : '' }}>Barak Damages
                           </option>
                         @endif
@@ -458,7 +454,6 @@
                           <option value="product_na" {{ $complaintStatus == 'product_na' ? 'selected' : '' }}>Product N/A</option>
                           <option value="un_authorized" {{ $complaintStatus == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
                           </option>
-                          <option value="pertains_to_ge_const_isld" {{ $complaintStatus == 'pertains_to_ge_const_isld' ? 'selected' : '' }}>Pertains to GE(N) Const Isld</option>
                         @endif
                       </select>
                       <i data-feather="chevron-down"
@@ -495,7 +490,6 @@
                           <option value="product_na" {{ $complaintStatus == 'product_na' ? 'selected' : '' }}>Product N/A</option>
                           <option value="un_authorized" {{ $complaintStatus == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
                           </option>
-                          <option value="pertains_to_ge_const_isld" {{ $complaintStatus == 'pertains_to_ge_const_isld' ? 'selected' : '' }}>Pertains to GE(N) Const Isld</option>
                           <option value="barak_damages" {{ $complaintStatus == 'barak_damages' ? 'selected' : '' }}>Barak Damages
                           </option>
                         @endif
@@ -503,45 +497,7 @@
                       <i data-feather="chevron-down"
                         style="width: 14px; height: 14px; color: #ffffff !important; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); pointer-events: none; z-index: 10; stroke: #ffffff;"></i>
                     </div>
-                  @elseif($complaintStatus == 'pertains_to_ge_const_isld')
-                    <div class="status-chip"
-                      style="background-color: {{ $statusColors['pertains_to_ge_const_isld']['bg'] }}; color: {{ $statusColors['pertains_to_ge_const_isld']['text'] }}; border-color: {{ $statusColors['pertains_to_ge_const_isld']['border'] }}; position: relative; overflow: hidden; height: 24px; width: 100px;">
-                      <span class="status-indicator"
-                        style="background-color: {{ $statusColors['pertains_to_ge_const_isld']['bg'] }}; border-color: {{ $statusColors['pertains_to_ge_const_isld']['border'] }};"></span>
-                      <select class="form-select form-select-sm status-select" data-complaint-id="{{ $complaint->id }}"
-                        data-actual-status="{{ $rawStatus }}" data-status-color="pertains_to_ge_const_isld"
-                        style="width: 100px; font-size: 9px; font-weight: 700; height: 24px; text-align: center; text-align-last: center; padding: 0;">
-                        @if(isset($statuses) && $statuses->count() > 0)
-                          @foreach($statuses as $statusValue => $statusLabel)
-                            @if($statusValue === 'unassigned' && $complaintStatus !== 'unassigned')
-                              @continue
-                            @endif
-                            <option value="{{ $statusValue }}" {{ $complaintStatus == $statusValue ? 'selected' : '' }}>
-                              {{ $statusLabel }}
-                            </option>
-                          @endforeach
-                        @else
-                          @if($complaintStatus === 'unassigned')
-                            <option value="unassigned" selected>Unassigned</option>
-                          @endif
-                          <option value="assigned" {{ $complaintStatus == 'assigned' ? 'selected' : '' }}>Assigned</option>
-                          <option value="in_progress" {{ $complaintStatus == 'in_progress' ? 'selected' : '' }}>In Progress</option>
-                          <option value="resolved" {{ $complaintStatus == 'resolved' ? 'selected' : '' }}>Addressed</option>
-                          <option value="work_priced_performa" {{ $complaintStatus == 'work_priced_performa' ? 'selected' : '' }}>
-                            Work Priced</option>
-                          <option value="maint_priced_performa" {{ $complaintStatus == 'maint_priced_performa' ? 'selected' : '' }}>
-                            Maint Priced</option>
-                          <option value="product_na" {{ $complaintStatus == 'product_na' ? 'selected' : '' }}>Product N/A</option>
-                          <option value="un_authorized" {{ $complaintStatus == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
-                          </option>
-                          <option value="pertains_to_ge_const_isld" {{ $complaintStatus == 'pertains_to_ge_const_isld' ? 'selected' : '' }}>Pertains to GE(N) Const Isld</option>
-                          <option value="barak_damages" {{ $complaintStatus == 'barak_damages' ? 'selected' : '' }}>Barak Damages
-                          </option>
-                        @endif
-                      </select>
-                      <i data-feather="chevron-down"
-                        style="width: 14px; height: 14px; color: #ffffff !important; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); pointer-events: none; z-index: 10; stroke: #ffffff;"></i>
-                    </div>
+
                   @elseif($complaintStatus == 'barak_damages')
                     <div class="status-chip"
                       style="background-color: {{ $statusColors['barak_damages']['bg'] }}; color: {{ $statusColors['barak_damages']['text'] }}; border-color: {{ $statusColors['barak_damages']['border'] }}; position: relative; overflow: hidden; height: 24px; width: 100px;">
@@ -573,7 +529,6 @@
                           <option value="product_na" {{ $complaintStatus == 'product_na' ? 'selected' : '' }}>Product N/A</option>
                           <option value="un_authorized" {{ $complaintStatus == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
                           </option>
-                          <option value="pertains_to_ge_const_isld" {{ $complaintStatus == 'pertains_to_ge_const_isld' ? 'selected' : '' }}>Pertains to GE(N) Const Isld</option>
                           <option value="barak_damages" {{ $complaintStatus == 'barak_damages' ? 'selected' : '' }}>Barak Damages
                           </option>
                         @endif
@@ -612,7 +567,6 @@
                           <option value="product_na" {{ $complaintStatus == 'product_na' ? 'selected' : '' }}>Product N/A</option>
                           <option value="un_authorized" {{ $complaintStatus == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
                           </option>
-                          <option value="pertains_to_ge_const_isld" {{ $complaintStatus == 'pertains_to_ge_const_isld' ? 'selected' : '' }}>Pertains to GE(N) Const Isld</option>
                           <option value="barak_damages" {{ $complaintStatus == 'barak_damages' ? 'selected' : '' }}>Barak Damages
                           </option>
                         @endif
@@ -4377,7 +4331,6 @@
       'maint_priced_performa': { bg: '#dc2626', text: '#ffffff', border: '#b91c1c' }, // Red (like product_na)
       'product_na': { bg: '#dc2626', text: '#ffffff', border: '#b91c1c' }, // Red
       'un_authorized': { bg: '#ec4899', text: '#ffffff', border: '#db2777' }, // Pink
-      'pertains_to_ge_const_isld': { bg: '#06b6d4', text: '#ffffff', border: '#0891b2' }, // Aqua/Cyan
       'assigned': { bg: '#16a34a', text: '#ffffff', border: '#15803d' }, // Green (swapped from grey)
       'unassigned': { bg: '#000000', text: '#ffffff', border: '#333333' }, // Black
       'barak_damages': { bg: '#808000', text: '#ffffff', border: '#666600' }, // Olive
@@ -4435,7 +4388,7 @@
 
         // Prevent status change if unassigned (unless selecting assigned or the 3 special statuses)
         const currentActualStatus = select.getAttribute('data-actual-status');
-        const statusesAllowedWithoutAssignment = ['assigned', 'un_authorized', 'pertains_to_ge_const_isld', 'barak_damages'];
+        const statusesAllowedWithoutAssignment = ['assigned', 'un_authorized', 'barak_damages'];
         if (currentActualStatus === 'new' && !statusesAllowedWithoutAssignment.includes(newStatus)) {
           alert('First assigned the complaint');
           select.value = 'unassigned';
@@ -4678,7 +4631,7 @@
         }
 
         // Real statuses only - include all possible statuses
-        const allowed = ['new', 'assigned', 'in_progress', 'resolved', 'closed', 'un_authorized', 'pertains_to_ge_const_isld', 'barak_damages', 'product_na', 'work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa'];
+        const allowed = ['new', 'assigned', 'in_progress', 'resolved', 'closed', 'un_authorized', 'barak_damages', 'product_na', 'work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa'];
         if (!allowed.includes(newStatus)) {
           console.warn('Blocked unsupported status:', newStatus);
           // Revert to old on invalid
@@ -4698,8 +4651,8 @@
           newStatus === 'work_performa' || newStatus === 'maint_performa' || newStatus === 'work_priced_performa' || newStatus === 'maint_priced_performa' || newStatus === 'product_na' ||
           originalStatusForSpecialOption === 'product_na';
 
-        // Clear Performa Required badge if switching to un_authorized or pertains_to_ge_const_isld
-        if (performaBadge && (newStatus === 'un_authorized' || newStatus === 'pertains_to_ge_const_isld')) {
+        // Clear Performa Required badge if switching to un_authorized
+        if (performaBadge && (newStatus === 'un_authorized')) {
           performaBadge.style.display = 'none';
           performaBadge.textContent = '';
           // Clear localStorage for these statuses
@@ -4792,7 +4745,7 @@
           }
         }
 
-        if (complaintId && !isSpecialOption && newStatus !== 'un_authorized' && newStatus !== 'pertains_to_ge_const_isld') {
+        if (complaintId && !isSpecialOption && newStatus !== 'un_authorized') {
           try { localStorage.removeItem(`performaRequired:${complaintId}`); } catch (err) { }
         }
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -5080,7 +5033,7 @@
                   updateStatusSelectColor(select, 'in_progress');
                 }
               } else {
-                // Check if newStatus is un_authorized or pertains_to_ge_const_isld first - these should always be set
+                // Check if newStatus is un_authorized first - these should always be set
                 if (newStatus === 'un_authorized') {
                   // Set un_authorized value and color
                   select.value = 'un_authorized';
@@ -5120,52 +5073,6 @@
                         .then(data => {
                           if (data.success) {
                             console.log('Performa type cleared from approval for un_authorized');
-                          }
-                        })
-                        .catch(error => {
-                          console.error('Error clearing performa type:', error);
-                        });
-                    }
-                  }
-                } else if (newStatus === 'pertains_to_ge_const_isld') {
-                  // Set pertains_to_ge_const_isld value and color
-                  select.value = 'pertains_to_ge_const_isld';
-                  updateStatusSelectColor(select, 'pertains_to_ge_const_isld');
-                  // Clear performa badge for pertains_to_ge_const_isld status
-                  const performaBadgeInRow = row?.querySelector('.performa-badge');
-                  if (performaBadgeInRow) {
-                    performaBadgeInRow.style.display = 'none';
-                    performaBadgeInRow.textContent = '';
-                  }
-                  // Clear localStorage
-                  if (complaintId) {
-                    try { localStorage.removeItem(`performaRequired:${complaintId}`); } catch (err) { }
-                  }
-
-                  // Clear performa_type from approval record
-                  const addStockBtn = row?.querySelector('button[data-approval-id]');
-                  const approvalId = addStockBtn ? addStockBtn.getAttribute('data-approval-id') : null;
-                  if (approvalId) {
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                    if (csrfToken) {
-                      fetch(`/admin/approvals/${approvalId}/save-performa`, {
-                        method: 'POST',
-                        headers: {
-                          'X-Requested-With': 'XMLHttpRequest',
-                          'Accept': 'application/json',
-                          'Content-Type': 'application/json',
-                          'X-CSRF-TOKEN': csrfToken
-                        },
-                        body: JSON.stringify({
-                          performa_type: null,
-                          remarks: `Performa type cleared - status changed to ${newStatus}`
-                        }),
-                        credentials: 'same-origin'
-                      })
-                        .then(response => response.json())
-                        .then(data => {
-                          if (data.success) {
-                            console.log('Performa type cleared from approval for pertains_to_ge_const_isld');
                           }
                         })
                         .catch(error => {
@@ -5300,15 +5207,11 @@
             if (select.isConnected && select.value !== 'resolved') {
               select.style.opacity = '1';
               select.disabled = false;
-              // Check if newStatus is un_authorized or pertains_to_ge_const_isld first - these should always be set
+              // Check if newStatus is un_authorized first - these should always be set
               if (newStatus === 'un_authorized') {
                 // Keep un_authorized value and color
                 select.value = 'un_authorized';
                 updateStatusSelectColor(select, 'un_authorized');
-              } else if (newStatus === 'pertains_to_ge_const_isld') {
-                // Keep pertains_to_ge_const_isld value and color
-                select.value = 'pertains_to_ge_const_isld';
-                updateStatusSelectColor(select, 'pertains_to_ge_const_isld');
               } else if (specialOptionType) {
                 // Restore dropdown value - show "In Progress" for all performa types (including priced ones)
                 // Actual value is preserved in data-actual-status and will be used on next reload
@@ -5370,9 +5273,9 @@
           return; // Server-rendered badge, keep it as is
         }
 
-        // Don't restore from localStorage if current status is un_authorized or pertains_to_ge_const_isld
+        // Don't restore from localStorage if current status is un_authorized
         const currentStatus = sel.value || sel.getAttribute('data-actual-status');
-        if (currentStatus === 'un_authorized' || currentStatus === 'pertains_to_ge_const_isld') {
+        if (currentStatus === 'un_authorized') {
           // Clear localStorage for these statuses
           try { localStorage.removeItem(`performaRequired:${complaintId}`); } catch (err) { }
           // Hide badge for these statuses

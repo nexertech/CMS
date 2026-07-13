@@ -138,7 +138,7 @@ class UserController extends Controller
             'name' => 'nullable|string|max:100',
             'email' => 'nullable|email|max:150|unique:users,email',
             'phone' => 'nullable|string|min:11|max:20',
-            'password' => 'required|string|min:6|confirmed',
+            'password' => 'required|string|min:8|confirmed',
             'role_id' => 'required|exists:roles,id',
             'city_id' => 'nullable|array',
             'sector_id' => 'nullable|array',
@@ -292,7 +292,7 @@ class UserController extends Controller
             'name' => 'nullable|string|max:100',
             'email' => 'nullable|email|max:150|unique:users,email,' . $user->id,
             'phone' => 'nullable|string|min:11|max:20',
-            'password' => 'nullable|string|min:6|confirmed',
+            'password' => 'nullable|string|min:8|confirmed',
             'role_id' => 'required|exists:roles,id',
             'city_id' => 'nullable|array',
             'sector_id' => 'nullable|array',
@@ -435,7 +435,7 @@ class UserController extends Controller
     public function resetPassword(Request $request, User $user)
     {
         $validator = Validator::make($request->all(), [
-            'password' => 'required|string|min:6|confirmed',
+            'password' => 'required|string|min:8|confirmed',
         ]);
 
         if ($validator->fails()) {

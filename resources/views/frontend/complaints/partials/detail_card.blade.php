@@ -15,7 +15,6 @@
     'maint_priced_performa' => 'Maintenance Priced',
     'product_na' => 'Product N/A',
     'un_authorized' => 'Un-Authorized',
-    'pertains_to_ge_const_isld' => 'GE Const Isld',
     'barak_damages' => 'Barak Damages',
     'pending' => 'Pending', // Frontend specific fallback
   ];
@@ -33,7 +32,6 @@
       'maint_priced_performa' => ['bg' => '#ea580c', 'text' => '#ffffff'],
       'product_na' => ['bg' => '#f97316', 'text' => '#ffffff'],
       'un_authorized' => ['bg' => '#ec4899', 'text' => '#ffffff'],
-      'pertains_to_ge_const_isld' => ['bg' => '#06b6d4', 'text' => '#ffffff'],
       'barak_damages' => ['bg' => '#808000', 'text' => '#ffffff'],
       'assigned' => ['bg' => '#16a34a', 'text' => '#ffffff'],    // Green
       'new' => ['bg' => '#000000', 'text' => '#ffffff'],         // Black

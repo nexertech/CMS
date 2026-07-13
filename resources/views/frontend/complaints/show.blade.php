@@ -30,7 +30,6 @@
     'maint_priced_performa' => 'Maintenance Priced',
     'product_na' => 'Product N/A',
     'un_authorized' => 'Un-Authorized',
-    'pertains_to_ge_const_isld' => 'GE Const Isld',
     'barak_damages' => 'Barak Damages',
   ];
   $statusDisplay = $statusLabels[$complaintStatus] ?? ucfirst(str_replace('_', ' ', $complaintStatus));
@@ -44,7 +43,6 @@
     'maint_priced_performa' => ['bg' => '#ea580c', 'text' => '#ffffff', 'border' => '#c2410c'],
     'product_na' => ['bg' => '#f97316', 'text' => '#ffffff', 'border' => '#c2410c'],
     'un_authorized' => ['bg' => '#ec4899', 'text' => '#ffffff', 'border' => '#db2777'],
-    'pertains_to_ge_const_isld' => ['bg' => '#06b6d4', 'text' => '#ffffff', 'border' => '#0891b2'],
     'barak_damages' => ['bg' => '#808000', 'text' => '#ffffff', 'border' => '#666600'],
     'assigned' => ['bg' => '#16a34a', 'text' => '#ffffff', 'border' => '#15803d'], // Green (swapped from grey)
   ];

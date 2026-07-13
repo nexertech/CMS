@@ -373,3 +373,73 @@
     </div>
   </div>
 @endsection
+
+@push('scripts')
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Basic profile form validation
+    const profileForm = document.querySelector('form[action*="profile/update"]');
+    if (profileForm) {
+      profileForm.setAttribute('novalidate', '');
+      profileForm.addEventListener('submit', function(e) {
+        const errors = [];
+        const username = document.getElementById('username').value.trim();
+        const name = document.getElementById('name').value.trim();
+
+        if (!username) {
+          errors.push('User Name is required.');
+        }
+        if (!name) {
+          errors.push('Full Name is required.');
+        }
+
+        if (errors.length > 0) {
+          e.preventDefault();
+          alert("Validation Errors:\n\n- " + errors.join("\n- "));
+          return false;
+        }
+      });
+    }
+
+    // Password form validation
+    const passwordForm = document.querySelector('form[action*="change-password"]');
+    if (passwordForm) {
+      passwordForm.setAttribute('novalidate', '');
+      passwordForm.addEventListener('submit', function(e) {
+        const errors = [];
+        const currentPassword = document.getElementById('current_password').value;
+        const newPassword = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('password_confirmation').value;
+
+        if (!currentPassword) {
+          errors.push('Current Password is required.');
+        }
+        if (!newPassword) {
+          errors.push('New Password is required.');
+        } else if (newPassword.length < 8) {
+          errors.push('New Password must be at least 8 characters long.');
+        }
+        if (newPassword && newPassword !== confirmPassword) {
+          errors.push('New Password and Confirm Password do not match.');
+        }
+
+        if (errors.length > 0) {
+          e.preventDefault();
+          alert("Validation Errors:\n\n- " + errors.join("\n- "));
+          return false;
+        }
+      });
+    }
+
+    // Show server-side validation errors in popup if any
+    @if($errors->any())
+      const serverErrors = [];
+      @foreach($errors->all() as $error)
+        serverErrors.push("{!! addslashes($error) !!}");
+      @endforeach
+      alert("Validation Errors:\n\n- " + serverErrors.join("\n- "));
+    @endif
+  });
+</script>
+@endpush
+

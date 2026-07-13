@@ -135,8 +135,6 @@
         .status-product_na .dot { background: #ef4444; }
         .status-un_authorized { background: #fef2f2; color: #b91c1c; }
         .status-un_authorized .dot { background: #dc2626; }
-        .status-pertains_to_ge_const_isld { background: #f1f5f9; color: #475569; }
-        .status-pertains_to_ge_const_isld .dot { background: #64748b; }
         .status-barak_damages { background: #fff1f2; color: #9f1239; }
         .status-barak_damages .dot { background: #e11d48; }
 
@@ -528,7 +526,6 @@
                             'maint_priced_performa' => 'Maint Priced Performa',
                             'product_na' => 'Product N/A',
                             'un_authorized' => 'Un-Authorized',
-                            'pertains_to_ge_const_isld' => 'Pertains to GE Const',
                             'barak_damages' => 'Barak Damages',
                         ];
                         $statusLabel = $statusLabels[$statusKey] ?? ucfirst(str_replace('_', ' ', $statusKey));

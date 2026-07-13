@@ -84,7 +84,7 @@ class FrontendUserController extends Controller
             'name' => 'nullable|string|max:100',
             'email' => 'nullable|email|max:150|unique:frontend_users,email',
             'phone' => 'nullable|string|min:11|max:20',
-            'password' => 'required|string|min:6|confirmed',
+            'password' => 'required|string|min:8|confirmed',
             'status' => 'required|in:0,1',
         ]);
 
@@ -225,7 +225,7 @@ class FrontendUserController extends Controller
             'name' => 'nullable|string|max:100',
             'email' => 'nullable|email|max:150|unique:frontend_users,email,' . $frontend_user->id,
             'phone' => 'nullable|string|min:11|max:20',
-            'password' => 'nullable|string|min:6|confirmed',
+            'password' => 'nullable|string|min:8|confirmed',
             'status' => 'required|in:0,1',
         ]);
 

@@ -123,7 +123,7 @@
           <div class="mb-3">
             <label for="password" class="form-label text-white">New Password</label>
             <input type="password" class="form-control @error('password') is-invalid @enderror" 
-                   id="password" name="password">
+                   id="password" name="password" placeholder="Minimum 8 characters">
             <div class="form-text text-muted">Leave blank to keep current password</div>
             @error('password')
               <div class="invalid-feedback">{{ $message }}</div>
@@ -501,8 +501,8 @@
         const passwordValue = document.getElementById('password').value;
         const confirmPasswordValue = document.getElementById('password_confirmation').value;
         
-        if (passwordValue && passwordValue.length < 6) {
-          errors.push('Password must be at least 6 characters long.');
+        if (passwordValue && passwordValue.length < 8) {
+          errors.push('Password must be at least 8 characters long.');
         }
         
         if (passwordValue && !confirmPasswordValue) {
@@ -533,10 +533,20 @@
         if (errors.length > 0) {
           e.preventDefault();
           showValidationAlert(errors);
+          alert("Validation Errors:\n\n- " + errors.join("\n- "));
           return false;
         }
       });
     }
+
+    // Show server-side validation errors in popup if any
+    @if($errors->any())
+      const serverErrors = [];
+      @foreach($errors->all() as $error)
+        serverErrors.push("{!! addslashes($error) !!}");
+      @endforeach
+      alert("Validation Errors:\n\n- " + serverErrors.join("\n- "));
+    @endif
 
     fetchSectors();
     updateSelectAllButtons();

@@ -47,7 +47,6 @@ class AddRecentMonthsComplaintsSeeder extends Seeder
             'maint_performa',
             'product_na',
             'un_authorized',
-            'pertains_to_ge_const_isld',
         ];
 
         // Categories array

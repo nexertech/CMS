@@ -100,7 +100,7 @@
           <div class="mb-3">
             <label for="password" class="form-label text-white">Password <span class="text-danger">*</span></label>
             <input type="password" class="form-control @error('password') is-invalid @enderror"
-                   id="password" name="password" required>
+                   id="password" name="password" placeholder="Minimum 8 characters" required>
             @error('password')
               <div class="invalid-feedback">{{ $message }}</div>
             @enderror
@@ -193,6 +193,60 @@
         this.value = numbersOnly;
       });
     }
+
+    // Frontend validation on submit
+    const userForm = document.querySelector('form[action*="frontend-users"]');
+    if (userForm) {
+      // Add novalidate to form to prevent default browser tooltips
+      userForm.setAttribute('novalidate', '');
+
+      userForm.addEventListener('submit', function(e) {
+        const errors = [];
+
+        // Username
+        const usernameValue = document.getElementById('username').value.trim();
+        if (!usernameValue) {
+          errors.push('Username is required.');
+        }
+
+        // Password
+        const passwordValue = document.getElementById('password').value;
+        const confirmPasswordValue = document.getElementById('password_confirmation').value;
+        
+        if (!passwordValue) {
+          errors.push('Password is required.');
+        } else if (passwordValue.length < 8) {
+          errors.push('Password must be at least 8 characters long.');
+        }
+
+        if (passwordValue && !confirmPasswordValue) {
+          errors.push('Please confirm your password.');
+        } else if (passwordValue && confirmPasswordValue && passwordValue !== confirmPasswordValue) {
+          errors.push('Password and Confirm Password do not match.');
+        }
+
+        // Phone validation
+        const phoneValue = phoneInput ? phoneInput.value.trim() : '';
+        if (phoneValue && phoneValue.length < 11) {
+          errors.push('Phone number must be at least 11 digits.');
+        }
+
+        if (errors.length > 0) {
+          e.preventDefault();
+          alert("Validation Errors:\n\n- " + errors.join("\n- "));
+          return false;
+        }
+      });
+    }
+
+    // Show server-side validation errors in popup if any
+    @if($errors->any())
+      const serverErrors = [];
+      @foreach($errors->all() as $error)
+        serverErrors.push("{!! addslashes($error) !!}");
+      @endforeach
+      alert("Validation Errors:\n\n- " + serverErrors.join("\n- "));
+    @endif
   });
 </script>
 @endpush

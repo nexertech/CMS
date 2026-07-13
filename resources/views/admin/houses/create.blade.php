@@ -295,6 +295,48 @@
                 this.setSelectionRange(cursorPos + replacedText.length, cursorPos + replacedText.length);
             });
         }
+
+        // Form Submit Validation
+        const houseForm = document.getElementById('houseForm');
+        if (houseForm) {
+            houseForm.setAttribute('novalidate', '');
+            houseForm.addEventListener('submit', function(e) {
+                const errors = [];
+                
+                const houseNo = document.getElementById('house_no').value.trim();
+                const cityId = document.getElementById('city_id').value;
+                const sectorId = document.getElementById('sector_id').value;
+                const password = document.getElementById('password').value;
+
+                if (!houseNo) {
+                    errors.push('House Number is required.');
+                }
+                if (!cityId) {
+                    errors.push('GE Group is required.');
+                }
+                if (!sectorId) {
+                    errors.push('GE Node is required.');
+                }
+                if (password && password.length < 8) {
+                    errors.push('Password must be at least 8 characters long.');
+                }
+
+                if (errors.length > 0) {
+                    e.preventDefault();
+                    alert("Validation Errors:\n\n- " + errors.join("\n- "));
+                    return false;
+                }
+            });
+        }
+
+        // Show server-side validation errors in popup if any
+        @if($errors->any())
+            const serverErrors = [];
+            @foreach($errors->all() as $error)
+                serverErrors.push("{!! addslashes($error) !!}");
+            @endforeach
+            alert("Validation Errors:\n\n- " + serverErrors.join("\n- "));
+        @endif
     });
 </script>
 @endpush

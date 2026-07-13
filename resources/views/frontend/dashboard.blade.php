@@ -693,14 +693,13 @@
                     <span class="text-sm font-bold" style="line-height: 1.2; font-weight: 700;">Product N/A</span>
                 </div>
 
-                <!-- Pertains to GE/Const/Isld -->
+                <!-- Work Performa Priced -->
                 <div class="stat-card text-white rounded-xl text-center font-bold flex flex-col items-center justify-start cursor-pointer"
-                    data-status-key="pertains_to_ge_const_isld" data-title="Pertains to GE/Const/Isld" role="button"
-                    style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); min-height: 120px; padding: 1rem 0.75rem;">
-                    <span id="stat-pertains-ge" class="text-3xl mb-1 font-bold"
-                        style="line-height: 1.2; font-weight: 700;">{{ $stats['pertains_to_ge_const_isld'] ?? 0 }}</span>
-                    <span class="text-sm font-bold" style="line-height: 1.2; font-weight: 700;">Pertains to
-                        GE/Const/Isld</span>
+                    data-status-key="work_priced_performa" data-title="Work Performa Priced" role="button"
+                    style="background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%); min-height: 120px; padding: 1rem 0.75rem;">
+                    <span id="stat-work-priced-performa" class="text-3xl mb-1 font-bold"
+                        style="line-height: 1.2; font-weight: 700;">{{ $stats['work_priced_performa'] ?? 0 }}</span>
+                    <span class="text-sm font-bold" style="line-height: 1.2; font-weight: 700;">Work Performa Priced</span>
                 </div>
 
                 <!-- Barak Damages -->
@@ -1143,14 +1142,12 @@
             maint_priced_performa: '#ea580c',  // orange for priced maint
             product_na: '#f97316',
             un_authorized: '#ec4899',
-            pertains_to_ge_const_isld: '#06b6d4',
             barak_damages: '#808000',
         };
 
         // Short labels to match admin badges
         const statusLabelOverrides = {
             unassigned: 'Unassigned',
-            pertains_to_ge_const_isld: 'Pertains to GE',
             work_performa: 'Work Performa',
             maint_performa: 'Maint Performa',
             work_priced_performa: 'Work Priced',
@@ -2067,8 +2064,6 @@
             'maint_priced_performa': { label: 'Maint Priced', color: '#ea580c' }, // Dark Orange
             'product_na': { label: 'Product N/A', color: '#0deb7c' }, // Green
             'un_authorized': { label: 'Un-Authorized', color: '#ec4899' }, // Pink
-            'pertains_to_ge': { label: 'Pertains to GE', color: '#8b5cf6' }, // Violet
-            'pertains_to_ge_const_isld': { label: 'Pertains to GE(N)', color: '#06b6d4' }, // Aqua/Cyan
             'barak_damages': { label: 'Barak Damages', color: '#808000' }, // Olive
             'closed': { label: 'Closed', color: '#6b7280' }, // Grey
             'unassigned': { label: 'Unassigned', color: '#000000' }, // Black
@@ -2721,9 +2716,9 @@
                 const el = document.getElementById('stat-product');
                 if (el) el.textContent = stats.product;
             }
-            if (stats.pertains_to_ge_const_isld !== undefined) {
-                const el = document.getElementById('stat-pertains-ge');
-                if (el) el.textContent = stats.pertains_to_ge_const_isld;
+            if (stats.work_priced_performa !== undefined) {
+                const el = document.getElementById('stat-work-priced-performa');
+                if (el) el.textContent = stats.work_priced_performa;
             }
             if (stats.barak_damages !== undefined) {
                 const el = document.getElementById('stat-barak-damages');

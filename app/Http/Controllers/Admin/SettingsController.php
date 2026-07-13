@@ -9,10 +9,22 @@ use Illuminate\View\View;
 class SettingsController extends Controller
 {
     /**
+     * Check if the authenticated user has Admin privileges.
+     */
+    private function checkAdmin()
+    {
+        $user = auth()->user();
+        if (!$user || strtolower($user->role->role_name ?? '') !== 'admin') {
+            abort(403, 'Unauthorized. Only Admins are allowed to access settings.');
+        }
+    }
+
+    /**
      * Display the settings page.
      */
     public function index(): View
     {
+        $this->checkAdmin();
         return view('admin.settings.index');
     }
 
@@ -21,12 +33,14 @@ class SettingsController extends Controller
      */
     public function updateGeneral(Request $request)
     {
+        $this->checkAdmin();
+
         $request->validate([
             'site_name' => 'required|string|max:255',
             'site_description' => 'nullable|string|max:500',
             'timezone' => 'required|string',
             'date_format' => 'required|string',
-            'time_format' => 'required|string',
+            'time_format' => 'nullable|string',
         ]);
 
         // Here you would typically save to database or config files
@@ -41,6 +55,8 @@ class SettingsController extends Controller
      */
     public function updateNotifications(Request $request)
     {
+        $this->checkAdmin();
+
         $request->validate([
             'email_notifications' => 'boolean',
             'push_notifications' => 'boolean',
@@ -59,6 +75,8 @@ class SettingsController extends Controller
      */
     public function updateSecurity(Request $request)
     {
+        $this->checkAdmin();
+
         $request->validate([
             'two_factor_auth' => 'boolean',
             'session_timeout' => 'required|integer|min:5|max:480',

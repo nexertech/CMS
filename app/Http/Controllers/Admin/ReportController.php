@@ -598,7 +598,6 @@ class ReportController extends Controller
         $rows['maint_priced_performa'] = 'Maintenance Performa Priced';
         $rows['product_na'] = 'Product N/A';
         $rows['un_authorized'] = 'Un-Authorized';
-        $rows['pertains_to_ge_const_isld'] = 'Pertains to GE(N) Const Isld';
 
         // Get user for location filtering and CMES filter
         $user = Auth::user();
@@ -716,8 +715,6 @@ class ReportController extends Controller
                     $count = ($indexedStats[$catId]['product_na'] ?? 0) + ($indexedPerformas[$catId]['product_na'] ?? 0);
                 } elseif ($rowKey === 'un_authorized') {
                     $count = $indexedStats[$catId]['un_authorized'] ?? 0;
-                } elseif ($rowKey === 'pertains_to_ge_const_isld') {
-                    $count = $indexedStats[$catId]['pertains_to_ge_const_isld'] ?? 0;
                 } elseif ($rowKey === 'barak_damages') {
                     $count = $indexedStats[$catId]['barak_damages'] ?? 0;
                 }

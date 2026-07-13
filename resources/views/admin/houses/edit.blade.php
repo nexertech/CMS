@@ -59,7 +59,7 @@
       <div class="col-md-3 mb-3">
         <label for="password" class="form-label text-white">Password</label>
         <input type="password" class="form-control @error('password') is-invalid @enderror" 
-                id="password" name="password" autocomplete="new-password" minlength="8">
+                id="password" name="password" autocomplete="new-password" minlength="8" placeholder="Minimum 8 characters">
         <small class="text-muted" style="display: block;">Leave blank to keep current password.</small>
         @error('password')
           <div class="invalid-feedback">{{ $message }}</div>
@@ -292,6 +292,48 @@
                 this.setSelectionRange(cursorPos + replacedText.length, cursorPos + replacedText.length);
             });
         }
+
+        // Form Submit Validation
+        const houseForm = document.getElementById('houseForm');
+        if (houseForm) {
+            houseForm.setAttribute('novalidate', '');
+            houseForm.addEventListener('submit', function(e) {
+                const errors = [];
+                
+                const houseNo = document.getElementById('house_no').value.trim();
+                const cityId = document.getElementById('city_id').value;
+                const sectorId = document.getElementById('sector_id').value;
+                const password = document.getElementById('password').value;
+
+                if (!houseNo) {
+                    errors.push('House Number is required.');
+                }
+                if (!cityId) {
+                    errors.push('GE Group is required.');
+                }
+                if (!sectorId) {
+                    errors.push('GE Node is required.');
+                }
+                if (password && password.length < 8) {
+                    errors.push('Password must be at least 8 characters long.');
+                }
+
+                if (errors.length > 0) {
+                    e.preventDefault();
+                    alert("Validation Errors:\n\n- " + errors.join("\n- "));
+                    return false;
+                }
+            });
+        }
+
+        // Show server-side validation errors in popup if any
+        @if($errors->any())
+            const serverErrors = [];
+            @foreach($errors->all() as $error)
+                serverErrors.push("{!! addslashes($error) !!}");
+            @endforeach
+            alert("Validation Errors:\n\n- " + serverErrors.join("\n- "));
+        @endif
     });
 </script>
 @endpush
