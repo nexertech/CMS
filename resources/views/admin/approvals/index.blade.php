@@ -17,7 +17,7 @@
         </button>
       </div>
     </div>
-  </div>
+  </div> 
 
   <!-- FILTERS -->
   <div class="card-glass mb-2" style="display: inline-block; width: fit-content; padding: 0.75rem;">
