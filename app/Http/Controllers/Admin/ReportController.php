@@ -345,9 +345,13 @@ class ReportController extends Controller
             SUM(stock_quantity * unit_price) as total_value
         ')->first();
 
+        $totalThisMonth = $complaintStats->total_this_month ?? 0;
+        $resolvedThisMonth = $complaintStats->resolved_this_month ?? 0;
+        $employeePerformance = $totalThisMonth > 0 ? round(($resolvedThisMonth / $totalThisMonth) * 100, 1) : 100;
+
         return [
-            'total_complaints_this_month' => $complaintStats->total_this_month ?? 0,
-            'resolved_this_month' => $complaintStats->resolved_this_month ?? 0,
+            'total_complaints_this_month' => $totalThisMonth,
+            'resolved_this_month' => $resolvedThisMonth,
             'active_employees' => (clone $employeesQuery)->count(),
             'total_spares' => $spareStats->total_spares ?? 0,
             'low_stock_items' => $spareStats->low_stock ?? 0,
@@ -355,7 +359,7 @@ class ReportController extends Controller
             'total_approvals' => $approvalsQuery->count(),
             'pending_approvals' => $pendingApprovalsQuery->count(),
             'total_spare_value' => $spareStats->total_value ?? 0,
-            'employee_performance' => $this->getAverageEmployeePerformance($user)
+            'employee_performance' => $employeePerformance
         ];
     }
 

@@ -97,31 +97,69 @@
     </a>
     @endif
     
-    <div class="section-title">Management</div>
-    @if($user && ($user->hasPermission('users')))
-    <a href="{{ route('admin.users.index') }}" class="nav-link d-block py-2 px-3 mb-1 {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
-      <i data-feather="users" class="me-2"></i> Users
-    </a>
+    @if($user && ($user->hasPermission('users') || $user->hasPermission('roles')))
+    <div class="nav-item-parent mb-1">
+      <div class="nav-link d-flex align-items-center justify-content-between py-2 px-3 {{ request()->routeIs('admin.users.*') || request()->routeIs('admin.roles.*') ? 'active' : '' }}">
+        @if($user && ($user->hasPermission('users')))
+        <a href="{{ route('admin.users.index') }}" class="text-decoration-none text-inherit d-flex align-items-center flex-grow-1">
+          <i data-feather="users" class="me-2"></i> Users
+        </a>
+        @else
+        <span class="d-flex align-items-center flex-grow-1 text-white-50" style="cursor: default;">
+          <i data-feather="users" class="me-2"></i> Users
+        </span>
+        @endif
+        @if($user && ($user->hasPermission('roles')))
+        <button type="button" class="btn btn-link text-inherit p-0 border-0 nav-arrow-btn" data-bs-toggle="collapse" data-bs-target="#usersSubmenu" aria-expanded="{{ request()->routeIs('admin.roles.*') ? 'true' : 'false' }}" style="background: none !important; color: inherit; cursor: pointer; border: none !important; box-shadow: none !important; outline: none !important; padding: 0 !important; margin: 0 !important;">
+          <i data-feather="chevron-down" class="nav-arrow ms-2" style="font-size: 14px; transition: transform 0.3s;"></i>
+        </button>
+        @endif
+      </div>
+      <div class="collapse {{ request()->routeIs('admin.roles.*') ? 'show' : '' }}" id="usersSubmenu">
+        @if($user && ($user->hasPermission('roles')))
+        <a href="{{ route('admin.roles.index') }}" class="nav-link d-block py-2 px-3 mb-2 mt-2 {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}" style="background: rgba(59, 130, 246, 0.08); margin-left: 20px; margin-right: 8px; border-left: 3px solid rgba(59, 130, 246, 0.4); border-radius: 6px;">
+          <i data-feather="shield" class="me-2"></i> Roles
+        </a>
+        @endif
+      </div>
+    </div>
     @endif
     @if($user && ($user->hasPermission('frontend-users')))
     <a href="{{ route('admin.frontend-users.index') }}" class="nav-link d-block py-2 px-3 mb-1 {{ request()->routeIs('admin.frontend-users.*') ? 'active' : '' }}">
       <i data-feather="user-check" class="me-2"></i> Frontend Users
     </a>
     @endif
-    @if($user && ($user->hasPermission('cmes')))
-    <a href="{{ route('admin.cmes.index') }}" class="nav-link d-block py-2 px-3 mb-1 {{ request()->routeIs('admin.cmes.*') ? 'active' : '' }}">
-      <i data-feather="layers" class="me-2"></i> CMES
-    </a>
-    @endif
-    @if($user && ($user->hasPermission('city')))
-    <a href="{{ route('admin.city.index') }}" class="nav-link d-block py-2 px-3 mb-1 {{ request()->routeIs('admin.city.*') ? 'active' : '' }}">
-      <i data-feather="map" class="me-2"></i> GE Groups
-    </a>
-    @endif
-    @if($user && ($user->hasPermission('sector')))
-    <a href="{{ route('admin.sector.index') }}" class="nav-link d-block py-2 px-3 mb-1 {{ request()->routeIs('admin.sector.*') ? 'active' : '' }}">
-      <i data-feather="map-pin" class="me-2"></i> GE Nodes
-    </a>
+    @if($user && ($user->hasPermission('cmes') || $user->hasPermission('city') || $user->hasPermission('sector')))
+    <div class="nav-item-parent mb-1">
+      <div class="nav-link d-flex align-items-center justify-content-between py-2 px-3 {{ request()->routeIs('admin.cmes.*') || request()->routeIs('admin.city.*') || request()->routeIs('admin.sector.*') ? 'active' : '' }}">
+        @if($user && ($user->hasPermission('cmes')))
+        <a href="{{ route('admin.cmes.index') }}" class="text-decoration-none text-inherit d-flex align-items-center flex-grow-1">
+          <i data-feather="layers" class="me-2"></i> CMES
+        </a>
+        @else
+        <span class="d-flex align-items-center flex-grow-1 text-white-50" style="cursor: default;">
+          <i data-feather="layers" class="me-2"></i> CMES
+        </span>
+        @endif
+        @if($user && ($user->hasPermission('city') || $user->hasPermission('sector')))
+        <button type="button" class="btn btn-link text-inherit p-0 border-0 nav-arrow-btn" data-bs-toggle="collapse" data-bs-target="#cmesSubmenu" aria-expanded="{{ request()->routeIs('admin.city.*') || request()->routeIs('admin.sector.*') ? 'true' : 'false' }}" style="background: none !important; color: inherit; cursor: pointer; border: none !important; box-shadow: none !important; outline: none !important; padding: 0 !important; margin: 0 !important;">
+          <i data-feather="chevron-down" class="nav-arrow ms-2" style="font-size: 14px; transition: transform 0.3s;"></i>
+        </button>
+        @endif
+      </div>
+      <div class="collapse {{ request()->routeIs('admin.city.*') || request()->routeIs('admin.sector.*') ? 'show' : '' }}" id="cmesSubmenu">
+        @if($user && ($user->hasPermission('city')))
+        <a href="{{ route('admin.city.index') }}" class="nav-link d-block py-2 px-3 mb-2 mt-2 {{ request()->routeIs('admin.city.*') ? 'active' : '' }}" style="background: rgba(59, 130, 246, 0.08); margin-left: 20px; margin-right: 8px; border-left: 3px solid rgba(59, 130, 246, 0.4); border-radius: 6px;">
+          <i data-feather="map" class="me-2"></i> GE Groups
+        </a>
+        @endif
+        @if($user && ($user->hasPermission('sector')))
+        <a href="{{ route('admin.sector.index') }}" class="nav-link d-block py-2 px-3 mb-2 {{ request()->routeIs('admin.sector.*') ? 'active' : '' }}" style="background: rgba(59, 130, 246, 0.08); margin-left: 20px; margin-right: 8px; border-left: 3px solid rgba(59, 130, 246, 0.4); border-radius: 6px;">
+          <i data-feather="map-pin" class="me-2"></i> GE Nodes
+        </a>
+        @endif
+      </div>
+    </div>
     @endif
     @if($user && ($user->hasPermission('employees')))
     <a href="{{ route('admin.houses.index') }}" class="nav-link d-block py-2 px-3 mb-1 {{ request()->routeIs('admin.houses.*') ? 'active' : '' }}">
@@ -131,12 +169,6 @@
     @if($user && ($user->hasPermission('registered-devices')))
     <a href="{{ route('admin.registered-devices.index') }}" class="nav-link d-block py-2 px-3 mb-1 {{ request()->routeIs('admin.registered-devices.*') ? 'active' : '' }}">
       <i data-feather="smartphone" class="me-2"></i> Devices
-    </a>
-    @endif
-
-    @if($user && ($user->hasPermission('roles')))
-    <a href="{{ route('admin.roles.index') }}" class="nav-link d-block py-2 px-3 mb-1 {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
-      <i data-feather="shield" class="me-2"></i> Roles
     </a>
     @endif
     @if($user && ($user->hasPermission('employees') || $user->hasPermission('designation')))
@@ -569,7 +601,7 @@
       }
 
       // Handle submenu collapse/expand with arrow rotation and icon initialization
-      const submenus = ['employeesSubmenu', 'complaintsManagementSubmenu', 'stockMgmtSubmenu'];
+      const submenus = ['usersSubmenu', 'cmesSubmenu', 'employeesSubmenu', 'complaintsManagementSubmenu', 'stockMgmtSubmenu'];
       
       submenus.forEach(submenuId => {
         const submenu = document.getElementById(submenuId);
