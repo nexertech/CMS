@@ -827,7 +827,7 @@ class ComplaintController extends Controller
     public function updateStatus(Request $request, Complaint $complaint)
     {
         $validator = Validator::make($request->all(), [
-            'status' => 'required|in:new,assigned,in_progress,resolved,work_performa,maint_performa,work_priced_performa,maint_priced_performa,product_na,un_authorized,barak_damages',
+            'status' => 'required|in:new,assigned,in_progress,resolved,work_performa,maint_performa,work_priced_performa,maint_priced_performa,product_na,un_authorized,barrack_damages',
             'notes' => 'nullable|string',
             'remarks' => 'nullable|string',
         ]);

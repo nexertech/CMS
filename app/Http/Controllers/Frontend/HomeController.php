@@ -607,7 +607,7 @@ class HomeController extends Controller
             SUM(CASE WHEN complaints.status = 'maint_priced_performa' THEN 1 ELSE 0 END) as maint_priced_performa,
             SUM(CASE WHEN complaints.status = 'un_authorized' THEN 1 ELSE 0 END) as un_authorized,
             SUM(CASE WHEN complaints.status = 'product_na' THEN 1 ELSE 0 END) as product_na,
-            SUM(CASE WHEN complaints.status = 'barak_damages' THEN 1 ELSE 0 END) as barak_damages,
+            SUM(CASE WHEN complaints.status = 'barrack_damages' THEN 1 ELSE 0 END) as barrack_damages,
             
             SUM(CASE WHEN complaints.status IN ('new', 'assigned', 'in_progress') AND EXISTS(SELECT 1 FROM sla_rules WHERE sla_rules.category_id = complaints.category_id AND sla_rules.status = 1 AND sla_rules.deleted_at IS NULL AND complaints.created_at < DATE_SUB(NOW(), INTERVAL sla_rules.max_resolution_time HOUR)) THEN 1 ELSE 0 END) as overdue_count,
 
@@ -640,7 +640,7 @@ class HomeController extends Controller
             'maint_performa' => $statsData->maint_performa ?? 0,
             'addressed' => $statsData->addressed ?? 0,
             'un_authorized' => $statsData->un_authorized ?? 0,
-            'barak_damages' => $statsData->barak_damages ?? 0,
+            'barrack_damages' => $statsData->barrack_damages ?? 0,
             'work_priced_performa' => $statsData->work_priced_performa ?? 0,
             'maint_priced_performa' => $statsData->maint_priced_performa ?? 0,
             'product' => $statsData->product_na ?? 0,
@@ -659,7 +659,7 @@ class HomeController extends Controller
             'maint_priced_performa' => (int) ($statsData->maint_priced_performa ?? 0),
             'un_authorized' => (int) ($statsData->un_authorized ?? 0),
             'product_na' => (int) ($statsData->product_na ?? 0),
-            'barak_damages' => (int) ($statsData->barak_damages ?? 0),
+            'barrack_damages' => (int) ($statsData->barrack_damages ?? 0),
         ]);
 
         $complaintsByStatus = $statusCounts;
@@ -1090,7 +1090,7 @@ class HomeController extends Controller
                 MONTH(complaints.created_at) as month,
                 COUNT(*) as total,
                 SUM(CASE WHEN complaints.status IN ('resolved', 'closed') THEN 1 ELSE 0 END) as addressed,
-                SUM(CASE WHEN complaints.status = 'barak_damages' THEN 1 ELSE 0 END) as barak,
+                SUM(CASE WHEN complaints.status = 'barrack_damages' THEN 1 ELSE 0 END) as barrack,
                 SUM(CASE WHEN complaints.status IN ('work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa') THEN 1 ELSE 0 END) as performa
             ")
             ->groupBy('year', 'month')
@@ -1127,13 +1127,13 @@ class HomeController extends Controller
             $row = $monthlyData->get($key);
             $total = $row ? $row->total : 0;
             $addressed = $row ? $row->addressed : 0;
-            $barak = $row ? $row->barak : 0;
+            $barrack = $row ? $row->barrack : 0;
             $performa = $row ? $row->performa : 0;
 
             $monthlyComplaints[] = $total;
             $recentEdData[] = $total;
             $resolvedVsEdData[] = $addressed;
-            $unauthorizedData[] = $barak;
+            $unauthorizedData[] = $barrack;
             $performaData[] = $performa;
 
             // YearTD Cumulative logic (reset at year start)

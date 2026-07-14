@@ -123,7 +123,7 @@ class TestReportDataSeeder extends Seeder
             'Plumbing',
             'General',
             'Kitchen',
-            'Barrak Damages',
+            'Barrack Damages',
         ];
 
         $priorities = ['low', 'medium', 'high', 'urgent', 'emergency'];
@@ -260,16 +260,16 @@ class TestReportDataSeeder extends Seeder
             ];
         }
 
-        // Barrak Damages complaints
+        // Barrack Damages complaints
         for ($i = 0; $i < 8; $i++) {
             $createdAt = $startDate->copy()->addDays(rand(0, 29))->addHours(rand(0, 23));
             
             $complaints[] = [
-                'title' => 'Barrak Damages Complaint ' . ($i + 1),
+                'title' => 'Barrack Damages Complaint ' . ($i + 1),
                 'client_id' => $clients->id,
-                'category' => 'Barrak Damages',
+                'category' => 'Barrack Damages',
                 'department' => $departments[array_rand($departments)],
-                'description' => 'Barrak damages reported - requires immediate attention',
+                'description' => 'Barrack damages reported - requires immediate attention',
                 'status' => $statuses[array_rand($statuses)],
                 'assigned_employee_id' => $employees->id,
                 'priority' => 'high',

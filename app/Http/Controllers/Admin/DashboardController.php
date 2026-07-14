@@ -158,7 +158,7 @@ class DashboardController extends Controller
             'maint_priced_performa' => 'Maintenance Performa Priced',
             'product_na' => 'Product N/A',
             'un_authorized' => 'Un-Authorized',
-            'barak_damages' => 'Barak Damages',
+            'barrack_damages' => 'Barrack Damages',
         ];
 
         // Get dashboard statistics with filters
@@ -772,7 +772,7 @@ class DashboardController extends Controller
             SUM(CASE WHEN complaints.status = 'maint_priced_performa' THEN 1 ELSE 0 END) as maint_priced_performa,
             SUM(CASE WHEN complaints.status = 'un_authorized' THEN 1 ELSE 0 END) as un_authorized,
             SUM(CASE WHEN complaints.status = 'product_na' THEN 1 ELSE 0 END) as direct_product_na,
-            SUM(CASE WHEN complaints.status = 'barak_damages' THEN 1 ELSE 0 END) as barak_damages
+            SUM(CASE WHEN complaints.status = 'barrack_damages' THEN 1 ELSE 0 END) as barrack_damages
         ", [
             $today,
             $thisMonth,
@@ -805,7 +805,7 @@ class DashboardController extends Controller
             'maint_priced_performa' => $dashboardStats->maint_priced_performa ?? 0,
             'un_authorized' => $dashboardStats->un_authorized ?? 0,
             'product_na' => ($dashboardStats->direct_product_na ?? 0) + ($performas['product_na'] ?? 0),
-            'barak_damages' => $dashboardStats->barak_damages ?? 0,
+            'barrack_damages' => $dashboardStats->barrack_damages ?? 0,
 
             'total_users' => User::count(),
             'active_users' => User::where('status', 1)->count(),

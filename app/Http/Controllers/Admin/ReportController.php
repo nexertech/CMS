@@ -578,7 +578,7 @@ class ReportController extends Controller
                 'plumbing' => 'Plumbing',
                 'general' => 'General',
                 'kitchen' => 'Kitchen',
-                'barrak_damages' => 'Barrak Damages',
+                'barrack_damages' => 'Barrack Damages',
             ];
         }
 
@@ -719,8 +719,8 @@ class ReportController extends Controller
                     $count = ($indexedStats[$catId]['product_na'] ?? 0) + ($indexedPerformas[$catId]['product_na'] ?? 0);
                 } elseif ($rowKey === 'un_authorized') {
                     $count = $indexedStats[$catId]['un_authorized'] ?? 0;
-                } elseif ($rowKey === 'barak_damages') {
-                    $count = $indexedStats[$catId]['barak_damages'] ?? 0;
+                } elseif ($rowKey === 'barrack_damages') {
+                    $count = $indexedStats[$catId]['barrack_damages'] ?? 0;
                 }
 
                 $percentage = $catTotal > 0 ? round(($count / $catTotal) * 100, 1) : 0;

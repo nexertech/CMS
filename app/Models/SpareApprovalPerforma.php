@@ -71,7 +71,7 @@ class SpareApprovalPerforma extends Model
             'pending' => 'In Progress',
             'approved' => 'Approved',
             'rejected' => 'Rejected',
-            'barak_damages' => 'Barak Damages',
+            'barrack_damages' => 'Barrack Damages',
         ];
     }
 
@@ -92,7 +92,7 @@ class SpareApprovalPerforma extends Model
             'pending' => 'warning',
             'approved' => 'success',
             'rejected' => 'danger',
-            'barak_damages' => 'olive',
+            'barrack_damages' => 'olive',
         ];
 
         return $colors[$this->status] ?? 'muted';
@@ -107,7 +107,7 @@ class SpareApprovalPerforma extends Model
             'pending' => 'fas fa-clock',
             'approved' => 'fas fa-check-circle',
             'rejected' => 'fas fa-times-circle',
-            'barak_damages' => 'fas fa-home',
+            'barrack_damages' => 'fas fa-home',
         ];
 
         return $icons[$this->status] ?? 'fas fa-circle';
@@ -301,18 +301,18 @@ class SpareApprovalPerforma extends Model
     }
 
     /**
-     * Check if performa is Barak Damages
+     * Check if performa is Barrack Damages
      */
-    public function isBarakDamages(): bool
+    public function isBarrackDamages(): bool
     {
-        return $this->status === 'barak_damages';
+        return $this->status === 'barrack_damages';
     }
 
     /**
-     * Scope for Barak Damages performas
+     * Scope for Barrack Damages performas
      */
-    public function scopeBarakDamages($query)
+    public function scopeBarrackDamages($query)
     {
-        return $query->where('status', 'barak_damages');
+        return $query->where('status', 'barrack_damages');
     }
 }

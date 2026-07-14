@@ -100,7 +100,7 @@
               <option value="product_na" {{ request('status') == 'product_na' ? 'selected' : '' }}>Product N/A</option>
               <option value="un_authorized" {{ request('status') == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
               </option>
-              <option value="barak_damages" {{ request('status') == 'barak_damages' ? 'selected' : '' }}>Barak Damages
+              <option value="barrack_damages" {{ request('status') == 'barrack_damages' ? 'selected' : '' }}>Barrack Damages
               </option>
               <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
               <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
@@ -213,7 +213,7 @@
                   'maint_priced_performa' => ['bg' => '#ea580c', 'text' => '#ffffff', 'border' => '#c2410c'], // Dark Orange (matching badge)
                   'product_na' => ['bg' => '#f97316', 'text' => '#ffffff', 'border' => '#c2410c'], // Orange (for status column)
                   'un_authorized' => ['bg' => '#ec4899', 'text' => '#ffffff', 'border' => '#db2777'], // Pink
-                  'barak_damages' => ['bg' => '#808000', 'text' => '#ffffff', 'border' => '#666600'], // Olive (matching Users card)
+                  'barrack_damages' => ['bg' => '#808000', 'text' => '#ffffff', 'border' => '#666600'], // Olive (matching Users card)
                   'assigned' => ['bg' => '#16a34a', 'text' => '#ffffff', 'border' => '#15803d'], // Green
                   'unassigned' => ['bg' => '#000000', 'text' => '#ffffff', 'border' => '#333333'], // Black
                 ];
@@ -378,7 +378,7 @@
                           </option>
                           <option value="un_authorized" {{ $displayStatusForSelect == 'un_authorized' ? 'selected' : '' }}>
                             Un-Authorized</option>
-                          <option value="barak_damages" {{ $displayStatusForSelect == 'barak_damages' ? 'selected' : '' }}>Barak
+                          <option value="barrack_damages" {{ $displayStatusForSelect == 'barrack_damages' ? 'selected' : '' }}>Barrack
                             Damages</option>
                         @endif
                       </select>
@@ -416,7 +416,7 @@
                           <option value="product_na" {{ $complaintStatus == 'product_na' ? 'selected' : '' }}>Product N/A</option>
                           <option value="un_authorized" {{ $complaintStatus == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
                           </option>
-                          <option value="barak_damages" {{ $complaintStatus == 'barak_damages' ? 'selected' : '' }}>Barak Damages
+                          <option value="barrack_damages" {{ $complaintStatus == 'barrack_damages' ? 'selected' : '' }}>Barrack Damages
                           </option>
                         @endif
                       </select>
@@ -490,7 +490,7 @@
                           <option value="product_na" {{ $complaintStatus == 'product_na' ? 'selected' : '' }}>Product N/A</option>
                           <option value="un_authorized" {{ $complaintStatus == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
                           </option>
-                          <option value="barak_damages" {{ $complaintStatus == 'barak_damages' ? 'selected' : '' }}>Barak Damages
+                          <option value="barrack_damages" {{ $complaintStatus == 'barrack_damages' ? 'selected' : '' }}>Barrack Damages
                           </option>
                         @endif
                       </select>
@@ -498,13 +498,13 @@
                         style="width: 14px; height: 14px; color: #ffffff !important; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); pointer-events: none; z-index: 10; stroke: #ffffff;"></i>
                     </div>
 
-                  @elseif($complaintStatus == 'barak_damages')
+                  @elseif($complaintStatus == 'barrack_damages')
                     <div class="status-chip"
-                      style="background-color: {{ $statusColors['barak_damages']['bg'] }}; color: {{ $statusColors['barak_damages']['text'] }}; border-color: {{ $statusColors['barak_damages']['border'] }}; position: relative; overflow: hidden; height: 24px; width: 100px;">
+                      style="background-color: {{ $statusColors['barrack_damages']['bg'] }}; color: {{ $statusColors['barrack_damages']['text'] }}; border-color: {{ $statusColors['barrack_damages']['border'] }}; position: relative; overflow: hidden; height: 24px; width: 100px;">
                       <span class="status-indicator"
-                        style="background-color: {{ $statusColors['barak_damages']['bg'] }}; border-color: {{ $statusColors['barak_damages']['border'] }};"></span>
+                        style="background-color: {{ $statusColors['barrack_damages']['bg'] }}; border-color: {{ $statusColors['barrack_damages']['border'] }};"></span>
                       <select class="form-select form-select-sm status-select" data-complaint-id="{{ $complaint->id }}"
-                        data-actual-status="{{ $rawStatus }}" data-status-color="barak_damages"
+                        data-actual-status="{{ $rawStatus }}" data-status-color="barrack_damages"
                         style="width: 100px; font-size: 9px; font-weight: 700; height: 24px; text-align: center; text-align-last: center; padding: 0;">
                         @if(isset($statuses) && $statuses->count() > 0)
                           @foreach($statuses as $statusValue => $statusLabel)
@@ -529,7 +529,7 @@
                           <option value="product_na" {{ $complaintStatus == 'product_na' ? 'selected' : '' }}>Product N/A</option>
                           <option value="un_authorized" {{ $complaintStatus == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
                           </option>
-                          <option value="barak_damages" {{ $complaintStatus == 'barak_damages' ? 'selected' : '' }}>Barak Damages
+                          <option value="barrack_damages" {{ $complaintStatus == 'barrack_damages' ? 'selected' : '' }}>Barrack Damages
                           </option>
                         @endif
                       </select>
@@ -567,7 +567,7 @@
                           <option value="product_na" {{ $complaintStatus == 'product_na' ? 'selected' : '' }}>Product N/A</option>
                           <option value="un_authorized" {{ $complaintStatus == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
                           </option>
-                          <option value="barak_damages" {{ $complaintStatus == 'barak_damages' ? 'selected' : '' }}>Barak Damages
+                          <option value="barrack_damages" {{ $complaintStatus == 'barrack_damages' ? 'selected' : '' }}>Barrack Damages
                           </option>
                         @endif
                       </select>
@@ -4333,7 +4333,7 @@
       'un_authorized': { bg: '#ec4899', text: '#ffffff', border: '#db2777' }, // Pink
       'assigned': { bg: '#16a34a', text: '#ffffff', border: '#15803d' }, // Green (swapped from grey)
       'unassigned': { bg: '#000000', text: '#ffffff', border: '#333333' }, // Black
-      'barak_damages': { bg: '#808000', text: '#ffffff', border: '#666600' }, // Olive
+      'barrack_damages': { bg: '#808000', text: '#ffffff', border: '#666600' }, // Olive
     };
 
     // Function to update status select box colors
@@ -4388,7 +4388,7 @@
 
         // Prevent status change if unassigned (unless selecting assigned or the 3 special statuses)
         const currentActualStatus = select.getAttribute('data-actual-status');
-        const statusesAllowedWithoutAssignment = ['assigned', 'un_authorized', 'barak_damages'];
+        const statusesAllowedWithoutAssignment = ['assigned', 'un_authorized', 'barrack_damages'];
         if (currentActualStatus === 'new' && !statusesAllowedWithoutAssignment.includes(newStatus)) {
           alert('First assigned the complaint');
           select.value = 'unassigned';
@@ -4631,7 +4631,7 @@
         }
 
         // Real statuses only - include all possible statuses
-        const allowed = ['new', 'assigned', 'in_progress', 'resolved', 'closed', 'un_authorized', 'barak_damages', 'product_na', 'work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa'];
+        const allowed = ['new', 'assigned', 'in_progress', 'resolved', 'closed', 'un_authorized', 'barrack_damages', 'product_na', 'work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa'];
         if (!allowed.includes(newStatus)) {
           console.warn('Blocked unsupported status:', newStatus);
           // Revert to old on invalid
@@ -5080,11 +5080,11 @@
                         });
                     }
                   }
-                } else if (newStatus === 'barak_damages') {
-                  // Set barak_damages value and color
-                  select.value = 'barak_damages';
-                  updateStatusSelectColor(select, 'barak_damages');
-                  // Clear performa badge for barak_damages status
+                } else if (newStatus === 'barrack_damages') {
+                  // Set barrack_damages value and color
+                  select.value = 'barrack_damages';
+                  updateStatusSelectColor(select, 'barrack_damages');
+                  // Clear performa badge for barrack_damages status
                   const performaBadgeInRow = row?.querySelector('.performa-badge');
                   if (performaBadgeInRow) {
                     performaBadgeInRow.style.display = 'none';
@@ -5118,7 +5118,7 @@
                         .then(response => response.json())
                         .then(data => {
                           if (data.success) {
-                            console.log('Performa type cleared from approval for barak_damages');
+                            console.log('Performa type cleared from approval for barrack_damages');
                           }
                         })
                         .catch(error => {

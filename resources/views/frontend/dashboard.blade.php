@@ -725,13 +725,13 @@
                     <span class="text-sm font-bold" style="line-height: 1.2; font-weight: 700;">Work Performa Priced</span>
                 </div>
 
-                <!-- Barak Damages -->
+                <!-- Barrack Damages -->
                 <div class="stat-card text-white rounded-xl text-center font-bold flex flex-col items-center justify-start cursor-pointer"
-                    data-status-key="barak_damages" data-title="Barak Damages" role="button"
+                    data-status-key="barrack_damages" data-title="Barrack Damages" role="button"
                     style="background: linear-gradient(135deg, #808000 0%, #808000 100%); min-height: 120px; padding: 1rem 0.75rem;">
-                    <span id="stat-barak-damages" class="text-3xl mb-1 font-bold"
-                        style="line-height: 1.2; font-weight: 700;">{{ $stats['barak_damages'] ?? 0 }}</span>
-                    <span class="text-sm font-bold" style="line-height: 1.2; font-weight: 700;">Un Authorized Barrak Damages</span>
+                    <span id="stat-barrack-damages" class="text-3xl mb-1 font-bold"
+                        style="line-height: 1.2; font-weight: 700;">{{ $stats['barrack_damages'] ?? 0 }}</span>
+                    <span class="text-sm font-bold" style="line-height: 1.2; font-weight: 700;">Un Authorized Barrack Damages</span>
                 </div>
 
                 <!-- Overdue Complaints -->
@@ -1172,7 +1172,7 @@
             maint_priced_performa: '#ea580c',  // orange for priced maint
             product_na: '#f97316',
             un_authorized: '#ec4899',
-            barak_damages: '#808000',
+            barrack_damages: '#808000',
         };
 
         // Short labels to match admin badges
@@ -1632,7 +1632,7 @@
                         pointBorderWidth: 2,
                     },
                     {
-                        label: 'Un Authorized Barrak Damages',
+                        label: 'Un Authorized Barrack Damages',
                         data: unauthorizedData,
                         borderColor: '#808000',
                         backgroundColor: 'rgba(128, 128, 0, 0.1)',
@@ -2094,7 +2094,7 @@
             'maint_priced_performa': { label: 'Maint Priced', color: '#ea580c' }, // Dark Orange
             'product_na': { label: 'Product N/A', color: '#0deb7c' }, // Green
             'un_authorized': { label: 'Un-Authorized', color: '#ec4899' }, // Pink
-            'barak_damages': { label: 'Barak Damages', color: '#808000' }, // Olive
+            'barrack_damages': { label: 'Barrack Damages', color: '#808000' }, // Olive
             'closed': { label: 'Closed', color: '#6b7280' }, // Grey
             'unassigned': { label: 'Unassigned', color: '#000000' }, // Black
             'new': { label: 'Unassigned', color: '#000000' } // Black
@@ -2730,9 +2730,9 @@
                 const el = document.getElementById('stat-work-priced-performa');
                 if (el) el.textContent = stats.work_priced_performa;
             }
-            if (stats.barak_damages !== undefined) {
-                const el = document.getElementById('stat-barak-damages');
-                if (el) el.textContent = stats.barak_damages;
+            if (stats.barrack_damages !== undefined) {
+                const el = document.getElementById('stat-barrack-damages');
+                if (el) el.textContent = stats.barrack_damages;
             }
             
             // Update Resolution Rate

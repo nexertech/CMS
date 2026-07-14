@@ -135,8 +135,8 @@
         .status-product_na .dot { background: #ef4444; }
         .status-un_authorized { background: #fef2f2; color: #b91c1c; }
         .status-un_authorized .dot { background: #dc2626; }
-        .status-barak_damages { background: #fff1f2; color: #9f1239; }
-        .status-barak_damages .dot { background: #e11d48; }
+        .status-barrack_damages { background: #fff1f2; color: #9f1239; }
+        .status-barrack_damages .dot { background: #e11d48; }
 
         @keyframes pulse-dot {
             0%, 100% { opacity: 1; }
@@ -526,7 +526,7 @@
                             'maint_priced_performa' => 'Maint Priced Performa',
                             'product_na' => 'Product N/A',
                             'un_authorized' => 'Un-Authorized',
-                            'barak_damages' => 'Barak Damages',
+                            'barrack_damages' => 'Barrack Damages',
                         ];
                         $statusLabel = $statusLabels[$statusKey] ?? ucfirst(str_replace('_', ' ', $statusKey));
                     @endphp

@@ -182,7 +182,7 @@ class ApprovalController extends Controller
                 'maint_priced_performa' => 'Maint Priced',
                 'product_na' => 'Product N/A',
                 'un_authorized' => 'Un-Authorized',
-                'barak_damages' => 'Barak Damages',
+                'barrack_damages' => 'Barrack Damages',
             ];
 
             // Define performa type labels
@@ -1201,7 +1201,7 @@ class ApprovalController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'status' => 'required|in:new,assigned,in_progress,resolved,work_performa,maint_performa,work_priced_performa,maint_priced_performa,product_na,un_authorized,barak_damages',
+            'status' => 'required|in:new,assigned,in_progress,resolved,work_performa,maint_performa,work_priced_performa,maint_priced_performa,product_na,un_authorized,barrack_damages',
             'notes' => 'nullable|string',
             'remarks' => 'nullable|string',
         ]);

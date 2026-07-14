@@ -704,11 +704,11 @@
   </div>
 
   <div class="col-md-2 col-lg-2">
-    <div class="stat-card" onclick="showComplaintsModal('barak_damages')" style="cursor: pointer; background: linear-gradient(135deg, #808000 0%, #808000 100%) !important;">
+    <div class="stat-card" onclick="showComplaintsModal('barrack_damages')" style="cursor: pointer; background: linear-gradient(135deg, #808000 0%, #808000 100%) !important;">
       <div class="d-flex align-items-center justify-content-between">
         <div class="flex-grow-1">
-          <div class="stat-number">{{ $stats['barak_damages'] ?? 0 }}</div>
-          <div class="stat-label">Un Authorized Barrak Damages</div>
+          <div class="stat-number">{{ $stats['barrack_damages'] ?? 0 }}</div>
+          <div class="stat-label">Un Authorized Barrack Damages</div>
         </div>
         <div class="stat-icon">
           <i data-feather="alert-triangle" class="feather-lg"></i>
@@ -1102,7 +1102,7 @@
                   <span class="status-badge status-{{ $displayStatus }}" style="background-color: #ec5454 !important; color: #ffffff !important; border-color: #b13030 !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; width: 120px !important; text-align: center !important;" title="{{ $fullStatusText }}">{{ $fullStatusText }}</span>
                 @elseif($displayStatus === 'closed')
                   <span class="status-badge status-{{ $displayStatus }}" style="background-color: #6b7280 !important; color: #ffffff !important; border-color: #4b5563 !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; width: 120px !important; text-align: center !important;" title="{{ $fullStatusText }}">{{ $fullStatusText }}</span>
-                @elseif($displayStatus === 'barak_damages')
+                @elseif($displayStatus === 'barrack_damages')
                   <span class="status-badge status-{{ $displayStatus }}" style="background-color: #808000 !important; color: #ffffff !important; border-color: #6b6b00 !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; width: 120px !important; text-align: center !important;" title="{{ $fullStatusText }}">{{ $fullStatusText }}</span>
                 @else
                   <span class="status-badge status-{{ $displayStatus }}" style="color: #ffffff !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; width: 120px !important; text-align: center !important;" title="{{ $fullStatusText }}">{{ $fullStatusText }}</span>

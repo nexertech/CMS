@@ -28,7 +28,7 @@
     'maint_priced_performa' => 'Maintenance Priced',
     'product_na' => 'Product N/A',
     'un_authorized' => 'Un-Authorized',
-    'barak_damages' => 'Barak Damages',
+    'barrack_damages' => 'Barrack Damages',
   ];
   
   // Real mapping: 'new' is 'unassigned'
@@ -45,7 +45,7 @@
     'maint_priced_performa' => ['bg' => '#ea580c', 'text' => '#ffffff', 'border' => '#c2410c'],
     'product_na' => ['bg' => '#f97316', 'text' => '#ffffff', 'border' => '#c2410c'],
     'un_authorized' => ['bg' => '#ec4899', 'text' => '#ffffff', 'border' => '#db2777'],
-    'barak_damages' => ['bg' => '#808000', 'text' => '#ffffff', 'border' => '#666600'],
+    'barrack_damages' => ['bg' => '#808000', 'text' => '#ffffff', 'border' => '#666600'],
     'assigned' => ['bg' => '#16a34a', 'text' => '#ffffff', 'border' => '#15803d'], // Green
   ];
   $currentStatusColor = $statusColors[$displayStatus] ?? $statusColors['assigned'];

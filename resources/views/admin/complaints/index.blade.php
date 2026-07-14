@@ -119,7 +119,7 @@
                             </option>
                             <option value="un_authorized" {{ request('status') == 'un_authorized' ? 'selected' : '' }}>
                                 Un-Authorized</option>
-                            <option value="barak_damages" {{ request('status') == 'barak_damages' ? 'selected' : '' }}>Barak
+                            <option value="barrack_damages" {{ request('status') == 'barrack_damages' ? 'selected' : '' }}>Barrack
                                 Damages</option>
                             <option value="closed" {{ request('status') == 'closed' ? 'selected' : '' }}>Closed</option>
                         </select>
@@ -205,7 +205,7 @@
                                                 'maint_priced_performa' => ['bg' => '#ea580c', 'border' => '#c2410c'],
                                                 'product_na' => ['bg' => '#f97316', 'border' => '#ea580c'],
                                                 'un_authorized' => ['bg' => '#ec4899', 'border' => '#db2777'],
-                                                'barak_damages' => ['bg' => '#808000', 'border' => '#6b6b00'],
+                                                'barrack_damages' => ['bg' => '#808000', 'border' => '#6b6b00'],
                                                 'closed' => ['bg' => '#6b7280', 'border' => '#4b5563'],
                                             ];
                                             $c = $statusColorMap[$status] ?? ['bg' => '#64748b', 'border' => '#475569'];
@@ -222,7 +222,7 @@
                                                 'maint_priced_performa' => 'Maint Priced',
                                                 'product_na' => 'Product NA',
                                                 'un_authorized' => 'Un-Authorized',
-                                                'barak_damages' => 'Barak Damages',
+                                                'barrack_damages' => 'Barrack Damages',
                                                 'closed' => 'Closed',
                                             ];
                                             $label = $statusLabelMap[$status] ?? ucfirst(str_replace('_', ' ', $status));
