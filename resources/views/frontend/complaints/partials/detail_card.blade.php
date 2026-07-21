@@ -16,6 +16,7 @@
     'product_na' => 'Product N/A',
     'un_authorized' => 'Un-Authorized',
     'barrack_damages' => 'Barrack Damages',
+    'door_lock' => 'Door Lock',
     'pending' => 'Pending', // Frontend specific fallback
   ];
   
@@ -33,6 +34,7 @@
       'product_na' => ['bg' => '#f97316', 'text' => '#ffffff'],
       'un_authorized' => ['bg' => '#ec4899', 'text' => '#ffffff'],
       'barrack_damages' => ['bg' => '#808000', 'text' => '#ffffff'],
+      'door_lock' => ['bg' => '#854d0e', 'text' => '#ffffff'],
       'assigned' => ['bg' => '#16a34a', 'text' => '#ffffff'],    // Green
       'new' => ['bg' => '#000000', 'text' => '#ffffff'],         // Black
       'pending' => ['bg' => '#f59e0b', 'text' => '#000000'],     // Orange
@@ -176,29 +178,25 @@
                     </div>
                 </div>
 
-                @if($complaint->house && $complaint->house->phone)
                 <div class="info-item">
                     <div class="d-flex align-items-center">
                         <i data-feather="phone" class="me-3 text-muted"></i>
                         <div class="w-100 d-flex justify-content-between">
                             <span class="text-muted small text-uppercase">Phone:</span>
-                            <span class="fw-medium text-dark text-end">{{ $complaint->house->phone }}</span>
+                            <span class="fw-medium text-dark text-end">{{ $complaint->house?->phone ?? 'N/A' }}</span>
                         </div>
                     </div>
                 </div>
-                @endif
                 
-                @if($complaint->house && $complaint->house->address)
                 <div class="info-item">
                     <div class="d-flex align-items-start">
                         <i data-feather="map-pin" class="me-3 text-muted mt-1"></i>
                         <div class="w-100 d-flex justify-content-between align-items-start">
                              <span class="text-muted small text-uppercase" style="white-space: nowrap;">Address:</span>
-                             <span class="fw-medium text-dark text-end ms-2" style="line-height: 1.3; font-size: 0.85rem;">{{ $complaint->house->address }}</span>
+                             <span class="fw-medium text-dark text-end ms-2" style="line-height: 1.3; font-size: 0.85rem;">{{ $complaint->house?->address ?? 'N/A' }}</span>
                         </div>
                     </div>
                 </div>
-                @endif
                 @if($complaint->city_id && $complaint->city)
                 <div class="info-item">
                     <div class="d-flex align-items-center">
@@ -250,10 +248,13 @@
                     <div class="d-flex align-items-center">
                         <i data-feather="flag" class="me-3 text-muted"></i>
                          <div class="w-100 d-flex justify-content-between align-items-center">
-                            <span class="text-muted small text-uppercase">Priority:</span>
-                            <span class="badge bg-{{ $complaint->priority === 'high' ? 'danger' : ($complaint->priority === 'medium' ? 'warning' : 'success') }} p-2" style="font-size: 0.75rem;">
-                                {{ ucfirst($complaint->priority) }}
-                            </span>
+                             <span class="text-muted small text-uppercase">Priority:</span>
+                             @php
+                               $isEmerg = strtolower($complaint->priority ?? 'normal') === 'emergency';
+                             @endphp
+                             <span class="badge" style="background-color: {{ $isEmerg ? '#991b1b' : '#1d4ed8' }} !important; color: #ffffff !important; border: 1px solid {{ $isEmerg ? '#7f1d1d' : '#1e40af' }} !important; font-size: 0.75rem; padding: 4px 10px; border-radius: 6px;">
+                                 {{ $isEmerg ? 'Emergency' : 'Normal' }}
+                             </span>
                         </div>
                     </div>
                 </div>

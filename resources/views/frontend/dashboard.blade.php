@@ -15,6 +15,25 @@
             max-height: none !important;
         }
 
+        /* ApexCharts Tooltip Text Color White */
+        .apexcharts-tooltip,
+        .apexcharts-tooltip *,
+        .apexcharts-tooltip-title,
+        .apexcharts-tooltip-text,
+        .apexcharts-tooltip-text-y-value,
+        .apexcharts-tooltip-text-y-label,
+        .apexcharts-tooltip-text-value {
+            color: #ffffff !important;
+            fill: #ffffff !important;
+        }
+        .apexcharts-tooltip.apexcharts-theme-dark,
+        .apexcharts-tooltip.apexcharts-theme-light,
+        .apexcharts-tooltip {
+            background: #0f172a !important;
+            border: 1px solid #334155 !important;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+        }
+
         /* Browser compatibility handled in app layout */
         html,
         body {
@@ -699,13 +718,13 @@
                         style="line-height: 1.2; font-weight: 700;">{{ $stats['maint_performa'] ?? 0 }}</span>
                     <span class="text-sm font-bold" style="line-height: 1.2; font-weight: 700;">Maintenance Performa</span>
                 </div>
-                <!-- Un Authorized -->
+                <!-- Door Lock -->
                 <div class="stat-card text-white rounded-xl text-center font-bold flex flex-col items-center justify-start cursor-pointer"
-                    data-status-key="un_authorized" data-title="Un Authorized" role="button"
-                    style="background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); min-height: 120px; padding: 1rem 0.75rem;">
-                    <span id="stat-un-authorized" class="text-3xl mb-1 font-bold"
-                        style="line-height: 1.2; font-weight: 700;">{{ $stats['un_authorized'] ?? 0 }}</span>
-                    <span class="text-sm font-bold" style="line-height: 1.2; font-weight: 700;">Un Authorized</span>
+                    data-status-key="door_lock" data-title="Door Lock" role="button"
+                    style="background: #000000; min-height: 120px; padding: 1rem 0.75rem;">
+                    <span id="stat-door-lock" class="text-3xl mb-1 font-bold"
+                        style="line-height: 1.2; font-weight: 700;">{{ $stats['door_lock'] ?? 0 }}</span>
+                    <span class="text-sm font-bold" style="line-height: 1.2; font-weight: 700;">Door Lock</span>
                 </div>
                 <!-- Product N/A -->
                 <div class="stat-card text-white rounded-xl text-center font-bold flex flex-col items-center justify-start cursor-pointer"
@@ -716,13 +735,13 @@
                     <span class="text-sm font-bold" style="line-height: 1.2; font-weight: 700;">Product N/A</span>
                 </div>
 
-                <!-- Work Performa Priced -->
+                <!-- Un Authorized -->
                 <div class="stat-card text-white rounded-xl text-center font-bold flex flex-col items-center justify-start cursor-pointer"
-                    data-status-key="work_priced_performa" data-title="Work Performa Priced" role="button"
-                    style="background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%); min-height: 120px; padding: 1rem 0.75rem;">
-                    <span id="stat-work-priced-performa" class="text-3xl mb-1 font-bold"
-                        style="line-height: 1.2; font-weight: 700;">{{ $stats['work_priced_performa'] ?? 0 }}</span>
-                    <span class="text-sm font-bold" style="line-height: 1.2; font-weight: 700;">Work Performa Priced</span>
+                    data-status-key="un_authorized" data-title="Un Authorized" role="button"
+                    style="background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); min-height: 120px; padding: 1rem 0.75rem;">
+                    <span id="stat-un-authorized" class="text-3xl mb-1 font-bold"
+                        style="line-height: 1.2; font-weight: 700;">{{ $stats['un_authorized'] ?? 0 }}</span>
+                    <span class="text-sm font-bold" style="line-height: 1.2; font-weight: 700;">Un Authorized</span>
                 </div>
 
                 <!-- Barrack Damages -->
@@ -1845,6 +1864,8 @@
                             display: false
                         },
                         ticks: {
+                            maxRotation: 0,
+                            minRotation: 0,
                             font: {
                                 size: 11,
                                 weight: 'bold',
@@ -2095,7 +2116,7 @@
             'product_na': { label: 'Product N/A', color: '#0deb7c' }, // Green
             'un_authorized': { label: 'Un-Authorized', color: '#ec4899' }, // Pink
             'barrack_damages': { label: 'Barrack Damages', color: '#808000' }, // Olive
-            'closed': { label: 'Closed', color: '#6b7280' }, // Grey
+            'door_lock': { label: 'Door Lock', color: '#000000' }, // Black
             'unassigned': { label: 'Unassigned', color: '#000000' }, // Black
             'new': { label: 'Unassigned', color: '#000000' } // Black
         };
@@ -2298,10 +2319,14 @@
                     },
                     tooltip: {
                         enabled: true,
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        backgroundColor: '#0f172a',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        footerColor: '#ffffff',
                         padding: 10,
                         titleFont: {
-                            size: 12
+                            size: 12,
+                            weight: 'bold'
                         },
                         bodyFont: {
                             size: 11
@@ -2733,6 +2758,10 @@
             if (stats.barrack_damages !== undefined) {
                 const el = document.getElementById('stat-barrack-damages');
                 if (el) el.textContent = stats.barrack_damages;
+            }
+            if (stats.door_lock !== undefined) {
+                const el = document.getElementById('stat-door-lock');
+                if (el) el.textContent = stats.door_lock;
             }
             
             // Update Resolution Rate

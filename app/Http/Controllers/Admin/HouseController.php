@@ -114,13 +114,15 @@ class HouseController extends Controller
             'username' => 'nullable|string|max:150|unique:houses,username',
             'house_no' => 'required|string|max:150',
             'name' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'nullable|regex:/^[0-9]{11}$/',
             'password' => 'nullable|string|min:8',
             'city_id' => 'required|exists:cities,id',
             'sector_id' => 'required|exists:sectors,id',
             'address' => 'nullable|string|max:500',
             'status' => 'nullable|in:0,1',
             'type' => 'nullable|string|max:100',
+        ], [
+            'phone.regex' => 'Phone number must be exactly 11 digits (e.g. 03001234567).',
         ]);
 
         if ($validator->fails()) {
@@ -237,13 +239,15 @@ class HouseController extends Controller
             'username' => ['nullable', 'string', 'max:150', Rule::unique('houses')->ignore($house->id)],
             'house_no' => 'required|string|max:150',
             'name' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'nullable|regex:/^[0-9]{11}$/',
             'password' => 'nullable|string|min:8',
             'city_id' => 'required|exists:cities,id',
             'sector_id' => 'required|exists:sectors,id',
             'address' => 'nullable|string|max:500',
             'status' => 'required|in:0,1',
             'type' => 'nullable|string|max:100',
+        ], [
+            'phone.regex' => 'Phone number must be exactly 11 digits (e.g. 03001234567).',
         ]);
 
         if ($validator->fails()) {

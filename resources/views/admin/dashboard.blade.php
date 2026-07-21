@@ -15,6 +15,66 @@
       transition: filter 0.3s ease;
   }
 
+  /* Custom ApexCharts Tooltip - Pure White Text in All Themes */
+  .custom-apex-tooltip {
+      background: #0f172a !important;
+      color: #ffffff !important;
+      padding: 8px 14px !important;
+      border-radius: 8px !important;
+      border: 1px solid #334155 !important;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+      font-size: 13px !important;
+      line-height: 1.4 !important;
+      display: flex !important;
+      align-items: center !important;
+  }
+  .custom-apex-tooltip *,
+  .custom-apex-tooltip span,
+  .custom-apex-tooltip strong {
+      color: #ffffff !important;
+  }
+
+  .apexcharts-tooltip,
+  .apexcharts-tooltip.apexcharts-theme-dark,
+  .apexcharts-tooltip.apexcharts-theme-light,
+  .theme-light .apexcharts-tooltip,
+  .theme-dark .apexcharts-tooltip {
+      background: #0f172a !important;
+      color: #ffffff !important;
+      border: 1px solid #334155 !important;
+      border-radius: 8px !important;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+  }
+  .apexcharts-tooltip-title,
+  .theme-light .apexcharts-tooltip-title,
+  .theme-dark .apexcharts-tooltip-title {
+      background: #1e293b !important;
+      color: #ffffff !important;
+      border-bottom: 1px solid #334155 !important;
+      font-weight: 700 !important;
+  }
+  .apexcharts-tooltip *,
+  .apexcharts-tooltip span,
+  .apexcharts-tooltip div,
+  .apexcharts-tooltip-text,
+  .apexcharts-tooltip-text-y-label,
+  .apexcharts-tooltip-text-y-value,
+  .apexcharts-tooltip-text-label,
+  .apexcharts-tooltip-text-value,
+  .apexcharts-tooltip-series-group,
+  .apexcharts-tooltip-series-group *,
+  .theme-light .apexcharts-tooltip *,
+  .theme-light .apexcharts-tooltip span,
+  .theme-light .apexcharts-tooltip div,
+  .theme-light .apexcharts-tooltip-text-y-label,
+  .theme-light .apexcharts-tooltip-text-y-value,
+  .theme-dark .apexcharts-tooltip *,
+  .theme-dark .apexcharts-tooltip span,
+  .theme-dark .apexcharts-tooltip div {
+      color: #ffffff !important;
+      fill: #ffffff !important;
+  }
+
   /* Compact Modal Table Styles */
   #complaintsListModal .table th,
   #complaintsListModal .table td {
@@ -42,8 +102,7 @@
 
   /* Override badge sizes in modal */
   #complaintsListModal .badge,
-  #complaintsListModal .status-badge,
-  #complaintsListModal .priority-badge {
+  #complaintsListModal .status-badge {
       font-size: 0.6rem !important;
       padding: 2px 0 !important; /* Reduced side padding, rely on width */
       min-width: 60px !important; /* Fixed width for equality */
@@ -52,6 +111,22 @@
       text-align: center !important;
       white-space: nowrap !important;
       overflow: hidden !important;
+  }
+
+  /* Priority badge styling across dashboard & modal */
+  .priority-badge,
+  #complaintsListModal .priority-badge {
+      display: inline-block !important;
+      width: 90px !important;
+      min-width: 90px !important;
+      max-width: 90px !important;
+      text-align: center !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      padding: 4px 6px !important;
+      font-size: 10px !important;
+      font-weight: 600 !important;
+      border-radius: 6px !important;
   }
 
   /* Specific override for Status badge to allow full text display */
@@ -690,14 +765,14 @@
   </div>
 
   <div class="col-md-2 col-lg-2">
-    <div class="stat-card" onclick="showComplaintsModal('work_priced_performa')" style="cursor: pointer; background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%) !important;">
+    <div class="stat-card" onclick="showComplaintsModal('door_lock')" style="cursor: pointer; background: #000000 !important;">
       <div class="d-flex align-items-center justify-content-between">
         <div class="flex-grow-1">
-          <div class="stat-number">{{ $stats['work_priced_performa'] ?? 0 }}</div>
-          <div class="stat-label">Work Performa Priced</div>
+          <div class="stat-number">{{ $stats['door_lock'] ?? 0 }}</div>
+          <div class="stat-label">Door Lock</div>
         </div>
         <div class="stat-icon">
-          <i data-feather="dollar-sign" class="feather-lg"></i>
+          <i data-feather="lock" class="feather-lg"></i>
         </div>
       </div>
     </div>
@@ -1100,25 +1175,19 @@
                   <span class="status-badge status-{{ $displayStatus }}" style="background-color: #ec4899 !important; color: #ffffff !important; border-color: #db2777 !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; width: 120px !important; text-align: center !important;" title="{{ $fullStatusText }}">{{ $fullStatusText }}</span>
                 @elseif($displayStatus === 'product_na')
                   <span class="status-badge status-{{ $displayStatus }}" style="background-color: #ec5454 !important; color: #ffffff !important; border-color: #b13030 !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; width: 120px !important; text-align: center !important;" title="{{ $fullStatusText }}">{{ $fullStatusText }}</span>
-                @elseif($displayStatus === 'closed')
-                  <span class="status-badge status-{{ $displayStatus }}" style="background-color: #6b7280 !important; color: #ffffff !important; border-color: #4b5563 !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; width: 120px !important; text-align: center !important;" title="{{ $fullStatusText }}">{{ $fullStatusText }}</span>
                 @elseif($displayStatus === 'barrack_damages')
                   <span class="status-badge status-{{ $displayStatus }}" style="background-color: #808000 !important; color: #ffffff !important; border-color: #6b6b00 !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; width: 120px !important; text-align: center !important;" title="{{ $fullStatusText }}">{{ $fullStatusText }}</span>
+                @elseif($displayStatus === 'door_lock')
+                  <span class="status-badge status-{{ $displayStatus }}" style="background-color: #000000 !important; color: #ffffff !important; border-color: #333333 !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; width: 120px !important; text-align: center !important;" title="{{ $fullStatusText }}">Door Lock</span>
                 @else
                   <span class="status-badge status-{{ $displayStatus }}" style="color: #ffffff !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; width: 120px !important; text-align: center !important;" title="{{ $fullStatusText }}">{{ $fullStatusText }}</span>
                 @endif
               </td>
               <td>
-                @if($complaint->priority === 'urgent')
-                  <span class="priority-badge priority-{{ $complaint->priority }}" style="background-color: #991b1b !important; color: #ffffff !important; border-color: #7f1d1d !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; min-width: 70px !important; text-align: center !important;">{{ $complaint->getPriorityDisplayAttribute() }}</span>
-                @elseif($complaint->priority === 'high')
-                  <span class="priority-badge priority-{{ $complaint->priority }}" style="background-color: #c2410c !important; color: #ffffff !important; border-color: #9a3412 !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; min-width: 70px !important; text-align: center !important;">{{ $complaint->getPriorityDisplayAttribute() }}</span>
-                @elseif($complaint->priority === 'medium')
-                  <span class="priority-badge priority-{{ $complaint->priority }}" style="background-color: #eab308 !important; color: #ffffff !important; border-color: #ca8a04 !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; min-width: 70px !important; text-align: center !important;">{{ $complaint->getPriorityDisplayAttribute() }}</span>
-                @elseif($complaint->priority === 'low')
-                  <span class="priority-badge priority-{{ $complaint->priority }}" style="background-color: #15803d !important; color: #ffffff !important; border-color: #166534 !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important; min-width: 70px !important; text-align: center !important;">{{ $complaint->getPriorityDisplayAttribute() }}</span>
+                @if(strtolower($complaint->priority ?? 'normal') === 'emergency')
+                  <span class="priority-badge" style="background-color: #991b1b !important; color: #ffffff !important; border: 1px solid #7f1d1d !important; width: 90px !important; min-width: 90px !important; max-width: 90px !important; display: inline-block !important; text-align: center !important; padding: 4px 6px !important; font-size: 10px !important; font-weight: 600 !important; border-radius: 6px !important;">Emergency</span>
                 @else
-                  <span class="priority-badge priority-{{ $complaint->priority }}" style="display: inline-block !important; min-width: 70px !important; text-align: center !important;">{{ $complaint->getPriorityDisplayAttribute() }}</span>
+                  <span class="priority-badge" style="background-color: #1d4ed8 !important; color: #ffffff !important; border: 1px solid #1e40af !important; width: 90px !important; min-width: 90px !important; max-width: 90px !important; display: inline-block !important; text-align: center !important; padding: 4px 6px !important; font-size: 10px !important; font-weight: 600 !important; border-radius: 6px !important;">Normal</span>
                 @endif
               </td>
               <td>
@@ -1200,19 +1269,11 @@
                   </td>
                   <td style="padding: 0.4rem 0.5rem !important;">
                     @if($approval->complaint)
-                      @php
-                        $priority = $approval->complaint->priority ?? 'medium';
-                        $priorityColors = [
-                          'urgent' => ['bg' => '#991b1b', 'text' => '#ffffff', 'border' => '#7f1d1d'],
-                          'high' => ['bg' => '#c2410c', 'text' => '#ffffff', 'border' => '#9a3412'],
-                          'medium' => ['bg' => '#eab308', 'text' => '#ffffff', 'border' => '#ca8a04'],
-                          'low' => ['bg' => '#15803d', 'text' => '#ffffff', 'border' => '#166534'],
-                        ];
-                        $priorityColor = $priorityColors[$priority] ?? ['bg' => '#6b7280', 'text' => '#ffffff', 'border' => '#4b5563'];
-                      @endphp
-                      <span class="priority-badge" style="background-color: {{ $priorityColor['bg'] }} !important; color: {{ $priorityColor['text'] }} !important; border: 1px solid {{ $priorityColor['border'] }} !important; padding: 3px 6px !important; font-size: 10px !important; font-weight: 600; border-radius: 6px !important; display: inline-block !important; min-width: 70px !important; text-align: center !important;">
-                        {{ $approval->complaint->getPriorityDisplayAttribute() ?? 'N/A' }}
-                      </span>
+                      @if(strtolower($approval->complaint->priority ?? 'normal') === 'emergency')
+                        <span class="priority-badge" style="background-color: #991b1b !important; color: #ffffff !important; border: 1px solid #7f1d1d !important; width: 90px !important; min-width: 90px !important; max-width: 90px !important; display: inline-block !important; text-align: center !important; padding: 4px 6px !important; font-size: 10px !important; font-weight: 600 !important; border-radius: 6px !important;">Emergency</span>
+                      @else
+                        <span class="priority-badge" style="background-color: #1d4ed8 !important; color: #ffffff !important; border: 1px solid #1e40af !important; width: 90px !important; min-width: 90px !important; max-width: 90px !important; display: inline-block !important; text-align: center !important; padding: 4px 6px !important; font-size: 10px !important; font-weight: 600 !important; border-radius: 6px !important;">Normal</span>
+                      @endif
                     @else
                       <span style="font-size: 0.75rem;">N/A</span>
                     @endif
@@ -1308,6 +1369,8 @@
       'maint_priced_performa' => '#ea580c', // Orange Red
       'product_na' => '#f97316', // Orange
       'un_authorized' => '#ec4899', // Pink
+      'barrack_damages' => '#808000', // Olive
+      'door_lock' => '#000000', // Black
     ];
 
     // All possible statuses from approvals page (in order)
@@ -1322,6 +1385,8 @@
       'maint_priced_performa',
       'product_na',
       'un_authorized',
+      'barrack_damages',
+      'door_lock',
     ];
 
     // Ensure we preserve the order of statuses and include all possible statuses
@@ -1405,10 +1470,13 @@
         }
       },
       tooltip: {
-        theme: document.body.classList.contains('theme-light') ? 'light' : 'dark',
-        style: {
-          fontSize: '12px',
-          fontFamily: 'inherit'
+        custom: function({series, seriesIndex, dataPointIndex, w}) {
+          var label = w.globals.labels[seriesIndex];
+          var val = series[seriesIndex];
+          return '<div class="custom-apex-tooltip">' +
+                    '<span style="color: #ffffff !important; font-weight: 600;">' + label + ': </span>' +
+                    '<strong style="color: #ffffff !important; font-weight: 700; margin-left: 6px;">' + val + '</strong>' +
+                 '</div>';
         }
       }
     };

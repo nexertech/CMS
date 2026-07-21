@@ -133,13 +133,15 @@ class EmployeeController extends Controller
             'name' => 'required|string|max:150',
             'category_id' => 'required|exists:complaint_categories,id',
             'designation_id' => 'required|exists:designations,id',
-            'phone' => 'nullable|string|min:11|max:20',
+            'phone' => 'nullable|regex:/^[0-9]{11}$/',
             // 'emp_id' removed
             'date_of_hire' => 'nullable|date',
             'address' => 'nullable|string|max:500',
             'city_id' => 'required|exists:cities,id',
             'sector_id' => 'required|exists:sectors,id',
             'status' => 'nullable|in:0,1',
+        ], [
+            'phone.regex' => 'Phone number must be exactly 11 digits (e.g. 03001234567).',
         ]);
 
         if ($validator->fails()) {
@@ -357,7 +359,7 @@ class EmployeeController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:150',
-            'phone' => 'nullable|string|min:11|max:20',
+            'phone' => 'nullable|regex:/^[0-9]{11}$/',
             'category_id' => 'required|exists:complaint_categories,id',
             'designation_id' => 'required|exists:designations,id',
             // 'emp_id' removed
@@ -366,6 +368,8 @@ class EmployeeController extends Controller
             'city_id' => 'required|exists:cities,id',
             'sector_id' => 'required|exists:sectors,id',
             'status' => 'required|in:0,1',
+        ], [
+            'phone.regex' => 'Phone number must be exactly 11 digits (e.g. 03001234567).',
         ]);
 
         if ($validator->fails()) {

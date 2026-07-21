@@ -71,6 +71,7 @@ class ComplaintApiController extends Controller
                     'description' => $complaint->description,
                     'availability_time' => $complaint->availability_time,
                     'status' => $complaint->mapped_status,
+                    'status_id' => $complaint->status_id,
                     'status_label' => $complaint->status_display,
                     'created_at' => $complaint->created_at->timezone('Asia/Karachi')->format('M d, Y H:i'),
                     'closed_at' => $complaint->closed_at ? $complaint->closed_at->timezone('Asia/Karachi')->format('M d, Y H:i') : null,
@@ -111,6 +112,7 @@ class ComplaintApiController extends Controller
                 'title' => $complaint->title ?? ($complaint->complaintTitle ? $complaint->complaintTitle->title : 'Unknown'),
                 'category' => $complaint->category ? $complaint->category->name : 'Unknown',
                 'status' => $complaint->mapped_status,
+                'status_id' => $complaint->status_id,
                 'status_label' => $complaint->status_display,
                 'priority' => $complaint->priority,
                 'description' => $complaint->description,
@@ -157,7 +159,7 @@ class ComplaintApiController extends Controller
             'title' => 'required',
             'description' => 'required|string',
             'availability_time' => 'nullable|string',
-            'priority' => 'nullable|in:low,medium,high,urgent'
+            'priority' => 'nullable|in:normal,emergency'
         ]);
 
         if ($validator->fails()) {
@@ -230,7 +232,7 @@ class ComplaintApiController extends Controller
                 'priority'           => $request->priority ?? 'medium',
                 'description'        => $request->description,
                 'availability_time'  => $request->availability_time,
-                'status'             => 'new',
+                'status'             => 'unassigned',
             ]);
 
             ComplaintLog::create([

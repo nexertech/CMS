@@ -602,6 +602,8 @@ class ReportController extends Controller
         $rows['maint_priced_performa'] = 'Maintenance Performa Priced';
         $rows['product_na'] = 'Product N/A';
         $rows['un_authorized'] = 'Un-Authorized';
+        $rows['barrack_damages'] = 'Barrack Damages';
+        $rows['door_lock'] = 'Door Lock';
 
         // Get user for location filtering and CMES filter
         $user = Auth::user();
@@ -651,16 +653,20 @@ class ReportController extends Controller
         // Fetch performa-type statistics from approvals joined with complaints
         $performaStats = (clone $baseQuery)
             ->join('spare_approval_performa', 'complaints.id', '=', 'spare_approval_performa.complaint_id')
-            ->where('complaints.status', 'in_progress')
+            ->where('complaints.status', Complaint::STATUS_IN_PROGRESS)
             ->where('spare_approval_performa.status', '!=', 'rejected')
-            ->selectRaw('complaints.category_id, spare_approval_performa.performa_type, COUNT(*) as count')
+            ->selectRaw('complaints.category_id, spare_approval_performa.performa_type, COUNT(DISTINCT complaints.id) as count')
             ->groupBy('complaints.category_id', 'spare_approval_performa.performa_type')
             ->get();
 
         // Pre-index records for fast mapping
+        $statusIdMap = Complaint::getStatusIdMap();
         $indexedStats = [];
         foreach ($allStats as $stat) {
-            $indexedStats[$stat->category_id][$stat->status] = $stat->count;
+            $rawStatus = $stat->status;
+            $statusKey = is_numeric($rawStatus) ? ($statusIdMap[(int)$rawStatus] ?? 'unassigned') : $rawStatus;
+            if ($statusKey === 'new') $statusKey = 'unassigned';
+            $indexedStats[$stat->category_id][$statusKey] = ($indexedStats[$stat->category_id][$statusKey] ?? 0) + $stat->count;
         }
 
         $indexedPerformas = [];
@@ -696,13 +702,13 @@ class ReportController extends Controller
 
                 $count = 0;
                 if ($rowKey === 'unassigned') {
-                    $count = $indexedStats[$catId]['new'] ?? 0;
+                    $count = $indexedStats[$catId]['unassigned'] ?? ($indexedStats[$catId]['new'] ?? 0);
                 } elseif ($rowKey === 'assigned') {
                     $count = $indexedStats[$catId]['assigned'] ?? 0;
                 } elseif ($rowKey === 'in_progress') {
                     $totalInProgress = $indexedStats[$catId]['in_progress'] ?? 0;
                     $hasPerformaCount = collect($indexedPerformas[$catId] ?? [])
-                        ->only(['work_performa', 'maint_performa', 'product_na'])
+                        ->only(['work_performa', 'maint_performa', 'product_na', 'barrack_damages', 'door_lock'])
                         ->sum();
                     $count = max(0, $totalInProgress - $hasPerformaCount);
                 } elseif ($rowKey === 'resolved') {
@@ -712,15 +718,17 @@ class ReportController extends Controller
                 } elseif ($rowKey === 'maint_performa') {
                     $count = ($indexedStats[$catId]['maint_performa'] ?? 0) + ($indexedPerformas[$catId]['maint_performa'] ?? 0);
                 } elseif ($rowKey === 'work_priced_performa') {
-                    $count = $indexedStats[$catId]['work_priced_performa'] ?? 0;
+                    $count = ($indexedStats[$catId]['work_priced_performa'] ?? 0) + ($indexedPerformas[$catId]['work_priced_performa'] ?? 0);
                 } elseif ($rowKey === 'maint_priced_performa') {
-                    $count = $indexedStats[$catId]['maint_priced_performa'] ?? 0;
+                    $count = ($indexedStats[$catId]['maint_priced_performa'] ?? 0) + ($indexedPerformas[$catId]['maint_priced_performa'] ?? 0);
                 } elseif ($rowKey === 'product_na') {
                     $count = ($indexedStats[$catId]['product_na'] ?? 0) + ($indexedPerformas[$catId]['product_na'] ?? 0);
                 } elseif ($rowKey === 'un_authorized') {
-                    $count = $indexedStats[$catId]['un_authorized'] ?? 0;
+                    $count = ($indexedStats[$catId]['un_authorized'] ?? 0) + ($indexedPerformas[$catId]['un_authorized'] ?? 0);
                 } elseif ($rowKey === 'barrack_damages') {
-                    $count = $indexedStats[$catId]['barrack_damages'] ?? 0;
+                    $count = ($indexedStats[$catId]['barrack_damages'] ?? 0) + ($indexedPerformas[$catId]['barrack_damages'] ?? 0);
+                } elseif ($rowKey === 'door_lock') {
+                    $count = ($indexedStats[$catId]['door_lock'] ?? 0) + ($indexedPerformas[$catId]['door_lock'] ?? 0);
                 }
 
                 $percentage = $catTotal > 0 ? round(($count / $catTotal) * 100, 1) : 0;

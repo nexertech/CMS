@@ -76,6 +76,7 @@
               'maint_priced_performa' => 'Maintenance Performa Priced',
               'product_na' => 'Product N/A',
               'un_authorized' => 'Un-Authorized',
+              'door_lock' => 'Door Lock',
             ];
           @endphp
           @foreach($reportData as $rowKey => $row)

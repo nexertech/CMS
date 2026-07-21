@@ -76,8 +76,8 @@
             <label for="phone" class="form-label text-white">Phone</label>
             <input type="tel" class="form-control @error('phone') is-invalid @enderror" 
                    id="phone" name="phone" value="{{ old('phone') }}" 
-                   pattern="[0-9]*" inputmode="numeric" 
-                   onkeypress="return event.charCode >= 48 && event.charCode <= 57">
+                   maxlength="11" minlength="11" pattern="[0-9]{11}" placeholder="03001234567" inputmode="numeric" 
+                   oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11)">
             @error('phone')
               <div class="invalid-feedback">{{ $message }}</div>
             @enderror

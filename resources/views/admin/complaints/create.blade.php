@@ -173,142 +173,109 @@
                         </div>
                     </div>
 
-                    <!-- Complaint Details Section (matching index file columns) -->
-                    <div class="row mb-4">
-                        <div class="col-12">
-                            <h6 class="text-white fw-bold mb-3"><i data-feather="alert-triangle" class="me-2"
-                                    style="width: 16px; height: 16px;"></i>Complaint Nature & Type</h6>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="category" class="form-label text-white">Category <span
-                                        class="text-danger">*</span></label>
-                                <select id="category" name="category"
-                                    class="form-select @error('category') is-invalid @enderror" required>
-                                    <option value="">Select Category</option>
-                                    @foreach ($categories as $id => $name)
-                                        <option value="{{ $id }}"
-                                            {{ old('category') == $id ? 'selected' : '' }}>{{ ucfirst($name) }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('category')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                    <!-- Complaints Container - Repeatable Entries -->
+                    <div id="complaints-container">
+                        <!-- Complaint Entry #1 -->
+                        <div class="complaint-entry" data-index="0">
+                            <div class="complaint-entry-header d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="text-white fw-bold mb-0">
+                                    <i data-feather="alert-triangle" class="me-2" style="width: 16px; height: 16px;"></i>
+                                    <span class="complaint-number">Complaint #1</span>
+                                </h6>
+                                <button type="button" class="btn btn-sm btn-remove-complaint" onclick="removeComplaint(this)" style="display: none; background: rgba(220,53,69,0.2); color: #ff6b6b; border: 1px solid rgba(220,53,69,0.3); border-radius: 8px; padding: 4px 12px; font-size: 13px;">
+                                    <i data-feather="x" style="width: 14px; height: 14px;"></i> Remove
+                                </button>
                             </div>
-                        </div>
-
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="complaint_title_id" class="form-label text-white">Complaint Type <span
-                                        class="text-danger">*</span></label>
-                                <div id="titleDropdownContainer">
-                                    <select class="form-select @error('complaint_title_id') is-invalid @enderror" id="title"
-                                        name="complaint_title_id" autocomplete="off" required data-prev="{{ old('complaint_title_id') }}">
-                                        <option value="">Select Category First</option>
-                                    </select>
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label text-white">Category <span class="text-danger">*</span></label>
+                                        <select name="complaints[0][category]" class="form-select complaint-category" required>
+                                            <option value="">Select Category</option>
+                                            @foreach ($categories as $id => $name)
+                                                <option value="{{ $id }}">{{ ucfirst($name) }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
                                 </div>
-                                <div id="titleInputContainer" style="display: none; position: relative;">
-                                    <input type="text" class="form-control @error('title_other') is-invalid @enderror"
-                                        id="title_other" name="title_other" placeholder="Enter custom title..."
-                                        value="{{ old('title_other') }}">
-                                    <button type="button" class="btn btn-sm btn-link text-white position-absolute end-0 top-0 mt-1 me-1" id="btn_back_to_select" title="Back to dropdown">
-                                        <i data-feather="corner-up-left" style="width: 14px; height: 14px;"></i>
-                                    </button>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label text-white">Complaint Type <span class="text-danger">*</span></label>
+                                        <div class="title-dropdown-container">
+                                            <select name="complaints[0][complaint_title_id]" class="form-select complaint-title" required autocomplete="off">
+                                                <option value="">Select Category First</option>
+                                            </select>
+                                        </div>
+                                        <div class="title-input-container" style="display: none; position: relative;">
+                                            <input type="text" class="form-control complaint-title-other" name="complaints[0][title_other]" placeholder="Enter custom title...">
+                                            <button type="button" class="btn btn-sm btn-link text-white position-absolute end-0 top-0 mt-1 me-1 btn-back-to-select" title="Back to dropdown">
+                                                <i data-feather="corner-up-left" style="width: 14px; height: 14px;"></i>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
-                                {{-- <small class="text-muted">Select category above to see complaint titles</small> --}}
-                                @error('complaint_title_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label text-white">Priority <span class="text-danger">*</span></label>
+                                        <select name="complaints[0][priority]" class="form-select complaint-priority" required>
+                                            <option value="normal" selected>Normal</option>
+                                            <option value="emergency">Emergency</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label text-white">Availability Time</label>
+                                        <input type="datetime-local" class="form-control complaint-availability" name="complaints[0][availability_time]">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label text-white">Assign Employee</label>
+                                        <select name="complaints[0][assigned_employee_id]" class="form-select complaint-employee">
+                                            <option value="">Select Employee (Optional)</option>
+                                            @if (isset($employees) && $employees->count() > 0)
+                                                @foreach ($employees as $employee)
+                                                    <option value="{{ $employee->id }}"
+                                                        data-category="{{ $employee->category_id ?? '' }}"
+                                                        data-city="{{ $employee->city_id }}"
+                                                        data-sector="{{ $employee->sector_id }}">
+                                                        {{ $employee->name }}@if($employee->designation) ({{ $employee->designation->name }})@endif</option>
+                                                @endforeach
+                                            @else
+                                                <option value="" disabled>No employees available</option>
+                                            @endif
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-
-
-
-
-
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="priority" class="form-label text-white">Priority <span
-                                        class="text-danger">*</span></label>
-                                <select class="form-select @error('priority') is-invalid @enderror" id="priority"
-                                    name="priority" required>
-                                    <option value="">Select Priority</option>
-                                    <option value="low" {{ old('priority') == 'low' ? 'selected' : '' }}>Low - Can wait
-                                    </option>
-                                    <option value="medium" {{ old('priority') == 'medium' ? 'selected' : '' }}>Medium -
-                                        Normal</option>
-                                    <option value="high" {{ old('priority') == 'high' ? 'selected' : '' }}>High -
-                                        Important</option>
-                                    <option value="urgent" {{ old('priority') == 'urgent' ? 'selected' : '' }}>Urgent -
-                                        Critical</option>
-                                   
-                                </select>
-                                @error('priority')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="availability_time" class="form-label text-white">Availability Time</label>
-                                <input type="datetime-local" class="form-control @error('availability_time') is-invalid @enderror"
-                                    id="availability_time" name="availability_time" value="{{ old('availability_time') }}">
-                                @error('availability_time')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="assigned_employee_id" class="form-label text-white">Assign Employee <span class="text-danger">*</span></label>
-                                <select class="form-select @error('assigned_employee_id') is-invalid @enderror"
-                                    id="assigned_employee_id" name="assigned_employee_id" required>
-                                    <option value="">Select Employee</option>
-                                    @if (isset($employees) && $employees->count() > 0)
-                                        @foreach ($employees as $employee)
-                                            <option value="{{ $employee->id }}"
-                                                data-category="{{ $employee->category_id ?? '' }}"
-                                                data-city="{{ $employee->city_id }}"
-                                                data-sector="{{ $employee->sector_id }}"
-                                                {{ (string) old('assigned_employee_id') === (string) $employee->id ? 'selected' : '' }}>
-                                                {{ $employee->name }}@if($employee->designation) ({{ $employee->designation->name }})@endif</option>
-                                        @endforeach
-                                    @else
-                                        <option value="" disabled>No employees available</option>
-                                    @endif
-                                </select>
-                                @error('assigned_employee_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="mb-3">
+                                        <div class="fixed-questions-container alert alert-info mb-3" style="display: none;">
+                                            <strong><i data-feather="help-circle" class="me-2" style="width: 16px; height: 16px;"></i>Questions to ask:</strong>
+                                            <p class="fixed-questions-text mb-0 mt-1"></p>
+                                        </div>
+                                        <label class="form-label text-white">Description</label>
+                                        <textarea class="form-control complaint-description" name="complaints[0][description]" rows="3" autocomplete="off"></textarea>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="mb-3">
-                                <div id="fixed-questions-container" class="alert alert-info mb-3" style="display: none;">
-                                    <strong><i data-feather="help-circle" class="me-2" style="width: 16px; height: 16px;"></i>Questions to ask:</strong>
-                                    <p id="fixed-questions-text" class="mb-0 mt-1"></p>
-                                </div>
-                                <label for="description" class="form-label text-white">Description</label>
-                                <textarea class="form-control @error('description') is-invalid @enderror" id="description" name="description"
-                                    rows="4" autocomplete="off">{{ old('description') }}</textarea>
-                                @error('description')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
+                    <!-- Add Another Complaint Button -->
+                    <div class="text-center mb-4">
+                        <button type="button" id="btn-add-complaint" class="btn d-inline-flex align-items-center gap-2" onclick="addComplaint()"
+                            style="background: rgba(37, 99, 235, 0.15); color: #60a5fa; border: 1.5px dashed rgba(96, 165, 250, 0.4); border-radius: 10px; padding: 10px 24px; font-weight: 600; font-size: 14px; transition: all 0.3s ease;">
+                            <i data-feather="plus-circle" style="width: 18px; height: 18px;"></i>
+                            Add Another Complaint
+                        </button>
                     </div>
-
 
                     <div class="d-flex justify-content-end gap-2">
                         <a href="{{ route('admin.complaints.index') }}" class="btn btn-outline-secondary">Cancel</a>
-                        <button type="submit" class="btn btn-accent">Create Complaint</button>
+                        <button type="submit" class="btn btn-accent" id="btn-submit-complaints">Create Complaint</button>
                     </div>
                 </form>
             </div>
@@ -316,7 +283,9 @@
     </div>
     </div>
     </div>
+
 @endsection
+
 
 @push('styles')
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" integrity="sha384-OXVF05DQEe311p6ohU11NwlnX08FzMCsyoXzGOaL+83dKAb3qS17yZJxESl8YrJQ" crossorigin="anonymous" />
@@ -371,6 +340,49 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+
+        /* Complaint Entry Card Styles */
+        .complaint-entry {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .complaint-entry:hover {
+            border-color: rgba(96, 165, 250, 0.3);
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .complaint-entry + .complaint-entry {
+            margin-top: 8px;
+        }
+        .complaint-entry-header h6 {
+            font-size: 15px;
+        }
+        .btn-remove-complaint:hover {
+            background: rgba(220,53,69,0.35) !important;
+            color: #ff4444 !important;
+        }
+        #btn-add-complaint:hover {
+            background: rgba(37, 99, 235, 0.25) !important;
+            border-color: rgba(96, 165, 250, 0.6) !important;
+            transform: translateY(-1px);
+        }
+        .complaint-entry.removing {
+            animation: fadeSlideOut 0.3s ease forwards;
+        }
+        @keyframes fadeSlideOut {
+            to { opacity: 0; transform: translateY(-10px); max-height: 0; margin: 0; padding: 0; overflow: hidden; }
+        }
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .complaint-entry.adding {
+            animation: fadeSlideIn 0.3s ease forwards;
+        }
     </style>
 @endpush
 
@@ -380,28 +392,354 @@
     <!-- Select2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" integrity="sha384-d3UHjPdzJkZuk5H3qKYMLRyWLAQBJbby2yr2Q58hXXtAGF8RSNO9jpLDlKKPv5v3" crossorigin="anonymous"></script>
     <script>
+        // ============================================
+        // Global: Complaint entry counter
+        // ============================================
+        let complaintCounter = 1; // starts at 1, index 0 already exists
+
+        // ============================================
+        // Add a new complaint entry
+        // ============================================
+        function addComplaint() {
+            const container = document.getElementById('complaints-container');
+            const firstEntry = container.querySelector('.complaint-entry');
+            const newEntry = firstEntry.cloneNode(true);
+            const newIndex = complaintCounter;
+            complaintCounter++;
+
+            // Update data-index
+            newEntry.setAttribute('data-index', newIndex);
+
+            // Update complaint number
+            const numberSpan = newEntry.querySelector('.complaint-number');
+            if (numberSpan) {
+                numberSpan.textContent = 'Complaint #' + (container.querySelectorAll('.complaint-entry').length + 1);
+            }
+
+            // Show remove button
+            const removeBtn = newEntry.querySelector('.btn-remove-complaint');
+            if (removeBtn) removeBtn.style.display = 'inline-flex';
+
+            // Reset all field values and update names
+            newEntry.querySelectorAll('select').forEach(sel => {
+                const oldName = sel.getAttribute('name');
+                if (oldName) {
+                    sel.setAttribute('name', oldName.replace(/complaints\[\d+\]/, 'complaints[' + newIndex + ']'));
+                }
+                sel.value = '';
+                sel.disabled = false;
+            });
+
+            newEntry.querySelectorAll('input').forEach(inp => {
+                const oldName = inp.getAttribute('name');
+                if (oldName) {
+                    inp.setAttribute('name', oldName.replace(/complaints\[\d+\]/, 'complaints[' + newIndex + ']'));
+                }
+                inp.value = '';
+            });
+
+            newEntry.querySelectorAll('textarea').forEach(ta => {
+                const oldName = ta.getAttribute('name');
+                if (oldName) {
+                    ta.setAttribute('name', oldName.replace(/complaints\[\d+\]/, 'complaints[' + newIndex + ']'));
+                }
+                ta.value = '';
+            });
+
+            // Reset title dropdown to default state
+            const titleDropdown = newEntry.querySelector('.title-dropdown-container');
+            const titleInput = newEntry.querySelector('.title-input-container');
+            if (titleDropdown) titleDropdown.style.display = 'block';
+            if (titleInput) titleInput.style.display = 'none';
+
+            // Reset title select to "Select Category First"
+            const titleSelect = newEntry.querySelector('.complaint-title');
+            if (titleSelect) {
+                titleSelect.innerHTML = '<option value="">Select Category First</option>';
+                titleSelect.required = true;
+            }
+
+            // Reset title other input
+            const titleOther = newEntry.querySelector('.complaint-title-other');
+            if (titleOther) titleOther.required = false;
+
+            // Reset questions container
+            const questionsContainer = newEntry.querySelector('.fixed-questions-container');
+            if (questionsContainer) questionsContainer.style.display = 'none';
+
+            // Filter employees based on current city/sector
+            filterEmployeesInEntry(newEntry);
+
+            // Add animation class
+            newEntry.classList.add('adding');
+            setTimeout(() => newEntry.classList.remove('adding'), 300);
+
+            // Append
+            container.appendChild(newEntry);
+
+            // Attach event listeners for new entry
+            attachEntryListeners(newEntry);
+
+            // Update numbering and button text
+            updateComplaintNumbers();
+            updateSubmitButton();
+
+            // Re-init feather icons
+            if (typeof feather !== 'undefined') feather.replace();
+
+            // Scroll to new entry
+            newEntry.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // ============================================
+        // Remove a complaint entry
+        // ============================================
+        function removeComplaint(btn) {
+            const entry = btn.closest('.complaint-entry');
+            const container = document.getElementById('complaints-container');
+
+            if (container.querySelectorAll('.complaint-entry').length <= 1) {
+                alert('At least one complaint is required.');
+                return;
+            }
+
+            entry.classList.add('removing');
+            setTimeout(() => {
+                entry.remove();
+                updateComplaintNumbers();
+                updateSubmitButton();
+            }, 300);
+        }
+
+        // ============================================
+        // Update complaint numbering after add/remove
+        // ============================================
+        function updateComplaintNumbers() {
+            const entries = document.querySelectorAll('#complaints-container .complaint-entry');
+            entries.forEach((entry, i) => {
+                const numberSpan = entry.querySelector('.complaint-number');
+                if (numberSpan) numberSpan.textContent = 'Complaint #' + (i + 1);
+
+                // Show/hide remove button (first entry can be removed if there are multiple)
+                const removeBtn = entry.querySelector('.btn-remove-complaint');
+                if (removeBtn) {
+                    removeBtn.style.display = entries.length > 1 ? 'inline-flex' : 'none';
+                }
+            });
+        }
+
+        // ============================================
+        // Update submit button text based on count
+        // ============================================
+        function updateSubmitButton() {
+            const count = document.querySelectorAll('#complaints-container .complaint-entry').length;
+            const btn = document.getElementById('btn-submit-complaints');
+            if (btn) {
+                btn.textContent = count > 1 ? 'Create ' + count + ' Complaints' : 'Create Complaint';
+            }
+        }
+
+        // ============================================
+        // Filter employees in a specific entry
+        // ============================================
+        function filterEmployeesInEntry(entry) {
+            const citySelect = document.getElementById('city_id');
+            const sectorSelect = document.getElementById('sector_id');
+            const categorySelect = entry.querySelector('.complaint-category');
+            const employeeSelect = entry.querySelector('.complaint-employee');
+            if (!employeeSelect) return;
+
+            const category = categorySelect ? categorySelect.value : '';
+            const cityId = citySelect ? citySelect.value : '';
+            const sectorId = sectorSelect ? sectorSelect.value : '';
+
+            const currentSelectedId = employeeSelect.value;
+            let currentlySelectedIsHidden = false;
+
+            Array.from(employeeSelect.options).forEach(opt => {
+                if (!opt.value) return;
+                const optCategory = opt.getAttribute('data-category') || '';
+                const optCity = opt.getAttribute('data-city') || '';
+                const optSector = opt.getAttribute('data-sector') || '';
+
+                const matchCategory = !category || optCategory === category;
+                const matchCity = !cityId || String(optCity) === String(cityId);
+                const matchSector = !sectorId || String(optSector) === String(sectorId);
+
+                const show = matchCategory && matchCity && matchSector;
+                opt.hidden = !show;
+                opt.style.display = show ? '' : 'none';
+                opt.disabled = !show;
+
+                if (!show && opt.value === currentSelectedId) {
+                    currentlySelectedIsHidden = true;
+                }
+            });
+
+            if (currentlySelectedIsHidden) {
+                employeeSelect.value = '';
+            }
+        }
+
+        // ============================================
+        // Load complaint titles for a specific entry
+        // ============================================
+        function loadTitlesForEntry(entry) {
+            const categorySelect = entry.querySelector('.complaint-category');
+            const titleSelect = entry.querySelector('.complaint-title');
+            const titleOther = entry.querySelector('.complaint-title-other');
+            const titleDropdown = entry.querySelector('.title-dropdown-container');
+            const titleInputContainer = entry.querySelector('.title-input-container');
+
+            if (!categorySelect || !titleSelect) return;
+
+            const category = categorySelect.value;
+            titleSelect.innerHTML = '<option value="">Loading titles...</option>';
+            titleSelect.disabled = true;
+
+            if (titleOther) {
+                titleOther.style.display = 'none';
+                titleOther.value = '';
+            }
+            if (titleDropdown) titleDropdown.style.display = 'block';
+            if (titleInputContainer) titleInputContainer.style.display = 'none';
+
+            if (!category) {
+                titleSelect.innerHTML = '<option value="">Select Category First</option>';
+                titleSelect.disabled = false;
+                return;
+            }
+
+            const url = `{{ route('admin.complaint-titles.by-category') }}?category=${encodeURIComponent(category)}`;
+
+            fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                titleSelect.innerHTML = '<option value="">Select Complaint Title</option>';
+                if (data && data.length > 0) {
+                    data.sort((a, b) => (a.title || '').toLowerCase().localeCompare((b.title || '').toLowerCase(), undefined, { numeric: true }))
+                        .forEach(title => {
+                            const option = document.createElement('option');
+                            option.value = title.id;
+                            option.textContent = title.title;
+                            if (title.description) option.setAttribute('title', title.description);
+                            if (title.questions) option.setAttribute('data-questions', title.questions);
+                            titleSelect.appendChild(option);
+                        });
+                } else {
+                    titleSelect.innerHTML = '<option value="">No titles found</option>';
+                }
+
+                const otherOption = document.createElement('option');
+                otherOption.value = 'other';
+                otherOption.textContent = 'Other';
+                titleSelect.appendChild(otherOption);
+
+                titleSelect.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error loading titles:', error);
+                titleSelect.innerHTML = '<option value="">Failed to load titles</option>';
+                titleSelect.disabled = false;
+            });
+        }
+
+        // ============================================
+        // Handle title change (other toggle) for entry
+        // ============================================
+        function handleTitleChangeForEntry(entry) {
+            const titleSelect = entry.querySelector('.complaint-title');
+            const titleOther = entry.querySelector('.complaint-title-other');
+            const titleDropdown = entry.querySelector('.title-dropdown-container');
+            const titleInputContainer = entry.querySelector('.title-input-container');
+            const questionsContainer = entry.querySelector('.fixed-questions-container');
+            const questionsText = entry.querySelector('.fixed-questions-text');
+
+            if (!titleSelect || !titleOther) return;
+            const selectedValue = titleSelect.value;
+
+            // Reset questions
+            if (questionsContainer) questionsContainer.style.display = 'none';
+            if (questionsText) questionsText.textContent = '';
+
+            if (selectedValue === 'other') {
+                if (titleDropdown) titleDropdown.style.display = 'none';
+                if (titleInputContainer) titleInputContainer.style.display = 'block';
+                titleOther.style.display = 'block';
+                titleOther.required = true;
+                titleSelect.removeAttribute('required');
+                setTimeout(() => titleOther.focus(), 100);
+                if (typeof feather !== 'undefined') feather.replace();
+            } else {
+                if (titleDropdown) titleDropdown.style.display = 'block';
+                if (titleInputContainer) titleInputContainer.style.display = 'none';
+                titleOther.style.display = 'none';
+                titleOther.required = false;
+                titleSelect.required = true;
+
+                // Show questions if available
+                const selectedOption = titleSelect.options[titleSelect.selectedIndex];
+                const questions = selectedOption ? selectedOption.getAttribute('data-questions') : null;
+
+                if (questions && questionsContainer && questionsText) {
+                    questionsText.textContent = questions;
+                    questionsContainer.style.display = 'block';
+                    if (typeof feather !== 'undefined') feather.replace();
+                }
+            }
+        }
+
+        // ============================================
+        // Attach event listeners to an entry
+        // ============================================
+        function attachEntryListeners(entry) {
+            const categorySelect = entry.querySelector('.complaint-category');
+            const titleSelect = entry.querySelector('.complaint-title');
+            const backBtn = entry.querySelector('.btn-back-to-select');
+
+            if (categorySelect) {
+                categorySelect.addEventListener('change', function() {
+                    loadTitlesForEntry(entry);
+                    filterEmployeesInEntry(entry);
+                });
+            }
+
+            if (titleSelect) {
+                titleSelect.addEventListener('change', function() {
+                    handleTitleChangeForEntry(entry);
+                });
+            }
+
+            if (backBtn) {
+                backBtn.addEventListener('click', function() {
+                    const ts = entry.querySelector('.complaint-title');
+                    const to = entry.querySelector('.complaint-title-other');
+                    if (ts) { ts.value = ''; handleTitleChangeForEntry(entry); }
+                    if (to) to.value = '';
+                });
+            }
+        }
+
+        // ============================================
+        // Main DOMContentLoaded
+        // ============================================
         document.addEventListener('DOMContentLoaded', function() {
-            // 1. Element Definitions
+            // Element Definitions (top-level / house section)
             const phoneInput = document.getElementById('phone');
             const clientNameInput = document.getElementById('complainant_name');
             const houseSelect = document.getElementById('house_id');
             const citySelect = document.getElementById('city_id');
             const sectorSelect = document.getElementById('sector_id');
             const addressInput = document.getElementById('address');
-            const spareSelect = document.getElementById('spare_select');
-            const quantityInput = document.getElementById('quantity_input');
-            const stockWarning = document.getElementById('stock_warning');
-            const categorySelect = document.getElementById('category');
-            const employeeSelect = document.getElementById('assigned_employee_id');
-            const titleSelect = document.getElementById('title');
-            const titleOtherInput = document.getElementById('title_other');
             const complaintForm = document.querySelector('form[action*="complaints"]');
 
-            // Store original options for filtering (Select2-compatible approach)
+            // Store original house options for filtering
             let allHouseOptions = [];
             if (houseSelect) {
                 Array.from(houseSelect.options).forEach(opt => {
-                    if (opt.value) { 
+                    if (opt.value) {
                         allHouseOptions.push({
                             value: opt.value,
                             text: opt.innerText,
@@ -416,7 +754,7 @@
                 });
             }
 
-            // Initialize Select2
+            // Initialize Select2 for house
             $(document).ready(function() {
                 $('#house_id').select2({
                     placeholder: "Select House Number",
@@ -427,15 +765,14 @@
                 $('#house_id').on('select2:select', function (e) {
                     houseSelect.dispatchEvent(new Event('change'));
                 });
-                
+
                 $('#house_id').on('select2:clear', function (e) {
                     houseSelect.dispatchEvent(new Event('change'));
                 });
             });
 
-            // 2. Helper Functions
+            // ---- Helper Functions ----
 
-            // Load sectors based on city
             function loadSectors(cityId, targetSectorId = null) {
                 if (!sectorSelect) return;
                 if (!cityId) {
@@ -448,65 +785,59 @@
                 sectorSelect.disabled = true;
 
                 fetch(`{{ route('admin.sectors.by-city') }}?city_id=${cityId}`, {
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'Accept': 'application/json',
-                        },
-                        credentials: 'same-origin'
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        sectorSelect.innerHTML = '<option value="">Select GE Nodes</option>';
-                        if (data && data.length > 0) {
-                            data.forEach(sector => {
-                                const option = document.createElement('option');
-                                option.value = sector.id;
-                                option.textContent = sector.name;
-                                if (targetSectorId && String(sector.id) === String(targetSectorId)) {
-                                    option.selected = true;
-                                }
-                                sectorSelect.appendChild(option);
-                            });
-                            sectorSelect.disabled = false;
-                            
-                            // Auto-select if only one option is available
-                            if (data.length === 1) {
-                                sectorSelect.value = data[0].id;
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    },
+                    credentials: 'same-origin'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    sectorSelect.innerHTML = '<option value="">Select GE Nodes</option>';
+                    if (data && data.length > 0) {
+                        data.forEach(sector => {
+                            const option = document.createElement('option');
+                            option.value = sector.id;
+                            option.textContent = sector.name;
+                            if (targetSectorId && String(sector.id) === String(targetSectorId)) {
+                                option.selected = true;
                             }
-                        } else {
-                            sectorSelect.innerHTML = '<option value="">No GE Nodes found</option>';
-                            sectorSelect.disabled = false;
-                        }
-                        
-                        // Trigger change to update dependent filters
-                        sectorSelect.dispatchEvent(new Event('change'));
-                    })
-                    .catch(error => {
-                        console.error('Error loading GE Nodes:', error);
-                        sectorSelect.innerHTML = '<option value="">Error loading GE Nodes</option>';
+                            sectorSelect.appendChild(option);
+                        });
                         sectorSelect.disabled = false;
-                    });
+
+                        if (data.length === 1) {
+                            sectorSelect.value = data[0].id;
+                        }
+                    } else {
+                        sectorSelect.innerHTML = '<option value="">No GE Nodes found</option>';
+                        sectorSelect.disabled = false;
+                    }
+
+                    sectorSelect.dispatchEvent(new Event('change'));
+                })
+                .catch(error => {
+                    console.error('Error loading GE Nodes:', error);
+                    sectorSelect.innerHTML = '<option value="">Error loading GE Nodes</option>';
+                    sectorSelect.disabled = false;
+                });
             }
 
             function filterHouses() {
                 if (!houseSelect) return;
-                
+
                 const cityId = citySelect ? citySelect.value : '';
                 const sectorId = sectorSelect ? sectorSelect.value : '';
-                
-                // Get current selection from Select2 (or value)
-                const currentSelectedId = $(houseSelect).val(); 
-                
-                // Clear and rebuild options
+                const currentSelectedId = $(houseSelect).val();
+
                 houseSelect.innerHTML = '<option value="">Select House Number</option>';
-                
                 let hasSelection = false;
 
                 allHouseOptions.forEach(optData => {
                     let show = true;
                     if (cityId && String(optData.city) !== String(cityId)) show = false;
                     if (sectorId && String(optData.sector) !== String(sectorId)) show = false;
-                    
+
                     if (show) {
                         const option = document.createElement('option');
                         option.value = optData.value;
@@ -516,8 +847,7 @@
                         option.setAttribute('data-address', optData.address);
                         option.setAttribute('data-name', optData.name);
                         option.setAttribute('data-phone', optData.phone);
-                        
-                        // Restore selection logic
+
                         if (currentSelectedId && String(optData.value) === String(currentSelectedId)) {
                             option.selected = true;
                             hasSelection = true;
@@ -529,125 +859,18 @@
                         houseSelect.appendChild(option);
                     }
                 });
-                
-                // Refresh Select2
+
                 $(houseSelect).trigger('change.select2');
             }
 
-            function filterEmployees() {
-                if (!employeeSelect) return;
-                const category = categorySelect ? categorySelect.value : '';
-                const cityId = citySelect ? citySelect.value : '';
-                const sectorId = sectorSelect ? sectorSelect.value : '';
-                
-                const currentSelectedId = employeeSelect.value;
-                let currentlySelectedIsHidden = false;
-
-                Array.from(employeeSelect.options).forEach(opt => {
-                    if (!opt.value) return; 
-                    const optCategory = opt.getAttribute('data-category') || '';
-                    const optCity = opt.getAttribute('data-city') || '';
-                    const optSector = opt.getAttribute('data-sector') || '';
-                    
-                    const matchCategory = !category || optCategory === category;
-                    const matchCity = !cityId || String(optCity) === String(cityId);
-                    const matchSector = !sectorId || String(optSector) === String(sectorId);
-                    
-                    const show = matchCategory && matchCity && matchSector;
-                    
-                    opt.hidden = !show;
-                    opt.style.display = show ? '' : 'none';
-                    opt.disabled = !show;
-
-                    if (!show && opt.value === currentSelectedId) {
-                        currentlySelectedIsHidden = true;
-                    }
-                });
-
-                if (currentlySelectedIsHidden) {
-                    employeeSelect.value = '';
-                }
-            }
-
-            function updateStockWarning() {
-                if (!spareSelect || !quantityInput || !stockWarning) return;
-                if (!spareSelect.value) {
-                    stockWarning.style.display = 'none';
-                    return;
-                }
-
-                const selectedOption = spareSelect.options[spareSelect.selectedIndex];
-                const stock = selectedOption ? parseInt(selectedOption.getAttribute('data-stock') || 0) : 0;
-                const requestedQty = parseInt(quantityInput.value) || 0;
-
-                if (requestedQty > stock && stock > 0) {
-                    quantityInput.value = stock;
-                    stockWarning.textContent = `Insufficient stock! Quantity adjusted to available stock: ${stock}`;
-                    stockWarning.style.display = 'block';
-                    stockWarning.className = 'text-warning mt-1';
-                } else if (stock === 0) {
-                    stockWarning.textContent = 'Warning: This product has zero stock available.';
-                    stockWarning.style.display = 'block';
-                    stockWarning.className = 'text-danger mt-1';
-                } else {
-                    stockWarning.style.display = 'none';
-                }
-            }
-
-            function handleTitleChange() {
-                if (!titleSelect || !titleOtherInput) return;
-                const selectedValue = titleSelect.value;
-                const questionsContainer = document.getElementById('fixed-questions-container');
-                const questionsText = document.getElementById('fixed-questions-text');
-                const titleDropdownContainer = document.getElementById('titleDropdownContainer');
-                const titleInputContainer = document.getElementById('titleInputContainer');
-
-                // Reset questions
-                if (questionsContainer) questionsContainer.style.display = 'none';
-                if (questionsText) questionsText.textContent = '';
-
-                if (selectedValue === 'other') {
-                    if (titleDropdownContainer) titleDropdownContainer.style.display = 'none';
-                    if (titleInputContainer) titleInputContainer.style.display = 'block';
-                    titleOtherInput.style.display = 'block';
-                    titleOtherInput.required = true;
-                    titleSelect.removeAttribute('required');
-                    setTimeout(() => titleOtherInput.focus(), 100);
-                    if (typeof feather !== 'undefined') feather.replace();
-                } else {
-                    if (titleDropdownContainer) titleDropdownContainer.style.display = 'block';
-                    if (titleInputContainer) titleInputContainer.style.display = 'none';
-                    titleOtherInput.style.display = 'none';
-                    titleOtherInput.required = false;
-                    titleSelect.required = true;
-
-                    // Show questions if available
-                    const selectedOption = titleSelect.options[titleSelect.selectedIndex];
-                    const questions = selectedOption ? selectedOption.getAttribute('data-questions') : null;
-                    
-                    if (questions && questionsContainer && questionsText) {
-                        questionsText.textContent = questions;
-                        questionsContainer.style.display = 'block';
-                        // Re-initialize feather icons if needed, or just let the CSS handle it
-                        if(typeof feather !== 'undefined') feather.replace();
-                    }
-                }
-            }
-
-            const btnBackToSelect = document.getElementById('btn_back_to_select');
-            if (btnBackToSelect) {
-                btnBackToSelect.addEventListener('click', function() {
-                    if (titleSelect) {
-                        titleSelect.value = '';
-                        handleTitleChange();
-                    }
-                    if (titleOtherInput) {
-                        titleOtherInput.value = '';
-                    }
+            // Filter employees in ALL complaint entries based on city/sector
+            function filterAllEmployees() {
+                document.querySelectorAll('#complaints-container .complaint-entry').forEach(entry => {
+                    filterEmployeesInEntry(entry);
                 });
             }
 
-            // 3. Event Listeners
+            // ---- Event Listeners ----
 
             if (phoneInput) {
                 phoneInput.addEventListener('input', function(e) {
@@ -664,14 +887,14 @@
                 citySelect.addEventListener('change', function() {
                     loadSectors(this.value);
                     filterHouses();
-                    filterEmployees();
+                    filterAllEmployees();
                 });
             }
 
             if (sectorSelect) {
                 sectorSelect.addEventListener('change', function() {
                     filterHouses();
-                    filterEmployees();
+                    filterAllEmployees();
                 });
             }
 
@@ -689,15 +912,15 @@
                             citySelect.value = cityId;
                             loadSectors(cityId, sectorId);
                         } else if (sectorSelect.value !== sectorId) {
-                             sectorSelect.value = sectorId;
+                            sectorSelect.value = sectorId;
                         }
-                        filterEmployees();
+                        filterAllEmployees();
                     }
 
-                    if (address) {
+                    if (address && addressInput) {
                         addressInput.value = address;
                     }
-                    
+
                     const name = selectedOption.getAttribute('data-name');
                     if (name && clientNameInput) {
                         clientNameInput.value = name;
@@ -733,101 +956,7 @@
                 });
             }
 
-            if (spareSelect && quantityInput) {
-                spareSelect.addEventListener('change', updateStockWarning);
-                quantityInput.addEventListener('input', updateStockWarning);
-                quantityInput.addEventListener('change', updateStockWarning);
-            }
-
-            if (categorySelect) {
-                categorySelect.addEventListener('change', function() {
-                    filterEmployees();
-                    
-                    if (titleSelect) {
-                        const category = this.value;
-                        titleSelect.innerHTML = '<option value="">Loading titles...</option>';
-                        titleSelect.disabled = true;
-                        if (titleOtherInput) {
-                            titleOtherInput.style.display = 'none';
-                            titleOtherInput.value = '';
-                        }
-                        titleSelect.style.display = 'block';
-
-                        if (!category) {
-                            titleSelect.innerHTML = '<option value="">Select Category First</option>';
-                            titleSelect.disabled = false;
-                            return;
-                        }
-
-                        // Updated to use category ID
-                        const url = `{{ route('admin.complaint-titles.by-category') }}?category=${encodeURIComponent(category)}`;
-                        console.log('Fetching titles from:', url);
-                        
-                        fetch(url, {
-                                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
-                            })
-                            .then(response => {
-                                console.log('Response status:', response.status);
-                                return response.json();
-                            })
-                            .then(data => {
-                                console.log('Titles data received:', data);
-                                titleSelect.innerHTML = '<option value="">Select Complaint Title</option>';
-                                if (data && data.length > 0) {
-                                    // Use ID as value
-                                    data.sort((a, b) => (a.title || '').toLowerCase().localeCompare((b.title || '').toLowerCase(), undefined, { numeric: true }))
-                                        .forEach(title => {
-                                            const option = document.createElement('option');
-                                            option.value = title.id; // Use ID
-                                            option.textContent = title.title;
-                                            if (title.description) option.setAttribute('title', title.description);
-                                            if (title.questions) option.setAttribute('data-questions', title.questions);
-                                            titleSelect.appendChild(option);
-                                        });
-                                } else {
-                                    console.warn('No titles found for category:', category);
-                                    titleSelect.innerHTML = '<option value="">No titles found</option>';
-                                }
-                                
-                                const otherOption = document.createElement('option');
-                                otherOption.value = 'other';
-                                otherOption.textContent = 'Other';
-                                titleSelect.appendChild(otherOption);
-                                
-                                titleSelect.disabled = false;
-                                
-                                const previous = titleSelect.getAttribute('data-prev');
-                                if (previous) {
-                                    // value is now ID, so check against ID
-                                    const opt = Array.from(titleSelect.options).find(o => o.value == previous);
-                                    if (opt) {
-                                        titleSelect.value = (String)(previous); // ensure type match
-                                        handleTitleChange();
-                                    } else {
-                                        // If previous was "other" or not found ID, check if it was 'other' string
-                                        // If previous was a string (old input), it might not match ID.
-                                        // But old('complaint_title_id') is ID.
-                                        
-                                        // If we have title_other input carrying value?
-                                        // The 'other' logic checks for 'other' value in Select.
-                                        // If previous ID not found, maybe it was 'other'.
-                                        // Let's assume standardized 'other' handling.
-                                    }
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Error loading titles:', error);
-                                titleSelect.innerHTML = '<option value="">Failed to load titles</option>';
-                                titleSelect.disabled = false;
-                            });
-                    }
-                });
-            }
-
-            if (titleSelect) {
-                titleSelect.addEventListener('change', handleTitleChange);
-            }
-
+            // Form submission — validate all complaint entries
             if (complaintForm) {
                 complaintForm.addEventListener('submit', function(e) {
                     // Phone validation
@@ -838,45 +967,64 @@
                         return false;
                     }
 
-                    // Stock validation
-                    if (spareSelect && spareSelect.value && (!quantityInput.value || parseInt(quantityInput.value) <= 0)) {
-                        e.preventDefault();
-                        alert('Please enter quantity for selected product.');
-                        return false;
-                    }
+                    // Validate each complaint entry
+                    const entries = document.querySelectorAll('#complaints-container .complaint-entry');
+                    for (let i = 0; i < entries.length; i++) {
+                        const entry = entries[i];
+                        const num = i + 1;
+                        const titleSelect = entry.querySelector('.complaint-title');
+                        const titleOther = entry.querySelector('.complaint-title-other');
+                        const titleInputContainer = entry.querySelector('.title-input-container');
 
-                    // Title mapping
-                    if (titleSelect && (titleSelect.value === 'other' || titleOtherInput.style.display !== 'none')) {
-                        if (!titleOtherInput.value || titleOtherInput.value.trim() === '') {
-                            e.preventDefault();
-                            alert('Please enter a custom complaint title.');
-                            titleOtherInput.focus();
-                            return false;
+                        // Check if "Other" title is selected but custom title is empty
+                        if (titleSelect && (titleSelect.value === 'other' || (titleInputContainer && titleInputContainer.style.display !== 'none'))) {
+                            if (!titleOther || !titleOther.value || titleOther.value.trim() === '') {
+                                e.preventDefault();
+                                alert('Complaint #' + num + ': Please enter a custom complaint title.');
+                                if (titleOther) titleOther.focus();
+                                return false;
+                            }
+
+                            // For "Other" entries: disable the title select and add hidden inputs
+                            const idx = entry.getAttribute('data-index');
+                            titleSelect.removeAttribute('name');
+                            titleSelect.removeAttribute('required');
+                            titleSelect.disabled = true;
+
+                            const hiddenTitle = document.createElement('input');
+                            hiddenTitle.type = 'hidden';
+                            hiddenTitle.name = 'complaints[' + idx + '][title]';
+                            hiddenTitle.value = titleOther.value.trim();
+                            entry.appendChild(hiddenTitle);
+
+                            const hiddenTitleOther = document.createElement('input');
+                            hiddenTitleOther.type = 'hidden';
+                            hiddenTitleOther.name = 'complaints[' + idx + '][title_other]';
+                            hiddenTitleOther.value = titleOther.value.trim();
+                            entry.appendChild(hiddenTitleOther);
+
+                            // Clear the complaint_title_id so null is sent
+                            const hiddenNullTitle = document.createElement('input');
+                            hiddenNullTitle.type = 'hidden';
+                            hiddenNullTitle.name = 'complaints[' + idx + '][complaint_title_id]';
+                            hiddenNullTitle.value = '';
+                            entry.appendChild(hiddenNullTitle);
                         }
-
-                        // Remove name from select and send hidden input
-                        titleSelect.removeAttribute('name');
-                        titleSelect.disabled = true;
-
-                        const hiddenTitle = document.createElement('input');
-                        hiddenTitle.type = 'hidden';
-                        hiddenTitle.name = 'title';
-                        hiddenTitle.value = titleOtherInput.value.trim();
-                        this.appendChild(hiddenTitle);
-                        
-                        const hiddenOther = document.createElement('input');
-                        hiddenOther.type = 'hidden';
-                        hiddenOther.name = 'title_other';
-                        hiddenOther.value = titleOtherInput.value.trim();
-                        this.appendChild(hiddenOther);
                     }
                 });
             }
 
-            // 4. Initial Setup
+            // ---- Initial Setup ----
+
+            // Attach listeners to the first entry
+            const firstEntry = document.querySelector('#complaints-container .complaint-entry');
+            if (firstEntry) {
+                attachEntryListeners(firstEntry);
+            }
+
             const defaultCityId = @json(old('city_id', $defaultCityId));
             const defaultSectorId = @json(old('sector_id', $defaultSectorId));
-            
+
             if (defaultCityId) {
                 loadSectors(defaultCityId, defaultSectorId);
             } else {
@@ -886,24 +1034,20 @@
                 }
             }
 
-
-            if (categorySelect && categorySelect.value) {
-                categorySelect.dispatchEvent(new Event('change'));
-            }
-
             filterHouses();
-            filterEmployees();
-            
+            filterAllEmployees();
+
             // Auto-populate house details if house_id is set by old input
             if (houseSelect && houseSelect.value) {
                 houseSelect.dispatchEvent(new Event('change'));
             }
-            
+
             // Auto-select single city (for restricted users)
-            if (citySelect && citySelect.options.length === 2 && !citySelect.value) { 
-                 citySelect.selectedIndex = 1;
-                 citySelect.dispatchEvent(new Event('change'));
+            if (citySelect && citySelect.options.length === 2 && !citySelect.value) {
+                citySelect.selectedIndex = 1;
+                citySelect.dispatchEvent(new Event('change'));
             }
         });
     </script>
 @endpush
+

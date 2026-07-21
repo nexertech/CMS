@@ -86,13 +86,68 @@ class ApprovalController extends Controller
                         $q->where('performa_type', $performaType);
                     });
                     // Exclude "Addressed" (resolved) complaints when filtering by performa_type
-                    $query->where('complaints.status', '!=', 'resolved');
+                    $query->where('complaints.status', '!=', Complaint::STATUS_RESOLVED);
                 }
                 elseif ($statusValue === 'work_priced_performa') {
-                    $query->where('complaints.status', 'work_priced_performa');
+                    $query->where('complaints.status', Complaint::STATUS_WORK_PRICED_PERFORMA);
                 }
                 elseif ($statusValue === 'maint_priced_performa') {
-                    $query->where('complaints.status', 'maint_priced_performa');
+                    $query->where('complaints.status', Complaint::STATUS_MAINT_PRICED_PERFORMA);
+                }
+                elseif ($statusValue === 'work_performa') {
+                    $query->where(function ($q) {
+                        $q->where('complaints.status', Complaint::STATUS_WORK_PERFORMA)
+                            ->orWhere(function ($subQ) {
+                                $subQ->where('complaints.status', Complaint::STATUS_IN_PROGRESS)
+                                    ->whereHas('spareApprovals', function ($approvalQ) {
+                                        $approvalQ->where('performa_type', 'work_performa');
+                                    });
+                            });
+                    });
+                }
+                elseif ($statusValue === 'maint_performa') {
+                    $query->where(function ($q) {
+                        $q->where('complaints.status', Complaint::STATUS_MAINT_PERFORMA)
+                            ->orWhere(function ($subQ) {
+                                $subQ->where('complaints.status', Complaint::STATUS_IN_PROGRESS)
+                                    ->whereHas('spareApprovals', function ($approvalQ) {
+                                        $approvalQ->where('performa_type', 'maint_performa');
+                                    });
+                            });
+                    });
+                }
+                elseif ($statusValue === 'product_na') {
+                    $query->where(function ($q) {
+                        $q->where('complaints.status', Complaint::STATUS_PRODUCT_NA)
+                            ->orWhere(function ($subQ) {
+                                $subQ->where('complaints.status', Complaint::STATUS_IN_PROGRESS)
+                                    ->whereHas('spareApprovals', function ($approvalQ) {
+                                        $approvalQ->where('performa_type', 'product_na');
+                                    });
+                            });
+                    });
+                }
+                elseif ($statusValue === 'barrack_damages') {
+                    $query->where(function ($q) {
+                        $q->where('complaints.status', Complaint::STATUS_BARRACK_DAMAGES)
+                            ->orWhere(function ($subQ) {
+                                $subQ->where('complaints.status', Complaint::STATUS_IN_PROGRESS)
+                                    ->whereHas('spareApprovals', function ($approvalQ) {
+                                        $approvalQ->where('performa_type', 'barrack_damages');
+                                    });
+                            });
+                    });
+                }
+                elseif ($statusValue === 'door_lock') {
+                    $query->where(function ($q) {
+                        $q->where('complaints.status', Complaint::STATUS_DOOR_LOCK)
+                            ->orWhere(function ($subQ) {
+                                $subQ->where('complaints.status', Complaint::STATUS_IN_PROGRESS)
+                                    ->whereHas('spareApprovals', function ($approvalQ) {
+                                        $approvalQ->where('performa_type', 'door_lock');
+                                    });
+                            });
+                    });
                 }
                 elseif ($statusValue === 'pending') {
                     $query->whereHas('spareApprovals', function ($q) {
@@ -111,7 +166,9 @@ class ApprovalController extends Controller
                 }
                 else {
                     // Regular status filter
-                    $query->where('complaints.status', $statusValue);
+                    $keyMap = Complaint::getStatusKeyToIdMap();
+                    $statusId = $keyMap[$statusValue] ?? $statusValue;
+                    $query->where('complaints.status', $statusId);
                 }
             }
 
@@ -183,6 +240,7 @@ class ApprovalController extends Controller
                 'product_na' => 'Product N/A',
                 'un_authorized' => 'Un-Authorized',
                 'barrack_damages' => 'Barrack Damages',
+                'door_lock' => 'Door Lock',
             ];
 
             // Define performa type labels
@@ -663,7 +721,7 @@ class ApprovalController extends Controller
         // Build validation rules - if null, just nullable; otherwise check if it's in the allowed list
         $performaTypeRules = 'nullable';
         if ($performaType !== null) {
-            $performaTypeRules .= '|in:work_performa,maint_performa,work_priced_performa,maint_priced_performa,product_na';
+            $performaTypeRules .= '|in:work_performa,maint_performa,work_priced_performa,maint_priced_performa,product_na,barrack_damages,door_lock';
         }
 
         $validator = Validator::make(array_merge($request->all(), ['performa_type' => $performaType]), [
@@ -770,7 +828,7 @@ class ApprovalController extends Controller
     public function updatePerformaType(Request $request, SpareApprovalPerforma $approval)
     {
         $validator = Validator::make($request->all(), [
-            'performa_type' => 'required|in:work_performa,maint_performa,work_priced_performa,maint_priced_performa,product_na',
+            'performa_type' => 'required|in:work_performa,maint_performa,work_priced_performa,maint_priced_performa,product_na,barrack_damages,door_lock',
         ]);
 
         if ($validator->fails()) {
@@ -1201,7 +1259,7 @@ class ApprovalController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'status' => 'required|in:new,assigned,in_progress,resolved,work_performa,maint_performa,work_priced_performa,maint_priced_performa,product_na,un_authorized,barrack_damages',
+            'status' => 'required|in:new,assigned,in_progress,resolved,work_performa,maint_performa,work_priced_performa,maint_priced_performa,product_na,un_authorized,barrack_damages,door_lock',
             'notes' => 'nullable|string',
             'remarks' => 'nullable|string',
         ]);
@@ -1293,26 +1351,31 @@ class ApprovalController extends Controller
                     ->where('id', $complaint->id)
                     ->value('status');
 
-                // Use raw SQL update to ensure status is saved correctly
-                // Use affectingStatement to get the number of affected rows
+                // Convert requested status string key to integer ID for DB TINYINT column
+                $keyMap = \App\Models\Complaint::getStatusKeyToIdMap();
+                $statusIdToSave = is_numeric($statusToUse) ? (int)$statusToUse : ($keyMap[$statusToUse] ?? \App\Models\Complaint::STATUS_UNASSIGNED);
+
+                // Use raw SQL update to ensure status is saved correctly as TINYINT
                 $updated = DB::affectingStatement(
                     "UPDATE complaints SET status = ?, closed_at = ? WHERE id = ?",
-                [
-                    $updateData['status'],
-                    $updateData['closed_at'] ?? null,
-                    $complaint->id
-                ]
+                    [
+                        $statusIdToSave,
+                        $updateData['closed_at'] ?? null,
+                        $complaint->id
+                    ]
                 );
 
                 // Verify the update was successful by checking the actual status in DB
-                $actualStatus = DB::table('complaints')
+                $actualStatusRaw = DB::table('complaints')
                     ->where('id', $complaint->id)
                     ->value('status');
 
-                // Check if the update was successful
-                if ($actualStatus !== $statusToUse) {
-                    // Update didn't work, throw error
-                    throw new \Exception('Status update failed. Current status: ' . ($currentDbStatus ?: 'null') . ', Requested: ' . $statusToUse . ', Actual in DB: ' . ($actualStatus ?: 'null') . ', Rows updated: ' . $updated);
+                $statusIdMap = \App\Models\Complaint::getStatusIdMap();
+                $actualStatusKey = is_numeric($actualStatusRaw) ? ($statusIdMap[(int)$actualStatusRaw] ?? 'unassigned') : $actualStatusRaw;
+
+                // Check if the update was successful (compare both numeric ID and string key)
+                if ($actualStatusKey !== $statusToUse && (int)$actualStatusRaw !== $statusIdToSave) {
+                    throw new \Exception('Status update failed. Current status: ' . ($currentDbStatus ?: 'null') . ', Requested: ' . $statusToUse . ', Actual in DB: ' . ($actualStatusRaw ?: 'null') . ', Rows updated: ' . $updated);
                 }
 
                 DB::commit();
@@ -1336,9 +1399,10 @@ class ApprovalController extends Controller
 
         if ($currentEmployee) {
             // Initialize log remarks with status change message
+            $updaterName = auth()->user()->name ?? auth()->user()->username ?? 'Staff';
             $statusDisplay = $statusToUse === 'resolved' ? 'addressed' : $statusToUse;
             $oldStatusDisplay = $oldStatus === 'resolved' ? 'addressed' : $oldStatus;
-            $logRemarks = "Status changed from {$oldStatusDisplay} to {$statusDisplay}";
+            $logRemarks = "Status changed from {$oldStatusDisplay} to {$statusDisplay} by {$updaterName}";
 
             if ($remarks) {
                 $logRemarks .= ". Remarks: " . $remarks;

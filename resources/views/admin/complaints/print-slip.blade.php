@@ -138,10 +138,11 @@
         }
 
         .label {
-            width: 75px;
+            width: 95px;
             font-weight: 500;
             color: var(--secondary-color);
             font-size: 8.5px;
+            white-space: nowrap;
         }
 
         .value {
@@ -490,11 +491,25 @@
                         $registeredBy = null;
                         if ($createdLog) {
                             if (str_contains($createdLog->remarks, 'created by ')) {
-                                $registeredBy = str_replace('Complaint created by ', '', $createdLog->remarks);
+                                $registeredBy = trim(str_replace('Complaint created by ', '', $createdLog->remarks));
                             } elseif (str_contains($createdLog->remarks, 'registered via App by ')) {
-                                $registeredBy = str_replace('Complaint registered via App by ', '', $createdLog->remarks);
+                                $registeredBy = trim(str_replace('Complaint registered via App by ', '', $createdLog->remarks));
                             } else {
-                                $registeredBy = $createdLog->action_by ? 'Staff' : null;
+                                $registeredBy = $createdLog->actionBy->name ?? 'Staff';
+                            }
+                        }
+
+                        // Get the latest status change log
+                        $statusLog = $complaint->logs->whereIn('action', ['status_changed', 'resolved', 'closed'])->last();
+                        $statusChangedBy = null;
+                        if ($statusLog) {
+                            if (str_contains($statusLog->remarks, ' by ')) {
+                                $parts = explode(' by ', $statusLog->remarks);
+                                $afterBy = end($parts);
+                                $cleanParts = explode('. Remarks:', $afterBy);
+                                $statusChangedBy = trim($cleanParts[0]);
+                            } else {
+                                $statusChangedBy = auth()->user()->name ?? auth()->user()->username ?? 'Staff';
                             }
                         }
                     @endphp
@@ -518,9 +533,7 @@
                     <tr>
                         <td class="label">Priority:</td>
                         <td class="value">
-                            <span class="badge badge-{{ strtolower($complaint->priority) }}">
-                                {{ ucfirst($complaint->priority) }}
-                            </span>
+                            {{ strtolower($complaint->priority ?? 'normal') === 'emergency' ? 'Emergency' : 'Normal' }}
                         </td>
                     </tr>
                     <tr>
@@ -529,12 +542,14 @@
                     </tr>
                     <tr>
                         <td class="label">Status:</td>
-                        <td class="value">
-                            <span class="badge badge-{{ strtolower($complaint->status) }}">
-                                {{ ucfirst($complaint->status) }}
-                            </span>
-                        </td>
+                        <td class="value">{{ ucwords(str_replace('_', ' ', $complaint->status === 'resolved' ? 'addressed' : $complaint->status)) }}</td>
                     </tr>
+                    @if($statusChangedBy)
+                        <tr>
+                            <td class="label">Changed By:</td>
+                            <td class="value">{{ $statusChangedBy }}</td>
+                        </tr>
+                    @endif
                     <tr>
                         <td class="label">Date:</td>
                         <td class="value">{{ $complaint->created_at->timezone('Asia/Karachi')->format('M d, Y H:i') }}</td>

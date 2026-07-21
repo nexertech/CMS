@@ -655,20 +655,66 @@ body.theme-night .filter-box label[style] {
   background: #f3f4f6 !important;
 }
 
-.theme-light .apexcharts-tooltip {
-  background: #ffffff !important;
-  color: #1e293b !important;
-  border: 2px solid #e2e8f0 !important;
-  border-radius: 12px !important;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
+/* Custom ApexCharts Tooltip - Pure White Text in All Themes */
+.custom-apex-tooltip {
+  background: #0f172a !important;
+  color: #ffffff !important;
+  padding: 8px 14px !important;
+  border-radius: 8px !important;
+  border: 1px solid #334155 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+.custom-apex-tooltip *,
+.custom-apex-tooltip span,
+.custom-apex-tooltip strong {
+  color: #ffffff !important;
 }
 
-.theme-light .apexcharts-tooltip-title {
-  background: #f9fafb !important;
-  color: #1e293b !important;
-  border-bottom: 2px solid #e2e8f0 !important;
+.apexcharts-tooltip,
+.apexcharts-tooltip.apexcharts-theme-dark,
+.apexcharts-tooltip.apexcharts-theme-light,
+.theme-light .apexcharts-tooltip,
+.theme-dark .apexcharts-tooltip {
+  background: #0f172a !important;
+  color: #ffffff !important;
+  border: 1px solid #334155 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+}
+
+.apexcharts-tooltip-title,
+.theme-light .apexcharts-tooltip-title,
+.theme-dark .apexcharts-tooltip-title {
+  background: #1e293b !important;
+  color: #ffffff !important;
+  border-bottom: 1px solid #334155 !important;
   font-weight: 700 !important;
-  padding: 0.75rem 1rem !important;
+}
+
+.apexcharts-tooltip *,
+.apexcharts-tooltip span,
+.apexcharts-tooltip div,
+.apexcharts-tooltip-text,
+.apexcharts-tooltip-text-y-label,
+.apexcharts-tooltip-text-y-value,
+.apexcharts-tooltip-text-label,
+.apexcharts-tooltip-text-value,
+.apexcharts-tooltip-series-group,
+.apexcharts-tooltip-series-group *,
+.theme-light .apexcharts-tooltip *,
+.theme-light .apexcharts-tooltip span,
+.theme-light .apexcharts-tooltip div,
+.theme-light .apexcharts-tooltip-text-y-label,
+.theme-light .apexcharts-tooltip-text-y-value,
+.theme-dark .apexcharts-tooltip *,
+.theme-dark .apexcharts-tooltip span,
+.theme-dark .apexcharts-tooltip div {
+  color: #ffffff !important;
+  fill: #ffffff !important;
 }
 
 /* GE Progress Cards Enhancement */

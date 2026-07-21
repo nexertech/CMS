@@ -159,6 +159,7 @@ class DashboardController extends Controller
             'product_na' => 'Product N/A',
             'un_authorized' => 'Un-Authorized',
             'barrack_damages' => 'Barrack Damages',
+            'door_lock' => 'Door Lock',
         ];
 
         // Get dashboard statistics with filters
@@ -227,74 +228,26 @@ class DashboardController extends Controller
         // Clone query before selectRaw to use for performa type counts
         $performaCountQuery = clone $complaintsByStatusQuery;
 
-        // Get status counts - map 'new' status to 'assigned' (same as approvals page)
-        $statusCounts = $complaintsByStatusQuery->selectRaw('status, COUNT(*) as count')
-            ->groupBy('status')
+        // Get status counts
+        $statusCounts = $complaintsByStatusQuery->selectRaw('complaints.status, COUNT(*) as count')
+            ->groupBy('complaints.status')
             ->pluck('count', 'status')
             ->toArray();
 
-        // Map 'new' status to 'unassigned' for display
+        // Map status IDs or legacy string keys for display
+        $statusIdMap = Complaint::getStatusIdMap();
         $complaintsByStatus = [];
         foreach ($statusCounts as $status => $count) {
-            $displayStatus = ($status === 'new') ? 'unassigned' : $status;
+            $statusKey = is_numeric($status) ? ($statusIdMap[(int)$status] ?? 'unassigned') : $status;
+            $displayStatus = ($statusKey === 'new') ? 'unassigned' : (($statusKey === 'closed') ? 'resolved' : $statusKey);
             if (!isset($complaintsByStatus[$displayStatus])) {
                 $complaintsByStatus[$displayStatus] = 0;
             }
             $complaintsByStatus[$displayStatus] += $count;
         }
 
-        // Add performa type complaints that are stored as in_progress with performa_type in approvals
-        // Work Performa - count complaints with work_performa status (waiting_for_authority removed)
-        $workPerformaCount = (clone $performaCountQuery)
-            ->where('status', 'work_performa')
-            ->count();
-        if ($workPerformaCount > 0) {
-            $complaintsByStatus['work_performa'] = ($complaintsByStatus['work_performa'] ?? 0) + $workPerformaCount;
-        }
-
-        // Maintenance Performa - count complaints with maint_performa status (waiting_for_authority removed)
-        $maintPerformaCount = (clone $performaCountQuery)
-            ->where('status', 'maint_performa')
-            ->count();
-        if ($maintPerformaCount > 0) {
-            $complaintsByStatus['maint_performa'] = ($complaintsByStatus['maint_performa'] ?? 0) + $maintPerformaCount;
-        }
-
-        // Work Performa Priced - count complaints with work_priced_performa status (waiting_for_authority removed)
-        $workPricedPerformaCount = (clone $performaCountQuery)
-            ->where('status', 'work_priced_performa')
-            ->count();
-        if ($workPricedPerformaCount > 0) {
-            $complaintsByStatus['work_priced_performa'] = ($complaintsByStatus['work_priced_performa'] ?? 0) + $workPricedPerformaCount;
-        }
-
-        // Maintenance Performa Priced - count complaints with maint_priced_performa status (waiting_for_authority removed)
-        $maintPricedPerformaCount = (clone $performaCountQuery)
-            ->where('status', 'maint_priced_performa')
-            ->count();
-        if ($maintPricedPerformaCount > 0) {
-            $complaintsByStatus['maint_priced_performa'] = ($complaintsByStatus['maint_priced_performa'] ?? 0) + $maintPricedPerformaCount;
-        }
-
-        // Product N/A - count product_na status OR in_progress complaints with product_na performa_type
-        // First get direct product_na status count (already in $complaintsByStatus from line 199-202)
-        $directProductNaCount = $complaintsByStatus['product_na'] ?? 0;
-
-        // Then count in_progress complaints with product_na performa_type in approvals
-        $productNaFromApprovals = (clone $performaCountQuery)
-            ->where('status', 'in_progress')
-            ->whereHas('spareApprovals', function ($q) {
-                $q->where('performa_type', 'product_na')
-                    ->whereNull('deleted_at'); // Exclude soft deleted approvals
-            })
-            ->count();
-
-        // Set total product_na count
-        $totalProductNa = $directProductNaCount + $productNaFromApprovals;
-        if ($totalProductNa > 0) {
-            $complaintsByStatus['product_na'] = $totalProductNa;
-        } elseif (!isset($complaintsByStatus['product_na'])) {
-            // Ensure product_na key exists even if count is 0
+        // Ensure product_na key exists even if count is 0
+        if (!isset($complaintsByStatus['product_na'])) {
             $complaintsByStatus['product_na'] = 0;
         }
 
@@ -389,7 +342,7 @@ class DashboardController extends Controller
                     ->selectRaw('
                         COALESCE(houses.city_id, complaints.city_id) as city_id,
                         COUNT(*) as total,
-                        SUM(CASE WHEN complaints.status IN ("resolved", "closed") THEN 1 ELSE 0 END) as resolved
+                        SUM(CASE WHEN complaints.status = 1 THEN 1 ELSE 0 END) as resolved
                     ')
                     ->where(function($q) use ($geGroupIds) {
                         $q->whereIn('houses.city_id', $geGroupIds)
@@ -413,7 +366,7 @@ class DashboardController extends Controller
                         SUM(CASE WHEN complaint_feedbacks.overall_rating IN ("excellent", "good", "satisfied") THEN 1 ELSE 0 END) as good_feedback,
                         SUM(CASE WHEN complaint_feedbacks.overall_rating IN ("fair", "poor") THEN 1 ELSE 0 END) as bad_feedback
                     ')
-                    ->whereIn('complaints.status', ['resolved', 'closed'])
+                    ->where('complaints.status', 1)
                     ->where(function($q) use ($geGroupIds) {
                         $q->whereIn('houses.city_id', $geGroupIds)
                           ->orWhere(function($cq) use ($geGroupIds) {
@@ -569,49 +522,58 @@ class DashboardController extends Controller
         // Filter by complaint status (supports array of statuses)
         if ($complaintStatus) {
             $statusList = is_array($complaintStatus) ? $complaintStatus : [$complaintStatus];
+            $keyMap = Complaint::getStatusKeyToIdMap();
             
-            $query->where(function ($q) use ($statusList) {
+            $query->where(function ($q) use ($statusList, $keyMap) {
                 $first = true;
                 foreach ($statusList as $status) {
                     $clause = $first ? 'where' : 'orWhere';
                     $first = false;
                     
-                    if ($status === 'work_priced_performa') {
-                        $q->{$clause}('complaints.status', 'work_priced_performa');
-                    } elseif ($status === 'maint_priced_performa') {
-                        $q->{$clause}('complaints.status', 'maint_priced_performa');
-                    } elseif ($status === 'work_performa') {
+                    $statusId = is_numeric($status) ? (int)$status : ($keyMap[$status] ?? null);
+                    
+                    if ($status === 'work_priced_performa' || $statusId === Complaint::STATUS_WORK_PRICED_PERFORMA) {
+                        $q->{$clause}('complaints.status', Complaint::STATUS_WORK_PRICED_PERFORMA);
+                    } elseif ($status === 'maint_priced_performa' || $statusId === Complaint::STATUS_MAINT_PRICED_PERFORMA) {
+                        $q->{$clause}('complaints.status', Complaint::STATUS_MAINT_PRICED_PERFORMA);
+                    } elseif ($status === 'work_performa' || $statusId === Complaint::STATUS_WORK_PERFORMA) {
                         $q->{$clause}(function ($subQ) {
-                            $subQ->where('complaints.status', 'work_performa')
+                            $subQ->where('complaints.status', Complaint::STATUS_WORK_PERFORMA)
                                 ->orWhere(function ($subQ2) {
-                                    $subQ2->where('complaints.status', 'in_progress')
+                                    $subQ2->where('complaints.status', Complaint::STATUS_IN_PROGRESS)
                                         ->whereHas('spareApprovals', function ($approvalQ) {
                                             $approvalQ->where('performa_type', 'work_performa');
                                         });
                                 });
                         });
-                    } elseif ($status === 'maint_performa') {
+                    } elseif ($status === 'maint_performa' || $statusId === Complaint::STATUS_MAINT_PERFORMA) {
                         $q->{$clause}(function ($subQ) {
-                            $subQ->where('complaints.status', 'maint_performa')
+                            $subQ->where('complaints.status', Complaint::STATUS_MAINT_PERFORMA)
                                 ->orWhere(function ($subQ2) {
-                                    $subQ2->where('complaints.status', 'in_progress')
+                                    $subQ2->where('complaints.status', Complaint::STATUS_IN_PROGRESS)
                                         ->whereHas('spareApprovals', function ($approvalQ) {
                                             $approvalQ->where('performa_type', 'maint_performa');
                                         });
                                 });
                         });
-                    } elseif ($status === 'product_na') {
+                    } elseif ($status === 'product_na' || $statusId === Complaint::STATUS_PRODUCT_NA) {
                         $q->{$clause}(function ($subQ) {
-                            $subQ->where('complaints.status', 'product_na')
+                            $subQ->where('complaints.status', Complaint::STATUS_PRODUCT_NA)
                                 ->orWhere(function ($subQ2) {
-                                    $subQ2->where('complaints.status', 'in_progress')
+                                    $subQ2->where('complaints.status', Complaint::STATUS_IN_PROGRESS)
                                         ->whereHas('spareApprovals', function ($approvalQ) {
                                             $approvalQ->where('performa_type', 'product_na');
                                         });
                                 });
                         });
+                    } elseif ($status === 'unassigned' || $status === 'new' || $statusId === Complaint::STATUS_UNASSIGNED) {
+                        $q->{$clause}('complaints.status', Complaint::STATUS_UNASSIGNED);
                     } else {
-                        $q->{$clause}('complaints.status', $status);
+                        if ($statusId !== null) {
+                            $q->{$clause}('complaints.status', $statusId);
+                        } else {
+                            $q->{$clause}('complaints.status', $status);
+                        }
                     }
                 }
             });
@@ -759,20 +721,21 @@ class DashboardController extends Controller
         // Consolidated stats query including complex performa counts
         $dashboardStats = (clone $complaintsQuery)->selectRaw("
             COUNT(*) as total,
-            SUM(CASE WHEN complaints.status IN ('new', 'assigned', 'in_progress') THEN 1 ELSE 0 END) as pending,
-            SUM(CASE WHEN complaints.status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
-            SUM(CASE WHEN complaints.status = 'resolved' THEN 1 ELSE 0 END) as addressed,
+            SUM(CASE WHEN complaints.status IN (0, 2, 3) THEN 1 ELSE 0 END) as pending,
+            SUM(CASE WHEN complaints.status = 0 THEN 1 ELSE 0 END) as in_progress,
+            SUM(CASE WHEN complaints.status = 1 THEN 1 ELSE 0 END) as addressed,
             SUM(CASE WHEN complaints.created_at >= ? THEN 1 ELSE 0 END) as today,
             SUM(CASE WHEN complaints.created_at >= ? THEN 1 ELSE 0 END) as this_month,
             SUM(CASE WHEN complaints.created_at >= ? AND complaints.created_at < ? THEN 1 ELSE 0 END) as last_month,
             
-            SUM(CASE WHEN complaints.status = 'work_performa' THEN 1 ELSE 0 END) as direct_work_performa,
-            SUM(CASE WHEN complaints.status = 'maint_performa' THEN 1 ELSE 0 END) as direct_maint_performa,
-            SUM(CASE WHEN complaints.status = 'work_priced_performa' THEN 1 ELSE 0 END) as work_priced_performa,
-            SUM(CASE WHEN complaints.status = 'maint_priced_performa' THEN 1 ELSE 0 END) as maint_priced_performa,
-            SUM(CASE WHEN complaints.status = 'un_authorized' THEN 1 ELSE 0 END) as un_authorized,
-            SUM(CASE WHEN complaints.status = 'product_na' THEN 1 ELSE 0 END) as direct_product_na,
-            SUM(CASE WHEN complaints.status = 'barrack_damages' THEN 1 ELSE 0 END) as barrack_damages
+            SUM(CASE WHEN complaints.status = 4 THEN 1 ELSE 0 END) as direct_work_performa,
+            SUM(CASE WHEN complaints.status = 5 THEN 1 ELSE 0 END) as direct_maint_performa,
+            SUM(CASE WHEN complaints.status = 6 THEN 1 ELSE 0 END) as work_priced_performa,
+            SUM(CASE WHEN complaints.status = 7 THEN 1 ELSE 0 END) as maint_priced_performa,
+            SUM(CASE WHEN complaints.status = 9 THEN 1 ELSE 0 END) as un_authorized,
+            SUM(CASE WHEN complaints.status = 8 THEN 1 ELSE 0 END) as direct_product_na,
+            SUM(CASE WHEN complaints.status = 10 THEN 1 ELSE 0 END) as barrack_damages,
+            SUM(CASE WHEN complaints.status = 11 THEN 1 ELSE 0 END) as door_lock
         ", [
             $today,
             $thisMonth,
@@ -784,7 +747,7 @@ class DashboardController extends Controller
         // we'll do one joined query to get those specific overlays
         $performas = (clone $complaintsQuery)
             ->join('spare_approval_performa', 'complaints.id', '=', 'spare_approval_performa.complaint_id')
-            ->where('complaints.status', 'in_progress')
+            ->whereIn('complaints.status', [0, '0', 'in_progress'])
             ->selectRaw('spare_approval_performa.performa_type, COUNT(*) as count')
             ->groupBy('spare_approval_performa.performa_type')
             ->pluck('count', 'performa_type');
@@ -799,13 +762,14 @@ class DashboardController extends Controller
             'complaints_this_month' => $dashboardStats->this_month ?? 0,
             'complaints_last_month' => $dashboardStats->last_month ?? 0,
 
-            'work_performa' => ($dashboardStats->direct_work_performa ?? 0) + ($performas['work_performa'] ?? 0),
-            'maint_performa' => ($dashboardStats->direct_maint_performa ?? 0) + ($performas['maint_performa'] ?? 0),
+            'work_performa' => $dashboardStats->direct_work_performa ?? 0,
+            'maint_performa' => $dashboardStats->direct_maint_performa ?? 0,
             'work_priced_performa' => $dashboardStats->work_priced_performa ?? 0,
             'maint_priced_performa' => $dashboardStats->maint_priced_performa ?? 0,
             'un_authorized' => $dashboardStats->un_authorized ?? 0,
-            'product_na' => ($dashboardStats->direct_product_na ?? 0) + ($performas['product_na'] ?? 0),
+            'product_na' => $dashboardStats->direct_product_na ?? 0,
             'barrack_damages' => $dashboardStats->barrack_damages ?? 0,
+            'door_lock' => $dashboardStats->door_lock ?? 0,
 
             'total_users' => User::count(),
             'active_users' => User::where('status', 1)->count(),
@@ -845,7 +809,7 @@ class DashboardController extends Controller
                          ->whereNull('sla_rules.deleted_at');
                 })
                 ->where('complaints.created_at', '>=', now()->subDays(30))
-                ->whereIn('complaints.status', ['resolved', 'closed'])
+                ->where('complaints.status', 1)
                 ->whereRaw("{$timeDiff} <= COALESCE(sla_rules.max_resolution_time, 999999)")
                 ->count();
 
@@ -881,7 +845,7 @@ class DashboardController extends Controller
                 YEAR(complaints.created_at) as year,
                 MONTH(complaints.created_at) as month,
                 COUNT(*) as total,
-                SUM(CASE WHEN complaints.status IN ("resolved", "closed") THEN 1 ELSE 0 END) as resolved
+                SUM(CASE WHEN complaints.status = 1 THEN 1 ELSE 0 END) as resolved
             ')
             ->groupBy('year', 'month')
             ->get()
@@ -911,7 +875,7 @@ class DashboardController extends Controller
     private function getSlaBreaches()
     {
         // Optimized query: Use a JOIN instead of a correlated subquery for 132k+ records
-        return Complaint::whereIn('complaints.status', ['assigned', 'in_progress'])
+        return Complaint::whereIn('complaints.status', [0, 3])
             ->join('sla_rules', function($join) {
                 $join->on('complaints.category_id', '=', 'sla_rules.category_id')
                      ->on('complaints.priority', '=', 'sla_rules.priority');

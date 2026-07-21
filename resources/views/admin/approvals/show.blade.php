@@ -52,6 +52,7 @@
       'maint_priced_performa' => 'Maintenance Priced',
       'product_na' => 'Product N/A',
       'un_authorized' => 'Un-Authorized',
+      'door_lock' => 'Door Lock',
     ];
     $statusDisplay = $statusLabels[$complaintStatus] ?? ucfirst(str_replace('_', ' ', $complaintStatus));
     $statusColors = [
@@ -64,6 +65,7 @@
       'maint_priced_performa' => ['bg' => '#ea580c', 'text' => '#ffffff', 'border' => '#c2410c'],
       'product_na' => ['bg' => '#f97316', 'text' => '#ffffff', 'border' => '#c2410c'],
       'un_authorized' => ['bg' => '#ec4899', 'text' => '#ffffff', 'border' => '#db2777'],
+      'door_lock' => ['bg' => '#000000', 'text' => '#ffffff', 'border' => '#000000'],
       'assigned' => ['bg' => '#16a34a', 'text' => '#ffffff', 'border' => '#15803d'], // Green (swapped from grey)
     ];
     $currentStatusColor = $statusColors[$complaintStatus] ?? $statusColors['assigned'];

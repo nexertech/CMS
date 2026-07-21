@@ -159,6 +159,81 @@ class Complaint extends Model
         ];
     }
 
+    // Status Integer Constants
+    const STATUS_IN_PROGRESS           = 0;
+    const STATUS_RESOLVED              = 1;
+    const STATUS_UNASSIGNED            = 2;
+    const STATUS_ASSIGNED              = 3;
+    const STATUS_WORK_PERFORMA         = 4;
+    const STATUS_MAINT_PERFORMA        = 5;
+    const STATUS_WORK_PRICED_PERFORMA  = 6;
+    const STATUS_MAINT_PRICED_PERFORMA = 7;
+    const STATUS_PRODUCT_NA            = 8;
+    const STATUS_UN_AUTHORIZED         = 9;
+    const STATUS_BARRACK_DAMAGES       = 10;
+    const STATUS_DOOR_LOCK             = 11;
+
+    public static function getStatusIdMap(): array
+    {
+        return [
+            self::STATUS_IN_PROGRESS           => 'in_progress',
+            self::STATUS_RESOLVED              => 'resolved',
+            self::STATUS_UNASSIGNED            => 'unassigned',
+            self::STATUS_ASSIGNED              => 'assigned',
+            self::STATUS_WORK_PERFORMA         => 'work_performa',
+            self::STATUS_MAINT_PERFORMA        => 'maint_performa',
+            self::STATUS_WORK_PRICED_PERFORMA  => 'work_priced_performa',
+            self::STATUS_MAINT_PRICED_PERFORMA => 'maint_priced_performa',
+            self::STATUS_PRODUCT_NA            => 'product_na',
+            self::STATUS_UN_AUTHORIZED         => 'un_authorized',
+            self::STATUS_BARRACK_DAMAGES       => 'barrack_damages',
+            self::STATUS_DOOR_LOCK             => 'door_lock',
+        ];
+    }
+
+    public static function getStatusKeyToIdMap(): array
+    {
+        return array_flip(self::getStatusIdMap());
+    }
+
+    /**
+     * Accessor: Convert raw DB integer status to string key
+     */
+    public function getStatusAttribute($value): string
+    {
+        if (is_numeric($value)) {
+            $map = self::getStatusIdMap();
+            return $map[(int)$value] ?? 'unassigned';
+        }
+        return $value ?: 'unassigned';
+    }
+
+    /**
+     * Mutator: Convert string status key or integer to DB integer value
+     */
+    public function setStatusAttribute($value): void
+    {
+        if (is_numeric($value)) {
+            $this->attributes['status'] = (int)$value;
+        } else {
+            $keyMap = self::getStatusKeyToIdMap();
+            $this->attributes['status'] = $keyMap[$value] ?? self::STATUS_UNASSIGNED;
+        }
+    }
+
+    /**
+     * Accessor: Get numeric status ID directly
+     */
+    public function getStatusIdAttribute(): int
+    {
+        $raw = $this->attributes['status'] ?? self::STATUS_UNASSIGNED;
+        if (is_numeric($raw)) {
+            return (int)$raw;
+        }
+        $keyMap = self::getStatusKeyToIdMap();
+        return $keyMap[$raw] ?? self::STATUS_UNASSIGNED;
+    }
+
     /**
      * Get available statuses
      */
@@ -169,7 +244,6 @@ class Complaint extends Model
             'assigned' => 'Assigned',
             'in_progress' => 'In Progress',
             'resolved' => 'Addressed',
-            'closed' => 'Closed',
             'work_performa' => 'Work Performa',
             'maint_performa' => 'Maintenance Performa',
             'work_priced_performa' => 'Work Performa Priced',
@@ -177,6 +251,7 @@ class Complaint extends Model
             'product_na' => 'Product N/A',
             'un_authorized' => 'Un-Authorized',
             'barrack_damages' => 'Barrack Damages',
+            'door_lock' => 'Door Lock',
         ];
     }
 
@@ -186,9 +261,8 @@ class Complaint extends Model
     public static function getPriorities(): array
     {
         return [
-            'low' => 'Low',
-            'medium' => 'Medium',
-            'high' => 'High',
+            'normal' => 'Normal',
+            'emergency' => 'Emergency',
         ];
     }
 
@@ -205,8 +279,7 @@ class Complaint extends Model
      */
     public function getStatusDisplayAttribute(): string
     {
-        // Internal status 'new' maps to 'unassigned' display label "Unassigned"
-        $status = $this->status === 'new' ? 'unassigned' : $this->status;
+        $status = $this->status;
 
         // Performa types and 'in_progress' should display as "In Progress"
         if (in_array($status, ['in_progress', 'work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa', 'product_na'])) {
@@ -227,7 +300,7 @@ class Complaint extends Model
      */
     public function getMappedStatusAttribute(): string
     {
-        $status = $this->status === 'new' ? 'unassigned' : $this->status;
+        $status = $this->status;
 
         if (in_array($status, ['work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa', 'product_na'])) {
             return 'in_progress';
@@ -241,15 +314,19 @@ class Complaint extends Model
      */
     public function getPriorityDisplayAttribute(): string
     {
-        return self::getPriorities()[$this->priority] ?? $this->priority;
+        $raw = strtolower($this->priority ?? 'normal');
+        if (in_array($raw, ['emergency', 'high', 'urgent'])) {
+            return 'Emergency';
+        }
+        return 'Normal';
     }
 
     /**
-     * Check if complaint is new
+     * Check if complaint is new/unassigned
      */
     public function isNew(): bool
     {
-        return $this->status === 'new';
+        return (int)$this->status === self::STATUS_UNASSIGNED;
     }
 
     /**
@@ -257,7 +334,7 @@ class Complaint extends Model
      */
     public function isAssigned(): bool
     {
-        return $this->status === 'assigned';
+        return (int)$this->status === self::STATUS_ASSIGNED;
     }
 
     /**
@@ -265,7 +342,7 @@ class Complaint extends Model
      */
     public function isInProgress(): bool
     {
-        return $this->status === 'in_progress';
+        return (int)$this->status === self::STATUS_IN_PROGRESS;
     }
 
     /**
@@ -273,23 +350,15 @@ class Complaint extends Model
      */
     public function isResolved(): bool
     {
-        return $this->status === 'resolved';
+        return (int)$this->status === self::STATUS_RESOLVED;
     }
 
     /**
-     * Check if complaint is closed
-     */
-    public function isClosed(): bool
-    {
-        return $this->status === 'closed';
-    }
-
-    /**
-     * Check if complaint is completed (resolved or closed)
+     * Check if complaint is completed
      */
     public function isCompleted(): bool
     {
-        return $this->status === 'resolved' || $this->status === 'closed';
+        return (int)$this->status === self::STATUS_RESOLVED;
     }
 
     /**
@@ -516,7 +585,7 @@ class Complaint extends Model
      */
     public function scopeNew($query)
     {
-        return $query->where('complaints.status', 'new');
+        return $query->where('complaints.status', self::STATUS_UNASSIGNED);
     }
 
     /**
@@ -524,7 +593,7 @@ class Complaint extends Model
      */
     public function scopeAssigned($query)
     {
-        return $query->where('complaints.status', 'assigned');
+        return $query->where('complaints.status', self::STATUS_ASSIGNED);
     }
 
     /**
@@ -532,7 +601,7 @@ class Complaint extends Model
      */
     public function scopeInProgress($query)
     {
-        return $query->where('complaints.status', 'in_progress');
+        return $query->where('complaints.status', self::STATUS_IN_PROGRESS);
     }
 
     /**
@@ -540,7 +609,7 @@ class Complaint extends Model
      */
     public function scopeResolved($query)
     {
-        return $query->where('complaints.status', 'resolved');
+        return $query->where('complaints.status', self::STATUS_RESOLVED);
     }
 
     /**
@@ -548,7 +617,7 @@ class Complaint extends Model
      */
     public function scopeClosed($query)
     {
-        return $query->where('complaints.status', 'closed');
+        return $query->where('complaints.status', self::STATUS_RESOLVED);
     }
 
     /**
@@ -556,7 +625,7 @@ class Complaint extends Model
      */
     public function scopePending($query)
     {
-        return $query->whereIn('complaints.status', ['new', 'assigned', 'in_progress']);
+        return $query->whereIn('complaints.status', [self::STATUS_UNASSIGNED, self::STATUS_ASSIGNED, self::STATUS_IN_PROGRESS]);
     }
 
     /**
@@ -564,7 +633,7 @@ class Complaint extends Model
      */
     public function scopeCompleted($query)
     {
-        return $query->whereIn('complaints.status', ['resolved', 'closed']);
+        return $query->whereIn('complaints.status', [self::STATUS_RESOLVED]);
     }
 
     /**

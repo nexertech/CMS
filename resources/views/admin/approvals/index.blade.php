@@ -102,6 +102,8 @@
               </option>
               <option value="barrack_damages" {{ request('status') == 'barrack_damages' ? 'selected' : '' }}>Barrack Damages
               </option>
+              <option value="door_lock" {{ request('status') == 'door_lock' ? 'selected' : '' }}>Door Lock
+              </option>
               <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
               <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
               <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
@@ -214,6 +216,7 @@
                   'product_na' => ['bg' => '#f97316', 'text' => '#ffffff', 'border' => '#c2410c'], // Orange (for status column)
                   'un_authorized' => ['bg' => '#ec4899', 'text' => '#ffffff', 'border' => '#db2777'], // Pink
                   'barrack_damages' => ['bg' => '#808000', 'text' => '#ffffff', 'border' => '#666600'], // Olive (matching Users card)
+                  'door_lock' => ['bg' => '#000000', 'text' => '#ffffff', 'border' => '#000000'], // Black
                   'assigned' => ['bg' => '#16a34a', 'text' => '#ffffff', 'border' => '#15803d'], // Green
                   'unassigned' => ['bg' => '#000000', 'text' => '#ffffff', 'border' => '#333333'], // Black
                 ];
@@ -380,6 +383,8 @@
                             Un-Authorized</option>
                           <option value="barrack_damages" {{ $displayStatusForSelect == 'barrack_damages' ? 'selected' : '' }}>Barrack
                             Damages</option>
+                          <option value="door_lock" {{ $displayStatusForSelect == 'door_lock' ? 'selected' : '' }}>Door
+                            Lock</option>
                         @endif
                       </select>
                       <i data-feather="chevron-down"
@@ -417,6 +422,8 @@
                           <option value="un_authorized" {{ $complaintStatus == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
                           </option>
                           <option value="barrack_damages" {{ $complaintStatus == 'barrack_damages' ? 'selected' : '' }}>Barrack Damages
+                          </option>
+                          <option value="door_lock" {{ $complaintStatus == 'door_lock' ? 'selected' : '' }}>Door Lock
                           </option>
                         @endif
                       </select>
@@ -492,6 +499,8 @@
                           </option>
                           <option value="barrack_damages" {{ $complaintStatus == 'barrack_damages' ? 'selected' : '' }}>Barrack Damages
                           </option>
+                          <option value="door_lock" {{ $complaintStatus == 'door_lock' ? 'selected' : '' }}>Door Lock
+                          </option>
                         @endif
                       </select>
                       <i data-feather="chevron-down"
@@ -531,6 +540,8 @@
                           </option>
                           <option value="barrack_damages" {{ $complaintStatus == 'barrack_damages' ? 'selected' : '' }}>Barrack Damages
                           </option>
+                          <option value="door_lock" {{ $complaintStatus == 'door_lock' ? 'selected' : '' }}>Door Lock
+                          </option>
                         @endif
                       </select>
                       <i data-feather="chevron-down"
@@ -568,6 +579,8 @@
                           <option value="un_authorized" {{ $complaintStatus == 'un_authorized' ? 'selected' : '' }}>Un-Authorized
                           </option>
                           <option value="barrack_damages" {{ $complaintStatus == 'barrack_damages' ? 'selected' : '' }}>Barrack Damages
+                          </option>
+                          <option value="door_lock" {{ $complaintStatus == 'door_lock' ? 'selected' : '' }}>Door Lock
                           </option>
                         @endif
                       </select>
@@ -4334,6 +4347,7 @@
       'assigned': { bg: '#16a34a', text: '#ffffff', border: '#15803d' }, // Green (swapped from grey)
       'unassigned': { bg: '#000000', text: '#ffffff', border: '#333333' }, // Black
       'barrack_damages': { bg: '#808000', text: '#ffffff', border: '#666600' }, // Olive
+      'door_lock': { bg: '#000000', text: '#ffffff', border: '#000000' }, // Black
     };
 
     // Function to update status select box colors
@@ -4366,6 +4380,22 @@
       }
     }
 
+    function applyPerformaBadgeStyle(badge, text, bg) {
+      if (!badge) return;
+      badge.textContent = text;
+      badge.style.setProperty('display', 'inline-flex', 'important');
+      badge.style.setProperty('background-color', bg, 'important');
+      badge.style.setProperty('color', '#ffffff', 'important');
+      badge.style.width = '100px';
+      badge.style.height = '24px';
+      badge.style.padding = '0';
+      badge.style.alignItems = 'center';
+      badge.style.justifyContent = 'center';
+      badge.style.fontSize = '9px';
+      badge.style.fontWeight = '700';
+      badge.style.borderRadius = '4px';
+    }
+
     // Handle Performa Required dropdown changes
     document.addEventListener('change', function (e) {
       if (e.target.classList.contains('status-select')) {
@@ -4386,11 +4416,10 @@
         };
         newStatus = normalize(newStatus);
 
-        // Prevent status change if unassigned (unless selecting assigned or the 3 special statuses)
+        // Prevent status change if unassigned (unless selecting assigned or unassigned)
         const currentActualStatus = select.getAttribute('data-actual-status');
-        const statusesAllowedWithoutAssignment = ['assigned', 'un_authorized', 'barrack_damages'];
-        if (currentActualStatus === 'new' && !statusesAllowedWithoutAssignment.includes(newStatus)) {
-          alert('First assigned the complaint');
+        if ((currentActualStatus === 'new' || currentActualStatus === 'unassigned') && newStatus !== 'assigned' && newStatus !== 'unassigned') {
+          alert('First assign an employee to the complaint before changing status');
           select.value = 'unassigned';
           updateStatusSelectColor(select, 'unassigned');
           return;
@@ -4402,54 +4431,10 @@
         // Handle work_performa and maint_performa - update badge and save to approval
         if (newStatus === 'work_performa' || newStatus === 'maint_performa') {
           if (performaBadge) {
-            // Performa column colors (original colors for badges)
-            const performaColors = {
-              'work_performa': '#60a5fa', // Light Blue
-              'maint_performa': '#eab308', // Dark Yellow
-              'work_priced_performa': '#9333ea', // Purple
-              'maint_priced_performa': '#ea580c', // Dark Orange
-              'product_na': '#000000' // Black
-            };
-
             if (newStatus === 'work_performa') {
-              performaBadge.textContent = 'Work Performa';
-              performaBadge.style.backgroundColor = performaColors['work_performa'];
-              performaBadge.style.width = '100px';
-              performaBadge.style.height = '24px';
-              performaBadge.style.padding = '0';
-              performaBadge.style.display = 'inline-flex';
-              performaBadge.style.alignItems = 'center';
-              performaBadge.style.justifyContent = 'center';
-              performaBadge.style.fontSize = '9px';
-              performaBadge.style.fontWeight = '700';
-              performaBadge.style.color = '#ffffff';
-              performaBadge.style.setProperty('color', '#ffffff', 'important');
-              // Update select box color to red (for status column)
-              updateStatusSelectColor(select, 'work_performa');
+              applyPerformaBadgeStyle(performaBadge, 'Work Performa', '#60a5fa');
             } else if (newStatus === 'maint_performa') {
-              performaBadge.textContent = 'Maintenance Performa';
-              performaBadge.style.backgroundColor = performaColors['maint_performa'];
-              performaBadge.style.width = '100px';
-              performaBadge.style.height = '24px';
-              performaBadge.style.padding = '0';
-              performaBadge.style.display = 'inline-flex';
-              performaBadge.style.alignItems = 'center';
-              performaBadge.style.justifyContent = 'center';
-              performaBadge.style.fontSize = '9px';
-              performaBadge.style.fontWeight = '700';
-              performaBadge.style.color = '#ffffff';
-              performaBadge.style.setProperty('color', '#ffffff', 'important');
-              // Update select box color to red (for status column)
-              updateStatusSelectColor(select, 'maint_performa');
-            }
-            if (performaBadge) {
-              performaBadge.style.width = '100px';
-              performaBadge.style.height = '24px';
-              performaBadge.style.padding = '0';
-              performaBadge.style.display = 'inline-flex';
-              performaBadge.style.alignItems = 'center';
-              performaBadge.style.justifyContent = 'center';
-              performaBadge.style.fontSize = '9px';
+              applyPerformaBadgeStyle(performaBadge, 'Maintenance Performa', '#eab308');
             }
           }
 
@@ -4502,79 +4487,47 @@
             try { localStorage.setItem(key, val); } catch (err) { }
           }
 
-          // Update complaint status to in_progress but keep performa badge
+          // Update complaint status to in_progress and update dropdown to in_progress while setting performa badge
           const performaType = newStatus; // Store original performa type
           newStatus = 'in_progress';
-          // Keep dropdown value as selected performa type but status will be in_progress
-          // Don't change select.value - keep it as work_performa or maint_performa
-          updateStatusSelectColor(select, performaType); // Apply performa color
+          select.value = 'in_progress';
+          updateStatusSelectColor(select, 'in_progress'); // Apply in_progress color
           skipConfirm = true;
           showSuccess(performaBadge?.textContent || 'Performa marked');
-        } else if (newStatus === 'work_priced_performa' || newStatus === 'maint_priced_performa' || newStatus === 'product_na') {
+        } else if (newStatus === 'work_priced_performa' || newStatus === 'maint_priced_performa' || newStatus === 'product_na' || newStatus === 'barrack_damages' || newStatus === 'door_lock') {
           // Store original status before changing it for localStorage and specialOptionType
           originalStatusForSpecialOption = newStatus;
           const originalStatus = newStatus;
 
-          // Handle Work Performa Priced, Maintenance Performa Priced and Product N/A options
+          // Handle Work Performa Priced, Maintenance Performa Priced, Product N/A, Barrack Damages and Door Lock options
           if (performaBadge) {
             if (newStatus === 'work_priced_performa') {
-              performaBadge.textContent = 'Work Performa Priced';
-              performaBadge.style.backgroundColor = '#9333ea';
-              performaBadge.style.width = '100px';
-              performaBadge.style.height = '24px';
-              performaBadge.style.padding = '0';
-              performaBadge.style.display = 'inline-flex';
-              performaBadge.style.alignItems = 'center';
-              performaBadge.style.justifyContent = 'center';
-              performaBadge.style.fontSize = '9px';
-              performaBadge.style.fontWeight = '700';
-              performaBadge.style.color = '#ffffff';
-              performaBadge.style.setProperty('color', '#ffffff', 'important');
-              // Keep actual status as work_priced_performa (don't change to in_progress)
+              applyPerformaBadgeStyle(performaBadge, 'Work Performa Priced', '#9333ea');
               select.value = 'work_priced_performa';
-              updateStatusSelectColor(select, 'work_priced_performa'); // Apply purple color for work_priced_performa
-              // Keep newStatus as work_priced_performa to send correct status to server
+              updateStatusSelectColor(select, 'work_priced_performa');
               newStatus = 'work_priced_performa';
             } else if (newStatus === 'maint_priced_performa') {
-              performaBadge.textContent = 'Maintenance Performa Priced';
-              performaBadge.style.backgroundColor = '#ea580c';
-              performaBadge.style.width = '100px';
-              performaBadge.style.height = '24px';
-              performaBadge.style.padding = '0';
-              performaBadge.style.display = 'inline-flex';
-              performaBadge.style.alignItems = 'center';
-              performaBadge.style.justifyContent = 'center';
-              performaBadge.style.fontSize = '9px';
-              performaBadge.style.fontWeight = '700';
-              performaBadge.style.color = '#ffffff';
-              performaBadge.style.setProperty('color', '#ffffff', 'important');
-              // Keep actual status as maint_priced_performa (don't change to in_progress)
+              applyPerformaBadgeStyle(performaBadge, 'Maintenance Performa Priced', '#ea580c');
               select.value = 'maint_priced_performa';
-              updateStatusSelectColor(select, 'maint_priced_performa'); // Apply orange color for maint_priced_performa
-              // Keep newStatus as maint_priced_performa to send correct status to server
+              updateStatusSelectColor(select, 'maint_priced_performa');
               newStatus = 'maint_priced_performa';
             } else if (newStatus === 'product_na') {
-              performaBadge.textContent = 'Product N/A';
-              performaBadge.style.backgroundColor = '#000000';
-              performaBadge.style.width = '100px';
-              performaBadge.style.height = '24px';
-              performaBadge.style.padding = '0';
-              performaBadge.style.display = 'inline-flex';
-              performaBadge.style.alignItems = 'center';
-              performaBadge.style.justifyContent = 'center';
-              performaBadge.style.fontSize = '9px';
-              performaBadge.style.fontWeight = '700';
-              performaBadge.style.color = '#ffffff';
-              performaBadge.style.setProperty('color', '#ffffff', 'important');
-              // Keep status as product_na (don't change to in_progress)
+              applyPerformaBadgeStyle(performaBadge, 'Product N/A', '#f97316');
               select.value = 'product_na';
-              updateStatusSelectColor(select, 'product_na'); // Apply black color for product_na
-              // newStatus remains 'product_na' - don't change it
+              updateStatusSelectColor(select, 'product_na');
+            } else if (newStatus === 'barrack_damages') {
+              applyPerformaBadgeStyle(performaBadge, 'Barrack Damages', '#808000');
+              select.value = 'barrack_damages';
+              updateStatusSelectColor(select, 'barrack_damages');
+            } else if (newStatus === 'door_lock') {
+              applyPerformaBadgeStyle(performaBadge, 'Door Lock', '#000000');
+              select.value = 'door_lock';
+              updateStatusSelectColor(select, 'door_lock');
             }
           }
 
-          // Save performa_type to approval if status is work_priced_performa or maint_priced_performa
-          if (newStatus === 'work_priced_performa' || newStatus === 'maint_priced_performa') {
+          // Save performa_type to approval if status is a performa type
+          if (['work_priced_performa', 'maint_priced_performa', 'product_na', 'barrack_damages', 'door_lock'].includes(newStatus)) {
             const row = select.closest('tr');
             let approvalId = null;
             if (row) {
@@ -4584,7 +4537,6 @@
               }
             }
 
-            // Save performa_type to approval if approvalId exists
             if (approvalId) {
               const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
               if (csrfToken) {
@@ -4620,7 +4572,7 @@
           // Persist selection locally - use originalStatus before it was changed
           if (complaintId) {
             const key = `performaRequired:${complaintId}`;
-            const val = originalStatus === 'work_priced_performa' ? 'work_priced' : (originalStatus === 'maint_priced_performa' ? 'maint_priced' : 'product_na');
+            const val = originalStatus;
             try { localStorage.setItem(key, val); } catch (err) { }
           }
           skipConfirm = true;
@@ -4631,7 +4583,7 @@
         }
 
         // Real statuses only - include all possible statuses
-        const allowed = ['new', 'assigned', 'in_progress', 'resolved', 'closed', 'un_authorized', 'barrack_damages', 'product_na', 'work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa'];
+        const allowed = ['new', 'assigned', 'in_progress', 'resolved', 'un_authorized', 'barrack_damages', 'door_lock', 'product_na', 'work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa'];
         if (!allowed.includes(newStatus)) {
           console.warn('Blocked unsupported status:', newStatus);
           // Revert to old on invalid
@@ -4641,25 +4593,25 @@
           return;
         }
 
-        // Clear persisted performa flag when switching to real statuses (but not for product_na, priced_performa, work_performa, or maint_performa)
-        // Check localStorage to determine if this is a special option (since dropdown value is now 'in_progress')
+        // Clear persisted performa flag when switching to real statuses (but not for performa types)
         let savedOptionForClear = null;
         if (complaintId) {
           try { savedOptionForClear = localStorage.getItem(`performaRequired:${complaintId}`); } catch (err) { savedOptionForClear = null; }
         }
-        const isSpecialOption = savedOptionForClear === 'work' || savedOptionForClear === 'maint' || savedOptionForClear === 'work_priced' || savedOptionForClear === 'maint_priced' || savedOptionForClear === 'product_na' ||
-          newStatus === 'work_performa' || newStatus === 'maint_performa' || newStatus === 'work_priced_performa' || newStatus === 'maint_priced_performa' || newStatus === 'product_na' ||
-          originalStatusForSpecialOption === 'product_na';
+        const isSpecialOption = ['work', 'maint', 'work_priced', 'maint_priced', 'work_priced_performa', 'maint_priced_performa', 'product_na', 'barrack_damages', 'door_lock'].includes(savedOptionForClear) ||
+          ['work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa', 'product_na', 'barrack_damages', 'door_lock'].includes(newStatus) ||
+          ['product_na', 'barrack_damages', 'door_lock'].includes(originalStatusForSpecialOption);
 
-        // Clear Performa Required badge if switching to un_authorized
-        if (performaBadge && (newStatus === 'un_authorized')) {
+        // Clear Performa Required badge if switching to regular statuses (assigned, resolved, un_authorized)
+        const isPerformaActive = isSpecialOption || ['work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa', 'product_na', 'barrack_damages', 'door_lock'].includes(select.value);
+        if (performaBadge && ['un_authorized', 'assigned', 'resolved'].includes(newStatus) && !isPerformaActive) {
           performaBadge.style.display = 'none';
           performaBadge.textContent = '';
           // Clear localStorage for these statuses
           if (complaintId) {
             try { localStorage.removeItem(`performaRequired:${complaintId}`); } catch (err) { }
           }
-        } else if (performaBadge && complaintId && !isSpecialOption) {
+        } else if (performaBadge && complaintId && !isPerformaActive) {
           let savedFlag = null;
           try { savedFlag = localStorage.getItem(`performaRequired:${complaintId}`); } catch (err) { savedFlag = null; }
           if (!savedFlag) {
@@ -4693,7 +4645,7 @@
               performaBadge.style.fontWeight = '700';
               performaBadge.style.color = '#ffffff';
               performaBadge.style.setProperty('color', '#ffffff', 'important');
-            } else if (savedFlag === 'work_priced') {
+            } else if (savedFlag === 'work_priced' || savedFlag === 'work_priced_performa') {
               performaBadge.textContent = 'Work Performa Priced';
               performaBadge.style.backgroundColor = '#9333ea';
               performaBadge.style.width = '100px';
@@ -4706,7 +4658,7 @@
               performaBadge.style.fontWeight = '700';
               performaBadge.style.color = '#ffffff';
               performaBadge.style.setProperty('color', '#ffffff', 'important');
-            } else if (savedFlag === 'maint_priced') {
+            } else if (savedFlag === 'maint_priced' || savedFlag === 'maint_priced_performa') {
               performaBadge.textContent = 'Maintenance Performa Priced';
               performaBadge.style.backgroundColor = '#ea580c';
               performaBadge.style.width = '100px';
@@ -4721,6 +4673,32 @@
               performaBadge.style.setProperty('color', '#ffffff', 'important');
             } else if (savedFlag === 'product_na') {
               performaBadge.textContent = 'Product N/A';
+              performaBadge.style.backgroundColor = '#f97316';
+              performaBadge.style.width = '100px';
+              performaBadge.style.height = '24px';
+              performaBadge.style.padding = '0';
+              performaBadge.style.display = 'inline-flex';
+              performaBadge.style.alignItems = 'center';
+              performaBadge.style.justifyContent = 'center';
+              performaBadge.style.fontSize = '9px';
+              performaBadge.style.fontWeight = '700';
+              performaBadge.style.color = '#ffffff';
+              performaBadge.style.setProperty('color', '#ffffff', 'important');
+            } else if (savedFlag === 'barrack_damages') {
+              performaBadge.textContent = 'Barrack Damages';
+              performaBadge.style.backgroundColor = '#808000';
+              performaBadge.style.width = '100px';
+              performaBadge.style.height = '24px';
+              performaBadge.style.padding = '0';
+              performaBadge.style.display = 'inline-flex';
+              performaBadge.style.alignItems = 'center';
+              performaBadge.style.justifyContent = 'center';
+              performaBadge.style.fontSize = '9px';
+              performaBadge.style.fontWeight = '700';
+              performaBadge.style.color = '#ffffff';
+              performaBadge.style.setProperty('color', '#ffffff', 'important');
+            } else if (savedFlag === 'door_lock') {
+              performaBadge.textContent = 'Door Lock';
               performaBadge.style.backgroundColor = '#000000';
               performaBadge.style.width = '100px';
               performaBadge.style.height = '24px';
@@ -4755,7 +4733,7 @@
         }
 
         const oldStatus = select.dataset.oldStatus || select.value;
-        const labelMap = { in_progress: 'In Progress', resolved: 'Addressed', assigned: 'Assigned', new: 'New', closed: 'Closed' };
+        const labelMap = { in_progress: 'In Progress', resolved: 'Addressed', assigned: 'Assigned', new: 'New' };
 
         // INTERCEPT ASSIGNED STATUS
         if (newStatus === 'assigned') {

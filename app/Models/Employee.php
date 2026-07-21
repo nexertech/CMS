@@ -115,10 +115,10 @@ class Employee extends Model
     {
         $totalComplaints = $this->assignedComplaints()->count();
         $resolvedComplaints = $this->assignedComplaints()
-            ->where('status', 'resolved')
+            ->where('status', \App\Models\Complaint::STATUS_RESOLVED)
             ->count();
         $closedComplaints = $this->assignedComplaints()
-            ->where('status', 'closed')
+            ->where('status', \App\Models\Complaint::STATUS_RESOLVED)
             ->count();
 
         return [

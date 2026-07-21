@@ -29,6 +29,7 @@
     'product_na' => 'Product N/A',
     'un_authorized' => 'Un-Authorized',
     'barrack_damages' => 'Barrack Damages',
+    'door_lock' => 'Door Lock',
   ];
   
   // Real mapping: 'new' is 'unassigned'
@@ -46,6 +47,7 @@
     'product_na' => ['bg' => '#f97316', 'text' => '#ffffff', 'border' => '#c2410c'],
     'un_authorized' => ['bg' => '#ec4899', 'text' => '#ffffff', 'border' => '#db2777'],
     'barrack_damages' => ['bg' => '#808000', 'text' => '#ffffff', 'border' => '#666600'],
+    'door_lock' => ['bg' => '#000000', 'text' => '#ffffff', 'border' => '#000000'],
     'assigned' => ['bg' => '#16a34a', 'text' => '#ffffff', 'border' => '#15803d'], // Green
   ];
   $currentStatusColor = $statusColors[$displayStatus] ?? $statusColors['assigned'];
@@ -110,29 +112,25 @@
       </div>
       @endif
       
-      @if($complaint->house->phone)
       <div class="info-item mb-3">
         <div class="d-flex align-items-start">
           <i data-feather="phone" class="me-3 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
           <div class="flex-grow-1">
             <div class="text-muted small mb-1" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Phone</div>
-            <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->house->phone }}</div>
+            <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->house?->phone ?? 'N/A' }}</div>
           </div>
         </div>
       </div>
-      @endif
       
-      @if($complaint->house->address)
       <div class="info-item mb-3">
         <div class="d-flex align-items-start">
           <i data-feather="map-pin" class="me-3 text-muted" style="width: 18px; height: 18px; margin-top: 4px;"></i>
           <div class="flex-grow-1">
             <div class="text-muted small mb-1" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Address</div>
-            <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->house->address }}</div>
+            <div class="text-white" style="font-size: 0.95rem; font-weight: 500;">{{ $complaint->house?->address ?? 'N/A' }}</div>
           </div>
         </div>
       </div>
-      @endif
       
       @if($complaint->city_id && $complaint->city)
       <div class="info-item mb-3">
@@ -247,8 +245,11 @@
           <div class="flex-grow-1">
             <div class="text-muted small mb-1" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Priority</div>
             <div>
-              <span class="badge bg-{{ $complaint->priority === 'high' ? 'danger' : ($complaint->priority === 'medium' ? 'warning' : 'success') }}" style="font-size: 0.85rem; padding: 6px 12px; color: #ffffff !important;">
-                {{ ucfirst($complaint->priority) }}
+              @php
+                $isEmerg = strtolower($complaint->priority ?? 'normal') === 'emergency';
+              @endphp
+              <span class="badge" style="background-color: {{ $isEmerg ? '#991b1b' : '#1d4ed8' }} !important; color: #ffffff !important; border: 1px solid {{ $isEmerg ? '#7f1d1d' : '#1e40af' }} !important; font-size: 0.85rem; padding: 6px 12px; border-radius: 6px;">
+                {{ $isEmerg ? 'Emergency' : 'Normal' }}
               </span>
             </div>
           </div>

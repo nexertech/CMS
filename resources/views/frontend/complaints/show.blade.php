@@ -31,6 +31,7 @@
     'product_na' => 'Product N/A',
     'un_authorized' => 'Un-Authorized',
     'barrack_damages' => 'Barrack Damages',
+    'door_lock' => 'Door Lock',
   ];
   $statusDisplay = $statusLabels[$complaintStatus] ?? ucfirst(str_replace('_', ' ', $complaintStatus));
   $statusColors = [
@@ -44,6 +45,7 @@
     'product_na' => ['bg' => '#f97316', 'text' => '#ffffff', 'border' => '#c2410c'],
     'un_authorized' => ['bg' => '#ec4899', 'text' => '#ffffff', 'border' => '#db2777'],
     'barrack_damages' => ['bg' => '#808000', 'text' => '#ffffff', 'border' => '#666600'],
+    'door_lock' => ['bg' => '#000000', 'text' => '#ffffff', 'border' => '#000000'],
     'assigned' => ['bg' => '#16a34a', 'text' => '#ffffff', 'border' => '#15803d'], // Green (swapped from grey)
   ];
   $currentStatusColor = $statusColors[$complaintStatus] ?? $statusColors['unassigned'];
@@ -167,8 +169,11 @@
                         <i data-feather="flag" class="me-3 text-muted" style="width: 16px; height: 16px; margin-top: 3px;"></i>
                         <div>
                             <div class="text-muted small text-uppercase">Priority</div>
-                            <span class="badge bg-{{ $complaint->priority === 'high' ? 'danger' : ($complaint->priority === 'medium' ? 'warning' : 'success') }}">
-                                {{ ucfirst($complaint->priority) }}
+                            @php
+                              $isEmerg = strtolower($complaint->priority ?? 'normal') === 'emergency';
+                            @endphp
+                            <span class="badge" style="background-color: {{ $isEmerg ? '#991b1b' : '#1d4ed8' }} !important; color: #ffffff !important; border: 1px solid {{ $isEmerg ? '#7f1d1d' : '#1e40af' }} !important; padding: 4px 10px; border-radius: 6px;">
+                                {{ $isEmerg ? 'Emergency' : 'Normal' }}
                             </span>
                         </div>
                     </div>

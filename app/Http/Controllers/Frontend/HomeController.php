@@ -588,31 +588,31 @@ class HomeController extends Controller
             'product_na' => 'Product N/A',
             'un_authorized' => 'Un-Authorized',
         ];
-        $performaStatuses = ['work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa'];
+        $performaStatuses = [Complaint::STATUS_WORK_PERFORMA, Complaint::STATUS_MAINT_PERFORMA, Complaint::STATUS_WORK_PRICED_PERFORMA, Complaint::STATUS_MAINT_PRICED_PERFORMA];
 
         // Calculate stats with filters in a single efficient query
         $now = now();
         $statsData = (clone $complaintsQuery)->selectRaw("
             COUNT(*) as total,
-            SUM(CASE WHEN complaints.status = 'new' THEN 1 ELSE 0 END) as new,
-            SUM(CASE WHEN complaints.status IN ('new', 'assigned', 'in_progress') THEN 1 ELSE 0 END) as pending,
-            SUM(CASE WHEN complaints.status = 'resolved' THEN 1 ELSE 0 END) as addressed,
-            SUM(CASE WHEN complaints.status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
-            SUM(CASE WHEN complaints.status = 'assigned' THEN 1 ELSE 0 END) as assigned,
-            SUM(CASE WHEN complaints.status = 'closed' THEN 1 ELSE 0 END) as closed,
+            SUM(CASE WHEN complaints.status = 2 THEN 1 ELSE 0 END) as new,
+            SUM(CASE WHEN complaints.status IN (0, 2, 3) THEN 1 ELSE 0 END) as pending,
+            SUM(CASE WHEN complaints.status = 1 THEN 1 ELSE 0 END) as addressed,
+            SUM(CASE WHEN complaints.status = 0 THEN 1 ELSE 0 END) as in_progress,
+            SUM(CASE WHEN complaints.status = 3 THEN 1 ELSE 0 END) as assigned,
 
-            SUM(CASE WHEN complaints.status = 'work_performa' THEN 1 ELSE 0 END) as work_performa,
-            SUM(CASE WHEN complaints.status = 'maint_performa' THEN 1 ELSE 0 END) as maint_performa,
-            SUM(CASE WHEN complaints.status = 'work_priced_performa' THEN 1 ELSE 0 END) as work_priced_performa,
-            SUM(CASE WHEN complaints.status = 'maint_priced_performa' THEN 1 ELSE 0 END) as maint_priced_performa,
-            SUM(CASE WHEN complaints.status = 'un_authorized' THEN 1 ELSE 0 END) as un_authorized,
-            SUM(CASE WHEN complaints.status = 'product_na' THEN 1 ELSE 0 END) as product_na,
-            SUM(CASE WHEN complaints.status = 'barrack_damages' THEN 1 ELSE 0 END) as barrack_damages,
+            SUM(CASE WHEN complaints.status = 4 THEN 1 ELSE 0 END) as work_performa,
+            SUM(CASE WHEN complaints.status = 5 THEN 1 ELSE 0 END) as maint_performa,
+            SUM(CASE WHEN complaints.status = 6 THEN 1 ELSE 0 END) as work_priced_performa,
+            SUM(CASE WHEN complaints.status = 7 THEN 1 ELSE 0 END) as maint_priced_performa,
+            SUM(CASE WHEN complaints.status = 9 THEN 1 ELSE 0 END) as un_authorized,
+            SUM(CASE WHEN complaints.status = 8 THEN 1 ELSE 0 END) as product_na,
+            SUM(CASE WHEN complaints.status = 10 THEN 1 ELSE 0 END) as barrack_damages,
+            SUM(CASE WHEN complaints.status = 11 THEN 1 ELSE 0 END) as door_lock,
             
-            SUM(CASE WHEN complaints.status IN ('new', 'assigned', 'in_progress') AND EXISTS(SELECT 1 FROM sla_rules WHERE sla_rules.category_id = complaints.category_id AND sla_rules.status = 1 AND sla_rules.deleted_at IS NULL AND complaints.created_at < DATE_SUB(NOW(), INTERVAL sla_rules.max_resolution_time HOUR)) THEN 1 ELSE 0 END) as overdue_count,
+            SUM(CASE WHEN complaints.status IN (0, 2, 3) AND EXISTS(SELECT 1 FROM sla_rules WHERE sla_rules.category_id = complaints.category_id AND sla_rules.status = 1 AND sla_rules.deleted_at IS NULL AND complaints.created_at < DATE_SUB(NOW(), INTERVAL sla_rules.max_resolution_time HOUR)) THEN 1 ELSE 0 END) as overdue_count,
 
-            SUM(CASE WHEN complaints.status = 'resolved' AND complaints.closed_at IS NOT NULL THEN DATEDIFF(complaints.closed_at, complaints.created_at) ELSE 0 END) as resolution_total_days,
-            SUM(CASE WHEN complaints.status = 'resolved' AND complaints.closed_at IS NOT NULL THEN 1 ELSE 0 END) as resolution_count,
+            SUM(CASE WHEN complaints.status = 1 AND complaints.closed_at IS NOT NULL THEN DATEDIFF(complaints.closed_at, complaints.created_at) ELSE 0 END) as resolution_total_days,
+            SUM(CASE WHEN complaints.status = 1 AND complaints.closed_at IS NOT NULL THEN 1 ELSE 0 END) as resolution_count,
 
             SUM(CASE WHEN complaints.created_at >= ? THEN 1 ELSE 0 END) as today,
             SUM(CASE WHEN complaints.created_at >= ? THEN 1 ELSE 0 END) as this_month,
@@ -641,6 +641,7 @@ class HomeController extends Controller
             'addressed' => $statsData->addressed ?? 0,
             'un_authorized' => $statsData->un_authorized ?? 0,
             'barrack_damages' => $statsData->barrack_damages ?? 0,
+            'door_lock' => $statsData->door_lock ?? 0,
             'work_priced_performa' => $statsData->work_priced_performa ?? 0,
             'maint_priced_performa' => $statsData->maint_priced_performa ?? 0,
             'product' => $statsData->product_na ?? 0,
@@ -648,11 +649,10 @@ class HomeController extends Controller
 
         // Grouped query for status counts (Pie Chart) replaced by fast array allocation
         $statusCounts = array_filter([
-            'new' => (int) ($statsData->new ?? 0),
+            'unassigned' => (int) ($statsData->new ?? 0),
             'assigned' => (int) ($statsData->assigned ?? 0),
             'in_progress' => (int) ($statsData->in_progress ?? 0),
             'resolved' => (int) ($statsData->addressed ?? 0),
-            'closed' => (int) ($statsData->closed ?? 0),
             'work_performa' => (int) ($statsData->work_performa ?? 0),
             'maint_performa' => (int) ($statsData->maint_performa ?? 0),
             'work_priced_performa' => (int) ($statsData->work_priced_performa ?? 0),
@@ -660,12 +660,17 @@ class HomeController extends Controller
             'un_authorized' => (int) ($statsData->un_authorized ?? 0),
             'product_na' => (int) ($statsData->product_na ?? 0),
             'barrack_damages' => (int) ($statsData->barrack_damages ?? 0),
+            'door_lock' => (int) ($statsData->door_lock ?? 0),
         ]);
 
         $complaintsByStatus = $statusCounts;
         if (isset($complaintsByStatus['new'])) {
             $complaintsByStatus['unassigned'] = ($complaintsByStatus['unassigned'] ?? 0) + $complaintsByStatus['new'];
             unset($complaintsByStatus['new']);
+        }
+        if (isset($complaintsByStatus['closed'])) {
+            $complaintsByStatus['resolved'] = ($complaintsByStatus['resolved'] ?? 0) + $complaintsByStatus['closed'];
+            unset($complaintsByStatus['closed']);
         }
 
         // Resolution rate & average time
@@ -724,7 +729,7 @@ class HomeController extends Controller
             ])
             ->selectRaw("
                 (
-                    complaints.status IN ('new', 'assigned', 'in_progress') AND 
+                    complaints.status IN (0, 2, 3) AND 
                     EXISTS(
                         SELECT 1 FROM sla_rules 
                         WHERE sla_rules.category_id = complaints.category_id
@@ -746,20 +751,20 @@ class HomeController extends Controller
 
         if ($statusKey) {
             if ($statusKey === 'unassigned') {
-                $complaintsBase->where('complaints.status', 'new');
+                $complaintsBase->where('complaints.status', Complaint::STATUS_UNASSIGNED);
             } elseif ($statusKey === 'resolved') {
-                $complaintsBase->where('complaints.status', 'resolved');
+                $complaintsBase->where('complaints.status', Complaint::STATUS_RESOLVED);
             } elseif ($statusKey === 'overdue') {
                 $complaintsBase->overdue();
             } elseif ($statusKey === 'work_priced_performa') {
-                $complaintsBase->where('complaints.status', 'work_priced_performa');
+                $complaintsBase->where('complaints.status', Complaint::STATUS_WORK_PRICED_PERFORMA);
             } elseif ($statusKey === 'maint_priced_performa') {
-                $complaintsBase->where('complaints.status', 'maint_priced_performa');
+                $complaintsBase->where('complaints.status', Complaint::STATUS_MAINT_PRICED_PERFORMA);
             } elseif ($statusKey === 'work_performa') {
                 $complaintsBase->where(function ($q) {
-                    $q->where('complaints.status', 'work_performa')
+                    $q->where('complaints.status', Complaint::STATUS_WORK_PERFORMA)
                         ->orWhere(function ($subQ) {
-                            $subQ->where('complaints.status', 'in_progress')
+                            $subQ->where('complaints.status', Complaint::STATUS_IN_PROGRESS)
                                 ->whereHas('spareApprovals', function ($approvalQ) {
                                     $approvalQ->where('performa_type', 'work_performa');
                                 });
@@ -767,9 +772,9 @@ class HomeController extends Controller
                 });
             } elseif ($statusKey === 'maint_performa') {
                 $complaintsBase->where(function ($q) {
-                    $q->where('complaints.status', 'maint_performa')
+                    $q->where('complaints.status', Complaint::STATUS_MAINT_PERFORMA)
                         ->orWhere(function ($subQ) {
-                            $subQ->where('complaints.status', 'in_progress')
+                            $subQ->where('complaints.status', Complaint::STATUS_IN_PROGRESS)
                                 ->whereHas('spareApprovals', function ($approvalQ) {
                                     $approvalQ->where('performa_type', 'maint_performa');
                                 });
@@ -777,16 +782,19 @@ class HomeController extends Controller
                 });
             } elseif ($statusKey === 'product_na') {
                 $complaintsBase->where(function ($q) {
-                    $q->where('complaints.status', 'product_na')
+                    $q->where('complaints.status', Complaint::STATUS_PRODUCT_NA)
                         ->orWhere(function ($subQ) {
-                            $subQ->where('complaints.status', 'in_progress')
+                            $subQ->where('complaints.status', Complaint::STATUS_IN_PROGRESS)
                                 ->whereHas('spareApprovals', function ($approvalQ) {
                                     $approvalQ->where('performa_type', 'product_na');
                                 });
                         });
                 });
             } else {
-                $complaintsBase->where('complaints.status', $statusKey);
+                // Convert string status key to integer ID for DB query
+                $keyMap = Complaint::getStatusKeyToIdMap();
+                $statusId = $keyMap[$statusKey] ?? $statusKey;
+                $complaintsBase->where('complaints.status', $statusId);
             }
         }
 
@@ -811,16 +819,19 @@ class HomeController extends Controller
         }
 
         // Map complaints for unified display (both AJAX and Initial)
-        $dashboardComplaints = $dashboardComplaintsRaw->map(function ($complaint) use ($performaStatuses) {
-            $statusKey = $complaint->status === 'new' ? 'unassigned' : $complaint->status;
-
+        $statusIdMap = Complaint::getStatusIdMap();
+        $dashboardComplaints = $dashboardComplaintsRaw->map(function ($complaint) use ($performaStatuses, $statusIdMap) {
+            // Convert integer status to string key for display
+            $rawStatus = $complaint->status;
+            $statusKey = is_numeric($rawStatus) ? ($statusIdMap[(int)$rawStatus] ?? 'unassigned') : $rawStatus;
+            if ($statusKey === 'new') $statusKey = 'unassigned';
 
             $statusLabel = $statusKey === 'resolved'
                 ? 'Addressed'
                 : ucfirst(str_replace('_', ' ', $statusKey));
 
-            $performaType = in_array($complaint->status, $performaStatuses, true)
-                ? $complaint->status
+            $performaType = in_array((int)$complaint->status, $performaStatuses, true)
+                ? $statusKey
                 : null;
 
             $house = $complaint->house;
@@ -1089,9 +1100,9 @@ class HomeController extends Controller
                 YEAR(complaints.created_at) as year,
                 MONTH(complaints.created_at) as month,
                 COUNT(*) as total,
-                SUM(CASE WHEN complaints.status IN ('resolved', 'closed') THEN 1 ELSE 0 END) as addressed,
-                SUM(CASE WHEN complaints.status = 'barrack_damages' THEN 1 ELSE 0 END) as barrack,
-                SUM(CASE WHEN complaints.status IN ('work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa') THEN 1 ELSE 0 END) as performa
+                SUM(CASE WHEN complaints.status = 1 THEN 1 ELSE 0 END) as addressed,
+                SUM(CASE WHEN complaints.status = 10 THEN 1 ELSE 0 END) as barrack,
+                SUM(CASE WHEN complaints.status IN (4, 5, 6, 7) THEN 1 ELSE 0 END) as performa
             ")
             ->groupBy('year', 'month')
             ->orderBy('year', 'asc')
@@ -1169,7 +1180,7 @@ class HomeController extends Controller
                 },
                 'assignedComplaints as resolved_complaints_count' => function ($query) use ($applyGlobalFilters) {
                     $applyGlobalFilters($query);
-                    $query->where('status', 'resolved');
+                    $query->where('status', Complaint::STATUS_RESOLVED);
                 }
             ])
             ->orderBy('assigned_complaints_count', 'desc')
@@ -1205,7 +1216,7 @@ class HomeController extends Controller
                 },
                 'assignedComplaints as resolved_complaints_count' => function ($query) use ($applyGlobalFilters) {
                     $applyGlobalFilters($query);
-                    $query->where('status', 'resolved');
+                    $query->where('status', Complaint::STATUS_RESOLVED);
                 }
             ])
             ->orderBy('assigned_complaints_count', 'asc') // Ascending to get least assigned

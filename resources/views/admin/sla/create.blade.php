@@ -49,11 +49,8 @@
                   <label for="priority" class="form-label text-white">Priority <span class="text-danger">*</span></label>
                   <select class="form-select @error('priority') is-invalid @enderror" 
                           id="priority" name="priority" required>
-                    <option value="">Select Priority</option>
-                    <option value="low" {{ old('priority') == 'low' ? 'selected' : '' }}>Low - Can wait</option>
-                    <option value="medium" {{ old('priority') == 'medium' ? 'selected' : '' }}>Medium - Normal</option>
-                    <option value="high" {{ old('priority') == 'high' ? 'selected' : '' }}>High - Important</option>
-                    <option value="urgent" {{ old('priority') == 'urgent' ? 'selected' : '' }}>Urgent - Critical</option>
+                    <option value="normal" {{ old('priority') == 'normal' ? 'selected' : '' }}>Normal</option>
+                    <option value="emergency" {{ old('priority') == 'emergency' ? 'selected' : '' }}>Emergency</option>
                   </select>
                   @error('priority')
                     <div class="invalid-feedback">{{ $message }}</div>

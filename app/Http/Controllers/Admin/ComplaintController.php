@@ -85,14 +85,14 @@ class ComplaintController extends Controller
             $statusValue = $request->status;
 
             if ($statusValue === 'work_priced_performa') {
-                $query->where('complaints.status', 'work_priced_performa');
+                $query->where('complaints.status', Complaint::STATUS_WORK_PRICED_PERFORMA);
             } elseif ($statusValue === 'maint_priced_performa') {
-                $query->where('complaints.status', 'maint_priced_performa');
+                $query->where('complaints.status', Complaint::STATUS_MAINT_PRICED_PERFORMA);
             } elseif ($statusValue === 'work_performa') {
                 $query->where(function ($q) {
-                    $q->where('complaints.status', 'work_performa')
+                    $q->where('complaints.status', Complaint::STATUS_WORK_PERFORMA)
                         ->orWhere(function ($subQ) {
-                            $subQ->where('complaints.status', 'in_progress')
+                            $subQ->where('complaints.status', Complaint::STATUS_IN_PROGRESS)
                                 ->whereHas('spareApprovals', function ($approvalQ) {
                                     $approvalQ->where('performa_type', 'work_performa');
                                 });
@@ -100,9 +100,9 @@ class ComplaintController extends Controller
                 });
             } elseif ($statusValue === 'maint_performa') {
                 $query->where(function ($q) {
-                    $q->where('complaints.status', 'maint_performa')
+                    $q->where('complaints.status', Complaint::STATUS_MAINT_PERFORMA)
                         ->orWhere(function ($subQ) {
-                            $subQ->where('complaints.status', 'in_progress')
+                            $subQ->where('complaints.status', Complaint::STATUS_IN_PROGRESS)
                                 ->whereHas('spareApprovals', function ($approvalQ) {
                                     $approvalQ->where('performa_type', 'maint_performa');
                                 });
@@ -110,35 +110,59 @@ class ComplaintController extends Controller
                 });
             } elseif ($statusValue === 'product_na') {
                 $query->where(function ($q) {
-                    $q->where('complaints.status', 'product_na')
+                    $q->where('complaints.status', Complaint::STATUS_PRODUCT_NA)
                         ->orWhere(function ($subQ) {
-                            $subQ->where('complaints.status', 'in_progress')
+                            $subQ->where('complaints.status', Complaint::STATUS_IN_PROGRESS)
                                 ->whereHas('spareApprovals', function ($approvalQ) {
                                     $approvalQ->where('performa_type', 'product_na');
                                 });
                         });
                 });
+            } elseif ($statusValue === 'barrack_damages') {
+                $query->where(function ($q) {
+                    $q->where('complaints.status', Complaint::STATUS_BARRACK_DAMAGES)
+                        ->orWhere(function ($subQ) {
+                            $subQ->where('complaints.status', Complaint::STATUS_IN_PROGRESS)
+                                ->whereHas('spareApprovals', function ($approvalQ) {
+                                    $approvalQ->where('performa_type', 'barrack_damages');
+                                });
+                        });
+                });
+            } elseif ($statusValue === 'door_lock') {
+                $query->where(function ($q) {
+                    $q->where('complaints.status', Complaint::STATUS_DOOR_LOCK)
+                        ->orWhere(function ($subQ) {
+                            $subQ->where('complaints.status', Complaint::STATUS_IN_PROGRESS)
+                                ->whereHas('spareApprovals', function ($approvalQ) {
+                                    $approvalQ->where('performa_type', 'door_lock');
+                                });
+                        });
+                });
             } else {
-                $query->where('complaints.status', $statusValue);
+                // Convert string status key to integer ID
+                $keyMap = Complaint::getStatusKeyToIdMap();
+                $statusId = $keyMap[$statusValue] ?? $statusValue;
+                $query->where('complaints.status', $statusId);
             }
         } elseif ($request->has('complaint_status') && $request->complaint_status) {
             $statusList = is_array($request->complaint_status) ? $request->complaint_status : [$request->complaint_status];
+            $keyMap = Complaint::getStatusKeyToIdMap();
             
-            $query->where(function ($q) use ($statusList) {
+            $query->where(function ($q) use ($statusList, $keyMap) {
                 $first = true;
                 foreach ($statusList as $status) {
                     $clause = $first ? 'where' : 'orWhere';
                     $first = false;
                     
                     if ($status === 'work_priced_performa') {
-                        $q->{$clause}('complaints.status', 'work_priced_performa');
+                        $q->{$clause}('complaints.status', Complaint::STATUS_WORK_PRICED_PERFORMA);
                     } elseif ($status === 'maint_priced_performa') {
-                        $q->{$clause}('complaints.status', 'maint_priced_performa');
+                        $q->{$clause}('complaints.status', Complaint::STATUS_MAINT_PRICED_PERFORMA);
                     } elseif ($status === 'work_performa') {
                         $q->{$clause}(function ($subQ) {
-                            $subQ->where('complaints.status', 'work_performa')
+                            $subQ->where('complaints.status', Complaint::STATUS_WORK_PERFORMA)
                                 ->orWhere(function ($subQ2) {
-                                    $subQ2->where('complaints.status', 'in_progress')
+                                    $subQ2->where('complaints.status', Complaint::STATUS_IN_PROGRESS)
                                         ->whereHas('spareApprovals', function ($approvalQ) {
                                             $approvalQ->where('performa_type', 'work_performa');
                                         });
@@ -146,9 +170,9 @@ class ComplaintController extends Controller
                         });
                     } elseif ($status === 'maint_performa') {
                         $q->{$clause}(function ($subQ) {
-                            $subQ->where('complaints.status', 'maint_performa')
+                            $subQ->where('complaints.status', Complaint::STATUS_MAINT_PERFORMA)
                                 ->orWhere(function ($subQ2) {
-                                    $subQ2->where('complaints.status', 'in_progress')
+                                    $subQ2->where('complaints.status', Complaint::STATUS_IN_PROGRESS)
                                         ->whereHas('spareApprovals', function ($approvalQ) {
                                             $approvalQ->where('performa_type', 'maint_performa');
                                         });
@@ -156,16 +180,17 @@ class ComplaintController extends Controller
                         });
                     } elseif ($status === 'product_na') {
                         $q->{$clause}(function ($subQ) {
-                            $subQ->where('complaints.status', 'product_na')
+                            $subQ->where('complaints.status', Complaint::STATUS_PRODUCT_NA)
                                 ->orWhere(function ($subQ2) {
-                                    $subQ2->where('complaints.status', 'in_progress')
+                                    $subQ2->where('complaints.status', Complaint::STATUS_IN_PROGRESS)
                                         ->whereHas('spareApprovals', function ($approvalQ) {
                                             $approvalQ->where('performa_type', 'product_na');
                                         });
                                 });
                         });
                     } else {
-                        $q->{$clause}('complaints.status', $status);
+                        $statusId = $keyMap[$status] ?? $status;
+                        $q->{$clause}('complaints.status', $statusId);
                     }
                 }
             });
@@ -349,8 +374,9 @@ class ComplaintController extends Controller
             ->reorder()
             ->orderBy('complaints.id', 'desc');
         if ($request->has('export_all')) {
-            $exportComplaints = $query->get()->map(function($complaint) {
-                $displayStatus = ($complaint->status === 'new') ? 'assigned' : $complaint->status;
+            $statusIdMap = Complaint::getStatusIdMap();
+            $exportComplaints = $query->get()->map(function($complaint) use ($statusIdMap) {
+                $displayStatus = ((int)$complaint->status === Complaint::STATUS_UNASSIGNED) ? 'assigned' : ($statusIdMap[(int)$complaint->status] ?? $complaint->status);
                 $statusText = $displayStatus === 'resolved' ? 'Addressed' : $complaint->getStatusDisplayAttribute();
 
                 return [
@@ -438,20 +464,26 @@ class ComplaintController extends Controller
             'method' => $request->method(),
         ]);
 
+        // Detect multi-complaint mode (new form sends complaints[] array)
+        if ($request->has('complaints') && is_array($request->complaints)) {
+            return $this->storeMultiple($request);
+        }
+
+        // Legacy single-complaint mode (backward compatible)
         $data = $request->all();
         if (isset($data['complaint_title_id']) && $data['complaint_title_id'] === 'other') {
             $data['complaint_title_id'] = null;
         }
 
         $validator = Validator::make($data, [
-            'title' => 'nullable|string|max:255', // Now holds custom title or "Other"
-            'complaint_title_id' => 'nullable|exists:complaint_titles,id', // Holds selected title ID
+            'title' => 'nullable|string|max:255',
+            'complaint_title_id' => 'nullable|exists:complaint_titles,id',
             'title_other' => 'nullable|string|max:255',
-            'category' => 'required|exists:complaint_categories,id', // Expecting ID now
-            'priority' => 'required|in:low,medium,high,urgent,emergency',
+            'category' => 'required|exists:complaint_categories,id',
+            'priority' => 'required|in:normal,emergency',
             'availability_time' => 'nullable|string|max:255',
             'description' => 'nullable|string',
-            'assigned_employee_id' => 'required|exists:employees,id',
+            'assigned_employee_id' => 'nullable|exists:employees,id',
             'city_id' => 'nullable|exists:cities,id',
             'sector_id' => 'nullable|exists:sectors,id',
             'house_id' => 'required|exists:houses,id',
@@ -475,6 +507,9 @@ class ComplaintController extends Controller
                     $customTitle = null;
             }
 
+            $assignedEmpId = $request->assigned_employee_id ?: null;
+            $complaintStatus = $assignedEmpId ? Complaint::STATUS_ASSIGNED : Complaint::STATUS_UNASSIGNED;
+
             $complaint = Complaint::create([
                 'complaint_title_id' => $complaintTitleId,
                 'title' => $customTitle,
@@ -485,8 +520,8 @@ class ComplaintController extends Controller
                 'priority' => $request->priority,
                 'availability_time' => $request->availability_time,
                 'description' => $request->description,
-                'assigned_employee_id' => $request->assigned_employee_id ?: null,
-                'status' => 'assigned',
+                'assigned_employee_id' => $assignedEmpId,
+                'status' => $complaintStatus,
             ]);
 
             $currentEmployee = Employee::first();
@@ -503,12 +538,133 @@ class ComplaintController extends Controller
             DB::commit();
 
             return redirect()->route('admin.complaints.index')
-                ->with('success', 'Complaint created successfully.');
+                ->with('success', 'Complaint created successfully.')
+                ->with('print_complaint_id', $complaint->id);
 
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()
                 ->with('error', 'Failed to create complaint: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
+    /**
+     * Store multiple complaints for the same house (multi-complaint form)
+     */
+    private function storeMultiple(Request $request)
+    {
+        $complaintsData = $request->complaints;
+
+        // Validate shared fields
+        $sharedValidator = Validator::make($request->all(), [
+            'city_id' => 'nullable|exists:cities,id',
+            'sector_id' => 'nullable|exists:sectors,id',
+            'house_id' => 'required|exists:houses,id',
+        ]);
+
+        if ($sharedValidator->fails()) {
+            return redirect()->back()
+                ->withErrors($sharedValidator)
+                ->withInput();
+        }
+
+        // Validate each complaint entry
+        foreach ($complaintsData as $index => $entry) {
+            $entryData = $entry;
+            if (isset($entryData['complaint_title_id']) && $entryData['complaint_title_id'] === 'other') {
+                $entryData['complaint_title_id'] = null;
+            }
+
+            $rules = [
+                'category' => 'required|exists:complaint_categories,id',
+                'complaint_title_id' => 'nullable|exists:complaint_titles,id',
+                'title' => 'nullable|string|max:255',
+                'title_other' => 'nullable|string|max:255',
+                'priority' => 'required|in:normal,emergency',
+                'availability_time' => 'nullable|string|max:255',
+                'description' => 'nullable|string',
+                'assigned_employee_id' => 'nullable|exists:employees,id',
+            ];
+
+            $validator = Validator::make($entryData, $rules, [], [
+                'category' => "Complaint #" . ($index + 1) . " Category",
+                'priority' => "Complaint #" . ($index + 1) . " Priority",
+                'assigned_employee_id' => "Complaint #" . ($index + 1) . " Assign Employee",
+            ]);
+
+            if ($validator->fails()) {
+                return redirect()->back()
+                    ->withErrors($validator)
+                    ->withInput();
+            }
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $createdIds = [];
+            $currentEmployee = Employee::first();
+            $creatorName = auth()->user()->name ?? auth()->user()->username ?? 'Staff';
+
+            foreach ($complaintsData as $entry) {
+                $complaintTitleId = $entry['complaint_title_id'] ?? null;
+                if ($complaintTitleId === 'other' || $complaintTitleId === '') {
+                    $complaintTitleId = null;
+                }
+
+                $customTitle = null;
+                if (!$complaintTitleId) {
+                    $customTitle = $entry['title_other'] ?? $entry['title'] ?? null;
+                    if ($customTitle && strtolower($customTitle) === 'other') {
+                        $customTitle = null;
+                    }
+                }
+
+                $assignedEmpId = $entry['assigned_employee_id'] ?? null ?: null;
+                $complaintStatus = $assignedEmpId ? Complaint::STATUS_ASSIGNED : Complaint::STATUS_UNASSIGNED;
+
+                $complaint = Complaint::create([
+                    'complaint_title_id' => $complaintTitleId,
+                    'title' => $customTitle,
+                    'house_id' => $request->house_id ?: null,
+                    'city_id' => $request->city_id ?: null,
+                    'sector_id' => $request->sector_id ?: null,
+                    'category_id' => $entry['category'],
+                    'priority' => $entry['priority'],
+                    'availability_time' => $entry['availability_time'] ?? null,
+                    'description' => $entry['description'] ?? null,
+                    'assigned_employee_id' => $assignedEmpId,
+                    'status' => $complaintStatus,
+                ]);
+
+                $createdIds[] = $complaint->id;
+
+                if ($currentEmployee) {
+                    ComplaintLog::create([
+                        'complaint_id' => $complaint->id,
+                        'action_by' => $currentEmployee->id,
+                        'action' => 'created',
+                        'remarks' => 'Complaint created by ' . $creatorName,
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            $count = count($createdIds);
+            $message = $count > 1
+                ? "{$count} Complaints created successfully."
+                : 'Complaint created successfully.';
+
+            return redirect()->route('admin.complaints.index')
+                ->with('success', $message)
+                ->with('print_complaint_ids', $createdIds);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()
+                ->with('error', 'Failed to create complaints: ' . $e->getMessage())
                 ->withInput();
         }
     }
@@ -590,10 +746,10 @@ class ComplaintController extends Controller
             'complaint_title_id' => 'nullable|exists:complaint_titles,id',
             'title_other' => 'nullable|string|max:255',
             'category' => 'required|exists:complaint_categories,id', // Expect ID
-            'priority' => 'required|in:low,medium,high,urgent,emergency',
+            'priority' => 'required|in:normal,emergency',
             'availability_time' => 'nullable|string|max:255',
             'description' => 'nullable|string',
-            'assigned_employee_id' => 'required|exists:employees,id',
+            'assigned_employee_id' => 'nullable|exists:employees,id',
             'spare_parts' => 'nullable|array',
             'spare_parts.0.spare_id' => 'nullable|exists:spares,id',
             'spare_parts.0.quantity' => 'nullable|integer|min:1',
@@ -694,11 +850,12 @@ class ComplaintController extends Controller
         if ($oldStatus !== $request->status) {
             $currentEmployee = Employee::first();
             if ($currentEmployee) {
+                $updaterName = auth()->user()->name ?? auth()->user()->username ?? 'Staff';
                 ComplaintLog::create([
                     'complaint_id' => $complaint->id,
                     'action_by' => $currentEmployee->id,
                     'action' => 'status_changed',
-                    'remarks' => "Status changed from {$oldStatus} to {$request->status}",
+                    'remarks' => "Status changed from {$oldStatus} to {$request->status} by {$updaterName}",
                 ]);
             }
 
@@ -795,7 +952,7 @@ class ComplaintController extends Controller
 
         $complaint->update([
             'assigned_employee_id' => $request->assigned_employee_id,
-            'status' => 'assigned',
+            'status' => Complaint::STATUS_ASSIGNED,
         ]);
 
         $currentEmployee = Employee::first();
@@ -827,7 +984,7 @@ class ComplaintController extends Controller
     public function updateStatus(Request $request, Complaint $complaint)
     {
         $validator = Validator::make($request->all(), [
-            'status' => 'required|in:new,assigned,in_progress,resolved,work_performa,maint_performa,work_priced_performa,maint_priced_performa,product_na,un_authorized,barrack_damages',
+            'status' => 'required|in:new,assigned,in_progress,resolved,work_performa,maint_performa,work_priced_performa,maint_priced_performa,product_na,un_authorized,barrack_damages,door_lock',
             'notes' => 'nullable|string',
             'remarks' => 'nullable|string',
         ]);
@@ -847,12 +1004,27 @@ class ComplaintController extends Controller
 
         $oldStatus = $complaint->status;
 
+        // Prevent status update for unassigned complaints unless assigning an employee
+        if (($complaint->status === 'unassigned' || $complaint->status === 'new' || !$complaint->assigned_employee_id) && $request->status !== 'assigned' && $request->status !== 'unassigned') {
+            if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please assign an employee to the complaint first before changing its status.',
+                ], 422);
+            }
+            return redirect()->back()->with('error', 'Please assign an employee to the complaint first before changing its status.');
+        }
+
         // Get remarks - prefer remarks field, fallback to notes
         $remarks = $request->input('remarks') ?: $request->input('notes') ?: '';
 
         // Set closed_at when status becomes 'addressed', but only if it's not already set
+        // Convert string status from request to integer ID for DB
+        $keyMap = Complaint::getStatusKeyToIdMap();
+        $statusIdToSave = $keyMap[$request->status] ?? $request->status;
+
         $updateData = [
-            'status' => $request->status,
+            'status' => $statusIdToSave,
         ];
 
         if ($request->status === 'resolved' && !$complaint->closed_at) {
@@ -871,16 +1043,24 @@ class ComplaintController extends Controller
             ->where('id', $complaint->id)
             ->update($updateData);
 
+        // Also sync spare_approval_performa performa_type to match new status if applicable
+        $performaTypesList = ['work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa', 'product_na', 'barrack_damages', 'door_lock'];
+        $newPerformaType = in_array($request->status, $performaTypesList) ? $request->status : null;
+        DB::table('spare_approval_performa')
+            ->where('complaint_id', $complaint->id)
+            ->update(['performa_type' => $newPerformaType]);
+
         // Refresh the complaint model to get updated data
         $complaint->refresh();
 
 
         $currentEmployee = Employee::first();
         if ($currentEmployee) {
+            $updaterName = auth()->user()->name ?? auth()->user()->username ?? 'Staff';
             // Initialize log remarks with status change message
             $statusDisplay = $request->status === 'resolved' ? 'addressed' : $request->status;
             $oldStatusDisplay = $oldStatus === 'resolved' ? 'addressed' : $oldStatus;
-            $logRemarks = "Status changed from {$oldStatusDisplay} to {$statusDisplay}";
+            $logRemarks = "Status changed from {$oldStatusDisplay} to {$statusDisplay} by {$updaterName}";
 
             if ($remarks) {
                 $logRemarks .= ". Remarks: " . $remarks;
@@ -964,16 +1144,16 @@ class ComplaintController extends Controller
 
         $stats = [
             'total' => Complaint::where('created_at', '>=', now()->subDays($period))->count(),
-            'new' => Complaint::where('created_at', '>=', now()->subDays($period))->where('status', 'new')->count(),
-            'assigned' => Complaint::where('created_at', '>=', now()->subDays($period))->where('status', 'assigned')->count(),
-            'in_progress' => Complaint::where('created_at', '>=', now()->subDays($period))->where('status', 'in_progress')->count(),
-            'addressed' => Complaint::where('created_at', '>=', now()->subDays($period))->where('status', 'resolved')->count(),
-            'work_performa' => Complaint::where('created_at', '>=', now()->subDays($period))->where('status', 'work_performa')->count(),
-            'maint_performa' => Complaint::where('created_at', '>=', now()->subDays($period))->where('status', 'maint_performa')->count(),
-            'work_priced_performa' => Complaint::where('created_at', '>=', now()->subDays($period))->where('status', 'work_priced_performa')->count(),
-            'maint_priced_performa' => Complaint::where('created_at', '>=', now()->subDays($period))->where('status', 'maint_priced_performa')->count(),
-            'product_na' => Complaint::where('created_at', '>=', now()->subDays($period))->where('status', 'product_na')->count(),
-            'un_authorized' => Complaint::where('created_at', '>=', now()->subDays($period))->where('status', 'un_authorized')->count(),
+            'new' => Complaint::where('created_at', '>=', now()->subDays($period))->where('status', Complaint::STATUS_UNASSIGNED)->count(),
+            'assigned' => Complaint::where('created_at', '>=', now()->subDays($period))->where('status', Complaint::STATUS_ASSIGNED)->count(),
+            'in_progress' => Complaint::where('created_at', '>=', now()->subDays($period))->where('status', Complaint::STATUS_IN_PROGRESS)->count(),
+            'addressed' => Complaint::where('created_at', '>=', now()->subDays($period))->where('status', Complaint::STATUS_RESOLVED)->count(),
+            'work_performa' => Complaint::where('created_at', '>=', now()->subDays($period))->where('status', Complaint::STATUS_WORK_PERFORMA)->count(),
+            'maint_performa' => Complaint::where('created_at', '>=', now()->subDays($period))->where('status', Complaint::STATUS_MAINT_PERFORMA)->count(),
+            'work_priced_performa' => Complaint::where('created_at', '>=', now()->subDays($period))->where('status', Complaint::STATUS_WORK_PRICED_PERFORMA)->count(),
+            'maint_priced_performa' => Complaint::where('created_at', '>=', now()->subDays($period))->where('status', Complaint::STATUS_MAINT_PRICED_PERFORMA)->count(),
+            'product_na' => Complaint::where('created_at', '>=', now()->subDays($period))->where('status', Complaint::STATUS_PRODUCT_NA)->count(),
+            'un_authorized' => Complaint::where('created_at', '>=', now()->subDays($period))->where('status', Complaint::STATUS_UN_AUTHORIZED)->count(),
             'overdue' => Complaint::overdue()->count(),
         ];
 
@@ -1091,18 +1271,30 @@ class ComplaintController extends Controller
 
                 Complaint::whereIn('id', $complaintIds)->update([
                     'assigned_employee_id' => $request->assigned_employee_id,
-                    'status' => 'assigned',
+                    'status' => Complaint::STATUS_ASSIGNED,
                 ]);
                 $message = 'Selected complaints assigned successfully.';
                 break;
 
             case 'change_status':
                 $validator = Validator::make($request->all(), [
-                    'status' => 'required|in:new,assigned,in_progress,resolved,work_priced_performa,maint_priced_performa,product_na,un_authorized',
+                    'status' => 'required|in:new,assigned,in_progress,resolved,work_priced_performa,maint_priced_performa,product_na,un_authorized,barrack_damages,door_lock',
                 ]);
 
                 if ($validator->fails()) {
                     return redirect()->back()->withErrors($validator);
+                }
+
+                if ($request->status !== 'assigned' && $request->status !== 'unassigned') {
+                    $unassignedCount = Complaint::whereIn('id', $complaintIds)
+                        ->where(function($q) {
+                            $q->whereNull('assigned_employee_id')
+                              ->orWhere('status', Complaint::STATUS_UNASSIGNED);
+                        })->count();
+
+                    if ($unassignedCount > 0) {
+                        return redirect()->back()->with('error', 'Some selected complaints are unassigned. Please assign an employee first before changing status.');
+                    }
                 }
 
                 // Set closed_at when status becomes 'addressed', but only if not already set
@@ -1111,7 +1303,7 @@ class ComplaintController extends Controller
                     Complaint::whereIn('id', $complaintIds)
                         ->whereNull('closed_at')
                         ->update([
-                            'status' => $request->status,
+                            'status' => Complaint::STATUS_RESOLVED,
                             'closed_at' => $nowKarachi->utc(),
                         ]);
 
@@ -1119,21 +1311,31 @@ class ComplaintController extends Controller
                     Complaint::whereIn('id', $complaintIds)
                         ->whereNotNull('closed_at')
                         ->update([
-                            'status' => $request->status,
+                            'status' => Complaint::STATUS_RESOLVED,
                         ]);
                 } else {
                     // If status is changed from addressed to something else, clear closed_at
+                    // Convert string status to integer for DB
+                    $keyMap = Complaint::getStatusKeyToIdMap();
+                    $bulkStatusId = $keyMap[$request->status] ?? $request->status;
                     Complaint::whereIn('id', $complaintIds)->update([
-                        'status' => $request->status,
+                        'status' => $bulkStatusId,
                         'closed_at' => null,
                     ]);
                 }
+
+                $performaTypesList = ['work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa', 'product_na', 'barrack_damages', 'door_lock'];
+                $newPerformaType = in_array($request->status, $performaTypesList) ? $request->status : null;
+                DB::table('spare_approval_performa')
+                    ->whereIn('complaint_id', $complaintIds)
+                    ->update(['performa_type' => $newPerformaType]);
+
                 $message = 'Selected complaints status updated successfully.';
                 break;
 
             case 'change_priority':
                 $validator = Validator::make($request->all(), [
-                    'priority' => 'required|in:low,medium,high',
+                    'priority' => 'required|in:normal,emergency',
                 ]);
 
                 if ($validator->fails()) {
