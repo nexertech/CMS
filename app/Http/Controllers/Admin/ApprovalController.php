@@ -1309,9 +1309,13 @@ class ApprovalController extends Controller
         }
         // If performa_type is null/empty, use status from request (status dropdown value - already in ID format)
 
+        // Convert string status to integer status ID for database
+        $keyMap = Complaint::getStatusKeyToIdMap();
+        $statusIdToSave = $keyMap[$statusToUse] ?? $statusToUse;
+
         // Set closed_at when status becomes 'addressed', but only if it's not already set
         $updateData = [
-            'status' => $statusToUse, // Use statusToUse instead of request->status
+            'status' => $statusIdToSave,
         ];
 
         if ($statusToUse === 'resolved' && !$complaint->closed_at) {

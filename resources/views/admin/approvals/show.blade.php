@@ -39,6 +39,10 @@
     $displayText = $catDisplay . ' - ' . $titleName;
 
     $rawStatus = $complaint->status ?? 'new';
+    $statusIdMap = \App\Models\Complaint::getStatusIdMap();
+    if (is_numeric($rawStatus) && isset($statusIdMap[(int)$rawStatus])) {
+      $rawStatus = $statusIdMap[(int)$rawStatus];
+    }
     $complaintStatus = ($rawStatus == 'new') ? 'unassigned' : $rawStatus;
     $statusLabels = [
       'unassigned' => 'Unassigned',

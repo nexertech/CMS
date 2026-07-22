@@ -985,30 +985,16 @@
                                 return false;
                             }
 
-                            // For "Other" entries: disable the title select and add hidden inputs
+                            // For "Other" entries: disable the title select so "other" is not sent as ID
                             const idx = entry.getAttribute('data-index');
                             titleSelect.removeAttribute('name');
                             titleSelect.removeAttribute('required');
                             titleSelect.disabled = true;
 
-                            const hiddenTitle = document.createElement('input');
-                            hiddenTitle.type = 'hidden';
-                            hiddenTitle.name = 'complaints[' + idx + '][title]';
-                            hiddenTitle.value = titleOther.value.trim();
-                            entry.appendChild(hiddenTitle);
-
-                            const hiddenTitleOther = document.createElement('input');
-                            hiddenTitleOther.type = 'hidden';
-                            hiddenTitleOther.name = 'complaints[' + idx + '][title_other]';
-                            hiddenTitleOther.value = titleOther.value.trim();
-                            entry.appendChild(hiddenTitleOther);
-
-                            // Clear the complaint_title_id so null is sent
-                            const hiddenNullTitle = document.createElement('input');
-                            hiddenNullTitle.type = 'hidden';
-                            hiddenNullTitle.name = 'complaints[' + idx + '][complaint_title_id]';
-                            hiddenNullTitle.value = '';
-                            entry.appendChild(hiddenNullTitle);
+                            // Ensure title_other has the correct input name
+                            if (titleOther) {
+                                titleOther.name = 'complaints[' + idx + '][title_other]';
+                            }
                         }
                     }
                 });

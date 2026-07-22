@@ -136,13 +136,19 @@ window.initializeComplaintForm = function(root = document) {
                     const previous = titleSelect.getAttribute('data-prev');
                     const custom = titleSelect.getAttribute('data-custom');
                     
-                    if (previous) {
+                    const hasValidPrevious = previous && previous !== '0' && previous !== 'null' && previous !== 'undefined' && previous !== 'other';
+                    
+                    if (hasValidPrevious) {
                         const opt = Array.from(titleSelect.options).find(o => o.value == previous);
                         if (opt) {
                             titleSelect.value = String(previous);
                             handleTitleChange();
+                        } else if (custom && custom !== 'null' && custom !== '' && custom !== 'undefined') {
+                            titleSelect.value = 'other';
+                            handleTitleChange();
+                            if (titleOtherInput) titleOtherInput.value = custom;
                         }
-                    } else if (custom && custom !== 'null' && custom !== '') {
+                    } else if (custom && custom !== 'null' && custom !== '' && custom !== 'undefined') {
                         titleSelect.value = 'other';
                         handleTitleChange();
                         if (titleOtherInput) titleOtherInput.value = custom;

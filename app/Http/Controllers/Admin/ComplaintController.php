@@ -498,13 +498,19 @@ class ComplaintController extends Controller
         DB::beginTransaction();
 
         try {
-            $complaintTitleId = $request->complaint_title_id;
+            $rawTitleId = $request->complaint_title_id;
+            $complaintTitleId = (is_numeric($rawTitleId) && (int) $rawTitleId > 0) ? (int) $rawTitleId : null;
             $customTitle = null;
 
             if (!$complaintTitleId) {
-                $customTitle = $request->title_other ?? $request->title;
-                if (strtolower($customTitle) === 'other')
+                $rawTitleOther = $request->title_other ?? $request->title ?? null;
+                if (is_array($rawTitleOther)) {
+                    $rawTitleOther = end($rawTitleOther);
+                }
+                $customTitle = is_string($rawTitleOther) ? trim($rawTitleOther) : null;
+                if ($customTitle && strtolower($customTitle) === 'other') {
                     $customTitle = null;
+                }
             }
 
             $assignedEmpId = $request->assigned_employee_id ?: null;
@@ -608,14 +614,16 @@ class ComplaintController extends Controller
             $creatorName = auth()->user()->name ?? auth()->user()->username ?? 'Staff';
 
             foreach ($complaintsData as $entry) {
-                $complaintTitleId = $entry['complaint_title_id'] ?? null;
-                if ($complaintTitleId === 'other' || $complaintTitleId === '') {
-                    $complaintTitleId = null;
-                }
+                $rawTitleId = $entry['complaint_title_id'] ?? null;
+                $complaintTitleId = (is_numeric($rawTitleId) && (int) $rawTitleId > 0) ? (int) $rawTitleId : null;
 
                 $customTitle = null;
                 if (!$complaintTitleId) {
-                    $customTitle = $entry['title_other'] ?? $entry['title'] ?? null;
+                    $rawTitleOther = $entry['title_other'] ?? $entry['title'] ?? null;
+                    if (is_array($rawTitleOther)) {
+                        $rawTitleOther = end($rawTitleOther);
+                    }
+                    $customTitle = is_string($rawTitleOther) ? trim($rawTitleOther) : null;
                     if ($customTitle && strtolower($customTitle) === 'other') {
                         $customTitle = null;
                     }
@@ -768,18 +776,34 @@ class ComplaintController extends Controller
         $oldAssignedTo = $complaint->assigned_employee_id;
 
         // Title Updating Logic
-        $complaintTitleId = $request->complaint_title_id;
+        $rawTitleId = $request->complaint_title_id;
+        $complaintTitleId = (is_numeric($rawTitleId) && (int) $rawTitleId > 0) ? (int) $rawTitleId : null;
         $customTitle = null;
 
         if (!$complaintTitleId) {
-            $customTitle = $request->title_other ?? $request->title;
-            if (strtolower($customTitle) === 'other')
+            $rawTitleOther = $request->title_other ?? $request->title ?? null;
+            if (is_array($rawTitleOther)) {
+                $rawTitleOther = end($rawTitleOther);
+            }
+            $customTitle = is_string($rawTitleOther) ? trim($rawTitleOther) : null;
+            if ($customTitle && strtolower($customTitle) === 'other') {
                 $customTitle = null;
+            }
         }
 
         $newStatus = $complaint->status;
-        if ($newStatus === 'new' && $request->assigned_employee_id) {
-            $newStatus = 'assigned';
+
+        // If an employee is assigned, automatically update status to ASSIGNED if it was unassigned/new
+        if ($request->filled('assigned_employee_id')) {
+            $unassignedStatuses = [Complaint::STATUS_UNASSIGNED, '2', 2, 'unassigned', 'new'];
+            if (in_array($newStatus, $unassignedStatuses) || $request->status === 'assigned' || $request->status == Complaint::STATUS_ASSIGNED) {
+                $newStatus = Complaint::STATUS_ASSIGNED;
+            }
+        } elseif ($request->has('assigned_employee_id') && empty($request->assigned_employee_id)) {
+            $assignedStatuses = [Complaint::STATUS_ASSIGNED, '3', 3, 'assigned'];
+            if (in_array($newStatus, $assignedStatuses) || $request->status === 'unassigned' || $request->status == Complaint::STATUS_UNASSIGNED) {
+                $newStatus = Complaint::STATUS_UNASSIGNED;
+            }
         }
 
         $complaint->update([
@@ -1486,5 +1510,4 @@ class ComplaintController extends Controller
         // Implementation for export
         return response()->json(['message' => 'Export functionality not implemented yet']);
     }
-
 }

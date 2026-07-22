@@ -170,6 +170,12 @@
 
                 // Logic: If performa_type is set, use it as status, otherwise use complaint status
                 $rawStatus = $complaint->status ?? 'new';
+                $statusIdMap = \App\Models\Complaint::getStatusIdMap();
+                if (is_numeric($rawStatus) && isset($statusIdMap[(int)$rawStatus])) {
+                  $rawStatus = $statusIdMap[(int)$rawStatus];
+                } elseif ($rawStatus === 'new') {
+                  $rawStatus = 'unassigned';
+                }
 
                 // Check if approval has performa_type set (same logic as product_na)
                 $hasPerformaType = isset($approval->performa_type) && $approval->performa_type;
@@ -180,7 +186,7 @@
                 // Otherwise use complaint status
                 if ($rawStatus === 'resolved' || $rawStatus === 'closed') {
                   // Always preserve resolved/closed status - don't override with performa type
-                  $complaintStatus = ($rawStatus == 'new') ? 'unassigned' : $rawStatus;
+                  $complaintStatus = $rawStatus;
                 } elseif ($hasPerformaType && in_array($performaTypeValue, ['product_na', 'work_performa', 'maint_performa', 'work_priced_performa', 'maint_priced_performa'])) {
                   // For all performa types, use in_progress for display (like product_na)
                   $complaintStatus = 'in_progress';
@@ -188,7 +194,7 @@
                   // If complaint status is a performa type, show "In Progress" in status column
                   $complaintStatus = 'in_progress';
                 } else {
-                  $complaintStatus = ($rawStatus == 'new') ? 'unassigned' : $rawStatus;
+                  $complaintStatus = $rawStatus;
                 }
 
                 $statusDisplay = $complaintStatus == 'in_progress' ? 'In Progress' :
