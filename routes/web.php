@@ -133,6 +133,8 @@ Route::middleware(['auth', 'verified', AdminAccessMiddleware::class])
         Route::get('employees/designations', [AdminEmployeeController::class, 'getDesignationsByCategory'])->name('employees.designations');
         Route::get('employees/export', [AdminEmployeeController::class, 'export'])->name('employees.export');
         Route::post('employees/bulk-action', [AdminEmployeeController::class, 'bulkAction'])->name('employees.bulk-action');
+        Route::post('employees/import', [AdminEmployeeController::class, 'import'])->name('employees.import');
+        Route::get('employees/sample-csv', [AdminEmployeeController::class, 'downloadSample'])->name('employees.sample-csv');
         
         // Resource routes
         Route::resource('employees', AdminEmployeeController::class)->except(['destroy']);
@@ -154,8 +156,9 @@ Route::middleware(['auth', 'verified', AdminAccessMiddleware::class])
     Route::middleware(['permission:employees.view'])->group(function () {
         // Extra AJAX/helper routes (must come BEFORE resource routes to avoid conflicts)
         Route::get('houses/sectors', [App\Http\Controllers\Admin\HouseController::class, 'getSectorsByCity'])->name('houses.sectors');
+        Route::post('houses/import', [App\Http\Controllers\Admin\HouseController::class, 'import'])->name('houses.import');
+        Route::get('houses/sample-csv', [App\Http\Controllers\Admin\HouseController::class, 'downloadSample'])->name('houses.sample-csv');
         
-        // Resource routes
         // Resource routes
         Route::resource('houses', App\Http\Controllers\Admin\HouseController::class);
     });

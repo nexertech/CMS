@@ -1330,7 +1330,7 @@ class HomeController extends Controller
                             $cq->whereNull('complaints.house_id')->whereIn('complaints.city_id', $cmeGroupCityIds);
                         });
                 })
-                ->selectRaw('COALESCE(houses.city_id, complaints.city_id) as city_id, COUNT(*) as total, SUM(CASE WHEN complaints.status IN ("resolved", "closed") THEN 1 ELSE 0 END) as resolved');
+                ->selectRaw('COALESCE(houses.city_id, complaints.city_id) as city_id, COUNT(*) as total, SUM(CASE WHEN complaints.status = 1 THEN 1 ELSE 0 END) as resolved');
 
             $this->applyCmeDateFilter($cmeStatsRaw, $cmeDateRange);
             $applyGlobalFilters($cmeStatsRaw); // Apply top-level filters (Category, etc.)
@@ -1359,7 +1359,7 @@ class HomeController extends Controller
                             $cq->whereNull('complaints.house_id')->whereIn('complaints.sector_id', $cmeNodeSectorIds);
                         });
                 })
-                ->selectRaw('COALESCE(houses.sector_id, complaints.sector_id) as sector_id, COUNT(*) as total, SUM(CASE WHEN complaints.status IN ("resolved", "closed") THEN 1 ELSE 0 END) as resolved');
+                ->selectRaw('COALESCE(houses.sector_id, complaints.sector_id) as sector_id, COUNT(*) as total, SUM(CASE WHEN complaints.status = 1 THEN 1 ELSE 0 END) as resolved');
 
             $this->applyCmeDateFilter($cmeStatsRaw, $cmeDateRange);
             $applyGlobalFilters($cmeStatsRaw); // Apply top-level filters (Category, etc.)
@@ -1388,7 +1388,7 @@ class HomeController extends Controller
                             $cq->whereNull('complaints.house_id')->whereIn('complaints.sector_id', $cmeNodeOnlySectorIds);
                         });
                 })
-                ->selectRaw('COALESCE(houses.sector_id, complaints.sector_id) as sector_id, COUNT(*) as total, SUM(CASE WHEN complaints.status IN ("resolved", "closed") THEN 1 ELSE 0 END) as resolved');
+                ->selectRaw('COALESCE(houses.sector_id, complaints.sector_id) as sector_id, COUNT(*) as total, SUM(CASE WHEN complaints.status = 1 THEN 1 ELSE 0 END) as resolved');
 
             $this->applyCmeDateFilter($cmeStatsRaw, $cmeDateRange);
             $applyGlobalFilters($cmeStatsRaw); // Apply top-level filters (Category, etc.)
@@ -1416,7 +1416,7 @@ class HomeController extends Controller
                 ->selectRaw('
                     COALESCE(cities.cme_id, sectors.cme_id) as cme_id, 
                     COUNT(*) as total, 
-                    SUM(CASE WHEN complaints.status IN ("resolved", "closed") THEN 1 ELSE 0 END) as resolved
+                    SUM(CASE WHEN complaints.status = 1 THEN 1 ELSE 0 END) as resolved
                 ')
                 ->where(function ($q) use ($cmeIds_list) {
                     $q->whereIn('cities.cme_id', $cmeIds_list)
@@ -1665,7 +1665,7 @@ class HomeController extends Controller
                     COALESCE(houses.sector_id, complaints.sector_id) as sector_id, 
                     YEAR(complaints.created_at) as year,
                     COUNT(*) as total,
-                    SUM(CASE WHEN complaints.status IN ("resolved", "closed") THEN 1 ELSE 0 END) as resolved
+                    SUM(CASE WHEN complaints.status = 1 THEN 1 ELSE 0 END) as resolved
                 ')
                     ->groupBy(\DB::raw('COALESCE(houses.city_id, complaints.city_id)'), \DB::raw('COALESCE(houses.sector_id, complaints.sector_id)'), 'year')
                     ->get();
@@ -1678,7 +1678,7 @@ class HomeController extends Controller
                     YEAR(complaints.created_at) as year, 
                     MONTH(complaints.created_at) as month,
                     COUNT(*) as total,
-                    SUM(CASE WHEN complaints.status IN ("resolved", "closed") THEN 1 ELSE 0 END) as resolved
+                    SUM(CASE WHEN complaints.status = 1 THEN 1 ELSE 0 END) as resolved
                 ')
                     ->groupBy(\DB::raw('COALESCE(houses.city_id, complaints.city_id)'), \DB::raw('COALESCE(houses.sector_id, complaints.sector_id)'), 'year', 'month')
                     ->get();

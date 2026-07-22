@@ -73,6 +73,8 @@ class ComplaintApiController extends Controller
                     'status' => $complaint->mapped_status,
                     'status_id' => $complaint->status_id,
                     'status_label' => $complaint->status_display,
+                    'priority' => strtolower($complaint->priority ?? 'normal') === 'emergency' ? 'emergency' : 'normal',
+                    'priority_label' => $complaint->priority_display,
                     'created_at' => $complaint->created_at->timezone('Asia/Karachi')->format('M d, Y H:i'),
                     'closed_at' => $complaint->closed_at ? $complaint->closed_at->timezone('Asia/Karachi')->format('M d, Y H:i') : null,
                     'assigned_employee' => $complaint->assignedEmployee ? $complaint->assignedEmployee->name : null,
@@ -114,7 +116,8 @@ class ComplaintApiController extends Controller
                 'status' => $complaint->mapped_status,
                 'status_id' => $complaint->status_id,
                 'status_label' => $complaint->status_display,
-                'priority' => $complaint->priority,
+                'priority' => strtolower($complaint->priority ?? 'normal') === 'emergency' ? 'emergency' : 'normal',
+                'priority_label' => $complaint->priority_display,
                 'description' => $complaint->description,
                 'created_at' => $complaint->created_at->timezone('Asia/Karachi')->format('d M Y, h:i A'),
                 'availability_time' => $complaint->availability_time,
@@ -159,7 +162,7 @@ class ComplaintApiController extends Controller
             'title' => 'required',
             'description' => 'required|string',
             'availability_time' => 'nullable|string',
-            'priority' => 'nullable|in:normal,emergency'
+            'priority' => 'nullable|string'
         ]);
 
         if ($validator->fails()) {
@@ -218,6 +221,10 @@ class ComplaintApiController extends Controller
             }
         }
 
+        // Resolve Priority strictly to 'normal' or 'emergency'
+        $priorityVal = strtolower((string)$request->priority);
+        $resolvedPriority = (in_array($priorityVal, ['emergency', 'high', 'urgent', '2'], true)) ? 'emergency' : 'normal';
+
         DB::beginTransaction();
         try {
 
@@ -229,7 +236,7 @@ class ComplaintApiController extends Controller
                 'city_id'            => $house->city_id,
                 'sector_id'          => $house->sector_id,
                 'category_id'        => $categoryId,
-                'priority'           => $request->priority ?? 'medium',
+                'priority'           => $resolvedPriority,
                 'description'        => $request->description,
                 'availability_time'  => $request->availability_time,
                 'status'             => 'unassigned',
@@ -371,6 +378,20 @@ class ComplaintApiController extends Controller
         return response()->json([
             'success' => true,
             'data' => $titles
+        ]);
+    }
+
+    /**
+     * Get Complaint Priorities (Only 2: Normal & Emergency)
+     */
+    public function priorities()
+    {
+        return response()->json([
+            'success' => true,
+            'data' => [
+                ['id' => 'normal', 'name' => 'Normal', 'label' => 'Normal'],
+                ['id' => 'emergency', 'name' => 'Emergency', 'label' => 'Emergency'],
+            ]
         ]);
     }
 

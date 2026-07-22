@@ -376,4 +376,235 @@ class HouseController extends Controller
         
         return response()->json(['sectors' => $sectors]);
     }
+
+    /**
+     * Download sample CSV for house import
+     */
+    public function downloadSample()
+    {
+        $headers = [
+            'Content-Type' => 'text/csv; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="house_import_sample.csv"',
+        ];
+
+        $columns = ['House No', 'Resident Name', 'Username', 'Phone', 'GE Group', 'GE Node', 'Type', 'Address', 'Status'];
+
+        $callback = function () use ($columns) {
+            $file = fopen('php://output', 'w');
+            fputs($file, "\xEF\xBB\xBF");
+            fputcsv($file, $columns);
+
+            $sampleCity = City::first()?->name ?? 'Isld Maint';
+            $sampleSector = Sector::first()?->name ?? 'Sector A';
+
+            fputcsv($file, [
+                'H-101',
+                'Ali Khan',
+                'h101_ali',
+                '03001234567',
+                $sampleCity,
+                $sampleSector,
+                'Resident',
+                'House 101, Street 5',
+                'Active'
+            ]);
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Import houses from CSV/Excel file
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:csv,txt,xls,xlsx|max:10240',
+        ], [
+            'file.required' => 'Please select a CSV or Excel file to import.',
+            'file.mimes' => 'The file must be a CSV or Excel format (.csv, .xls, .xlsx).',
+        ]);
+
+        $file = $request->file('file');
+        $path = $file->getRealPath();
+        $extension = strtolower($file->getClientOriginalExtension());
+
+        $rows = [];
+
+        if (in_array($extension, ['xlsx', 'xls'])) {
+            if ($xlsx = \Shuchkin\SimpleXLSX::parse($path)) {
+                $rows = $xlsx->rows();
+            } else {
+                return redirect()->back()->with('error', 'Unable to parse Excel file: ' . \Shuchkin\SimpleXLSX::parseError());
+            }
+        } else {
+            // Read CSV file
+            $handle = fopen($path, 'r');
+            if (!$handle) {
+                return redirect()->back()->with('error', 'Unable to open file.');
+            }
+
+            $bom = fread($handle, 3);
+            if ($bom !== "\xEF\xBB\xBF") {
+                rewind($handle);
+            }
+
+            $delimiter = ',';
+            $firstLine = fgetcsv($handle, 2000, ',');
+            if (!$firstLine || count($firstLine) < 2) {
+                rewind($handle);
+                if ($bom === "\xEF\xBB\xBF") {
+                    fread($handle, 3);
+                }
+                $firstLine = fgetcsv($handle, 2000, ';');
+                $delimiter = ';';
+            }
+
+            if ($firstLine) {
+                $rows[] = $firstLine;
+                while (($data = fgetcsv($handle, 2000, $delimiter)) !== false) {
+                    $rows[] = $data;
+                }
+            }
+            fclose($handle);
+        }
+
+        if (empty($rows) || count($rows) < 2) {
+            return redirect()->back()->with('error', 'File is empty or missing data rows.');
+        }
+
+        $header = array_shift($rows); // First row is header
+        $headerMap = [];
+        foreach ($header as $index => $colName) {
+            $cleanCol = strtolower(trim(preg_replace('/[^a-zA-Z0-9_]/', '', str_replace([' ', '-'], '_', (string)$colName))));
+            if ($cleanCol !== '') {
+                $headerMap[$cleanCol] = $index;
+            }
+        }
+
+        $cities = City::all()->keyBy(fn($item) => strtolower(trim($item->name)));
+        $citiesById = City::all()->keyBy('id');
+        $sectors = Sector::all()->keyBy(fn($item) => strtolower(trim($item->name)));
+        $sectorsById = Sector::all()->keyBy('id');
+
+        $imported = 0;
+        $skipped = 0;
+
+        DB::beginTransaction();
+        try {
+            foreach ($rows as $row) {
+                if (!is_array($row) || array_filter($row, fn($val) => trim((string)$val) !== '') === []) {
+                    continue;
+                }
+
+                $getValue = function($key) use ($headerMap, $row) {
+                    if (isset($headerMap[$key]) && isset($row[$headerMap[$key]])) {
+                        return trim((string)$row[$headerMap[$key]]);
+                    }
+                    return null;
+                };
+
+                $houseNo = $getValue('house_no') ?? $getValue('houseno') ?? ($row[0] ?? null);
+                $name = $getValue('resident_name') ?? $getValue('name') ?? ($row[1] ?? null);
+                $username = $getValue('username') ?? ($row[2] ?? null);
+                $phone = $getValue('phone') ?? ($row[3] ?? null);
+                $cityVal = $getValue('ge_group') ?? $getValue('city') ?? $getValue('city_id') ?? ($row[4] ?? null);
+                $sectorVal = $getValue('ge_node') ?? $getValue('sector') ?? $getValue('sector_id') ?? ($row[5] ?? null);
+                $type = $getValue('type') ?? ($row[6] ?? null);
+                $address = $getValue('address') ?? ($row[7] ?? null);
+                $statusVal = $getValue('status') ?? ($row[8] ?? '1');
+
+                if ($houseNo === null) {
+                    $skipped++;
+                    continue;
+                }
+
+                $houseNo = trim((string)$houseNo);
+
+                // Clean string and filter out non-printable ASCII/junk
+                if (preg_match('/[^\x20-\x7E\t\r\n]/', $houseNo)) {
+                    $houseNo = preg_replace('/[^\x20-\x7E]/', '', $houseNo);
+                }
+
+                if (empty($houseNo)) {
+                    $skipped++;
+                    continue;
+                }
+
+                // City lookup
+                $cityId = null;
+                if (!empty($cityVal)) {
+                    if (is_numeric($cityVal) && isset($citiesById[$cityVal])) {
+                        $cityId = (int)$cityVal;
+                    } else {
+                        $cityKey = strtolower(trim((string)$cityVal));
+                        $cityId = $cities[$cityKey]->id ?? null;
+                    }
+                }
+                if (!$cityId && $cities->count() > 0) {
+                    $cityId = $cities->first()->id;
+                }
+
+                // Sector lookup
+                $sectorId = null;
+                if (!empty($sectorVal)) {
+                    if (is_numeric($sectorVal) && isset($sectorsById[$sectorVal])) {
+                        $sectorId = (int)$sectorVal;
+                    } else {
+                        $sectorKey = strtolower(trim((string)$sectorVal));
+                        $sectorId = $sectors[$sectorKey]->id ?? null;
+                    }
+                }
+                if (!$sectorId && $sectors->count() > 0) {
+                    $sectorId = $sectors->first()->id;
+                }
+
+                // Phone
+                if (!empty($phone)) {
+                    $phone = preg_replace('/[^0-9]/', '', (string)$phone);
+                    if (strlen($phone) === 10 && str_starts_with($phone, '3')) {
+                        $phone = '0' . $phone;
+                    } elseif (strlen($phone) === 12 && str_starts_with($phone, '92')) {
+                        $phone = '0' . substr($phone, 2);
+                    }
+                }
+
+                // Status
+                $status = 1;
+                if ($statusVal !== null && in_array(strtolower(trim((string)$statusVal)), ['0', 'inactive', 'false', 'disabled'], true)) {
+                    $status = 0;
+                }
+
+                House::create([
+                    'house_no' => $houseNo,
+                    'name' => $name ? trim((string)$name) : null,
+                    'username' => $username ? trim((string)$username) : null,
+                    'phone' => $phone ?: null,
+                    'city_id' => $cityId,
+                    'sector_id' => $sectorId,
+                    'address' => $address ? trim((string)$address) : null,
+                    'type' => $type ? trim((string)$type) : null,
+                    'status' => $status,
+                ]);
+
+                $imported++;
+            }
+
+            DB::commit();
+
+            $msg = "Successfully imported {$imported} house(s).";
+            if ($skipped > 0) {
+                $msg .= " Skipped {$skipped} empty/invalid row(s).";
+            }
+
+            return redirect()->route('admin.houses.index')->with('success', $msg);
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error("House import failed: " . $e->getMessage());
+            return redirect()->back()->with('error', 'Import failed: ' . $e->getMessage());
+        }
+    }
 }

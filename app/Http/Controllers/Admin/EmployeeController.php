@@ -579,4 +579,279 @@ class EmployeeController extends Controller
             'message' => 'Export functionality will be implemented.'
         ]);
     }
+
+    /**
+     * Download sample CSV for employee import
+     */
+    public function downloadSample()
+    {
+        $headers = [
+            'Content-Type' => 'text/csv; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="employee_import_sample.csv"',
+        ];
+
+        $columns = ['Name', 'Category', 'Designation', 'Phone', 'City', 'Sector', 'Date of Hire', 'Address', 'Status'];
+
+        $callback = function () use ($columns) {
+            $file = fopen('php://output', 'w');
+            fputs($file, "\xEF\xBB\xBF");
+            fputcsv($file, $columns);
+
+            $sampleCat = ComplaintCategory::first()?->name ?? 'Electrical';
+            $sampleDes = Designation::first()?->name ?? 'Technician';
+            $sampleCity = City::first()?->name ?? 'Karachi';
+            $sampleSector = Sector::first()?->name ?? 'Sector A';
+
+            fputcsv($file, [
+                'Muhammad Ali',
+                $sampleCat,
+                $sampleDes,
+                '03001234567',
+                $sampleCity,
+                $sampleSector,
+                '2024-01-15',
+                'House 123, Block A',
+                'Active'
+            ]);
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Import employees from CSV/Excel file
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:csv,txt,xls,xlsx|max:10240',
+        ], [
+            'file.required' => 'Please select a CSV or Excel file to import.',
+            'file.mimes' => 'The file must be a CSV or Excel format (.csv, .xls, .xlsx).',
+        ]);
+
+        $file = $request->file('file');
+        $path = $file->getRealPath();
+        $extension = strtolower($file->getClientOriginalExtension());
+
+        $rows = [];
+
+        if (in_array($extension, ['xlsx', 'xls'])) {
+            if ($xlsx = \Shuchkin\SimpleXLSX::parse($path)) {
+                $rows = $xlsx->rows();
+            } else {
+                return redirect()->back()->with('error', 'Unable to parse Excel file: ' . \Shuchkin\SimpleXLSX::parseError());
+            }
+        } else {
+            // Read CSV file
+            $handle = fopen($path, 'r');
+            if (!$handle) {
+                return redirect()->back()->with('error', 'Unable to open file.');
+            }
+
+            $bom = fread($handle, 3);
+            if ($bom !== "\xEF\xBB\xBF") {
+                rewind($handle);
+            }
+
+            $delimiter = ',';
+            $firstLine = fgetcsv($handle, 2000, ',');
+            if (!$firstLine || count($firstLine) < 2) {
+                rewind($handle);
+                if ($bom === "\xEF\xBB\xBF") {
+                    fread($handle, 3);
+                }
+                $firstLine = fgetcsv($handle, 2000, ';');
+                $delimiter = ';';
+            }
+
+            if ($firstLine) {
+                $rows[] = $firstLine;
+                while (($data = fgetcsv($handle, 2000, $delimiter)) !== false) {
+                    $rows[] = $data;
+                }
+            }
+            fclose($handle);
+        }
+
+        if (empty($rows) || count($rows) < 2) {
+            return redirect()->back()->with('error', 'File is empty or missing data rows.');
+        }
+
+        $header = array_shift($rows); // First row is header
+        $headerMap = [];
+        foreach ($header as $index => $colName) {
+            $cleanCol = strtolower(trim(preg_replace('/[^a-zA-Z0-9_]/', '', str_replace([' ', '-'], '_', (string)$colName))));
+            if ($cleanCol !== '') {
+                $headerMap[$cleanCol] = $index;
+            }
+        }
+
+        $categories = ComplaintCategory::all()->keyBy(fn($item) => strtolower(trim($item->name)));
+        $categoriesById = ComplaintCategory::all()->keyBy('id');
+        $designations = Designation::all()->keyBy(fn($item) => strtolower(trim($item->name)));
+        $designationsById = Designation::all()->keyBy('id');
+        $cities = City::all()->keyBy(fn($item) => strtolower(trim($item->name)));
+        $citiesById = City::all()->keyBy('id');
+        $sectors = Sector::all()->keyBy(fn($item) => strtolower(trim($item->name)));
+        $sectorsById = Sector::all()->keyBy('id');
+
+        $imported = 0;
+        $skipped = 0;
+
+        DB::beginTransaction();
+        try {
+            foreach ($rows as $row) {
+                // Skip completely empty rows
+                if (!is_array($row) || array_filter($row, fn($val) => trim((string)$val) !== '') === []) {
+                    continue;
+                }
+
+                $getValue = function($key) use ($headerMap, $row) {
+                    if (isset($headerMap[$key]) && isset($row[$headerMap[$key]])) {
+                        return trim((string)$row[$headerMap[$key]]);
+                    }
+                    return null;
+                };
+
+                $name = $getValue('name') ?? ($row[0] ?? null);
+                $catVal = $getValue('category') ?? $getValue('category_id') ?? ($row[1] ?? null);
+                $desVal = $getValue('designation') ?? $getValue('designation_id') ?? ($row[2] ?? null);
+                $phone = $getValue('phone') ?? ($row[3] ?? null);
+                $cityVal = $getValue('city') ?? $getValue('city_id') ?? ($row[4] ?? null);
+                $sectorVal = $getValue('sector') ?? $getValue('sector_id') ?? ($row[5] ?? null);
+                $dateOfHire = $getValue('date_of_hire') ?? $getValue('dateofhire') ?? ($row[6] ?? null);
+                $address = $getValue('address') ?? ($row[7] ?? null);
+                $statusVal = $getValue('status') ?? ($row[8] ?? '1');
+
+                if ($name === null) {
+                    $skipped++;
+                    continue;
+                }
+
+                $name = trim((string)$name);
+
+                // Clean string and filter out non-printable ASCII/junk
+                if (preg_match('/[^\x20-\x7E\t\r\n]/', $name) && !preg_match('/[\x{0600}-\x{06FF}]/u', $name)) {
+                    $name = preg_replace('/[^\x20-\x7E]/', '', $name);
+                }
+
+                if (empty($name) || strlen($name) < 2) {
+                    $skipped++;
+                    continue;
+                }
+
+                // Category lookup
+                $catId = null;
+                if (!empty($catVal)) {
+                    if (is_numeric($catVal) && isset($categoriesById[$catVal])) {
+                        $catId = (int)$catVal;
+                    } else {
+                        $catKey = strtolower(trim((string)$catVal));
+                        $catId = $categories[$catKey]->id ?? null;
+                    }
+                }
+                if (!$catId && $categories->count() > 0) {
+                    $catId = $categories->first()->id;
+                }
+
+                // Designation lookup
+                $desId = null;
+                if (!empty($desVal)) {
+                    if (is_numeric($desVal) && isset($designationsById[$desVal])) {
+                        $desId = (int)$desVal;
+                    } else {
+                        $desKey = strtolower(trim((string)$desVal));
+                        $desId = $designations[$desKey]->id ?? null;
+                    }
+                }
+                if (!$desId && $designations->count() > 0) {
+                    $desId = $designations->first()->id;
+                }
+
+                // City lookup
+                $cityId = null;
+                if (!empty($cityVal)) {
+                    if (is_numeric($cityVal) && isset($citiesById[$cityVal])) {
+                        $cityId = (int)$cityVal;
+                    } else {
+                        $cityKey = strtolower(trim((string)$cityVal));
+                        $cityId = $cities[$cityKey]->id ?? null;
+                    }
+                }
+                if (!$cityId && $cities->count() > 0) {
+                    $cityId = $cities->first()->id;
+                }
+
+                // Sector lookup
+                $sectorId = null;
+                if (!empty($sectorVal)) {
+                    if (is_numeric($sectorVal) && isset($sectorsById[$sectorVal])) {
+                        $sectorId = (int)$sectorVal;
+                    } else {
+                        $sectorKey = strtolower(trim((string)$sectorVal));
+                        $sectorId = $sectors[$sectorKey]->id ?? null;
+                    }
+                }
+                if (!$sectorId && $sectors->count() > 0) {
+                    $sectorId = $sectors->first()->id;
+                }
+
+                // Phone
+                if (!empty($phone)) {
+                    $phone = preg_replace('/[^0-9]/', '', (string)$phone);
+                    if (strlen($phone) === 10 && str_starts_with($phone, '3')) {
+                        $phone = '0' . $phone;
+                    } elseif (strlen($phone) === 12 && str_starts_with($phone, '92')) {
+                        $phone = '0' . substr($phone, 2);
+                    }
+                }
+
+                // Date of hire
+                $formattedHireDate = null;
+                if (!empty($dateOfHire)) {
+                    $timestamp = strtotime((string)$dateOfHire);
+                    if ($timestamp) {
+                        $formattedHireDate = date('Y-m-d', $timestamp);
+                    }
+                }
+
+                // Status
+                $status = 1;
+                if ($statusVal !== null && in_array(strtolower(trim((string)$statusVal)), ['0', 'inactive', 'false', 'disabled'], true)) {
+                    $status = 0;
+                }
+
+                Employee::create([
+                    'name' => $name,
+                    'category_id' => $catId,
+                    'designation_id' => $desId,
+                    'phone' => $phone,
+                    'city_id' => $cityId,
+                    'sector_id' => $sectorId,
+                    'date_of_hire' => $formattedHireDate,
+                    'address' => $address ? (string)$address : null,
+                    'status' => $status,
+                ]);
+
+                $imported++;
+            }
+
+            DB::commit();
+
+            $msg = "Successfully imported {$imported} employee(s).";
+            if ($skipped > 0) {
+                $msg .= " Skipped {$skipped} empty/invalid row(s).";
+            }
+
+            return redirect()->route('admin.employees.index')->with('success', $msg);
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error("Employee import failed: " . $e->getMessage());
+            return redirect()->back()->with('error', 'Import failed: ' . $e->getMessage());
+        }
+    }
 }

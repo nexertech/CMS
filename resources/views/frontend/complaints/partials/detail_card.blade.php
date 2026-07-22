@@ -168,6 +168,18 @@
             <div class="col-md-6 border-end-md">
                 <h6 class="text-primary fw-bold text-uppercase border-bottom pb-2 mb-3">Complainant Information</h6>
                 
+                @if($complaint->house?->house_no)
+                <div class="info-item">
+                    <div class="d-flex align-items-center">
+                        <i data-feather="home" class="me-3 text-muted"></i>
+                        <div class="w-100 d-flex justify-content-between">
+                            <span class="text-muted small text-uppercase">House NO:</span>
+                            <span class="fw-medium text-dark text-end">{{ $complaint->house->house_no }}</span>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
                 <div class="info-item">
                     <div class="d-flex align-items-center">
                         <i data-feather="user" class="me-3 text-muted"></i>
@@ -189,9 +201,9 @@
                 </div>
                 
                 <div class="info-item">
-                    <div class="d-flex align-items-start">
-                        <i data-feather="map-pin" class="me-3 text-muted mt-1"></i>
-                        <div class="w-100 d-flex justify-content-between align-items-start">
+                    <div class="d-flex align-items-center">
+                        <i data-feather="map-pin" class="me-3 text-muted"></i>
+                        <div class="w-100 d-flex justify-content-between align-items-center">
                              <span class="text-muted small text-uppercase" style="white-space: nowrap;">Address:</span>
                              <span class="fw-medium text-dark text-end ms-2" style="line-height: 1.3; font-size: 0.85rem;">{{ $complaint->house?->address ?? 'N/A' }}</span>
                         </div>

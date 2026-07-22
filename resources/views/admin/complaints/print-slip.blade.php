@@ -531,12 +531,6 @@
                         <td class="value" style="font-size: 11px;">#{{ $complaint->id }}</td>
                     </tr>
                     <tr>
-                        <td class="label">Priority:</td>
-                        <td class="value">
-                            {{ strtolower($complaint->priority ?? 'normal') === 'emergency' ? 'Emergency' : 'Normal' }}
-                        </td>
-                    </tr>
-                    <tr>
                         <td class="label">Availability:</td>
                         <td class="value">{{ str_replace('T', ' ', $complaint->availability_time ?? 'N/A') }}</td>
                     </tr>
