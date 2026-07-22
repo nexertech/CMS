@@ -772,32 +772,10 @@ class EmployeeController extends Controller
                 }
 
                 // City lookup
-                $cityId = null;
-                if (!empty($cityVal)) {
-                    if (is_numeric($cityVal) && isset($citiesById[$cityVal])) {
-                        $cityId = (int)$cityVal;
-                    } else {
-                        $cityKey = strtolower(trim((string)$cityVal));
-                        $cityId = $cities[$cityKey]->id ?? null;
-                    }
-                }
-                if (!$cityId && $cities->count() > 0) {
-                    $cityId = $cities->first()->id;
-                }
+                $cityId = $this->matchCity($cityVal, $citiesById->values());
 
                 // Sector lookup
-                $sectorId = null;
-                if (!empty($sectorVal)) {
-                    if (is_numeric($sectorVal) && isset($sectorsById[$sectorVal])) {
-                        $sectorId = (int)$sectorVal;
-                    } else {
-                        $sectorKey = strtolower(trim((string)$sectorVal));
-                        $sectorId = $sectors[$sectorKey]->id ?? null;
-                    }
-                }
-                if (!$sectorId && $sectors->count() > 0) {
-                    $sectorId = $sectors->first()->id;
-                }
+                $sectorId = $this->matchSector($sectorVal, $cityId, $sectorsById->values());
 
                 // Phone
                 if (!empty($phone)) {
@@ -853,5 +831,110 @@ class EmployeeController extends Controller
             Log::error("Employee import failed: " . $e->getMessage());
             return redirect()->back()->with('error', 'Import failed: ' . $e->getMessage());
         }
+    }
+
+    private function matchCity($cityVal, $cities)
+    {
+        if (empty($cityVal)) return $cities->first()->id ?? null;
+        if (is_numeric($cityVal)) {
+            $cityObj = $cities->firstWhere('id', (int)$cityVal);
+            if ($cityObj) return $cityObj->id;
+        }
+
+        $clean = strtolower(trim(preg_replace('/\s+/', ' ', str_replace(["\xc2\xa0", "\xa0"], ' ', (string)$cityVal))));
+        if (empty($clean)) return $cities->first()->id ?? null;
+
+        // 1. Direct name match
+        foreach ($cities as $city) {
+            $cName = strtolower(trim(preg_replace('/\s+/', ' ', str_replace(["\xc2\xa0", "\xa0"], ' ', $city->name))));
+            if ($cName === $clean) return $city->id;
+        }
+
+        // 2. Alias matching
+        if (str_contains($clean, 'isld') || str_contains($clean, 'islab') || str_contains($clean, 'islamabad') || str_contains($clean, 'islambad')) {
+            $isldCity = $cities->first(fn($c) => str_contains(strtolower($c->name), 'isld') || str_contains(strtolower($c->name), 'islamabad'));
+            if ($isldCity) return $isldCity->id;
+        }
+
+        // 3. Substring match
+        foreach ($cities as $city) {
+            $cName = strtolower(trim(preg_replace('/\s+/', ' ', str_replace(["\xc2\xa0", "\xa0"], ' ', $city->name))));
+            if (str_contains($clean, $cName) || str_contains($cName, $clean)) {
+                return $city->id;
+            }
+        }
+
+        return $cities->first()->id ?? null;
+    }
+
+    private function matchSector($sectorVal, $cityId, $sectors)
+    {
+        if (empty($sectorVal)) {
+            if ($cityId) {
+                $firstCitySec = $sectors->where('city_id', $cityId)->first();
+                if ($firstCitySec) return $firstCitySec->id;
+            }
+            return $sectors->first()->id ?? null;
+        }
+
+        if (is_numeric($sectorVal)) {
+            $secObj = $sectors->firstWhere('id', (int)$sectorVal);
+            if ($secObj) return $secObj->id;
+        }
+
+        $clean = strtolower(trim(preg_replace('/\s+/', ' ', str_replace(["\xc2\xa0", "\xa0"], ' ', (string)$sectorVal))));
+        if (empty($clean)) {
+            if ($cityId) {
+                $firstCitySec = $sectors->where('city_id', $cityId)->first();
+                if ($firstCitySec) return $firstCitySec->id;
+            }
+            return $sectors->first()->id ?? null;
+        }
+
+        // Filter sectors by cityId first
+        $citySectors = $cityId ? $sectors->where('city_id', $cityId) : $sectors;
+        if ($citySectors->isEmpty()) {
+            $citySectors = $sectors;
+        }
+
+        // 1. Exact cleaned match in city sectors
+        foreach ($citySectors as $sec) {
+            $sName = strtolower(trim(preg_replace('/\s+/', ' ', str_replace(["\xc2\xa0", "\xa0"], ' ', $sec->name))));
+            if ($sName === $clean) return $sec->id;
+        }
+
+        // 2. Global exact match if city sectors match failed
+        foreach ($sectors as $sec) {
+            $sName = strtolower(trim(preg_replace('/\s+/', ' ', str_replace(["\xc2\xa0", "\xa0"], ' ', $sec->name))));
+            if ($sName === $clean) return $sec->id;
+        }
+
+        // 3. Islamabad / Isld / Complaint Office fuzzy alias match
+        if (str_contains($clean, 'isld') || str_contains($clean, 'islambad') || str_contains($clean, 'islamabad') || str_contains($clean, 'isl')) {
+            $isldSec = $citySectors->first(fn($s) => str_contains(strtolower($s->name), 'isld') || str_contains(strtolower($s->name), 'islamabad'));
+            if (!$isldSec) {
+                $isldSec = $sectors->first(fn($s) => str_contains(strtolower($s->name), 'isld') || str_contains(strtolower($s->name), 'islamabad'));
+            }
+            if ($isldSec) return $isldSec->id;
+        }
+
+        // 4. Word-by-word substring match within city sectors
+        $cleanWords = explode(' ', $clean);
+        foreach ($citySectors as $sec) {
+            $sName = strtolower(trim(preg_replace('/\s+/', ' ', str_replace(["\xc2\xa0", "\xa0"], ' ', $sec->name))));
+            foreach ($cleanWords as $word) {
+                if (strlen($word) > 3 && str_contains($sName, $word)) {
+                    return $sec->id;
+                }
+            }
+        }
+
+        // 5. Fallback: first sector of that city
+        if ($cityId) {
+            $firstCitySec = $sectors->where('city_id', $cityId)->first();
+            if ($firstCitySec) return $firstCitySec->id;
+        }
+
+        return $sectors->first()->id ?? null;
     }
 }
