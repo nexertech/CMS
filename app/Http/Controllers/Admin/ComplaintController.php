@@ -386,7 +386,7 @@ class ComplaintController extends Controller
                     'house_no' => $complaint->house->house_no ?? 'N/A',
                     'status' => $statusText,
                     'category' => $complaint->getCategoryDisplayAttribute(),
-                    'type' => $complaint->complaintTitle->name ?? ($complaint->category->name ?? 'N/A'),
+                    'type' => $complaint->complaintTitle->title ?? $complaint->title ?? 'N/A',
                     'priority' => $complaint->getPriorityDisplayAttribute() ?? 'N/A',
                 ];
             });
@@ -1239,14 +1239,14 @@ class ComplaintController extends Controller
         $performance = Complaint::where('created_at', '>=', now()->subDays($period))
             ->whereNotNull('assigned_employee_id')
             ->selectRaw('assigned_employee_id, COUNT(*) as total_complaints, 
-                SUM(CASE WHEN status = "resolved" THEN 1 ELSE 0 END) as addressed_complaints,
-                SUM(CASE WHEN status = "work_performa" THEN 1 ELSE 0 END) as work_performa_count,
-                SUM(CASE WHEN status = "maint_performa" THEN 1 ELSE 0 END) as maint_performa_count,
-                SUM(CASE WHEN status = "work_priced_performa" THEN 1 ELSE 0 END) as work_priced_performa_count,
-                SUM(CASE WHEN status = "maint_priced_performa" THEN 1 ELSE 0 END) as maint_priced_performa_count,
-                SUM(CASE WHEN status = "product_na" THEN 1 ELSE 0 END) as product_na_count,
-                SUM(CASE WHEN status = "un_authorized" THEN 1 ELSE 0 END) as un_authorized_count,
-                AVG(CASE WHEN status = "resolved" THEN TIMESTAMPDIFF(HOUR, complaints.created_at, complaints.updated_at) ELSE NULL END) as avg_resolution_time')
+                SUM(CASE WHEN status IN ("resolved", "closed", 1, "1") THEN 1 ELSE 0 END) as addressed_complaints,
+                SUM(CASE WHEN status IN ("work_performa", 4, "4") THEN 1 ELSE 0 END) as work_performa_count,
+                SUM(CASE WHEN status IN ("maint_performa", 5, "5") THEN 1 ELSE 0 END) as maint_performa_count,
+                SUM(CASE WHEN status IN ("work_priced_performa", 6, "6") THEN 1 ELSE 0 END) as work_priced_performa_count,
+                SUM(CASE WHEN status IN ("maint_priced_performa", 7, "7") THEN 1 ELSE 0 END) as maint_priced_performa_count,
+                SUM(CASE WHEN status IN ("product_na", 8, "8") THEN 1 ELSE 0 END) as product_na_count,
+                SUM(CASE WHEN status IN ("un_authorized", 9, "9") THEN 1 ELSE 0 END) as un_authorized_count,
+                AVG(CASE WHEN status IN ("resolved", "closed", 1, "1") THEN TIMESTAMPDIFF(HOUR, complaints.created_at, complaints.updated_at) ELSE NULL END) as avg_resolution_time')
             ->groupBy('assigned_employee_id')
             ->with('assignedEmployee')
             ->get();

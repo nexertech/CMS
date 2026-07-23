@@ -95,8 +95,8 @@ class ReportController extends Controller
         // Get aggregated complaint stats in one query
         $complaintStats = (clone $complaintsQuery)->selectRaw('
             COUNT(*) as total,
-            SUM(CASE WHEN complaints.status = "resolved" AND complaints.closed_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as resolved,
-            SUM(CASE WHEN complaints.status != "resolved" THEN 1 ELSE 0 END) as pending
+            SUM(CASE WHEN complaints.created_at BETWEEN ? AND ? AND complaints.status IN ("resolved", "closed", 1, "1") THEN 1 ELSE 0 END) as resolved,
+            SUM(CASE WHEN complaints.status NOT IN ("resolved", "closed", 1, "1") THEN 1 ELSE 0 END) as pending
         ', [$startOfMonth, $now])->first();
 
         // Get aggregated spare stats in one query
@@ -139,7 +139,7 @@ class ReportController extends Controller
      */
     private function getAverageResolutionTime($user = null)
     {
-        $query = \App\Models\Complaint::query()->where('complaints.status', 'resolved')
+        $query = \App\Models\Complaint::query()->whereIn('complaints.status', ['resolved', 'closed', 1, '1'])
             ->whereNotNull('complaints.updated_at')
             ->whereNotNull('complaints.created_at');
 
@@ -163,7 +163,7 @@ class ReportController extends Controller
                 $this->filterComplaintsByLocation($q, $user);
             },
             'assignedComplaints as resolved_count' => function ($q) use ($user) {
-                $q->where('status', 'resolved');
+                $q->whereIn('status', ['resolved', 'closed', 1, '1']);
                 $this->filterComplaintsByLocation($q, $user);
             }
         ])->get();
@@ -335,7 +335,7 @@ class ReportController extends Controller
         // Consolidated stats in fewer queries
         $complaintStats = (clone $complaintsQuery)->selectRaw('
             SUM(CASE WHEN complaints.created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as total_this_month,
-            SUM(CASE WHEN complaints.status = "resolved" AND complaints.closed_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as resolved_this_month
+            SUM(CASE WHEN complaints.created_at BETWEEN ? AND ? AND complaints.status IN ("resolved", "closed", 1, "1") THEN 1 ELSE 0 END) as resolved_this_month
         ', [$startOfMonth, $now, $startOfMonth, $now])->first();
 
         $spareStats = (clone $sparesQuery)->selectRaw('
@@ -373,7 +373,7 @@ class ReportController extends Controller
 
         $stats = (clone $query)->selectRaw('
             COUNT(*) as total,
-            SUM(CASE WHEN complaints.status = "resolved" THEN 1 ELSE 0 END) as resolved_count
+            SUM(CASE WHEN complaints.status IN ("resolved", "closed", 1, "1") THEN 1 ELSE 0 END) as resolved_count
         ')->first();
 
         if (!$stats || $stats->total == 0) {
@@ -381,7 +381,7 @@ class ReportController extends Controller
         }
 
         // Get specifically compliant resolved complaints
-        $compliantCount = (clone $query)->where('complaints.status', 'resolved')
+        $compliantCount = (clone $query)->whereIn('complaints.status', ['resolved', 'closed', 1, '1'])
             ->whereHas('slaRule', function ($q) {
                 $q->whereRaw('TIMESTAMPDIFF(HOUR, complaints.created_at, complaints.updated_at) <= sla_rules.max_resolution_time')
                     ->where('sla_rules.status', 1);
@@ -925,8 +925,8 @@ class ReportController extends Controller
             $complaintStats = $statsQuery->selectRaw('
                 assigned_employee_id,
                 COUNT(*) as total,
-                SUM(CASE WHEN status IN ("resolved", "closed") THEN 1 ELSE 0 END) as resolved,
-                AVG(CASE WHEN status IN ("resolved", "closed") AND updated_at IS NOT NULL THEN TIMESTAMPDIFF(HOUR, created_at, updated_at) ELSE NULL END) as avg_time
+                SUM(CASE WHEN status IN ("resolved", "closed", 1, "1") THEN 1 ELSE 0 END) as resolved,
+                AVG(CASE WHEN status IN ("resolved", "closed", 1, "1") AND updated_at IS NOT NULL THEN TIMESTAMPDIFF(HOUR, created_at, updated_at) ELSE NULL END) as avg_time
             ')->groupBy('assigned_employee_id')->get()->keyBy('assigned_employee_id');
 
             $allEmployees = $query->get();
@@ -1234,7 +1234,7 @@ class ReportController extends Controller
     {
         $stats = [
             'total_complaints' => Complaint::count(),
-            'resolved_complaints' => Complaint::query()->whereIn('status', ['resolved', 'closed'])->count(),
+            'resolved_complaints' => Complaint::query()->whereIn('status', ['resolved', 'closed', 1, '1'])->count(),
             'pending_complaints' => Complaint::pending()->count(),
             'overdue_complaints' => Complaint::overdue()->count(),
             'total_employees' => Employee::query()->where('status', 1)->count(),
@@ -1283,7 +1283,7 @@ class ReportController extends Controller
                 $data = $employeesQuery->withCount([
                     'assignedComplaints' => function ($q) use ($period, $user) {
                         $q->where('created_at', '>=', now()->subDays($period))
-                            ->whereIn('status', ['resolved', 'closed']);
+                            ->whereIn('status', ['resolved', 'closed', 1, '1']);
                         // Apply location filter to complaints - using whereHas on the relation
                         if ($user && !$this->canViewAllData($user)) {
                             if (!empty($user->city_ids)) {
@@ -1639,9 +1639,9 @@ class ReportController extends Controller
 
         $summary = [
             'total_complaints' => (clone $baseQuery)->count(),
-            'resolved_complaints' => (clone $baseQuery)->whereIn('status', ['resolved', 'closed'])->count(),
-            'pending_complaints' => (clone $baseQuery)->whereIn('status', ['new', 'assigned', 'in_progress'])->count(),
-            'avg_resolution_time' => (clone $baseQuery)->whereIn('status', ['resolved', 'closed'])->selectRaw('AVG(TIMESTAMPDIFF(HOUR, created_at, updated_at)) as avg_hours')->value('avg_hours') ?? 0,
+            'resolved_complaints' => (clone $baseQuery)->whereIn('status', ['resolved', 'closed', 1, '1'])->count(),
+            'pending_complaints' => (clone $baseQuery)->whereNotIn('status', ['resolved', 'closed', 1, '1'])->count(),
+            'avg_resolution_time' => (clone $baseQuery)->whereIn('status', ['resolved', 'closed', 1, '1'])->selectRaw('AVG(TIMESTAMPDIFF(HOUR, created_at, updated_at)) as avg_hours')->value('avg_hours') ?? 0,
         ];
 
         return ['data' => $data, 'summary' => $summary];
@@ -1687,7 +1687,9 @@ class ReportController extends Controller
 
         $employees = $query->get()->map(function ($employee) {
             $complaints = $employee->assignedComplaints;
-            $resolved = $complaints->whereIn('status', ['resolved', 'closed']);
+            $resolved = $complaints->filter(function ($c) {
+                return in_array($c->status, ['resolved', 'closed', 1, '1']) || (int)$c->getOriginal('status') === \App\Models\Complaint::STATUS_RESOLVED;
+            });
             return [
                 'employee' => $employee,
                 'total_complaints' => $complaints->count(),
@@ -1909,11 +1911,11 @@ class ReportController extends Controller
         $allSlaStats = (clone $baseQuery)->selectRaw('
                 category_id,
                 COUNT(*) as total,
-                SUM(CASE WHEN status IN ("resolved", "closed") THEN 1 ELSE 0 END) as resolved_count,
-                SUM(CASE WHEN status IN ("resolved", "closed") AND TIMESTAMPDIFF(HOUR, created_at, updated_at) < 24 THEN 1 ELSE 0 END) as lt_24,
-                SUM(CASE WHEN status IN ("resolved", "closed") AND TIMESTAMPDIFF(HOUR, created_at, updated_at) BETWEEN 24 AND 48 THEN 1 ELSE 0 END) as bw_24_48,
-                SUM(CASE WHEN status IN ("resolved", "closed") AND TIMESTAMPDIFF(HOUR, created_at, updated_at) > 48 THEN 1 ELSE 0 END) as gt_48,
-                SUM(CASE WHEN status IN ("resolved", "closed") THEN TIMESTAMPDIFF(HOUR, created_at, updated_at) ELSE 0 END) as total_hours
+                SUM(CASE WHEN status IN ("resolved", "closed", 1, "1") THEN 1 ELSE 0 END) as resolved_count,
+                SUM(CASE WHEN status IN ("resolved", "closed", 1, "1") AND TIMESTAMPDIFF(HOUR, created_at, updated_at) < 24 THEN 1 ELSE 0 END) as lt_24,
+                SUM(CASE WHEN status IN ("resolved", "closed", 1, "1") AND TIMESTAMPDIFF(HOUR, created_at, updated_at) BETWEEN 24 AND 48 THEN 1 ELSE 0 END) as bw_24_48,
+                SUM(CASE WHEN status IN ("resolved", "closed", 1, "1") AND TIMESTAMPDIFF(HOUR, created_at, updated_at) > 48 THEN 1 ELSE 0 END) as gt_48,
+                SUM(CASE WHEN status IN ("resolved", "closed", 1, "1") THEN TIMESTAMPDIFF(HOUR, created_at, updated_at) ELSE 0 END) as total_hours
             ')->groupBy('category_id')->get()->keyBy('category_id');
 
         $slaData = [];
