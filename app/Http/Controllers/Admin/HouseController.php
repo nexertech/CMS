@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use App\Traits\LocationFilterTrait;
 use Exception;
 
@@ -24,65 +25,85 @@ class HouseController extends Controller
      */
     public function index(Request $request)
     {
-        $query = House::query();
+        try {
+            $query = House::query();
 
-        // Search functionality
-        if ($request->has('search') && $request->search) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('username', 'like', "%{$search}%")
-                  ->orWhere('house_no', 'like', "%{$search}%")
-                  ->orWhere('name', 'like', "%{$search}%")
-                  ->orWhere('type', 'like', "%{$search}%")
-                  ->orWhere('address', 'like', "%{$search}%");
-            });
-        }
+            // Search functionality
+            if ($request->has('search') && !empty($request->search)) {
+                $search = $request->search;
+                $query->where(function($q) use ($search) {
+                    $q->where('username', 'like', "%{$search}%")
+                      ->orWhere('house_no', 'like', "%{$search}%")
+                      ->orWhere('name', 'like', "%{$search}%")
+                      ->orWhere('type', 'like', "%{$search}%")
+                      ->orWhere('address', 'like', "%{$search}%");
+                });
+            }
 
-        // Filter by city (GE Group)
-        if ($request->has('city_id') && $request->city_id) {
-            $query->where('city_id', $request->city_id);
-        }
+            // Filter by city (GE Group)
+            if ($request->has('city_id') && !empty($request->city_id)) {
+                $query->where('city_id', $request->city_id);
+            }
 
-        // Filter by sector (GE Node)
-        if ($request->has('sector_id') && $request->sector_id) {
-            $query->where('sector_id', $request->sector_id);
-        }
+            // Filter by sector (GE Node)
+            if ($request->has('sector_id') && !empty($request->sector_id)) {
+                $query->where('sector_id', $request->sector_id);
+            }
 
-        // Filter by status
-        if ($request->has('status') && $request->status) {
-            $query->where('status', $request->status);
-        }
+            // Filter by status
+            if ($request->has('status') && $request->status !== null && $request->status !== '') {
+                $query->where('status', $request->status);
+            }
 
-        $user = Auth::user();
-        $this->filterHousesByLocation($query, $user);
+            $user = Auth::user();
+            $this->filterHousesByLocation($query, $user);
 
-        $houses = $query->with(['city', 'sector'])->orderBy('id', 'desc')->paginate(10);
-        
-        // Get cities and sectors for filter dropdowns based on user permissions
-        $cityIds = $this->getUserCityIds($user);
-        $sectorIds = $this->getUserSectorIds($user);
+            $houses = $query->with(['city', 'sector'])->orderBy('id', 'desc')->paginate(10);
+            
+            // Get cities and sectors for filter dropdowns based on user permissions
+            $cityIds = $this->getUserCityIds($user);
+            $sectorIds = $this->getUserSectorIds($user);
 
-        $citiesQuery = City::where('status', 1);
-        if ($cityIds !== null) {
-            $citiesQuery->whereIn('id', $cityIds);
-        }
-        $cities = $citiesQuery->orderBy('name')->get();
+            $citiesQuery = City::query();
+            if (Schema::hasColumn('cities', 'status')) {
+                $citiesQuery->where('status', 1);
+            }
+            if ($cityIds !== null) {
+                $citiesQuery->whereIn('id', $cityIds);
+            }
+            $cities = $citiesQuery->orderBy('name')->get();
 
-        $sectorsQuery = Sector::where('status', 1);
-        if ($sectorIds !== null) {
-            $sectorsQuery->whereIn('id', $sectorIds);
-        }
-        $sectors = $sectorsQuery->orderBy('name')->get();
+            $sectorsQuery = Sector::query();
+            if (Schema::hasColumn('sectors', 'status')) {
+                $sectorsQuery->where('status', 1);
+            }
+            if ($sectorIds !== null) {
+                $sectorsQuery->whereIn('id', $sectorIds);
+            }
+            $sectors = $sectorsQuery->orderBy('name')->get();
 
-        if ($request->ajax()) {
-            return response()->json([
-                'html' => view('admin.houses.index', compact('houses', 'cities', 'sectors'))->renderSections()['content'],
-                'total' => $houses->total(),
-                'pagination' => $houses->links()->toHtml()
+            if ($request->ajax()) {
+                $sections = view('admin.houses.index', compact('houses', 'cities', 'sectors'))->renderSections();
+                return response()->json([
+                    'html' => $sections['content'] ?? '',
+                    'total' => $houses->total(),
+                    'pagination' => $houses->links()->toHtml()
+                ]);
+            }
+            
+            return view('admin.houses.index', compact('houses', 'cities', 'sectors'));
+        } catch (\Exception $e) {
+            Log::error('HouseController index error: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
             ]);
+
+            if ($request->ajax()) {
+                return response()->json(['error' => 'Error loading houses: ' . $e->getMessage()], 500);
+            }
+
+            throw $e;
         }
-        
-        return view('admin.houses.index', compact('houses', 'cities', 'sectors'));
     }
 
     /**

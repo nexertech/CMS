@@ -145,17 +145,15 @@ trait LocationFilterTrait
             return null;
         }
 
+        if ($this->hasGlobalAccess($user)) {
+            return null;
+        }
+
         $ids = $this->getNormalizedLocationIds($user);
         $cityIds = $ids['city_ids'];
         $sectorIds = $ids['sector_ids'];
 
-        // If no locations assigned, return null (all cities) for Admins/Directors
-        // This is primarily for populating form dropdowns/checkboxes
         if (empty($cityIds) && empty($sectorIds)) {
-            $roleName = strtolower($user->role->role_name ?? '');
-            if (in_array($roleName, ['admin', 'director'])) {
-                return null;
-            }
             return [];
         }
 
@@ -167,22 +165,19 @@ trait LocationFilterTrait
      */
     public function getUserSectorIds($user): ?array
     {
-        if (!$user || !$user->role) {
+        if (!$user) {
             return null;
         }
 
-        $roleName = strtolower($user->role->role_name ?? '');
+        if ($this->hasGlobalAccess($user)) {
+            return null;
+        }
 
         $ids = $this->getNormalizedLocationIds($user);
         $cityIds = $ids['city_ids'];
         $sectorIds = $ids['sector_ids'];
 
-        // If no locations assigned, return null (all sectors) for Admins/Directors
-        // This is primarily for populating form dropdowns/checkboxes
         if (empty($cityIds) && empty($sectorIds)) {
-            if (in_array($roleName, ['admin', 'director'])) {
-                return null;
-            }
             return [];
         }
 
@@ -401,9 +396,35 @@ trait LocationFilterTrait
      */
     private function getNormalizedLocationIds($user): array
     {
+        if (!$user) {
+            return ['city_ids' => [], 'sector_ids' => []];
+        }
+
+        $cityIds = $user->city_ids ?? $user->group_ids ?? [];
+        $sectorIds = $user->sector_ids ?? $user->node_ids ?? [];
+
+        if (is_string($cityIds)) {
+            $decoded = json_decode($cityIds, true);
+            $cityIds = is_array($decoded) ? $decoded : ($cityIds !== '' ? [$cityIds] : []);
+        }
+        if (is_string($sectorIds)) {
+            $decoded = json_decode($sectorIds, true);
+            $sectorIds = is_array($decoded) ? $decoded : ($sectorIds !== '' ? [$sectorIds] : []);
+        }
+
+        if (!is_array($cityIds)) {
+            $cityIds = is_null($cityIds) ? [] : [$cityIds];
+        }
+        if (!is_array($sectorIds)) {
+            $sectorIds = is_null($sectorIds) ? [] : [$sectorIds];
+        }
+
+        $cityIds = array_values(array_filter(array_map('intval', $cityIds), fn($v) => $v > 0));
+        $sectorIds = array_values(array_filter(array_map('intval', $sectorIds), fn($v) => $v > 0));
+
         return [
-            'city_ids' => $user->city_ids ?? $user->group_ids ?? [],
-            'sector_ids' => $user->sector_ids ?? $user->node_ids ?? []
+            'city_ids' => $cityIds,
+            'sector_ids' => $sectorIds
         ];
     }
 }
