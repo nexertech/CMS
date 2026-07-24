@@ -1915,7 +1915,7 @@
       }, { once: true });
 
       // Load complaint edit form via AJAX
-      const redirectTo = encodeURIComponent(window.location.href);
+      const redirectTo = encodeURIComponent(window.location.pathname + window.location.search);
       fetch(`/admin/complaints/${complaintId}/edit?format=html&redirect_to=${redirectTo}`, {
         method: 'GET',
         headers: { 'Accept': 'text/html' },
@@ -4751,7 +4751,8 @@
           if (typeof editComplaintModal === 'function') {
             editComplaintModal(complaintId);
           } else {
-            window.location.href = `/admin/complaints/${complaintId}/edit`;
+            const currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
+            window.location.href = `/admin/complaints/${complaintId}/edit?redirect_to=${currentUrl}`;
           }
           return;
         }

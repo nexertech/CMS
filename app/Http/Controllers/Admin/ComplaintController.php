@@ -476,10 +476,10 @@ class ComplaintController extends Controller
         }
 
         $validator = Validator::make($data, [
-            'title' => 'nullable|string|max:255',
-            'complaint_title_id' => 'nullable|exists:complaint_titles,id',
-            'title_other' => 'nullable|string|max:255',
             'category' => 'required|exists:complaint_categories,id',
+            'complaint_title_id' => 'required_without_all:title_other,title|nullable|exists:complaint_titles,id',
+            'title_other' => 'required_without:complaint_title_id|nullable|string|max:255',
+            'title' => 'nullable|string|max:255',
             'priority' => 'required|in:normal,emergency',
             'availability_time' => 'nullable|string|max:255',
             'description' => 'nullable|string',
@@ -487,6 +487,13 @@ class ComplaintController extends Controller
             'city_id' => 'nullable|exists:cities,id',
             'sector_id' => 'nullable|exists:sectors,id',
             'house_id' => 'required|exists:houses,id',
+        ], [
+            'complaint_title_id.required_without_all' => 'Complaint Type is required.',
+            'title_other.required_without' => 'Custom Complaint Type is required when "Other" is selected.',
+        ], [
+            'category' => 'Category',
+            'house_id' => 'House Number',
+            'priority' => 'Priority',
         ]);
 
         if ($validator->fails()) {
@@ -560,13 +567,15 @@ class ComplaintController extends Controller
      */
     private function storeMultiple(Request $request)
     {
-        $complaintsData = $request->complaints;
+        $complaintsData = $request->complaints ?? [];
 
         // Validate shared fields
         $sharedValidator = Validator::make($request->all(), [
             'city_id' => 'nullable|exists:cities,id',
             'sector_id' => 'nullable|exists:sectors,id',
             'house_id' => 'required|exists:houses,id',
+        ], [], [
+            'house_id' => 'House Number',
         ]);
 
         if ($sharedValidator->fails()) {
@@ -575,7 +584,9 @@ class ComplaintController extends Controller
                 ->withInput();
         }
 
-        // Validate each complaint entry
+        $allErrors = new \Illuminate\Support\MessageBag();
+
+        // Validate all complaint entries
         foreach ($complaintsData as $index => $entry) {
             $entryData = $entry;
             if (isset($entryData['complaint_title_id']) && $entryData['complaint_title_id'] === 'other') {
@@ -584,28 +595,41 @@ class ComplaintController extends Controller
 
             $rules = [
                 'category' => 'required|exists:complaint_categories,id',
-                'complaint_title_id' => 'nullable|exists:complaint_titles,id',
+                'complaint_title_id' => 'required_without_all:title_other,title|nullable|exists:complaint_titles,id',
+                'title_other' => 'required_without:complaint_title_id|nullable|string|max:255',
                 'title' => 'nullable|string|max:255',
-                'title_other' => 'nullable|string|max:255',
                 'priority' => 'required|in:normal,emergency',
                 'availability_time' => 'nullable|string|max:255',
                 'description' => 'nullable|string',
                 'assigned_employee_id' => 'nullable|exists:employees,id',
             ];
 
-            $validator = Validator::make($entryData, $rules, [], [
+            $messages = [
+                'complaint_title_id.required_without_all' => "Complaint #" . ($index + 1) . " Complaint Type is required.",
+                'title_other.required_without' => "Complaint #" . ($index + 1) . " Custom Title is required when 'Other' is selected.",
+            ];
+
+            $validator = Validator::make($entryData, $rules, $messages, [
                 'category' => "Complaint #" . ($index + 1) . " Category",
                 'priority' => "Complaint #" . ($index + 1) . " Priority",
                 'assigned_employee_id' => "Complaint #" . ($index + 1) . " Assign Employee",
             ]);
 
             if ($validator->fails()) {
-                return redirect()->back()
-                    ->withErrors($validator)
-                    ->withInput();
+                foreach ($validator->errors()->all() as $msg) {
+                    $allErrors->add("complaint_{$index}", $msg);
+                }
             }
         }
 
+        // If there are validation failures in ANY complaint entry, return back with ALL inputs preserved
+        if ($allErrors->any()) {
+            return redirect()->back()
+                ->withErrors($allErrors)
+                ->withInput();
+        }
+
+        // All entries valid -> Save all in DB transaction
         DB::beginTransaction();
 
         try {
@@ -750,10 +774,10 @@ class ComplaintController extends Controller
         }
 
         $validator = Validator::make($data, [
+            'category' => 'required|exists:complaint_categories,id',
+            'complaint_title_id' => 'required_without_all:title_other,title|nullable|exists:complaint_titles,id',
+            'title_other' => 'required_without:complaint_title_id|nullable|string|max:255',
             'title' => 'nullable|string|max:255',
-            'complaint_title_id' => 'nullable|exists:complaint_titles,id',
-            'title_other' => 'nullable|string|max:255',
-            'category' => 'required|exists:complaint_categories,id', // Expect ID
             'priority' => 'required|in:normal,emergency',
             'availability_time' => 'nullable|string|max:255',
             'description' => 'nullable|string',
@@ -764,6 +788,9 @@ class ComplaintController extends Controller
             'city_id' => 'nullable|exists:cities,id',
             'sector_id' => 'nullable|exists:sectors,id',
             'house_id' => 'required|exists:houses,id',
+        ], [
+            'complaint_title_id.required_without_all' => 'Complaint Type is required.',
+            'title_other.required_without' => 'Custom Complaint Type is required when "Other" is selected.',
         ]);
 
         if ($validator->fails()) {
@@ -924,6 +951,15 @@ class ComplaintController extends Controller
         if ($request->filled('redirect_to')) {
             $redirectTo = $request->redirect_to;
             
+            // If full URL was passed, convert to relative path if host matches current host
+            if (is_string($redirectTo) && (str_starts_with($redirectTo, 'http://') || str_starts_with($redirectTo, 'https://'))) {
+                $parsed = parse_url($redirectTo);
+                $host = $parsed['host'] ?? null;
+                if ($host === $request->getHost()) {
+                    $redirectTo = ($parsed['path'] ?? '/') . (isset($parsed['query']) ? '?' . $parsed['query'] : '');
+                }
+            }
+
             // Security: Only allow internal redirects to prevent Open Redirect attacks
             // Must be a relative path starting with '/' and not containing backslashes (which browsers can convert to slashes)
             if (is_string($redirectTo) && str_starts_with($redirectTo, '/') && !str_starts_with($redirectTo, '//') && !str_contains($redirectTo, '\\')) {

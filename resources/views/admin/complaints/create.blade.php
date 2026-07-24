@@ -175,14 +175,31 @@
 
                     <!-- Complaints Container - Repeatable Entries -->
                     <div id="complaints-container">
-                        <!-- Complaint Entry #1 -->
-                        <div class="complaint-entry" data-index="0">
+                        @php
+                            $oldComplaints = old('complaints');
+                            if (!is_array($oldComplaints) || empty($oldComplaints)) {
+                                $oldComplaints = [0 => []];
+                            }
+                        @endphp
+
+                        @foreach($oldComplaints as $index => $oldEntry)
+                        @php
+                            $catVal = is_array($oldEntry) && isset($oldEntry['category']) ? $oldEntry['category'] : old("complaints.{$index}.category");
+                            $titleVal = is_array($oldEntry) && isset($oldEntry['complaint_title_id']) ? $oldEntry['complaint_title_id'] : old("complaints.{$index}.complaint_title_id");
+                            $titleOtherVal = is_array($oldEntry) && isset($oldEntry['title_other']) ? $oldEntry['title_other'] : old("complaints.{$index}.title_other");
+                            $priorityVal = is_array($oldEntry) && isset($oldEntry['priority']) ? $oldEntry['priority'] : old("complaints.{$index}.priority", 'normal');
+                            $availVal = is_array($oldEntry) && isset($oldEntry['availability_time']) ? $oldEntry['availability_time'] : old("complaints.{$index}.availability_time");
+                            $empVal = is_array($oldEntry) && isset($oldEntry['assigned_employee_id']) ? $oldEntry['assigned_employee_id'] : old("complaints.{$index}.assigned_employee_id");
+                            $descVal = is_array($oldEntry) && isset($oldEntry['description']) ? $oldEntry['description'] : old("complaints.{$index}.description");
+                        @endphp
+                        <!-- Complaint Entry #{{ $loop->iteration }} -->
+                        <div class="complaint-entry" data-index="{{ $index }}">
                             <div class="complaint-entry-header d-flex justify-content-between align-items-center mb-3">
                                 <h6 class="text-white fw-bold mb-0">
                                     <i data-feather="alert-triangle" class="me-2" style="width: 16px; height: 16px;"></i>
-                                    <span class="complaint-number">Complaint #1</span>
+                                    <span class="complaint-number">Complaint #{{ $loop->iteration }}</span>
                                 </h6>
-                                <button type="button" class="btn btn-sm btn-remove-complaint" onclick="removeComplaint(this)" style="display: none; background: rgba(220,53,69,0.2); color: #ff6b6b; border: 1px solid rgba(220,53,69,0.3); border-radius: 8px; padding: 4px 12px; font-size: 13px;">
+                                <button type="button" class="btn btn-sm btn-remove-complaint" onclick="removeComplaint(this)" style="{{ count($oldComplaints) > 1 ? 'display: inline-flex;' : 'display: none;' }} background: rgba(220,53,69,0.2); color: #ff6b6b; border: 1px solid rgba(220,53,69,0.3); border-radius: 8px; padding: 4px 12px; font-size: 13px;">
                                     <i data-feather="x" style="width: 14px; height: 14px;"></i> Remove
                                 </button>
                             </div>
@@ -190,10 +207,10 @@
                                 <div class="col-md-4">
                                     <div class="mb-3">
                                         <label class="form-label text-white">Category <span class="text-danger">*</span></label>
-                                        <select name="complaints[0][category]" class="form-select complaint-category" required>
+                                        <select name="complaints[{{ $index }}][category]" class="form-select complaint-category" required>
                                             <option value="">Select Category</option>
                                             @foreach ($categories as $id => $name)
-                                                <option value="{{ $id }}">{{ ucfirst($name) }}</option>
+                                                <option value="{{ $id }}" {{ (string)$catVal === (string)$id ? 'selected' : '' }}>{{ ucfirst($name) }}</option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -202,12 +219,12 @@
                                     <div class="mb-3">
                                         <label class="form-label text-white">Complaint Type <span class="text-danger">*</span></label>
                                         <div class="title-dropdown-container">
-                                            <select name="complaints[0][complaint_title_id]" class="form-select complaint-title" required autocomplete="off">
+                                            <select name="complaints[{{ $index }}][complaint_title_id]" class="form-select complaint-title" required autocomplete="off" data-old-value="{{ $titleVal }}">
                                                 <option value="">Select Category First</option>
                                             </select>
                                         </div>
-                                        <div class="title-input-container" style="display: none; position: relative;">
-                                            <input type="text" class="form-control complaint-title-other" name="complaints[0][title_other]" placeholder="Enter custom title...">
+                                        <div class="title-input-container" style="{{ $titleOtherVal || (string)$titleVal === 'other' ? 'display: block;' : 'display: none;' }} position: relative;">
+                                            <input type="text" class="form-control complaint-title-other" name="complaints[{{ $index }}][title_other]" value="{{ $titleOtherVal }}" placeholder="Enter custom title...">
                                             <button type="button" class="btn btn-sm btn-link text-white position-absolute end-0 top-0 mt-1 me-1 btn-back-to-select" title="Back to dropdown">
                                                 <i data-feather="corner-up-left" style="width: 14px; height: 14px;"></i>
                                             </button>
@@ -217,29 +234,30 @@
                                 <div class="col-md-4">
                                     <div class="mb-3">
                                         <label class="form-label text-white">Priority <span class="text-danger">*</span></label>
-                                        <select name="complaints[0][priority]" class="form-select complaint-priority" required>
-                                            <option value="normal" selected>Normal</option>
-                                            <option value="emergency">Emergency</option>
+                                        <select name="complaints[{{ $index }}][priority]" class="form-select complaint-priority" required>
+                                            <option value="normal" {{ (string)$priorityVal === 'normal' ? 'selected' : '' }}>Normal</option>
+                                            <option value="emergency" {{ (string)$priorityVal === 'emergency' ? 'selected' : '' }}>Emergency</option>
                                         </select>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="mb-3">
                                         <label class="form-label text-white">Availability Time</label>
-                                        <input type="datetime-local" class="form-control complaint-availability" name="complaints[0][availability_time]">
+                                        <input type="datetime-local" class="form-control complaint-availability" name="complaints[{{ $index }}][availability_time]" value="{{ $availVal }}">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="mb-3">
                                         <label class="form-label text-white">Assign Employee</label>
-                                        <select name="complaints[0][assigned_employee_id]" class="form-select complaint-employee">
+                                        <select name="complaints[{{ $index }}][assigned_employee_id]" class="form-select complaint-employee">
                                             <option value="">Select Employee (Optional)</option>
                                             @if (isset($employees) && $employees->count() > 0)
                                                 @foreach ($employees as $employee)
                                                     <option value="{{ $employee->id }}"
                                                         data-category="{{ $employee->category_id ?? '' }}"
                                                         data-city="{{ $employee->city_id }}"
-                                                        data-sector="{{ $employee->sector_id }}">
+                                                        data-sector="{{ $employee->sector_id }}"
+                                                        {{ (string)$empVal === (string)$employee->id ? 'selected' : '' }}>
                                                         {{ $employee->name }}@if($employee->designation) ({{ $employee->designation->name }})@endif</option>
                                                 @endforeach
                                             @else
@@ -257,11 +275,12 @@
                                             <p class="fixed-questions-text mb-0 mt-1"></p>
                                         </div>
                                         <label class="form-label text-white">Description</label>
-                                        <textarea class="form-control complaint-description" name="complaints[0][description]" rows="3" autocomplete="off"></textarea>
+                                        <textarea class="form-control complaint-description" name="complaints[{{ $index }}][description]" rows="3" autocomplete="off">{{ $descVal }}</textarea>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                        @endforeach
                     </div>
 
                     <!-- Add Another Complaint Button -->
@@ -562,11 +581,12 @@
                 const optCity = opt.getAttribute('data-city') || '';
                 const optSector = opt.getAttribute('data-sector') || '';
 
-                const matchCategory = !category || optCategory === category;
+                const matchCategory = !category || !optCategory || String(optCategory) === String(category);
                 const matchCity = !cityId || String(optCity) === String(cityId);
                 const matchSector = !sectorId || String(optSector) === String(sectorId);
 
-                const show = matchCategory && matchCity && matchSector;
+                const isSelected = currentSelectedId && String(opt.value) === String(currentSelectedId);
+                const show = isSelected || (matchCategory && matchCity && matchSector);
                 opt.hidden = !show;
                 opt.style.display = show ? '' : 'none';
                 opt.disabled = !show;
@@ -584,7 +604,7 @@
         // ============================================
         // Load complaint titles for a specific entry
         // ============================================
-        function loadTitlesForEntry(entry) {
+        function loadTitlesForEntry(entry, selectedTitleId = null) {
             const categorySelect = entry.querySelector('.complaint-category');
             const titleSelect = entry.querySelector('.complaint-title');
             const titleOther = entry.querySelector('.complaint-title-other');
@@ -594,21 +614,15 @@
             if (!categorySelect || !titleSelect) return;
 
             const category = categorySelect.value;
-            titleSelect.innerHTML = '<option value="">Loading titles...</option>';
-            titleSelect.disabled = true;
-
-            if (titleOther) {
-                titleOther.style.display = 'none';
-                titleOther.value = '';
-            }
-            if (titleDropdown) titleDropdown.style.display = 'block';
-            if (titleInputContainer) titleInputContainer.style.display = 'none';
 
             if (!category) {
                 titleSelect.innerHTML = '<option value="">Select Category First</option>';
                 titleSelect.disabled = false;
                 return;
             }
+
+            titleSelect.innerHTML = '<option value="">Loading titles...</option>';
+            titleSelect.disabled = true;
 
             const url = `{{ route('admin.complaint-titles.by-category') }}?category=${encodeURIComponent(category)}`;
 
@@ -618,6 +632,7 @@
             .then(response => response.json())
             .then(data => {
                 titleSelect.innerHTML = '<option value="">Select Complaint Title</option>';
+                let matchedTitle = false;
                 if (data && data.length > 0) {
                     data.sort((a, b) => (a.title || '').toLowerCase().localeCompare((b.title || '').toLowerCase(), undefined, { numeric: true }))
                         .forEach(title => {
@@ -626,6 +641,10 @@
                             option.textContent = title.title;
                             if (title.description) option.setAttribute('title', title.description);
                             if (title.questions) option.setAttribute('data-questions', title.questions);
+                            if (selectedTitleId && String(title.id) === String(selectedTitleId)) {
+                                option.selected = true;
+                                matchedTitle = true;
+                            }
                             titleSelect.appendChild(option);
                         });
                 } else {
@@ -635,9 +654,17 @@
                 const otherOption = document.createElement('option');
                 otherOption.value = 'other';
                 otherOption.textContent = 'Other';
+                if (selectedTitleId && (selectedTitleId === 'other' || (!matchedTitle && titleOther && titleOther.value))) {
+                    otherOption.selected = true;
+                }
                 titleSelect.appendChild(otherOption);
 
+                if (selectedTitleId && selectedTitleId !== 'other' && matchedTitle) {
+                    titleSelect.value = selectedTitleId;
+                }
+
                 titleSelect.disabled = false;
+                handleTitleChangeForEntry(entry);
             })
             .catch(error => {
                 console.error('Error loading titles:', error);
@@ -1002,11 +1029,33 @@
 
             // ---- Initial Setup ----
 
-            // Attach listeners to the first entry
-            const firstEntry = document.querySelector('#complaints-container .complaint-entry');
-            if (firstEntry) {
-                attachEntryListeners(firstEntry);
-            }
+            // Attach listeners and restore state for all rendered complaint entries
+            const allEntries = document.querySelectorAll('#complaints-container .complaint-entry');
+            let maxIdx = 0;
+
+            allEntries.forEach(entry => {
+                attachEntryListeners(entry);
+
+                const idx = parseInt(entry.getAttribute('data-index') || 0, 10);
+                if (idx > maxIdx) maxIdx = idx;
+
+                const categorySelect = entry.querySelector('.complaint-category');
+                const titleSelect = entry.querySelector('.complaint-title');
+                const oldTitleValue = titleSelect ? titleSelect.getAttribute('data-old-value') : null;
+                const titleOther = entry.querySelector('.complaint-title-other');
+
+                if (categorySelect && categorySelect.value) {
+                    let titleToSelect = oldTitleValue;
+                    if (!titleToSelect && titleOther && titleOther.value) {
+                        titleToSelect = 'other';
+                    }
+                    loadTitlesForEntry(entry, titleToSelect);
+                }
+            });
+
+            complaintCounter = maxIdx + 1;
+            updateComplaintNumbers();
+            updateSubmitButton();
 
             const defaultCityId = @json(old('city_id', $defaultCityId));
             const defaultSectorId = @json(old('sector_id', $defaultSectorId));
