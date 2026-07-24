@@ -1320,7 +1320,7 @@
                 @foreach($lowStockItems as $item)
                 <tr>
                   <td>{{ $item->item_name }}</td>
-                  <td>{{ ucfirst($item->category) }}</td>
+                  <td>{{ $item->category->name ?? (is_string($item->category) ? ucfirst($item->category) : 'N/A') }}</td>
                   <td>{{ $item->stock_quantity }}</td>
                   <td>{{ $item->threshold_level }}</td>
                   <td>

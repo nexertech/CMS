@@ -45,7 +45,7 @@ class AdminController extends Controller
             ->get();
 
         // Get low stock items
-        $lowStockItems = Spare::lowStock()
+        $lowStockItems = Spare::with('category')->lowStock()
             ->orderBy('stock_quantity', 'asc')
             ->limit(10)
             ->get();

@@ -204,7 +204,7 @@ class DashboardController extends Controller
             ->get();
 
         // Get low stock items with location filtering
-        $lowStockItemsQuery = Spare::lowStock();
+        $lowStockItemsQuery = Spare::with('category')->lowStock();
         $this->filterSparesByLocation($lowStockItemsQuery, $user);
         $lowStockItems = $lowStockItemsQuery
             ->orderBy('stock_quantity', 'asc')
