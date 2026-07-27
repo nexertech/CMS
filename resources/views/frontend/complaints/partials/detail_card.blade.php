@@ -47,6 +47,32 @@
   $titleName = $complaint->complaintTitle?->title ?? $complaint->title ?? 'N/A';
   $catDisplay = $complaint->getCategoryDisplayAttribute();
   $displayText = $catDisplay . ' - ' . $titleName;
+
+  // Extract Registered By and Status Changed By
+  $createdLog = ($complaint && $complaint->logs) ? $complaint->logs->where('action', 'created')->first() : null;
+  $registeredBy = null;
+  if ($createdLog) {
+      if (str_contains($createdLog->remarks, 'created by ')) {
+          $registeredBy = trim(str_replace('Complaint created by ', '', $createdLog->remarks));
+      } elseif (str_contains($createdLog->remarks, 'registered via App by ')) {
+          $registeredBy = trim(str_replace('Complaint registered via App by ', '', $createdLog->remarks));
+      } else {
+          $registeredBy = $createdLog->actionBy->name ?? 'Staff';
+      }
+  }
+
+  $statusLog = ($complaint && $complaint->logs) ? $complaint->logs->whereIn('action', ['status_changed', 'resolved', 'closed'])->last() : null;
+  $statusChangedBy = null;
+  if ($statusLog) {
+      if (str_contains($statusLog->remarks, ' by ')) {
+          $parts = explode(' by ', $statusLog->remarks);
+          $afterBy = end($parts);
+          $cleanParts = explode('. Remarks:', $afterBy);
+          $statusChangedBy = trim($cleanParts[0]);
+      } else {
+          $statusChangedBy = $statusLog->actionBy->name ?? $statusLog->actionBy->username ?? 'Staff';
+      }
+  }
 @endphp
 <style>
   /* Navy Theme Colors & Card Styles */
@@ -291,6 +317,30 @@
                         </div>
                     </div>
                 </div>
+
+                @if($statusChangedBy)
+                <div class="info-item">
+                    <div class="d-flex align-items-center">
+                        <i data-feather="user-check" class="me-3 text-muted"></i>
+                        <div class="w-100 d-flex justify-content-between">
+                            <span class="text-muted small text-uppercase">Changed By:</span>
+                            <span class="fw-medium text-dark text-end">{{ $statusChangedBy }}</span>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                @if($registeredBy)
+                <div class="info-item">
+                    <div class="d-flex align-items-center">
+                        <i data-feather="user-plus" class="me-3 text-muted"></i>
+                        <div class="w-100 d-flex justify-content-between">
+                            <span class="text-muted small text-uppercase">Registered By:</span>
+                            <span class="fw-medium text-dark text-end">{{ $registeredBy }}</span>
+                        </div>
+                    </div>
+                </div>
+                @endif
 
                 <div class="info-item">
                     <div class="d-flex align-items-center">

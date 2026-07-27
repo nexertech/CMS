@@ -370,24 +370,79 @@ class ComplaintController extends Controller
 
         // Order by ID descending (3, 2, 1...) - newest/highest ID first
         // Clear any existing orders and set explicit descending order
-        $query->with(['assignedEmployee', 'house', 'category', 'complaintTitle']) // Added relations
+        $query->with(['assignedEmployee.designation', 'house', 'category', 'complaintTitle', 'city.cme', 'sector.cme', 'logs.actionBy'])
             ->reorder()
             ->orderBy('complaints.id', 'desc');
         if ($request->has('export_all')) {
             $statusIdMap = Complaint::getStatusIdMap();
             $exportComplaints = $query->get()->map(function($complaint) use ($statusIdMap) {
-                $displayStatus = ((int)$complaint->status === Complaint::STATUS_UNASSIGNED) ? 'assigned' : ($statusIdMap[(int)$complaint->status] ?? $complaint->status);
-                $statusText = $displayStatus === 'resolved' ? 'Addressed' : $complaint->getStatusDisplayAttribute();
+                $rawStatus = $complaint->status ?? 'new';
+                $displayStatus = ((int)$rawStatus === Complaint::STATUS_UNASSIGNED || $rawStatus === 'new') ? 'assigned' : ($statusIdMap[(int)$rawStatus] ?? $rawStatus);
+                $statusText = ($displayStatus === 'resolved') ? 'Addressed' : $complaint->getStatusDisplayAttribute();
+
+                // CMES name
+                $cmesName = $complaint->city?->cme?->name ?? $complaint->sector?->cme?->name ?? 'N/A';
+
+                // Registered By
+                $createdLog = $complaint->logs ? $complaint->logs->where('action', 'created')->first() : null;
+                $registeredBy = 'Staff';
+                if ($createdLog) {
+                    if (str_contains($createdLog->remarks, 'created by ')) {
+                        $registeredBy = trim(str_replace('Complaint created by ', '', $createdLog->remarks));
+                    } elseif (str_contains($createdLog->remarks, 'registered via App by ')) {
+                        $registeredBy = trim(str_replace('Complaint registered via App by ', '', $createdLog->remarks));
+                    } else {
+                        $registeredBy = $createdLog->actionBy->name ?? 'Staff';
+                    }
+                }
+
+                // Changed By
+                $statusLog = $complaint->logs ? $complaint->logs->whereIn('action', ['status_changed', 'resolved', 'closed'])->last() : null;
+                $statusChangedBy = '-';
+                if ($statusLog) {
+                    if (str_contains($statusLog->remarks, ' by ')) {
+                        $parts = explode(' by ', $statusLog->remarks);
+                        $afterBy = end($parts);
+                        $cleanParts = explode('. Remarks:', $afterBy);
+                        $statusChangedBy = trim($cleanParts[0]);
+                    } else {
+                        $statusChangedBy = $statusLog->actionBy->name ?? $statusLog->actionBy->username ?? 'Staff';
+                    }
+                }
+
+                // Assigned Employee
+                $empName = $complaint->assignedEmployee?->name ?? 'Unassigned';
+                if ($complaint->assignedEmployee && $complaint->assignedEmployee->designation) {
+                    $designationName = $complaint->assignedEmployee->designation->name ?? $complaint->assignedEmployee->designation;
+                    if ($designationName && $designationName !== 'N/A') {
+                        $empName .= " ({$designationName})";
+                    }
+                }
+
+                // Priority (Default to Normal if empty/blank)
+                $pVal = strtolower(trim((string)$complaint->priority));
+                $priorityText = in_array($pVal, ['emergency', 'urgent', 'high'], true) ? 'Emergency' : 'Normal';
 
                 return [
                     'id' => (int)$complaint->id,
-                    'created_at' => $complaint->created_at ? $complaint->created_at->format('M d, Y H:i') : '-',
-                    'closed_at' => $complaint->closed_at ? $complaint->closed_at->format('M d, Y H:i') : ($complaint->resolved_at ? $complaint->resolved_at->format('M d, Y H:i') : '-'),
+                    'cmp_id' => 'CMP-' . str_pad($complaint->complaint_id ?? $complaint->id, 4, '0', STR_PAD_LEFT),
+                    'created_at' => $complaint->created_at ? $complaint->created_at->timezone('Asia/Karachi')->format('M d, Y H:i:s') : '-',
+                    'closed_at' => $complaint->closed_at ? $complaint->closed_at->timezone('Asia/Karachi')->format('M d, Y H:i:s') : ($complaint->resolved_at ? $complaint->resolved_at->timezone('Asia/Karachi')->format('M d, Y H:i:s') : '-'),
+                    'cmes' => $cmesName,
+                    'city' => $complaint->city->name ?? 'N/A',
+                    'sector' => $complaint->sector->name ?? 'N/A',
                     'house_no' => $complaint->house->house_no ?? 'N/A',
-                    'status' => $statusText,
-                    'category' => $complaint->getCategoryDisplayAttribute(),
+                    'name' => $complaint->house->name ?? 'N/A',
+                    'phone' => $complaint->house->phone ?? 'N/A',
+                    'address' => $complaint->house->address ?? 'N/A',
+                    'category' => $complaint->getCategoryDisplayAttribute() ?? 'N/A',
                     'type' => $complaint->complaintTitle->title ?? $complaint->title ?? 'N/A',
-                    'priority' => $complaint->getPriorityDisplayAttribute() ?? 'N/A',
+                    'description' => $complaint->description ?: 'N/A',
+                    'status' => $statusText,
+                    'registered_by' => $registeredBy,
+                    'changed_by' => $statusChangedBy,
+                    'assigned_employee' => $empName,
+                    'priority' => $priorityText,
                 ];
             });
 

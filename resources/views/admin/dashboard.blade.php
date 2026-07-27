@@ -2228,15 +2228,17 @@
         });
     };
 
-    // Client-side Excel (CSV) exporter for modal table
+    // Client-side Excel exporter for modal table with full details & auto-adjust column width
     window.exportModalToExcel = function() {
         const modalElement = document.getElementById('complaintsListModal');
         if (!modalElement) return;
 
         const btn = document.querySelector('#complaintsListModal button[onclick="exportModalToExcel()"]');
-        const originalHtml = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Exporting...';
+        const originalHtml = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Exporting...';
+        }
 
         const urlParams = new URLSearchParams(window.location.search);
         urlParams.set('export_all', '1');
@@ -2260,8 +2262,10 @@
         })
         .then(response => response.json())
         .then(data => {
-            btn.disabled = false;
-            btn.innerHTML = originalHtml;
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
 
             if (!data || !data.complaints || data.complaints.length === 0) {
                 alert('No complaints found to export.');
@@ -2269,42 +2273,80 @@
             }
 
             const modalTitle = document.getElementById('complaintsListModalLabel').textContent.trim() || 'Complaints';
+            const totalCount = data.complaints.length;
 
-            // Build CSV content with UTF-8 BOM
-            let csvContent = '\uFEFF'; // Add BOM for Excel UTF-8 support
-            
-            // Header Row
-            csvContent += 'CMP-ID,Reg. Date,Addr. Time,House,Status,Nature,Type,Priority\r\n';
+            // Build CSV content with UTF-8 BOM so Excel opens it cleanly without warnings
+            let csvContent = '\uFEFF';
 
-            // Helper to escape values and wrap in Excel formula to force left-alignment
+            // Header Row (Starts at Row 1)
+            const headers = [
+                'CMP-ID',
+                'Reg. Date/Time',
+                'CMES',
+                'GE Group',
+                'GE Node',
+                'House No.',
+                'Complainant Name',
+                'Phone',
+                'Address',
+                'Nature',
+                'Type',
+                'Priority',
+                'Registered By',
+                'Status',
+                'Changed By',
+                'Assigned Employee',
+                'Addressed Time'
+            ];
+
+            csvContent += headers.map(h => `"${String(h).replace(/"/g, '""')}"`).join(',') + '\r\n';
+
+            // Helper to format values for CSV
             const fmt = (val) => {
-                const cleanVal = String(val || '').replace(/"/g, '""');
-                return '"=""' + cleanVal + '"""';
+                const cleanVal = String(val === null || val === undefined ? '' : val).replace(/"/g, '""');
+                return `"${cleanVal}"`;
+            };
+
+            // Helper to format numeric strings (like Phone) as Excel text formula to force left-alignment
+            const fmtText = (val) => {
+                const cleanVal = String(val === null || val === undefined ? 'N/A' : val).replace(/"/g, '""');
+                return `="""${cleanVal}"""`;
             };
 
             data.complaints.forEach(row => {
-                const cmpIdText = 'CMP-' + String(row.id).padStart(4, '0');
                 let rowData = [
-                    fmt(cmpIdText),
+                    fmt(row.cmp_id || ''),
                     fmt(row.created_at || '-'),
-                    fmt(row.closed_at || '-'),
+                    fmt(row.cmes || 'N/A'),
+                    fmt(row.city || 'N/A'),
+                    fmt(row.sector || 'N/A'),
                     fmt(row.house_no || 'N/A'),
+                    fmt(row.name || 'N/A'),
+                    fmtText(row.phone || 'N/A'),
+                    fmt(row.address || 'N/A'),
+                    fmt(row.category || 'N/A'),
+                    fmt(row.type || 'N/A'),
+                    fmt(row.priority || 'Normal'),
+                    fmt(row.registered_by || '-'),
                     fmt(row.status || '-'),
-                    fmt(row.category || '-'),
-                    fmt(row.type || '-'),
-                    fmt(row.priority || '-')
+                    fmt(row.changed_by || '-'),
+                    fmt(row.assigned_employee || 'Unassigned'),
+                    fmt(row.closed_at || '-')
                 ];
                 csvContent += rowData.join(',') + '\r\n';
             });
 
-            // Create Blob and trigger download
+            // Single Bottom Total Summary Row
+            csvContent += `\r\n"Total Complaints","${totalCount}"\r\n`;
+
+            // Create Blob and trigger download as .csv
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const downloadUrl = URL.createObjectURL(blob);
             const link = document.createElement('a');
             const dateStr = new Date().toISOString().slice(0, 10);
             
             link.setAttribute('href', downloadUrl);
-            link.setAttribute('download', modalTitle.replace(/\s+/g, '_') + '_' + dateStr + '.csv');
+            link.setAttribute('download', modalTitle.replace(/\s+/g, '_') + '_Report_' + dateStr + '.csv');
             link.style.visibility = 'hidden';
             document.body.appendChild(link);
             link.click();
@@ -2312,8 +2354,10 @@
         })
         .catch(err => {
             console.error(err);
-            btn.disabled = false;
-            btn.innerHTML = originalHtml;
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
             alert('Error exporting data. Please try again.');
         });
     };
