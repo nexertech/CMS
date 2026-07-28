@@ -22,6 +22,39 @@
         </p>
     </div>
 
+    <!-- PRINT SLIP NOTIFICATION BANNER -->
+    @if(session('print_complaint_id') || session('print_complaint_ids'))
+        @php
+            $printIds = session('print_complaint_ids') ?? [session('print_complaint_id')];
+        @endphp
+        <div class="alert alert-success d-flex align-items-center justify-content-between mb-4" 
+             style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 12px; padding: 15px 20px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
+            <div class="d-flex align-items-center gap-3">
+                <i data-feather="printer" style="width: 28px; height: 28px; stroke-width: 2.5;"></i>
+                <div>
+                    <h6 class="mb-1 text-white fw-bold" style="font-size: 1.1rem;">
+                        Complaint {{ count($printIds) > 1 ? 'Slips Ready to Print' : 'Slip Ready to Print' }}!
+                    </h6>
+                    <p class="mb-0 text-white-50 small">
+                        Click the button(s) below to print slip(s) directly if popups were blocked by your browser.
+                    </p>
+                </div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                @foreach($printIds as $idx => $pid)
+                    <a href="{{ route('admin.complaints.print-slip', $pid) }}" 
+                       target="_blank"
+                       onclick="var w = window.open(this.href, 'PrintSlip_{{ $pid }}', 'width=800,height=700,scrollbars=yes,resizable=yes'); if(w) { w.focus(); return false; }"
+                       class="btn btn-light fw-bold d-inline-flex align-items-center gap-1 shadow-sm"
+                       style="border-radius: 8px; font-size: 0.9rem; color: #047857; text-decoration: none; cursor: pointer;">
+                        <i data-feather="printer" style="width: 16px; height: 16px;"></i>
+                        Print Slip #{{ $pid }}
+                    </a>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     <!-- FILTERS -->
     <div class="card-glass mb-4" style="display: inline-block; width: fit-content;">
         <div class="card-header">
@@ -52,10 +85,8 @@
                         <select class="form-select" name="priority" onchange="submitComplaintsFilters()"
                             style="font-size: 0.9rem; width: 140px;">
                             <option value="" {{ request('priority') ? '' : 'selected' }}>All</option>
-                            <option value="low" {{ request('priority') == 'low' ? 'selected' : '' }}>Low</option>
-                            <option value="medium" {{ request('priority') == 'medium' ? 'selected' : '' }}>Medium</option>
-                            <option value="high" {{ request('priority') == 'high' ? 'selected' : '' }}>High</option>
-                            <option value="urgent" {{ request('priority') == 'urgent' ? 'selected' : '' }}>Urgent</option>
+                            <option value="normal" {{ request('priority') == 'normal' ? 'selected' : '' }}>Normal</option>
+                            <option value="emergency" {{ request('priority') == 'emergency' ? 'selected' : '' }}>Emergency</option>
                         </select>
                     </div>
                     <div class="col-auto">
@@ -104,7 +135,7 @@
                         <select class="form-select" name="status" onchange="submitComplaintsFilters()"
                             style="font-size: 0.9rem; width: 140px;">
                             <option value="" {{ request('status') ? '' : 'selected' }}>All</option>
-                            <option value="new" {{ request('status') == 'new' ? 'selected' : '' }}>Unassigned</option>
+                            <option value="unassigned" {{ request('status') == 'unassigned' ? 'selected' : '' }}>Unassigned</option>
                             <option value="assigned" {{ request('status') == 'assigned' ? 'selected' : '' }}>Assigned</option>
                             <option value="in_progress" {{ request('status') == 'in_progress' ? 'selected' : '' }}>In Progress
                             </option>
@@ -121,7 +152,8 @@
                                 Un-Authorized</option>
                             <option value="barrack_damages" {{ request('status') == 'barrack_damages' ? 'selected' : '' }}>Barrack
                                 Damages</option>
-                            <option value="closed" {{ request('status') == 'closed' ? 'selected' : '' }}>Closed</option>
+                            <option value="door_lock" {{ request('status') == 'door_lock' ? 'selected' : '' }}>Door
+                                Lock</option>
                         </select>
                     </div>
                     <div class="col-auto">
@@ -195,7 +227,6 @@
                                             $status = $complaint->status ?? 'unassigned';
                                             $statusColorMap = [
                                                 'unassigned' => ['bg' => '#000000', 'border' => '#333333'],
-                                                'new' => ['bg' => '#000000', 'border' => '#333333'],
                                                 'assigned' => ['bg' => '#16a34a', 'border' => '#15803d'],
                                                 'in_progress' => ['bg' => '#dd4040', 'border' => '#b13030'],
                                                 'resolved' => ['bg' => '#475569', 'border' => '#334155'],
@@ -206,13 +237,12 @@
                                                 'product_na' => ['bg' => '#f97316', 'border' => '#ea580c'],
                                                 'un_authorized' => ['bg' => '#ec4899', 'border' => '#db2777'],
                                                 'barrack_damages' => ['bg' => '#808000', 'border' => '#6b6b00'],
-                                                'closed' => ['bg' => '#6b7280', 'border' => '#4b5563'],
+                                                'door_lock' => ['bg' => '#000000', 'border' => '#000000'],
                                             ];
                                             $c = $statusColorMap[$status] ?? ['bg' => '#64748b', 'border' => '#475569'];
                                             
                                             $statusLabelMap = [
                                                 'unassigned' => 'Unassigned',
-                                                'new' => 'Unassigned',
                                                 'assigned' => 'Assigned',
                                                 'in_progress' => 'In Progress',
                                                 'resolved' => 'Addressed',
@@ -223,7 +253,7 @@
                                                 'product_na' => 'Product NA',
                                                 'un_authorized' => 'Un-Authorized',
                                                 'barrack_damages' => 'Barrack Damages',
-                                                'closed' => 'Closed',
+                                                'door_lock' => 'Door Lock',
                                             ];
                                             $label = $statusLabelMap[$status] ?? ucfirst(str_replace('_', ' ', $status));
                                         @endphp
@@ -240,19 +270,14 @@
                                 </td>
                                 <td>
                                     @php
-                                        $priority = $complaint->priority ?? 'medium';
-                                        $priorityColors = [
-                                            'low' => ['bg' => '#15803d', 'text' => '#ffffff', 'border' => '#166534'],
-                                            'medium' => ['bg' => '#eab308', 'text' => '#ffffff', 'border' => '#ca8a04'],
-                                            'high' => ['bg' => '#c2410c', 'text' => '#ffffff', 'border' => '#9a3412'],
-                                            'urgent' => ['bg' => '#991b1b', 'text' => '#ffffff', 'border' => '#7f1d1d'],
-                                            'emergency' => ['bg' => '#991b1b', 'text' => '#ffffff', 'border' => '#7f1d1d'],
-                                        ];
-                                        $priorityColor = $priorityColors[$priority] ?? $priorityColors['medium'];
-                                        $priorityDisplay = ucfirst($priority);
+                                        $isEmergency = strtolower($complaint->priority ?? 'normal') === 'emergency';
+                                        $priorityDisplay = $isEmergency ? 'Emergency' : 'Normal';
+                                        $priorityColor = $isEmergency 
+                                            ? ['bg' => '#991b1b', 'text' => '#ffffff', 'border' => '#7f1d1d']
+                                            : ['bg' => '#1d4ed8', 'text' => '#ffffff', 'border' => '#1e40af'];
                                     @endphp
                                     <span class="badge priority-badge"
-                                        style="background-color: {{ $priorityColor['bg'] }} !important; color: {{ $priorityColor['text'] }} !important; border: 1px solid {{ $priorityColor['border'] }} !important; font-size: 10px !important; font-weight: 600 !important; border-radius: 6px !important;">
+                                        style="background-color: {{ $priorityColor['bg'] }} !important; color: {{ $priorityColor['text'] }} !important; border: 1px solid {{ $priorityColor['border'] }} !important; width: 90px !important; min-width: 90px !important; max-width: 90px !important; display: inline-block !important; text-align: center !important; font-size: 10px !important; font-weight: 600 !important; border-radius: 6px !important; padding: 4px 6px !important;">
                                         {{ $priorityDisplay }}
                                     </span>
                                 </td>
@@ -312,14 +337,13 @@
     <style>
         /* Make priority badges a fixed width so all boxes align uniformly */
         .priority-badge {
-            display: inline-block;
-            min-width: 72px;
-            max-width: 72px;
-            width: 72px;
-            text-align: center;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            display: inline-block !important;
+            min-width: 90px !important;
+            max-width: 90px !important;
+            width: 90px !important;
+            text-align: center !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
             padding: 4px 6px !important;
         }
 
@@ -859,5 +883,39 @@
                 alert('Delete complaint functionality coming soon!');
             }
         }
+
+        // Function to open print slip popup window
+        function openPrintSlip(url, id) {
+            var win = window.open(url, 'PrintSlip_' + id, 'width=700,height=600,scrollbars=yes,resizable=yes,menubar=no,toolbar=no,location=no,status=no');
+            if (win) {
+                win.focus();
+            } else {
+                alert('Popup blocked! Please allow popups in your browser settings or click the Print Slip button above.');
+            }
+        }
+
+        // Auto-open print slip popup on page load
+        @if(session('print_complaint_id'))
+            (function() {
+                var complaintId = {{ session('print_complaint_id') }};
+                var printUrl = '{{ route("admin.complaints.print-slip", ":id") }}'.replace(':id', complaintId);
+                openPrintSlip(printUrl, complaintId);
+            })();
+        @endif
+
+        @if(session('print_complaint_ids'))
+            (function() {
+                var complaintIds = @json(session('print_complaint_ids'));
+                var baseUrl = '{{ route("admin.complaints.print-slip", ":id") }}';
+
+                complaintIds.forEach(function(id, index) {
+                    setTimeout(function() {
+                        var printUrl = baseUrl.replace(':id', id);
+                        var win = window.open(printUrl, 'PrintSlip_' + id, 'width=700,height=600,scrollbars=yes,resizable=yes,menubar=no,toolbar=no,location=no,status=no');
+                        if (win) win.focus();
+                    }, index * 400);
+                });
+            })();
+        @endif
     </script>
 @endpush

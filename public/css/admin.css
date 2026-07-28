@@ -881,3 +881,48 @@ body.modal-open-blur .modal-backdrop,
     padding: 12px;
   }
 }
+
+/* Global Button Text & Icon White Color Fix */
+.btn-success,
+.btn-secondary,
+.btn-primary,
+.btn-danger,
+.btn-info,
+.btn-warning,
+.btn-dark {
+  color: #ffffff !important;
+}
+
+.btn-success *,
+.btn-secondary *,
+.btn-primary *,
+.btn-danger *,
+.btn-info *,
+.btn-warning *,
+.btn-dark * {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+.btn-success:hover,
+.btn-secondary:hover,
+.btn-primary:hover,
+.btn-danger:hover,
+.btn-info:hover,
+.btn-warning:hover,
+.btn-dark:hover,
+.btn-outline-success:hover,
+.btn-outline-success:hover *,
+.btn-outline-success:focus,
+.btn-outline-success:active,
+.btn-outline-secondary:hover,
+.btn-outline-secondary:hover *,
+.btn-outline-secondary:focus,
+.btn-outline-secondary:active,
+.btn-outline-primary:hover,
+.btn-outline-primary:hover *,
+.btn-outline-primary:focus,
+.btn-outline-primary:active {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}

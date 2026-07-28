@@ -27,10 +27,8 @@
     <div class="col-6 col-md-3">
       <select class="form-select" name="priority" onchange="submitSlaFilters()">
             <option value="" {{ request('priority') ? '' : 'selected' }}>All Priorities</option>
-            <option value="low" {{ request('priority') == 'low' ? 'selected' : '' }}>Low</option>
-            <option value="medium" {{ request('priority') == 'medium' ? 'selected' : '' }}>Medium</option>
-            <option value="high" {{ request('priority') == 'high' ? 'selected' : '' }}>High</option>
-            <option value="urgent" {{ request('priority') == 'urgent' ? 'selected' : '' }}>Urgent</option>
+            <option value="normal" {{ request('priority') == 'normal' ? 'selected' : '' }}>Normal</option>
+            <option value="emergency" {{ request('priority') == 'emergency' ? 'selected' : '' }}>Emergency</option>
           </select>
     </div>
     <div class="col-6 col-md-3">
@@ -68,13 +66,16 @@
             <div class="text-muted small">{{ $rule->complaint_type_display }}</div>
               </td>
               <td>
-            @if(($rule->priority ?? 'medium') === 'urgent')
-              <span class="priority-badge priority-{{ $rule->priority ?? 'medium' }}" style="background-color: #991b1b !important; color: #ffffff !important; border: 1px solid #7f1d1d !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important;">
-                {{ ucfirst($rule->priority ?? 'medium') }}
+            @php
+              $isEmerg = strtolower($rule->priority ?? 'normal') === 'emergency';
+            @endphp
+            @if($isEmerg)
+              <span class="priority-badge" style="background-color: #991b1b !important; color: #ffffff !important; border: 1px solid #7f1d1d !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important;">
+                Emergency
               </span>
             @else
-              <span class="priority-badge priority-{{ $rule->priority ?? 'medium' }}" style="color: #ffffff !important;">
-                {{ ucfirst($rule->priority ?? 'medium') }}
+              <span class="priority-badge" style="background-color: #1d4ed8 !important; color: #ffffff !important; border: 1px solid #1e40af !important; padding: 3px 6px !important; font-size: 10px !important; border-radius: 6px !important; display: inline-block !important;">
+                Normal
               </span>
             @endif
               </td>

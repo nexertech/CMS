@@ -35,8 +35,8 @@
           <label for="phone" class="form-label text-white">Phone</label>
           <input type="tel" class="form-control @error('phone') is-invalid @enderror" 
                  id="phone" name="phone" value="{{ old('phone') }}" 
-                 pattern="[0-9]*" inputmode="numeric" 
-                 onkeypress="return event.charCode >= 48 && event.charCode <= 57">
+                 maxlength="11" minlength="11" pattern="[0-9]{11}" placeholder="03001234567" inputmode="numeric" 
+                 oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11)">
           @error('phone')
             <div class="invalid-feedback">{{ $message }}</div>
           @enderror
@@ -121,8 +121,12 @@
           <label for="status" class="form-label text-white">Status</label>
           <select class="form-select @error('status') is-invalid @enderror" 
                   id="status" name="status">
-            <option value="1" {{ old('status', 1) == 'active' ? 'selected' : '' }}>Active</option>
-            <option value="0" {{ old('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
+            @php
+              $currStatus = old('status', 1);
+              $isActive = ($currStatus == 1 || $currStatus === '1' || $currStatus === 'active' || $currStatus === true);
+            @endphp
+            <option value="1" {{ $isActive ? 'selected' : '' }}>Active</option>
+            <option value="0" {{ !$isActive ? 'selected' : '' }}>Inactive</option>
           </select>
           @error('status')
             <div class="invalid-feedback">{{ $message }}</div>

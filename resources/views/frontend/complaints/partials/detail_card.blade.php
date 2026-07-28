@@ -16,6 +16,7 @@
     'product_na' => 'Product N/A',
     'un_authorized' => 'Un-Authorized',
     'barrack_damages' => 'Barrack Damages',
+    'door_lock' => 'Door Lock',
     'pending' => 'Pending', // Frontend specific fallback
   ];
   
@@ -33,6 +34,7 @@
       'product_na' => ['bg' => '#f97316', 'text' => '#ffffff'],
       'un_authorized' => ['bg' => '#ec4899', 'text' => '#ffffff'],
       'barrack_damages' => ['bg' => '#808000', 'text' => '#ffffff'],
+      'door_lock' => ['bg' => '#854d0e', 'text' => '#ffffff'],
       'assigned' => ['bg' => '#16a34a', 'text' => '#ffffff'],    // Green
       'new' => ['bg' => '#000000', 'text' => '#ffffff'],         // Black
       'pending' => ['bg' => '#f59e0b', 'text' => '#000000'],     // Orange
@@ -45,6 +47,32 @@
   $titleName = $complaint->complaintTitle?->title ?? $complaint->title ?? 'N/A';
   $catDisplay = $complaint->getCategoryDisplayAttribute();
   $displayText = $catDisplay . ' - ' . $titleName;
+
+  // Extract Registered By and Status Changed By
+  $createdLog = ($complaint && $complaint->logs) ? $complaint->logs->where('action', 'created')->first() : null;
+  $registeredBy = null;
+  if ($createdLog) {
+      if (str_contains($createdLog->remarks, 'created by ')) {
+          $registeredBy = trim(str_replace('Complaint created by ', '', $createdLog->remarks));
+      } elseif (str_contains($createdLog->remarks, 'registered via App by ')) {
+          $registeredBy = trim(str_replace('Complaint registered via App by ', '', $createdLog->remarks));
+      } else {
+          $registeredBy = $createdLog->actionBy->name ?? 'Staff';
+      }
+  }
+
+  $statusLog = ($complaint && $complaint->logs) ? $complaint->logs->whereIn('action', ['status_changed', 'resolved', 'closed'])->last() : null;
+  $statusChangedBy = null;
+  if ($statusLog) {
+      if (str_contains($statusLog->remarks, ' by ')) {
+          $parts = explode(' by ', $statusLog->remarks);
+          $afterBy = end($parts);
+          $cleanParts = explode('. Remarks:', $afterBy);
+          $statusChangedBy = trim($cleanParts[0]);
+      } else {
+          $statusChangedBy = $statusLog->actionBy->name ?? $statusLog->actionBy->username ?? 'Staff';
+      }
+  }
 @endphp
 <style>
   /* Navy Theme Colors & Card Styles */
@@ -166,6 +194,18 @@
             <div class="col-md-6 border-end-md">
                 <h6 class="text-primary fw-bold text-uppercase border-bottom pb-2 mb-3">Complainant Information</h6>
                 
+                @if($complaint->house?->house_no)
+                <div class="info-item">
+                    <div class="d-flex align-items-center">
+                        <i data-feather="home" class="me-3 text-muted"></i>
+                        <div class="w-100 d-flex justify-content-between">
+                            <span class="text-muted small text-uppercase">House NO:</span>
+                            <span class="fw-medium text-dark text-end">{{ $complaint->house->house_no }}</span>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
                 <div class="info-item">
                     <div class="d-flex align-items-center">
                         <i data-feather="user" class="me-3 text-muted"></i>
@@ -176,29 +216,25 @@
                     </div>
                 </div>
 
-                @if($complaint->house && $complaint->house->phone)
                 <div class="info-item">
                     <div class="d-flex align-items-center">
                         <i data-feather="phone" class="me-3 text-muted"></i>
                         <div class="w-100 d-flex justify-content-between">
                             <span class="text-muted small text-uppercase">Phone:</span>
-                            <span class="fw-medium text-dark text-end">{{ $complaint->house->phone }}</span>
+                            <span class="fw-medium text-dark text-end">{{ $complaint->house?->phone ?? 'N/A' }}</span>
                         </div>
                     </div>
                 </div>
-                @endif
                 
-                @if($complaint->house && $complaint->house->address)
                 <div class="info-item">
-                    <div class="d-flex align-items-start">
-                        <i data-feather="map-pin" class="me-3 text-muted mt-1"></i>
-                        <div class="w-100 d-flex justify-content-between align-items-start">
+                    <div class="d-flex align-items-center">
+                        <i data-feather="map-pin" class="me-3 text-muted"></i>
+                        <div class="w-100 d-flex justify-content-between align-items-center">
                              <span class="text-muted small text-uppercase" style="white-space: nowrap;">Address:</span>
-                             <span class="fw-medium text-dark text-end ms-2" style="line-height: 1.3; font-size: 0.85rem;">{{ $complaint->house->address }}</span>
+                             <span class="fw-medium text-dark text-end ms-2" style="line-height: 1.3; font-size: 0.85rem;">{{ $complaint->house?->address ?? 'N/A' }}</span>
                         </div>
                     </div>
                 </div>
-                @endif
                 @if($complaint->city_id && $complaint->city)
                 <div class="info-item">
                     <div class="d-flex align-items-center">
@@ -250,10 +286,13 @@
                     <div class="d-flex align-items-center">
                         <i data-feather="flag" class="me-3 text-muted"></i>
                          <div class="w-100 d-flex justify-content-between align-items-center">
-                            <span class="text-muted small text-uppercase">Priority:</span>
-                            <span class="badge bg-{{ $complaint->priority === 'high' ? 'danger' : ($complaint->priority === 'medium' ? 'warning' : 'success') }} p-2" style="font-size: 0.75rem;">
-                                {{ ucfirst($complaint->priority) }}
-                            </span>
+                             <span class="text-muted small text-uppercase">Priority:</span>
+                             @php
+                               $isEmerg = strtolower($complaint->priority ?? 'normal') === 'emergency';
+                             @endphp
+                             <span class="badge" style="background-color: {{ $isEmerg ? '#991b1b' : '#1d4ed8' }} !important; color: #ffffff !important; border: 1px solid {{ $isEmerg ? '#7f1d1d' : '#1e40af' }} !important; font-size: 0.75rem; padding: 4px 10px; border-radius: 6px;">
+                                 {{ $isEmerg ? 'Emergency' : 'Normal' }}
+                             </span>
                         </div>
                     </div>
                 </div>
@@ -278,6 +317,30 @@
                         </div>
                     </div>
                 </div>
+
+                @if($statusChangedBy)
+                <div class="info-item">
+                    <div class="d-flex align-items-center">
+                        <i data-feather="user-check" class="me-3 text-muted"></i>
+                        <div class="w-100 d-flex justify-content-between">
+                            <span class="text-muted small text-uppercase">Changed By:</span>
+                            <span class="fw-medium text-dark text-end">{{ $statusChangedBy }}</span>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                @if($registeredBy)
+                <div class="info-item">
+                    <div class="d-flex align-items-center">
+                        <i data-feather="user-plus" class="me-3 text-muted"></i>
+                        <div class="w-100 d-flex justify-content-between">
+                            <span class="text-muted small text-uppercase">Registered By:</span>
+                            <span class="fw-medium text-dark text-end">{{ $registeredBy }}</span>
+                        </div>
+                    </div>
+                </div>
+                @endif
 
                 <div class="info-item">
                     <div class="d-flex align-items-center">

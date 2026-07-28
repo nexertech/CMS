@@ -77,9 +77,7 @@
       <table class="table table-dark align-middle compact-table">
         <thead>
           <tr>
-            <th style="width:70px">#</th>
-                        <th>Types</th>
-
+            <th>Types</th>
             <th>Category</th>
             <th>Questions</th>
             <th style="width:180px">Actions</th>
@@ -88,8 +86,7 @@
         <tbody id="titlesTableBody">
         @forelse($complaintTitles as $title)
           <tr>
-            <td>{{ $title->id }}</td>
-                        <td><strong>{{ $title->title }}</strong></td>
+            <td><strong>{{ $title->title }}</strong></td>
 
             <td>
               {{ ucfirst($title->category->name ?? '-') }}

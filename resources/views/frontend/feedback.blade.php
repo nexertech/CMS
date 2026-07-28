@@ -222,10 +222,8 @@
             text-transform: uppercase;
         }
 
-        .priority-urgent, .priority-emergency { background: #fee2e2; color: #b91c1c; }
-        .priority-high { background: #fef9c3; color: #a16207; }
-        .priority-medium { background: #eff6ff; color: #1e40af; }
-        .priority-low { background: #dcfce7; color: #15803d; }
+        .priority-normal, .priority-medium, .priority-low { background: #1d4ed8 !important; color: #ffffff !important; border: 1px solid #1e40af !important; }
+        .priority-urgent, .priority-emergency, .priority-high { background: #991b1b !important; color: #ffffff !important; border: 1px solid #7f1d1d !important; }
 
         /* ===== ALERTS ===== */
         .alert {

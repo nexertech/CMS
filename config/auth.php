@@ -130,6 +130,6 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
-    'password_renewal_days' => env('PASSWORD_RENEWAL_DAYS'),
+    'password_renewal_days' => env('PASSWORD_RENEWAL_DAYS', 180),
 
 ];

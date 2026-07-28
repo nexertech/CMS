@@ -158,12 +158,8 @@
                     <div class="mb-3">
                         <label for="priority" class="form-label text-white">Priority <span class="text-danger">*</span></label>
                         <select class="form-select @error('priority') is-invalid @enderror" id="priority" name="priority" required>
-                            <option value="">Select Priority</option>
-                            <option value="low" {{ old('priority', $complaint->priority) == 'low' ? 'selected' : '' }}>Low - Can wait</option>
-                            <option value="medium" {{ old('priority', $complaint->priority) == 'medium' ? 'selected' : '' }}>Medium - Normal</option>
-                            <option value="high" {{ old('priority', $complaint->priority) == 'high' ? 'selected' : '' }}>High - Important</option>
-                            <option value="urgent" {{ old('priority', $complaint->priority) == 'urgent' ? 'selected' : '' }}>Urgent - Critical</option>
-                            <option value="emergency" {{ old('priority', $complaint->priority) == 'emergency' ? 'selected' : '' }}>Emergency</option>
+                            <option value="normal" {{ old('priority', $complaint->priority) === 'normal' ? 'selected' : '' }}>Normal</option>
+                            <option value="emergency" {{ old('priority', $complaint->priority) === 'emergency' ? 'selected' : '' }}>Emergency</option>
                         </select>
                         @error('priority')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -182,9 +178,9 @@
                 </div>
                 <div class="col-md-4">
                     <div class="mb-3">
-                        <label for="assigned_employee_id" class="form-label text-white">Assign Employee <span class="text-danger">*</span></label>
-                        <select class="form-select @error('assigned_employee_id') is-invalid @enderror" id="assigned_employee_id" name="assigned_employee_id" required>
-                            <option value="">Select Employee</option>
+                        <label for="assigned_employee_id" class="form-label text-white">Assign Employee</label>
+                        <select class="form-select @error('assigned_employee_id') is-invalid @enderror" id="assigned_employee_id" name="assigned_employee_id">
+                            <option value="">Select Employee (Optional)</option>
                             @foreach($employees as $employee)
                                 <option value="{{ $employee->id }}" 
                                         data-category="{{ $employee->category_id }}"

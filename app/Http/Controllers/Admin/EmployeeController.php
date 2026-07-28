@@ -133,13 +133,15 @@ class EmployeeController extends Controller
             'name' => 'required|string|max:150',
             'category_id' => 'required|exists:complaint_categories,id',
             'designation_id' => 'required|exists:designations,id',
-            'phone' => 'nullable|string|min:11|max:20',
+            'phone' => 'nullable|regex:/^[0-9]{11}$/',
             // 'emp_id' removed
             'date_of_hire' => 'nullable|date',
             'address' => 'nullable|string|max:500',
             'city_id' => 'required|exists:cities,id',
             'sector_id' => 'required|exists:sectors,id',
             'status' => 'nullable|in:0,1',
+        ], [
+            'phone.regex' => 'Phone number must be exactly 11 digits (e.g. 03001234567).',
         ]);
 
         if ($validator->fails()) {
@@ -357,7 +359,7 @@ class EmployeeController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:150',
-            'phone' => 'nullable|string|min:11|max:20',
+            'phone' => 'nullable|regex:/^[0-9]{11}$/',
             'category_id' => 'required|exists:complaint_categories,id',
             'designation_id' => 'required|exists:designations,id',
             // 'emp_id' removed
@@ -366,6 +368,8 @@ class EmployeeController extends Controller
             'city_id' => 'required|exists:cities,id',
             'sector_id' => 'required|exists:sectors,id',
             'status' => 'required|in:0,1',
+        ], [
+            'phone.regex' => 'Phone number must be exactly 11 digits (e.g. 03001234567).',
         ]);
 
         if ($validator->fails()) {
@@ -574,5 +578,363 @@ class EmployeeController extends Controller
             'success' => true,
             'message' => 'Export functionality will be implemented.'
         ]);
+    }
+
+    /**
+     * Download sample CSV for employee import
+     */
+    public function downloadSample()
+    {
+        $headers = [
+            'Content-Type' => 'text/csv; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="employee_import_sample.csv"',
+        ];
+
+        $columns = ['Name', 'Category', 'Designation', 'Phone', 'City', 'Sector', 'Date of Hire', 'Address', 'Status'];
+
+        $callback = function () use ($columns) {
+            $file = fopen('php://output', 'w');
+            fputs($file, "\xEF\xBB\xBF");
+            fputcsv($file, $columns);
+
+            $sampleCat = ComplaintCategory::first()?->name ?? 'Electrical';
+            $sampleDes = Designation::first()?->name ?? 'Technician';
+            $sampleCity = City::first()?->name ?? 'Karachi';
+            $sampleSector = Sector::first()?->name ?? 'Sector A';
+
+            fputcsv($file, [
+                'Muhammad Ali',
+                $sampleCat,
+                $sampleDes,
+                '03001234567',
+                $sampleCity,
+                $sampleSector,
+                '2024-01-15',
+                'House 123, Block A',
+                'Active'
+            ]);
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Import employees from CSV/Excel file
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:csv,txt,xls,xlsx|max:10240',
+        ], [
+            'file.required' => 'Please select a CSV or Excel file to import.',
+            'file.mimes' => 'The file must be a CSV or Excel format (.csv, .xls, .xlsx).',
+        ]);
+
+        $file = $request->file('file');
+        $path = $file->getRealPath();
+        $extension = strtolower($file->getClientOriginalExtension());
+
+        $rows = [];
+
+        if (in_array($extension, ['xlsx', 'xls'])) {
+            if ($xlsx = \Shuchkin\SimpleXLSX::parse($path)) {
+                $rows = $xlsx->rows();
+            } else {
+                return redirect()->back()->with('error', 'Unable to parse Excel file: ' . \Shuchkin\SimpleXLSX::parseError());
+            }
+        } else {
+            // Read CSV file
+            $handle = fopen($path, 'r');
+            if (!$handle) {
+                return redirect()->back()->with('error', 'Unable to open file.');
+            }
+
+            $bom = fread($handle, 3);
+            if ($bom !== "\xEF\xBB\xBF") {
+                rewind($handle);
+            }
+
+            $delimiter = ',';
+            $firstLine = fgetcsv($handle, 2000, ',');
+            if (!$firstLine || count($firstLine) < 2) {
+                rewind($handle);
+                if ($bom === "\xEF\xBB\xBF") {
+                    fread($handle, 3);
+                }
+                $firstLine = fgetcsv($handle, 2000, ';');
+                $delimiter = ';';
+            }
+
+            if ($firstLine) {
+                $rows[] = $firstLine;
+                while (($data = fgetcsv($handle, 2000, $delimiter)) !== false) {
+                    $rows[] = $data;
+                }
+            }
+            fclose($handle);
+        }
+
+        if (empty($rows) || count($rows) < 2) {
+            return redirect()->back()->with('error', 'File is empty or missing data rows.');
+        }
+
+        $header = array_shift($rows); // First row is header
+        $headerMap = [];
+        foreach ($header as $index => $colName) {
+            $cleanCol = strtolower(trim(preg_replace('/[^a-zA-Z0-9_]/', '', str_replace([' ', '-'], '_', (string)$colName))));
+            if ($cleanCol !== '') {
+                $headerMap[$cleanCol] = $index;
+            }
+        }
+
+        $categories = ComplaintCategory::all()->keyBy(fn($item) => strtolower(trim($item->name)));
+        $categoriesById = ComplaintCategory::all()->keyBy('id');
+        $designations = Designation::all()->keyBy(fn($item) => strtolower(trim($item->name)));
+        $designationsById = Designation::all()->keyBy('id');
+        $cities = City::all()->keyBy(fn($item) => strtolower(trim($item->name)));
+        $citiesById = City::all()->keyBy('id');
+        $sectors = Sector::all()->keyBy(fn($item) => strtolower(trim($item->name)));
+        $sectorsById = Sector::all()->keyBy('id');
+
+        $imported = 0;
+        $skipped = 0;
+
+        DB::beginTransaction();
+        try {
+            foreach ($rows as $row) {
+                // Skip completely empty rows
+                if (!is_array($row) || array_filter($row, fn($val) => trim((string)$val) !== '') === []) {
+                    continue;
+                }
+
+                $getValue = function($key) use ($headerMap, $row) {
+                    if (isset($headerMap[$key]) && isset($row[$headerMap[$key]])) {
+                        return trim((string)$row[$headerMap[$key]]);
+                    }
+                    return null;
+                };
+
+                $name = $getValue('name') ?? ($row[0] ?? null);
+                $catVal = $getValue('category') ?? $getValue('category_id') ?? ($row[1] ?? null);
+                $desVal = $getValue('designation') ?? $getValue('designation_id') ?? ($row[2] ?? null);
+                $phone = $getValue('phone') ?? ($row[3] ?? null);
+                $cityVal = $getValue('city') ?? $getValue('city_id') ?? ($row[4] ?? null);
+                $sectorVal = $getValue('sector') ?? $getValue('sector_id') ?? ($row[5] ?? null);
+                $dateOfHire = $getValue('date_of_hire') ?? $getValue('dateofhire') ?? ($row[6] ?? null);
+                $address = $getValue('address') ?? ($row[7] ?? null);
+                $statusVal = $getValue('status') ?? ($row[8] ?? '1');
+
+                if ($name === null) {
+                    $skipped++;
+                    continue;
+                }
+
+                $name = trim((string)$name);
+
+                // Clean string and filter out non-printable ASCII/junk
+                if (preg_match('/[^\x20-\x7E\t\r\n]/', $name) && !preg_match('/[\x{0600}-\x{06FF}]/u', $name)) {
+                    $name = preg_replace('/[^\x20-\x7E]/', '', $name);
+                }
+
+                if (empty($name) || strlen($name) < 2) {
+                    $skipped++;
+                    continue;
+                }
+
+                // Category lookup
+                $catId = null;
+                if (!empty($catVal)) {
+                    if (is_numeric($catVal) && isset($categoriesById[$catVal])) {
+                        $catId = (int)$catVal;
+                    } else {
+                        $catKey = strtolower(trim((string)$catVal));
+                        $catId = $categories[$catKey]->id ?? null;
+                    }
+                }
+                if (!$catId && $categories->count() > 0) {
+                    $catId = $categories->first()->id;
+                }
+
+                // Designation lookup
+                $desId = null;
+                if (!empty($desVal)) {
+                    if (is_numeric($desVal) && isset($designationsById[$desVal])) {
+                        $desId = (int)$desVal;
+                    } else {
+                        $desKey = strtolower(trim((string)$desVal));
+                        $desId = $designations[$desKey]->id ?? null;
+                    }
+                }
+                if (!$desId && $designations->count() > 0) {
+                    $desId = $designations->first()->id;
+                }
+
+                // City lookup
+                $cityId = $this->matchCity($cityVal, $citiesById->values());
+
+                // Sector lookup
+                $sectorId = $this->matchSector($sectorVal, $cityId, $sectorsById->values());
+
+                // Phone
+                if (!empty($phone)) {
+                    $phone = preg_replace('/[^0-9]/', '', (string)$phone);
+                    if (strlen($phone) === 10 && str_starts_with($phone, '3')) {
+                        $phone = '0' . $phone;
+                    } elseif (strlen($phone) === 12 && str_starts_with($phone, '92')) {
+                        $phone = '0' . substr($phone, 2);
+                    }
+                }
+
+                // Date of hire
+                $formattedHireDate = null;
+                if (!empty($dateOfHire)) {
+                    $timestamp = strtotime((string)$dateOfHire);
+                    if ($timestamp) {
+                        $formattedHireDate = date('Y-m-d', $timestamp);
+                    }
+                }
+
+                // Status
+                $status = 1;
+                if ($statusVal !== null && in_array(strtolower(trim((string)$statusVal)), ['0', 'inactive', 'false', 'disabled'], true)) {
+                    $status = 0;
+                }
+
+                Employee::create([
+                    'name' => $name,
+                    'category_id' => $catId,
+                    'designation_id' => $desId,
+                    'phone' => $phone,
+                    'city_id' => $cityId,
+                    'sector_id' => $sectorId,
+                    'date_of_hire' => $formattedHireDate,
+                    'address' => $address ? (string)$address : null,
+                    'status' => $status,
+                ]);
+
+                $imported++;
+            }
+
+            DB::commit();
+
+            $msg = "Successfully imported {$imported} employee(s).";
+            if ($skipped > 0) {
+                $msg .= " Skipped {$skipped} empty/invalid row(s).";
+            }
+
+            return redirect()->route('admin.employees.index')->with('success', $msg);
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error("Employee import failed: " . $e->getMessage());
+            return redirect()->back()->with('error', 'Import failed: ' . $e->getMessage());
+        }
+    }
+
+    private function matchCity($cityVal, $cities)
+    {
+        if (empty($cityVal)) return $cities->first()->id ?? null;
+        if (is_numeric($cityVal)) {
+            $cityObj = $cities->firstWhere('id', (int)$cityVal);
+            if ($cityObj) return $cityObj->id;
+        }
+
+        $clean = strtolower(trim(preg_replace('/\s+/', ' ', str_replace(["\xc2\xa0", "\xa0"], ' ', (string)$cityVal))));
+        if (empty($clean)) return $cities->first()->id ?? null;
+
+        // 1. Direct name match
+        foreach ($cities as $city) {
+            $cName = strtolower(trim(preg_replace('/\s+/', ' ', str_replace(["\xc2\xa0", "\xa0"], ' ', $city->name))));
+            if ($cName === $clean) return $city->id;
+        }
+
+        // 2. Alias matching
+        if (str_contains($clean, 'isld') || str_contains($clean, 'islab') || str_contains($clean, 'islamabad') || str_contains($clean, 'islambad')) {
+            $isldCity = $cities->first(fn($c) => str_contains(strtolower($c->name), 'isld') || str_contains(strtolower($c->name), 'islamabad'));
+            if ($isldCity) return $isldCity->id;
+        }
+
+        // 3. Substring match
+        foreach ($cities as $city) {
+            $cName = strtolower(trim(preg_replace('/\s+/', ' ', str_replace(["\xc2\xa0", "\xa0"], ' ', $city->name))));
+            if (str_contains($clean, $cName) || str_contains($cName, $clean)) {
+                return $city->id;
+            }
+        }
+
+        return $cities->first()->id ?? null;
+    }
+
+    private function matchSector($sectorVal, $cityId, $sectors)
+    {
+        if (empty($sectorVal)) {
+            if ($cityId) {
+                $firstCitySec = $sectors->where('city_id', $cityId)->first();
+                if ($firstCitySec) return $firstCitySec->id;
+            }
+            return $sectors->first()->id ?? null;
+        }
+
+        if (is_numeric($sectorVal)) {
+            $secObj = $sectors->firstWhere('id', (int)$sectorVal);
+            if ($secObj) return $secObj->id;
+        }
+
+        $clean = strtolower(trim(preg_replace('/\s+/', ' ', str_replace(["\xc2\xa0", "\xa0"], ' ', (string)$sectorVal))));
+        if (empty($clean)) {
+            if ($cityId) {
+                $firstCitySec = $sectors->where('city_id', $cityId)->first();
+                if ($firstCitySec) return $firstCitySec->id;
+            }
+            return $sectors->first()->id ?? null;
+        }
+
+        // Filter sectors by cityId first
+        $citySectors = $cityId ? $sectors->where('city_id', $cityId) : $sectors;
+        if ($citySectors->isEmpty()) {
+            $citySectors = $sectors;
+        }
+
+        // 1. Exact cleaned match in city sectors
+        foreach ($citySectors as $sec) {
+            $sName = strtolower(trim(preg_replace('/\s+/', ' ', str_replace(["\xc2\xa0", "\xa0"], ' ', $sec->name))));
+            if ($sName === $clean) return $sec->id;
+        }
+
+        // 2. Global exact match if city sectors match failed
+        foreach ($sectors as $sec) {
+            $sName = strtolower(trim(preg_replace('/\s+/', ' ', str_replace(["\xc2\xa0", "\xa0"], ' ', $sec->name))));
+            if ($sName === $clean) return $sec->id;
+        }
+
+        // 3. Islamabad / Isld / Complaint Office fuzzy alias match
+        if (str_contains($clean, 'isld') || str_contains($clean, 'islambad') || str_contains($clean, 'islamabad') || str_contains($clean, 'isl')) {
+            $isldSec = $citySectors->first(fn($s) => str_contains(strtolower($s->name), 'isld') || str_contains(strtolower($s->name), 'islamabad'));
+            if (!$isldSec) {
+                $isldSec = $sectors->first(fn($s) => str_contains(strtolower($s->name), 'isld') || str_contains(strtolower($s->name), 'islamabad'));
+            }
+            if ($isldSec) return $isldSec->id;
+        }
+
+        // 4. Word-by-word substring match within city sectors
+        $cleanWords = explode(' ', $clean);
+        foreach ($citySectors as $sec) {
+            $sName = strtolower(trim(preg_replace('/\s+/', ' ', str_replace(["\xc2\xa0", "\xa0"], ' ', $sec->name))));
+            foreach ($cleanWords as $word) {
+                if (strlen($word) > 3 && str_contains($sName, $word)) {
+                    return $sec->id;
+                }
+            }
+        }
+
+        // 5. Fallback: first sector of that city
+        if ($cityId) {
+            $firstCitySec = $sectors->where('city_id', $cityId)->first();
+            if ($firstCitySec) return $firstCitySec->id;
+        }
+
+        return $sectors->first()->id ?? null;
     }
 }

@@ -19,7 +19,7 @@ return new class extends Migration {
             $table->unsignedBigInteger('city_id')->nullable();
             $table->unsignedBigInteger('sector_id')->nullable();
             $table->text('description')->nullable();
-            $table->string('status', 50)->default('new');
+            $table->tinyInteger('status')->default(2);
             $table->unsignedBigInteger('assigned_employee_id')->nullable();
             $table->enum('priority', ['low', 'medium', 'high', 'urgent'])->default('medium');
             $table->string('availability_time')->nullable();

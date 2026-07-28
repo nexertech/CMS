@@ -56,6 +56,7 @@ Route::middleware('throttle:60,1')->group(function () {
     Route::get('/categories', [ComplaintApiController::class, 'categories']);
     Route::get('/categories/{category}/titles', [ComplaintApiController::class, 'getTitlesByCategory']);
     Route::get('/titles', [ComplaintApiController::class, 'titles']);
+    Route::get('/priorities', [ComplaintApiController::class, 'priorities']);
     Route::get('/app/check-update', [AppVersionController::class, 'checkUpdate']);
 });
 

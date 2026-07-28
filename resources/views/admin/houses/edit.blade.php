@@ -81,8 +81,10 @@
       <div class="col-md-4">
         <div class="mb-3">
           <label for="phone" class="form-label text-white">Phone</label>
-          <input type="text" class="form-control @error('phone') is-invalid @enderror" 
-                 id="phone" name="phone" value="{{ old('phone', $house->phone) }}" autocomplete="off" placeholder="Phone Number">
+          <input type="tel" class="form-control @error('phone') is-invalid @enderror" 
+                 id="phone" name="phone" value="{{ old('phone', $house->phone) }}" autocomplete="off" 
+                 maxlength="11" minlength="11" pattern="[0-9]{11}" placeholder="03001234567" inputmode="numeric"
+                 oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11)">
           @error('phone')
             <div class="invalid-feedback">{{ $message }}</div>
           @enderror

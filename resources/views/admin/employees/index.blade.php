@@ -3,18 +3,47 @@
 @section('title', 'Employees Management — CMS Admin')
 
 @section('content')
+<style>
+  .btn-success, .btn-secondary, .btn-primary, .btn-danger, .btn-info, .btn-warning, .btn-dark,
+  .btn-success *, .btn-secondary *, .btn-primary *, .btn-danger *, .btn-info *, .btn-warning *, .btn-dark *,
+  .btn-outline-success:hover, .btn-outline-success:hover *, .btn-outline-success:focus, .btn-outline-success:active,
+  .btn-outline-secondary:hover, .btn-outline-secondary:hover *, .btn-outline-secondary:focus, .btn-outline-secondary:active {
+    color: #ffffff !important;
+    stroke: #ffffff !important;
+  }
+</style>
+
 <!-- PAGE HEADER -->
 <div class="mb-4">
-  <div class="d-flex justify-content-between align-items-center">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
     <div>
-      <h2 class="text-white mb-2">Employees Management</h2>
-      <p class="text-light">Manage employee information and records</p>
+      <h2 class="text-white mb-1">Employees Management</h2>
+      <p class="text-light mb-0">Manage employee information and records</p>
     </div>
-    <a href="{{ route('admin.employees.create') }}" class="btn btn-outline-secondary">
-      <i data-feather="user-plus" class="me-2"></i>Add New Employee
-    </a>
+    <div class="d-flex gap-2 align-items-center">
+      <button type="button" class="btn btn-sm btn-outline-success px-3" data-bs-toggle="modal" data-bs-target="#importEmployeesModal" style="font-weight: 500; font-size: 0.875rem;">
+        <i data-feather="upload" class="me-1" style="width: 14px; height: 14px;"></i>Import Excel / CSV
+      </button>
+      <a href="{{ route('admin.employees.create') }}" class="btn btn-sm btn-outline-secondary px-3" style="font-weight: 500; font-size: 0.875rem;">
+        <i data-feather="user-plus" class="me-1" style="width: 14px; height: 14px;"></i>Add New Employee
+      </a>
+    </div>
   </div>
 </div>
+
+@if(session('success'))
+<div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+  <i data-feather="check-circle" class="me-2"></i>{{ session('success') }}
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+@endif
+
+@if(session('error'))
+<div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+  <i data-feather="alert-circle" class="me-2"></i>{{ session('error') }}
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+@endif
 
 <!-- FILTERS -->
 <div class="card-glass mb-4" style="display: inline-block; width: fit-content;">
@@ -191,6 +220,55 @@
           <i data-feather="trash-2" class="me-1"></i>Delete Employee
         </button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT EMPLOYEES MODAL -->
+<div class="modal fade" id="importEmployeesModal" tabindex="-1" aria-labelledby="importEmployeesModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content card-glass text-white" style="background: rgba(20, 20, 30, 0.95); border: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px);">
+      <div class="modal-header" style="border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+        <h5 class="modal-title text-white" id="importEmployeesModalLabel"><i data-feather="upload" class="me-2 text-success"></i>Import Employees from Excel / CSV</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="{{ route('admin.employees.import') }}" method="POST" enctype="multipart/form-data">
+        @csrf
+        <div class="modal-body">
+          <div class="alert alert-info py-2" style="font-size: 0.85rem; background: rgba(13, 202, 240, 0.15); border: 1px solid rgba(13, 202, 240, 0.3); color: #0dcaf0;">
+            <i data-feather="info" class="me-1"></i> Upload a <strong>CSV</strong> or <strong>Excel (.csv, .xlsx)</strong> file containing employee records.
+            <div class="mt-2">
+              <a href="{{ route('admin.employees.sample-csv') }}" class="btn btn-sm btn-outline-info text-decoration-none">
+                <i data-feather="download" class="me-1"></i>Download Sample CSV Template
+              </a>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label text-white fw-bold">Select File (.csv, .xls, .xlsx) <span class="text-danger">*</span></label>
+            <input type="file" name="file" class="form-control bg-dark text-white border-secondary" accept=".csv, .txt, .xls, .xlsx" required>
+          </div>
+
+          <div class="small">
+            <h6 class="text-light mb-2">Supported Column Headers:</h6>
+            <div class="d-flex flex-wrap gap-1">
+              <span class="badge bg-secondary">Name</span>
+              <span class="badge bg-secondary">Category</span>
+              <span class="badge bg-secondary">Designation</span>
+              <span class="badge bg-secondary">Phone</span>
+              <span class="badge bg-secondary">City</span>
+              <span class="badge bg-secondary">Sector</span>
+              <span class="badge bg-secondary">Date of Hire</span>
+              <span class="badge bg-secondary">Address</span>
+              <span class="badge bg-secondary">Status</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="border-top: 1px solid rgba(255, 255, 255, 0.1);">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success"><i data-feather="upload" class="me-1"></i> Upload & Import</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>

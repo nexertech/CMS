@@ -137,12 +137,14 @@ class UserController extends Controller
             'username' => 'required|string|max:100|unique:users',
             'name' => 'nullable|string|max:100',
             'email' => 'nullable|email|max:150|unique:users,email',
-            'phone' => 'nullable|string|min:11|max:20',
+            'phone' => 'nullable|regex:/^[0-9]{11}$/',
             'password' => 'required|string|min:8|confirmed',
             'role_id' => 'required|exists:roles,id',
             'city_id' => 'nullable|array',
             'sector_id' => 'nullable|array',
             'status' => 'required|in:0,1',
+        ], [
+            'phone.regex' => 'Phone number must be exactly 11 digits (e.g. 03001234567).',
         ]);
 
         if ($validator->fails()) {
@@ -291,13 +293,15 @@ class UserController extends Controller
             'username' => 'required|string|max:100|unique:users,username,' . $user->id,
             'name' => 'nullable|string|max:100',
             'email' => 'nullable|email|max:150|unique:users,email,' . $user->id,
-            'phone' => 'nullable|string|min:11|max:20',
+            'phone' => 'nullable|regex:/^[0-9]{11}$/',
             'password' => 'nullable|string|min:8|confirmed',
             'role_id' => 'required|exists:roles,id',
             'city_id' => 'nullable|array',
             'sector_id' => 'nullable|array',
             'status' => 'required|in:0,1',
             'theme' => 'nullable|in:auto,light,dark',
+        ], [
+            'phone.regex' => 'Phone number must be exactly 11 digits (e.g. 03001234567).',
         ]);
 
         if ($validator->fails()) {

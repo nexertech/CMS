@@ -71,18 +71,12 @@
               <div class="text-muted small mb-1"
                 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Priority</div>
               <div>
-                @if($sla->priority == 'urgent')
-                  <span class="badge"
-                    style="background-color: #991b1b !important; color: #ffffff !important; border: 1px solid #7f1d1d !important; padding: 6px 12px !important; font-size: 0.85rem !important; border-radius: 6px !important;">
-                    {{ ucfirst($sla->priority ?? 'medium') }}
-                  </span>
-                @else
-                  <span
-                    class="badge bg-{{ $sla->priority == 'low' ? 'success' : ($sla->priority == 'medium' ? 'warning' : ($sla->priority == 'high' ? 'info' : 'danger')) }}"
-                    style="font-size: 0.85rem; padding: 6px 12px;">
-                    {{ ucfirst($sla->priority ?? 'medium') }}
-                  </span>
-                @endif
+                @php
+                  $isEmerg = strtolower($sla->priority ?? 'normal') === 'emergency';
+                @endphp
+                <span class="badge" style="background-color: {{ $isEmerg ? '#991b1b' : '#1d4ed8' }} !important; color: #ffffff !important; border: 1px solid {{ $isEmerg ? '#7f1d1d' : '#1e40af' }} !important; font-size: 0.85rem; padding: 6px 12px; border-radius: 6px;">
+                  {{ $isEmerg ? 'Emergency' : 'Normal' }}
+                </span>
               </div>
             </div>
           </div>
