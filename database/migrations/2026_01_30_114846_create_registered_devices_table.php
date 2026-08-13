@@ -20,6 +20,11 @@ return new class extends Migration
             $table->foreignId('city_id')->nullable()->constrained('cities')->onDelete('set null');
             $table->foreignId('sector_id')->nullable()->constrained('sectors')->onDelete('set null');
             $table->timestamps();
+
+            // Performance indexes
+            $table->index('is_active');
+            $table->index('assigned_to_house_no');
+            $table->index(['sector_id', 'is_active']);
         });
     }
 

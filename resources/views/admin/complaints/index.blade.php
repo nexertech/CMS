@@ -265,9 +265,9 @@
                                 <td style="width: auto;">
                                     {{ ucfirst($complaint->category->name ?? $complaint->category ?? 'Uncategorized') }}
                                 </td>
-                                <td style="width: auto;">
-                                    {{ $complaint->complaintTitle->title ?? $complaint->title ?? 'N/A' }}
-                                </td>
+                                 <td style="width: auto;">
+                                     {{ $complaint->getTitleDisplayAttribute() }}
+                                 </td>
                                 <td>
                                     @php
                                         $isEmergency = strtolower($complaint->priority ?? 'normal') === 'emergency';

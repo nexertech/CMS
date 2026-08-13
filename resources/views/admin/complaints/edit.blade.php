@@ -185,7 +185,7 @@
                                 <option value="{{ $employee->id }}" 
                                         data-category="{{ $employee->category_id }}"
                                         data-city="{{ $employee->city_id }}"
-                                        data-sector="{{ $employee->sector_id }}"
+                                        data-sector="{{ $employee->all_sector_ids_csv }}"
                                         {{ old('assigned_employee_id', $complaint->assigned_employee_id) == $employee->id ? 'selected' : '' }}>
                                     {{ $employee->name }}@if($employee->designation) ({{ $employee->designation->name }})@endif
                                 </option>

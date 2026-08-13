@@ -54,7 +54,7 @@
   
   $category = $complaint->category_id ?? 'N/A';
   $designation = $complaint->assignedEmployee->designation->name ?? $complaint->assignedEmployee->designation ?? 'N/A';
-  $titleName = $complaint->complaintTitle->title ?? $complaint->title ?? 'N/A';
+  $titleName = $complaint->getTitleDisplayAttribute();
   $catDisplay = $complaint->getCategoryDisplayAttribute();
   $displayText = $catDisplay . ' - ' . $titleName;
   

@@ -89,45 +89,41 @@
     <table class="table table-dark table-sm" id="employeesTable">
       <thead>
         <tr>
-          <th>ID</th>
-          <th>Employee</th>
-          <th>Category</th>
-          <th>Designation</th>
-          <th>GE Groups</th>
-          <th>GE Nodes</th>
-          <th>Phone</th>
-          <th>Status</th>
-          <th>Hire Date</th>
-          <th>Actions</th>
+          <th class="text-nowrap">ID</th>
+          <th class="text-nowrap">Employee</th>
+          <th class="text-nowrap">Category</th>
+          <th class="text-nowrap">Designation</th>
+          <th class="text-nowrap">GE Groups</th>
+          <th class="text-nowrap">GE Nodes</th>
+          <th class="text-nowrap">Phone</th>
+          <th class="text-nowrap">Status</th>
+          <th class="text-nowrap">Hire Date</th>
+          <th class="text-nowrap">Actions</th>
         </tr>
       </thead>
       <tbody id="employeesTableBody">
         @forelse($employees as $employee)
         <tr>
-          <td>{{ $employee->id }}</td>
-          <td>
+          <td class="text-nowrap">{{ $employee->id }}</td>
+          <td class="text-nowrap">
             <div class="d-flex align-items-center">
-              {{-- <div class="avatar-sm me-3" style="width: 40px; height: 40px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold;">
-                {{ substr($employee->name ?? 'E', 0, 1) }}
-              </div> --}}
               <div>
-                <div class="fw-bold">{{ $employee->name ?? 'N/A' }}</div>
-                {{-- <small class="text-muted">ID: {{ $employee->id }}</small> --}}
+                <div class="fw-bold text-nowrap">{{ $employee->name ?? 'N/A' }}</div>
               </div>
             </div>
           </td>
-          <td>{{ $employee->category ? ucfirst($employee->category->name) : 'N/A' }}</td>
-          <td>{{ $employee->designation ? ucfirst($employee->designation->name) : 'N/A' }}</td>
-          <td>{{ $employee->city ? $employee->city->name : 'N/A' }}</td>
-          <td>{{ $employee->sector ? $employee->sector->name : 'N/A' }}</td>
-          <td>{{ $employee->phone ?: 'N/A' }}</td>
-          <td>
+          <td class="text-nowrap">{{ $employee->category ? ucfirst($employee->category->name) : 'N/A' }}</td>
+          <td class="text-nowrap">{{ $employee->designation ? ucfirst($employee->designation->name) : 'N/A' }}</td>
+          <td class="text-nowrap">{{ $employee->city ? $employee->city->name : 'N/A' }}</td>
+          <td>{{ $employee->assigned_sectors_text }}</td>
+          <td class="text-nowrap">{{ $employee->phone ?: 'N/A' }}</td>
+          <td class="text-nowrap">
             <span class="badge {{ $employee->status === 1 ? 'bg-success' : 'bg-danger' }}" style="color: #ffffff !important;">
               {{ ($employee->status ? 'Active' : 'Inactive') }}
             </span>
           </td>
-          <td>{{ $employee->date_of_hire ? $employee->date_of_hire->format('M d, Y') : 'N/A' }}</td>
-          <td>
+          <td class="text-nowrap">{{ $employee->date_of_hire ? $employee->date_of_hire->format('M d, Y') : 'N/A' }}</td>
+          <td class="text-nowrap">
             <div class="btn-group" role="group">
               <button onclick="viewEmployee({{ $employee->id }})" class="btn btn-outline-success btn-sm" title="View Details" style="padding: 3px 8px;">
                 <i data-feather="eye" style="width: 16px; height: 16px;"></i>

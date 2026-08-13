@@ -93,13 +93,26 @@
       </div>
       <div class="col-md-6">
         <div class="mb-3">
-          <label for="sector_id" class="form-label text-white">GE Nodes <span class="text-danger">*</span></label>
-          <select class="form-select @error('sector_id') is-invalid @enderror" 
-                  id="sector_id" name="sector_id" disabled required>
-            <option value="">Select GE Groups First</option>
-          </select>
+          <label class="form-label text-white">GE Nodes <span class="text-danger">*</span></label>
+          <div class="dropdown" id="sectorDropdownContainer">
+            <button class="form-select text-start text-white d-flex justify-content-between align-items-center @error('sector_ids') is-invalid @enderror @error('sector_id') is-invalid @enderror" 
+                    type="button" 
+                    id="sectorDropdownBtn" 
+                    data-bs-toggle="dropdown" 
+                    data-bs-auto-close="outside"
+                    aria-expanded="false" 
+                    disabled>
+              <span id="sectorDropdownText" class="text-truncate me-2">Select GE Groups First</span>
+            </button>
+            <div class="dropdown-menu p-3 w-100 shadow-lg" id="sectors_dropdown_menu" aria-labelledby="sectorDropdownBtn" style="max-height: 220px; overflow-y: auto; background: #1e293b; border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 8px;">
+              <span class="text-muted small">Select GE Groups First</span>
+            </div>
+          </div>
+          @error('sector_ids')
+            <div class="invalid-feedback d-block">{{ $message }}</div>
+          @enderror
           @error('sector_id')
-            <div class="invalid-feedback">{{ $message }}</div>
+            <div class="invalid-feedback d-block">{{ $message }}</div>
           @enderror
         </div>
       </div>
@@ -118,15 +131,11 @@
       </div>
       <div class="col-md-6">
         <div class="mb-3">
-          <label for="status" class="form-label text-white">Status</label>
+          <label for="status" class="form-label text-white">Status <span class="text-danger">*</span></label>
           <select class="form-select @error('status') is-invalid @enderror" 
                   id="status" name="status" required>
-            @php
-              $currStatus = old('status', $employee->status);
-              $isActive = ($currStatus == 1 || $currStatus === '1' || $currStatus === 'active' || $currStatus === true || $currStatus === null);
-            @endphp
-            <option value="1" {{ $isActive ? 'selected' : '' }}>Active</option>
-            <option value="0" {{ !$isActive ? 'selected' : '' }}>Inactive</option>
+            <option value="1" {{ old('status', $employee->status) == 1 ? 'selected' : '' }}>Active</option>
+            <option value="0" {{ old('status', $employee->status) == 0 ? 'selected' : '' }}>Inactive</option>
           </select>
           @error('status')
             <div class="invalid-feedback">{{ $message }}</div>
@@ -152,7 +161,7 @@
       <button type="submit" class="btn btn-accent">
         <i data-feather="save" class="me-2"></i>Update Employee
       </button>
-      <a href="{{ route('admin.employees.index', $employee) }}" class="btn btn-outline-secondary">
+      <a href="{{ route('admin.employees.index') }}" class="btn btn-outline-secondary">
         <i data-feather="x" class="me-2"></i>Cancel
       </a>
     </div>
@@ -165,323 +174,128 @@
   feather.replace();
   
   document.addEventListener('DOMContentLoaded', function() {
-    // Phone number input validation - only allow numbers
+    // Phone number input validation
     const phoneInput = document.getElementById('phone');
     if (phoneInput) {
       phoneInput.addEventListener('input', function(e) {
         this.value = this.value.replace(/[^0-9]/g, '');
       });
-      phoneInput.addEventListener('paste', function(e) {
-        e.preventDefault();
-        const pastedText = (e.clipboardData || window.clipboardData).getData('text');
-        const numbersOnly = pastedText.replace(/[^0-9]/g, '');
-        this.value = numbersOnly;
-      });
-    }
-    
-    // Form validation - check phone number before submit
-    const employeeForm = document.querySelector('form[action*="employees"]');
-    if (employeeForm) {
-      employeeForm.addEventListener('submit', function(e) {
-        const phoneValue = phoneInput ? phoneInput.value.trim() : '';
-        if (phoneValue && phoneValue.length < 11) {
-          e.preventDefault();
-          alert('Phone number must be at least 11 digits.');
-          if (phoneInput) phoneInput.focus();
-          return false;
-        }
-      });
     }
     
     const categorySelect = document.getElementById('category');
     const designationSelect = document.getElementById('designation');
+    const citySelect = document.getElementById('city_id');
+    const sectorDropdownBtn = document.getElementById('sectorDropdownBtn');
+    const sectorDropdownText = document.getElementById('sectorDropdownText');
+    const sectorsDropdownMenu = document.getElementById('sectors_dropdown_menu');
     const currentCategory = '{{ old('category_id', $employee->category_id) }}';
     const currentDesignation = '{{ old('designation_id', $employee->designation_id) }}';
-    const citySelect = document.getElementById('city_id');
-    const sectorSelect = document.getElementById('sector_id');
     const currentCity = '{{ old('city_id', $employee->city_id) }}';
-    const currentSector = '{{ old('sector_id', $employee->sector_id) }}';
+    const assignedSectorIds = @json(old('sector_ids', $employee->sectors ? $employee->sectors->pluck('id')->toArray() : []));
     
-    // Load designations on page load if category is already selected
-    if (currentCategory && categorySelect && designationSelect) {
-      console.log('Loading designations for category:', currentCategory);
+    // Update button display text based on selected checkboxes
+    function updateDropdownButtonText() {
+      const checkedBoxes = document.querySelectorAll('input[name="sector_ids[]"]:checked');
+      if (!sectorDropdownText) return;
       
-      // Enable dropdown immediately if category exists
-      designationSelect.disabled = false;
-      designationSelect.required = true;
-      
-      // Show loading state
-      designationSelect.innerHTML = '<option value="">Loading...</option>';
-      
-      fetch(`{{ route('admin.employees.designations') }}?category_id=${encodeURIComponent(currentCategory)}`, {
-        method: 'GET',
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-          'Accept': 'application/json',
-        }
-      })
-      .then(response => {
-        console.log('Designations response status:', response.status);
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        return response.json();
-      })
-      .then(data => {
-        console.log('Designations data received:', data);
-        
-        // Start with empty select
-        designationSelect.innerHTML = '<option value="">Select Designation</option>';
-        
-        let foundCurrent = false;
-
-        // Add all fetched designations
-        if (data.designations && data.designations.length > 0) {
-          data.designations.forEach(function(designation) {
-            const option = document.createElement('option');
-            option.value = designation.id;
-            option.textContent = designation.name;
-            if (currentDesignation && designation.id == currentDesignation) {
-                option.selected = true;
-                foundCurrent = true;
-            }
-            designationSelect.appendChild(option);
-          });
-          designationSelect.disabled = false;
-          designationSelect.required = true;
-          console.log('Loaded', data.designations.length, 'designations');
-        } else {
-          console.log('No designations found in response');
-        }
-        
-        // If no designations found, show message
-        if ((!data.designations || data.designations.length === 0)) {
-          designationSelect.innerHTML = '<option value="">No Designation Available</option>';
-          designationSelect.disabled = true;
-          designationSelect.required = false;
-        }
-        
-        // If current designation exists but wasn't found in list (e.g. inactive), user must select new one.
-        // Or we could try to look up name if we had it, but for now we enforce valid selection.
-      })
-      .catch(error => {
-        console.error('Error fetching designations:', error);
-        // If there's an error but we have current designation, show it
-        if (currentDesignation) {
-          designationSelect.innerHTML = '<option value="">Select Designation</option>';
-          const currentOption = document.createElement('option');
-          currentOption.value = currentDesignation;
-          currentOption.textContent = currentDesignation;
-          currentOption.selected = true;
-          designationSelect.appendChild(currentOption);
-          designationSelect.disabled = false;
-          designationSelect.required = true;
-          console.log('Error occurred, but showing current designation:', currentDesignation);
-        } else {
-          designationSelect.innerHTML = '<option value="">Error Loading Designations</option>';
-          designationSelect.disabled = true;
-          designationSelect.required = false;
-        }
-      });
-    } else {
-      console.log('Not loading designations - currentCategory:', currentCategory, 'categorySelect:', categorySelect, 'designationSelect:', designationSelect);
-    }
-    
-    // Handle category change to load designations
-    if (categorySelect && designationSelect) {
-      categorySelect.addEventListener('change', function() {
-        const category = this.value;
-        designationSelect.innerHTML = '<option value="">Loading...</option>';
-        designationSelect.disabled = true;
-        
-        if (category) {
-          fetch(`{{ route('admin.employees.designations') }}?category_id=${encodeURIComponent(category)}`, {
-            method: 'GET',
-            headers: {
-              'X-Requested-With': 'XMLHttpRequest',
-              'Accept': 'application/json',
-            }
-          })
-          .then(response => response.json())
-          .then(data => {
-            designationSelect.innerHTML = '<option value="">Select Designation</option>';
-            
-            if (data.designations && data.designations.length > 0) {
-              data.designations.forEach(function(designation) {
-                const option = document.createElement('option');
-                option.value = designation.id;
-                option.textContent = designation.name;
-                designationSelect.appendChild(option);
-              });
-              designationSelect.disabled = false;
-              designationSelect.required = true;
-            } else {
-              designationSelect.innerHTML = '<option value="">No Designation Available</option>';
-              designationSelect.disabled = true;
-              designationSelect.required = false;
-            }
-          })
-          .catch(error => {
-            console.error('Error fetching designations:', error);
-            designationSelect.innerHTML = '<option value="">Error Loading Designations</option>';
-          });
-        } else {
-          designationSelect.innerHTML = '<option value="">Select Category First</option>';
-          designationSelect.disabled = true;
-          designationSelect.required = false;
-        }
-      });
-    }
-    
-    // Load sectors on page load if city is already selected
-    if (currentCity && citySelect && sectorSelect) {
-      const selectedOption = citySelect.options[citySelect.selectedIndex];
-      const cityIdFromData = selectedOption ? selectedOption.getAttribute('data-id') : null;
-      const cityId = cityIdFromData || currentCity;
-      
-      console.log('Loading sectors on page load - currentCity:', currentCity, 'cityId:', cityId);
-      
-      if (cityId) {
-        fetch(`{{ route('admin.employees.sectors') }}?city_id=${cityId}`, {
-          method: 'GET',
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Accept': 'application/json',
-          }
-        })
-        .then(response => response.json())
-        .then(data => {
-          console.log('GE Nodes loaded on page load:', data);
-          sectorSelect.innerHTML = '<option value="">Select GE Nodes</option>';
-          
-            if (data.sectors && data.sectors.length > 0) {
-              data.sectors.forEach(function(sector) {
-                const option = document.createElement('option');
-                option.value = sector.id;
-                option.textContent = sector.name;
-                if (sector.id == currentSector) {
-                  option.selected = true;
-                }
-                sectorSelect.appendChild(option);
-              });
-              sectorSelect.disabled = false;
-              sectorSelect.required = true;
-              console.log('GE Nodes loaded on page load:', data.sectors.length);
-            }
-        })
-        .catch(error => {
-          console.error('Error fetching sectors:', error);
-        });
+      if (checkedBoxes.length === 0) {
+        sectorDropdownText.textContent = 'Select GE Nodes';
+      } else if (checkedBoxes.length === 1) {
+        const label = checkedBoxes[0].nextElementSibling;
+        sectorDropdownText.textContent = label ? label.textContent : '1 GE Node Selected';
+      } else {
+        const labels = Array.from(checkedBoxes).map(cb => cb.nextElementSibling ? cb.nextElementSibling.textContent : '').filter(Boolean);
+        sectorDropdownText.textContent = `${checkedBoxes.length} GE Nodes Selected`;
       }
     }
-    
-    // Handle city change
-    if (citySelect && sectorSelect) {
-      citySelect.addEventListener('change', function() {
-        // Get the actual city ID value - make sure we're using the value attribute, not text
-        const cityId = this.value;
-        const selectedOption = this.options[this.selectedIndex];
-        const cityIdFromData = selectedOption ? selectedOption.getAttribute('data-id') : null;
-        
-        // Use data-id if available, otherwise use value
-        const actualCityId = cityIdFromData || cityId;
-        
-        console.log('City selected - value:', cityId, 'data-id:', cityIdFromData, 'using:', actualCityId);
-        
-        // Clear and disable sector dropdown
-        sectorSelect.innerHTML = '<option value="">Loading...</option>';
-        sectorSelect.disabled = true;
-        
-        if (actualCityId) {
-          // Fetch sectors for this city
-          const url = `{{ route('admin.employees.sectors') }}?city_id=${actualCityId}`;
-          console.log('Fetching sectors from:', url);
-          
-          fetch(url, {
-            method: 'GET',
-            headers: {
-              'X-Requested-With': 'XMLHttpRequest',
-              'Accept': 'application/json',
-            }
-          })
-          .then(response => {
-            console.log('Response status:', response.status);
-            if (!response.ok) {
-              throw new Error('Network response was not ok');
-            }
-            return response.json();
-          })
-          .then(data => {
-            console.log('GE Nodes data received:', data);
-            console.log('Number of GE Nodes for GE Groups:', data.sectors ? data.sectors.length : 0);
-            sectorSelect.innerHTML = '<option value="">Select GE Nodes</option>';
-            
-            if (data.sectors && data.sectors.length > 0) {
-              data.sectors.forEach(function(sector) {
-                const option = document.createElement('option');
-                option.value = sector.id;
-                option.textContent = sector.name;
-                sectorSelect.appendChild(option);
-              });
-              sectorSelect.disabled = false;
-              sectorSelect.required = true;
-              console.log('GE Nodes loaded successfully:', data.sectors.length);
-            } else {
-              sectorSelect.innerHTML = '<option value="">No GE Nodes Available</option>';
-              sectorSelect.disabled = true;
-              sectorSelect.required = false;
-              console.log('No GE Nodes found for GE Groups ID:', actualCityId);
-            }
-          })
-          .catch(error => {
-            console.error('Error fetching GE Nodes:', error);
-            sectorSelect.innerHTML = '<option value="">Error Loading GE Nodes</option>';
-          });
-        } else {
-          sectorSelect.innerHTML = '<option value="">Select GE Groups First</option>';
-          sectorSelect.disabled = true;
-          sectorSelect.required = false;
-        }
+
+    // Function to load designations
+    function loadDesignations(categoryId, targetDesignationId = null) {
+      if (!categoryId || !designationSelect) return;
+      fetch(`{{ route('admin.employees.designations') }}?category_id=${encodeURIComponent(categoryId)}`)
+      .then(response => response.json())
+      .then(data => {
+        designationSelect.innerHTML = '<option value="">Select Designation</option>';
+        data.designations.forEach(function(designation) {
+          const option = document.createElement('option');
+          option.value = designation.id;
+          option.textContent = designation.name;
+          if (targetDesignationId && String(designation.id) === String(targetDesignationId)) option.selected = true;
+          designationSelect.appendChild(option);
+        });
+        designationSelect.disabled = false;
       });
     }
     
-    // Form validation before submit
+    if (currentCategory && categorySelect) loadDesignations(currentCategory, currentDesignation);
+    
+    if (categorySelect) {
+      categorySelect.addEventListener('change', function() {
+        if (this.value) loadDesignations(this.value);
+      });
+    }
+    
+    // Function to load GE Nodes
+    function loadSectors(cityId, targetSectorIds = assignedSectorIds) {
+      let actualCityId = cityId;
+      if (this instanceof Element) {
+         const selectedOption = this.options[this.selectedIndex];
+         actualCityId = selectedOption ? selectedOption.getAttribute('data-id') : null;
+      }
+      
+      if (!actualCityId || !sectorsDropdownMenu) return;
+      
+      sectorsDropdownMenu.innerHTML = '<span class="text-muted small">Loading GE Nodes...</span>';
+      if (sectorDropdownText) sectorDropdownText.textContent = 'Loading...';
+      if (sectorDropdownBtn) sectorDropdownBtn.disabled = true;
+
+      fetch(`{{ route('admin.employees.sectors') }}?city_id=${actualCityId}`)
+      .then(response => response.json())
+      .then(data => {
+        sectorsDropdownMenu.innerHTML = '';
+        if (data.sectors && data.sectors.length > 0) {
+          data.sectors.forEach(function(sector) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'form-check mb-2';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'form-check-input';
+            checkbox.name = 'sector_ids[]';
+            checkbox.value = sector.id;
+            checkbox.id = 'sector_node_' + sector.id;
+            if (targetSectorIds.map(String).includes(String(sector.id))) checkbox.checked = true;
+            checkbox.addEventListener('change', updateDropdownButtonText);
+            const label = document.createElement('label');
+            label.className = 'form-check-label text-white ms-1';
+            label.htmlFor = 'sector_node_' + sector.id;
+            label.textContent = sector.name;
+            wrapper.appendChild(checkbox);
+            wrapper.appendChild(label);
+            sectorsDropdownMenu.appendChild(wrapper);
+          });
+          if (sectorDropdownBtn) sectorDropdownBtn.disabled = false;
+          updateDropdownButtonText();
+        } else {
+          sectorsDropdownMenu.innerHTML = '<span class="text-muted small">No GE Nodes Available</span>';
+        }
+      });
+    }
+
+    if (currentCity && citySelect) loadSectors(currentCity, assignedSectorIds);
+    
+    if (citySelect) {
+      citySelect.addEventListener('change', function() {
+        loadSectors.call(this, this.value, []);
+      });
+    }
+    
     window.validateEmployeeForm = function() {
       const citySelect = document.getElementById('city_id');
-      const sectorSelect = document.getElementById('sector_id');
       const designationSelect = document.getElementById('designation');
-      
-      // Enable sector select if it's disabled but has a value
-      if (sectorSelect && sectorSelect.disabled && sectorSelect.value) {
-        sectorSelect.disabled = false;
-      }
-      
-      // Enable designation select if it's disabled but has a value
-      if (designationSelect && designationSelect.disabled && designationSelect.value) {
-        designationSelect.disabled = false;
-      }
-      
-      // Check if city is selected
-      if (!citySelect || !citySelect.value) {
-        alert('Please select GE Groups');
-        citySelect.focus();
-        return false;
-      }
-      
-      // Check if sector is selected
-      if (!sectorSelect || !sectorSelect.value) {
-        alert('Please select GE Nodes');
-        sectorSelect.focus();
-        return false;
-      }
-      
-      // Check if designation is selected
-      if (!designationSelect || !designationSelect.value) {
-        alert('Please select Designation');
-        designationSelect.focus();
-        return false;
-      }
-      
+      const checkedSectors = document.querySelectorAll('input[name="sector_ids[]"]:checked');
+      if (!citySelect.value) { alert('Select GE Group'); return false; }
+      if (checkedSectors.length === 0) { alert('Select at least one GE Node.'); return false; }
+      if (!designationSelect.value) { alert('Select Designation'); return false; }
       return true;
     };
   });

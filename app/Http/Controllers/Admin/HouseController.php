@@ -442,10 +442,10 @@ class HouseController extends Controller
     public function import(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|mimes:csv,txt,xls,xlsx|max:10240',
+            'file' => 'required|file|extensions:csv,txt,xls,xlsx|max:10240',
         ], [
             'file.required' => 'Please select a CSV or Excel file to import.',
-            'file.mimes' => 'The file must be a CSV or Excel format (.csv, .xls, .xlsx).',
+            'file.extensions' => 'The file must be a CSV or Excel format (.csv, .xls, .xlsx).',
         ]);
 
         $file = $request->file('file');
@@ -721,5 +721,70 @@ class HouseController extends Controller
         }
 
         return $sectors->first()->id ?? null;
+    }
+
+    /**
+     * Search active houses via AJAX (Select2 autocomplete)
+     */
+    public function search(Request $request)
+    {
+        $user = Auth::user();
+        $query = House::with(['city', 'sector'])->where('status', 1);
+
+        // Apply location filter scoping
+        $this->filterHousesByLocation($query, $user);
+
+        // Filter by GE Group (city_id) if provided
+        if ($request->filled('city_id')) {
+            $query->where('city_id', $request->city_id);
+        }
+
+        // Filter by GE Node (sector_id) if provided
+        if ($request->filled('sector_id')) {
+            $query->where('sector_id', $request->sector_id);
+        }
+
+        // Search by term (house_no, name, or phone)
+        $term = trim($request->input('q', $request->input('search', '')));
+        if (!empty($term)) {
+            $query->where(function ($q) use ($term) {
+                $q->where('house_no', 'like', "%{$term}%")
+                  ->orWhere('name', 'like', "%{$term}%")
+                  ->orWhere('phone', 'like', "%{$term}%")
+                  ->orWhere('address', 'like', "%{$term}%");
+            });
+        }
+
+        $houses = $query->orderBy('house_no', 'asc')
+            ->limit(30)
+            ->get();
+
+        $results = $houses->map(function ($house) {
+            $locationInfo = [];
+            if ($house->city) {
+                $locationInfo[] = $house->city->name;
+            }
+            if ($house->sector) {
+                $locationInfo[] = $house->sector->name;
+            }
+            $locStr = !empty($locationInfo) ? ' (' . implode(' - ', $locationInfo) . ')' : '';
+            $phoneStr = $house->phone ? ' - ' . $house->phone : '';
+            $nameStr = $house->name ? ' (' . $house->name . ')' : '';
+
+            return [
+                'id' => $house->id,
+                'text' => $house->house_no . ($house->name ? ' - ' . $house->name : ''),
+                'house_no' => $house->house_no,
+                'name' => $house->name,
+                'phone' => $house->phone,
+                'address' => $house->address,
+                'city_id' => $house->city_id,
+                'sector_id' => $house->sector_id,
+            ];
+        });
+
+        return response()->json([
+            'results' => $results
+        ]);
     }
 }

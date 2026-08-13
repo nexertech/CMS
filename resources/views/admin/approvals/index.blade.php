@@ -163,7 +163,7 @@
                   $designationName = is_string($designationObj) ? $designationObj : ($designationObj->name ?? 'N/A');
                 }
 
-                $titleName = $complaint->complaintTitle->title ?? $complaint->title ?? 'N/A';
+                $titleName = $complaint->getTitleDisplayAttribute();
 
                 $catDisplay = ucfirst($categoryName);
                 $displayText = $catDisplay . ' - ' . $titleName;

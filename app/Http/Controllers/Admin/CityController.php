@@ -21,7 +21,7 @@ class CityController extends Controller
                 ->with('error', 'Run migrations to create cities table.');
         }
 
-        // Show all cities; status column indicates active/inactive
+        // Show all cities (both active and edit-inactivated)
         $cities = City::with('cme')->orderBy('id', 'asc')->paginate(15);
         $cmes = Schema::hasTable('cmes')
             ? Cme::where('status', 1)->orderBy('name')->get()
@@ -95,15 +95,21 @@ class CityController extends Controller
         
         try {
             $city = City::findOrFail($id);
-            // Soft delete without migration: mark as inactive
-            $city->update([
-                'status' => 0
-            ]);
+            $city->delete();
             
             if (request()->ajax() || request()->wantsJson()) {
                 return response()->json(['success' => true]);
             }
-            return back()->with('success', 'City removed from list');
+            return back()->with('success', 'GE Group deleted successfully.');
+        } catch (\Illuminate\Database\QueryException $e) {
+            $city = City::find($id);
+            if ($city) {
+                $city->update(['status' => 0]);
+            }
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => true]);
+            }
+            return back()->with('success', 'GE Group marked as inactive.');
         } catch (\Exception $e) {
             Log::error('City delete error: ' . $e->getMessage());
             if (request()->ajax() || request()->wantsJson()) {

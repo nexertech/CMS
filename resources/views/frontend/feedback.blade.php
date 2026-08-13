@@ -590,7 +590,7 @@
                     <div class="details-grid">
                         <div class="detail-item">
                             <span class="detail-label">Nature & Type</span>
-                            <span class="detail-value">{{ ucfirst($complaint->getCategoryDisplayAttribute()) }} - {{ $complaint->complaintTitle->title ?? $complaint->title ?? 'N/A' }}</span>
+                            <span class="detail-value">{{ ucfirst($complaint->getCategoryDisplayAttribute()) }} - {{ $complaint->getTitleDisplayAttribute() }}</span>
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Priority</span>

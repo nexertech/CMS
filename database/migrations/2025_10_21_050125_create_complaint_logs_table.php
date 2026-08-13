@@ -18,6 +18,11 @@ return new class extends Migration
             $table->string('action', 100);
             $table->text('remarks')->nullable();
             $table->timestamps();
+
+            // Performance indexes
+            $table->index('complaint_id');
+            $table->index('action_by');
+            $table->index('created_at');
         });
     }
 

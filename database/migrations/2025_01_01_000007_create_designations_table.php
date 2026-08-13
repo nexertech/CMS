@@ -19,6 +19,10 @@ return new class extends Migration
             $table->timestamps();
 
             $table->foreign('category_id')->references('id')->on('complaint_categories')->onDelete('cascade');
+
+            // Performance indexes
+            $table->index('status');
+            $table->index('category_id');
         });
     }
 

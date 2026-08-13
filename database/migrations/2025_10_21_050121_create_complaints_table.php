@@ -36,11 +36,15 @@ return new class extends Migration {
             // Performance indexes
             $table->index('city_id');
             $table->index('sector_id');
+            $table->index('house_id');
             $table->index('status');
             $table->index('category_id');
             $table->index('complaint_title_id');
             $table->index('created_at');
             $table->index('assigned_employee_id');
+            $table->index(['city_id', 'sector_id', 'status']);
+            $table->index(['sector_id', 'status']);
+            $table->index(['house_id', 'status']);
         });
     }
 

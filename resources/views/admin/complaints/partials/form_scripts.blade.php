@@ -63,16 +63,15 @@ window.initializeComplaintForm = function(root = document) {
             if (!opt.value) return; 
             const optCategory = opt.getAttribute('data-category') || '';
             const optCity = opt.getAttribute('data-city') || '';
-            const optSector = opt.getAttribute('data-sector') || '';
+            const optSectorRaw = opt.getAttribute('data-sector') || opt.getAttribute('data-sectors') || '';
+            const optSectors = optSectorRaw ? optSectorRaw.split(',').map(s => s.trim()) : [];
             
             const matchCategory = !category || String(optCategory) === String(category);
-            const matchCity = !cityId || String(optCity) === String(cityId);
-            
-            // STRICT sector matching: if sector is selected, employee MUST have that exact sector
             let matchSector = true;
             if (sectorId) {
-                matchSector = String(optSector) === String(sectorId);
+                matchSector = optSectors.length === 0 || optSectors.includes(String(sectorId));
             }
+            const matchCity = !cityId || String(optCity) === String(cityId) || (sectorId && optSectors.includes(String(sectorId)));
             
             const show = matchCategory && matchCity && matchSector;
             
@@ -225,30 +224,61 @@ window.initializeComplaintForm = function(root = document) {
     }
 
     if (houseSelect) {
-        houseSelect.addEventListener('change', function() {
-            const option = this.options[this.selectedIndex];
-            if (option.value) {
-                const nameInput = root.querySelector('#complainant_name');
-                const phoneInput = root.querySelector('#client_phone');
-                if (nameInput) nameInput.value = option.getAttribute('data-name') || '';
-                if (phoneInput) phoneInput.value = option.getAttribute('data-phone') || '';
-                
-                // Auto-populate city and sector from house data
-                const houseCity = option.getAttribute('data-city');
-                const houseSector = option.getAttribute('data-sector');
-                
-                if (houseCity && citySelect) {
-                    // Store the sector value to be applied after AJAX loads sectors
-                    if (houseSector) {
-                        pendingSectorValue = houseSector;
+        // For Select2 AJAX: read house data from the select2:select event
+        if (typeof $ !== 'undefined' && $.fn.select2) {
+            $(houseSelect).on('select2:select', function(e) {
+                const data = e.params.data;
+                if (data) {
+                    const nameInput = root.querySelector('#complainant_name');
+                    const phoneInput = root.querySelector('#client_phone') || root.querySelector('#phone');
+                    const addrInput = root.querySelector('#address');
+                    if (nameInput) nameInput.value = data.name || '';
+                    if (phoneInput) phoneInput.value = data.phone || '';
+                    if (addrInput) addrInput.value = data.address || '';
+
+                    // Auto-populate city and sector from house data
+                    if (data.city_id && citySelect) {
+                        if (data.sector_id) {
+                            pendingSectorValue = data.sector_id;
+                        }
+                        citySelect.value = data.city_id;
+                        citySelect.dispatchEvent(new Event('change'));
                     }
-                    
-                    citySelect.value = houseCity;
-                    // Trigger change event to load sectors
-                    citySelect.dispatchEvent(new Event('change'));
                 }
-            }
-        });
+                filterEmployees();
+            });
+
+            $(houseSelect).on('select2:clear', function() {
+                const nameInput = root.querySelector('#complainant_name');
+                const phoneInput = root.querySelector('#client_phone') || root.querySelector('#phone');
+                const addrInput = root.querySelector('#address');
+                if (nameInput) nameInput.value = '';
+                if (phoneInput) phoneInput.value = '';
+                if (addrInput) addrInput.value = '';
+            });
+        } else {
+            // Fallback for non-Select2 (standard <option> data-* attributes)
+            houseSelect.addEventListener('change', function() {
+                const option = this.options[this.selectedIndex];
+                if (option.value) {
+                    const nameInput = root.querySelector('#complainant_name');
+                    const phoneInput = root.querySelector('#client_phone');
+                    if (nameInput) nameInput.value = option.getAttribute('data-name') || '';
+                    if (phoneInput) phoneInput.value = option.getAttribute('data-phone') || '';
+
+                    const houseCity = option.getAttribute('data-city');
+                    const houseSector = option.getAttribute('data-sector');
+
+                    if (houseCity && citySelect) {
+                        if (houseSector) {
+                            pendingSectorValue = houseSector;
+                        }
+                        citySelect.value = houseCity;
+                        citySelect.dispatchEvent(new Event('change'));
+                    }
+                }
+            });
+        }
         
         // Trigger on page load if house is already selected (for edit mode)
         if (houseSelect.value) {
@@ -260,7 +290,35 @@ window.initializeComplaintForm = function(root = document) {
     feather.replace();
     
     if (typeof $ !== 'undefined' && $.fn.select2) {
-        $(root).find('.select2').each(function() {
+        const $houseSelect = $(root).find('#house_id');
+        if ($houseSelect.length) {
+            $houseSelect.select2({
+                placeholder: "Type House No. or Search...",
+                allowClear: true,
+                width: '100%',
+                ajax: {
+                    url: "{{ route('admin.houses.search') }}",
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            q: params.term,
+                            city_id: $(root).find('#city_id').val(),
+                            sector_id: $(root).find('#sector_id').val()
+                        };
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: data.results
+                        };
+                    },
+                    cache: true
+                },
+                minimumInputLength: 0
+            });
+        }
+
+        $(root).find('.select2:not(#house_id)').each(function() {
             const $this = $(this);
             const parent = $this.closest('.modal').length ? $this.closest('.modal') : null;
             $this.select2({
@@ -268,5 +326,4 @@ window.initializeComplaintForm = function(root = document) {
             });
         });
     }
-};
-</script>
+};</script>

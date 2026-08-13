@@ -2296,7 +2296,8 @@
                 'Status',
                 'Changed By',
                 'Assigned Employee',
-                'Addressed Time'
+                'Addressed Time',
+                'Description'
             ];
 
             csvContent += headers.map(h => `"${String(h).replace(/"/g, '""')}"`).join(',') + '\r\n';
@@ -2331,7 +2332,8 @@
                     fmt(row.status || '-'),
                     fmt(row.changed_by || '-'),
                     fmt(row.assigned_employee || 'Unassigned'),
-                    fmt(row.closed_at || '-')
+                    fmt(row.closed_at || '-'),
+                    fmt(row.description || 'N/A')
                 ];
                 csvContent += rowData.join(',') + '\r\n';
             });

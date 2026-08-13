@@ -93,13 +93,26 @@
       </div>
       <div class="col-md-6">
         <div class="mb-3">
-          <label for="sector_id" class="form-label text-white">GE Nodes <span class="text-danger">*</span></label>
-          <select class="form-select @error('sector_id') is-invalid @enderror" 
-                  id="sector_id" name="sector_id" disabled required>
-            <option value="">Select GE Groups First</option>
-          </select>
+          <label class="form-label text-white">GE Nodes <span class="text-danger">*</span></label>
+          <div class="dropdown" id="sectorDropdownContainer">
+            <button class="form-select text-start text-white d-flex justify-content-between align-items-center @error('sector_ids') is-invalid @enderror @error('sector_id') is-invalid @enderror" 
+                    type="button" 
+                    id="sectorDropdownBtn" 
+                    data-bs-toggle="dropdown" 
+                    data-bs-auto-close="outside"
+                    aria-expanded="false" 
+                    disabled>
+              <span id="sectorDropdownText" class="text-truncate me-2">Select GE Groups First</span>
+            </button>
+            <div class="dropdown-menu p-3 w-100 shadow-lg" id="sectors_dropdown_menu" aria-labelledby="sectorDropdownBtn" style="max-height: 220px; overflow-y: auto; background: #1e293b; border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 8px;">
+              <span class="text-muted small">Select GE Groups First</span>
+            </div>
+          </div>
+          @error('sector_ids')
+            <div class="invalid-feedback d-block">{{ $message }}</div>
+          @enderror
           @error('sector_id')
-            <div class="invalid-feedback">{{ $message }}</div>
+            <div class="invalid-feedback d-block">{{ $message }}</div>
           @enderror
         </div>
       </div>
@@ -196,8 +209,26 @@
     const categorySelect = document.getElementById('category');
     const designationSelect = document.getElementById('designation');
     const citySelect = document.getElementById('city_id');
-    const sectorSelect = document.getElementById('sector_id');
+    const sectorDropdownBtn = document.getElementById('sectorDropdownBtn');
+    const sectorDropdownText = document.getElementById('sectorDropdownText');
+    const sectorsDropdownMenu = document.getElementById('sectors_dropdown_menu');
     
+    // Update button display text based on selected checkboxes
+    function updateDropdownButtonText() {
+      const checkedBoxes = document.querySelectorAll('input[name="sector_ids[]"]:checked');
+      if (!sectorDropdownText) return;
+      
+      if (checkedBoxes.length === 0) {
+        sectorDropdownText.textContent = 'Select GE Nodes';
+      } else if (checkedBoxes.length === 1) {
+        const label = checkedBoxes[0].nextElementSibling;
+        sectorDropdownText.textContent = label ? label.textContent : '1 GE Node Selected';
+      } else {
+        const labels = Array.from(checkedBoxes).map(cb => cb.nextElementSibling ? cb.nextElementSibling.textContent : '').filter(Boolean);
+        sectorDropdownText.textContent = `${checkedBoxes.length} GE Nodes Selected (${labels.join(', ')})`;
+      }
+    }
+
     // Handle category change to load designations
     if (categorySelect && designationSelect) {
       categorySelect.addEventListener('change', function() {
@@ -259,48 +290,33 @@
       });
     }
     
-    // Handle city change
-    if (citySelect && sectorSelect) {
+    // Handle city change to load sectors (GE Nodes) into dropdown menu
+    if (citySelect && sectorsDropdownMenu) {
         
-      function loadSectors(cityId, targetSectorId = null) {
-          // Use data-id if available (from select option attribute), otherwise use value directly
-          // When called from event listener, 'this' might be the select element
-          // When called manually, cityId is passed directly
-          
+      function loadSectors(cityId, targetSectorIds = []) {
           let actualCityId = cityId;
           
-          // If called from event listener
           if (this instanceof Element) {
              const selectedOption = this.options[this.selectedIndex];
              const cityIdFromData = selectedOption ? selectedOption.getAttribute('data-id') : null;
              actualCityId = cityIdFromData || this.value;
-          } else {
-             // If passed as ID, ensure we get the data-id if needed or just use the ID
-             // For simplicity in manual call we assume the ID passed is correct or we find the option
-             if (citySelect) {
-                 // Try to find the option with this value to see if it has a data-id
-                 // This is a bit of a hack because the original code used data-id for some reason
-                 // logic preserved from original event listener
-                 for(let i=0; i<citySelect.options.length; i++) {
-                     if(citySelect.options[i].value == cityId) {
-                         const cityIdFromData = citySelect.options[i].getAttribute('data-id');
-                         if(cityIdFromData) actualCityId = cityIdFromData;
-                         break;
-                     }
+          } else if (citySelect) {
+             for (let i = 0; i < citySelect.options.length; i++) {
+                 if (citySelect.options[i].value == cityId) {
+                     const cityIdFromData = citySelect.options[i].getAttribute('data-id');
+                     if (cityIdFromData) actualCityId = cityIdFromData;
+                     break;
                  }
              }
           }
           
           console.log('City selected/loaded:', actualCityId);
-          
-          // Clear and disable sector dropdown
-          sectorSelect.innerHTML = '<option value="">Loading...</option>';
-          sectorSelect.disabled = true;
+          sectorsDropdownMenu.innerHTML = '<span class="text-muted small"><i class="spinner-border spinner-border-sm me-1"></i>Loading GE Nodes...</span>';
+          if (sectorDropdownText) sectorDropdownText.textContent = 'Loading GE Nodes...';
+          if (sectorDropdownBtn) sectorDropdownBtn.disabled = true;
           
           if (actualCityId) {
-            // Fetch sectors for this city
             const url = `{{ route('admin.employees.sectors') }}?city_id=${actualCityId}`;
-            console.log('Fetching sectors from:', url);
             
             fetch(url, {
               method: 'GET',
@@ -316,37 +332,57 @@
               return response.json();
             })
             .then(data => {
-              sectorSelect.innerHTML = '<option value="">Select GE Nodes</option>';
+              sectorsDropdownMenu.innerHTML = '';
               
               if (data.sectors && data.sectors.length > 0) {
+                const isSingleNode = (data.sectors.length === 1);
+                
                 data.sectors.forEach(function(sector) {
-                  const option = document.createElement('option');
-                  option.value = sector.id;
-                  option.textContent = sector.name;
+                  const wrapper = document.createElement('div');
+                  wrapper.className = 'form-check mb-2';
+
+                  const checkbox = document.createElement('input');
+                  checkbox.type = 'checkbox';
+                  checkbox.className = 'form-check-input sector-checkbox';
+                  checkbox.name = 'sector_ids[]';
+                  checkbox.value = sector.id;
+                  checkbox.id = 'sector_node_' + sector.id;
                   
-                  // Auto-select if matches target
-                  if (targetSectorId && String(sector.id) === String(targetSectorId)) {
-                      option.selected = true;
+                  // Auto-check if only 1 node is available OR if included in targetSectorIds
+                  if (isSingleNode || (targetSectorIds && targetSectorIds.map(String).includes(String(sector.id)))) {
+                      checkbox.checked = true;
                   }
-                  
-                  sectorSelect.appendChild(option);
+
+                  checkbox.addEventListener('change', updateDropdownButtonText);
+
+                  const label = document.createElement('label');
+                  label.className = 'form-check-label text-white ms-1 cursor-pointer';
+                  label.htmlFor = 'sector_node_' + sector.id;
+                  label.textContent = sector.name;
+
+                  wrapper.appendChild(checkbox);
+                  wrapper.appendChild(label);
+                  sectorsDropdownMenu.appendChild(wrapper);
                 });
-                sectorSelect.disabled = false;
-                sectorSelect.required = true;
+
+                if (sectorDropdownBtn) sectorDropdownBtn.disabled = false;
+                updateDropdownButtonText();
               } else {
-                sectorSelect.innerHTML = '<option value="">No GE Nodes Available</option>';
-                sectorSelect.disabled = true;
-                sectorSelect.required = false;
+                sectorsDropdownMenu.innerHTML = '<span class="text-muted small">No GE Nodes Available</span>';
+                if (sectorDropdownText) sectorDropdownText.textContent = 'No GE Nodes Available';
+                if (sectorDropdownBtn) sectorDropdownBtn.disabled = true;
               }
             })
             .catch(error => {
               console.error('Error fetching GE Nodes:', error);
-              sectorSelect.innerHTML = '<option value="">Error Loading GE Nodes</option>';
+              sectorsDropdownMenu.innerHTML = '<span class="text-danger small">Error Loading GE Nodes</span>';
+              if (sectorDropdownText) sectorDropdownText.textContent = 'Error Loading GE Nodes';
+              if (sectorDropdownBtn) sectorDropdownBtn.disabled = true;
             });
           } else {
-            sectorSelect.innerHTML = '<option value="">Select GE Groups First</option>';
-            sectorSelect.disabled = true;
-            sectorSelect.required = false;
+            sectorsDropdownMenu.innerHTML = '<span class="text-muted small">Select GE Groups First</span>';
+            if (sectorDropdownText) sectorDropdownText.textContent = 'Select GE Groups First';
+            if (sectorDropdownBtn) sectorDropdownBtn.disabled = true;
           }
       }
 
@@ -354,28 +390,19 @@
           loadSectors.call(this, this.value);
       });
       
-      // Initial load if city is pre-selected (e.g. for Staff)
+      // Initial load if city is pre-selected
       if (citySelect.value) {
           const defaultSectorId = '{{ isset($defaultSectorId) ? $defaultSectorId : old('sector_id') }}';
-          loadSectors(citySelect.value, defaultSectorId);
+          const initialSectorIds = defaultSectorId ? [defaultSectorId] : [];
+          loadSectors(citySelect.value, initialSectorIds);
       }
     }
     
     // Form validation before submit
     window.validateEmployeeForm = function() {
       const citySelect = document.getElementById('city_id');
-      const sectorSelect = document.getElementById('sector_id');
       const designationSelect = document.getElementById('designation');
-      
-      // Enable sector select if it's disabled but has a value
-      if (sectorSelect && sectorSelect.disabled && sectorSelect.value) {
-        sectorSelect.disabled = false;
-      }
-      
-      // Enable designation select if it's disabled but has a value
-      if (designationSelect && designationSelect.disabled && designationSelect.value) {
-        designationSelect.disabled = false;
-      }
+      const checkedSectors = document.querySelectorAll('input[name="sector_ids[]"]:checked');
       
       // Check if city is selected
       if (!citySelect || !citySelect.value) {
@@ -384,10 +411,10 @@
         return false;
       }
       
-      // Check if sector is selected
-      if (!sectorSelect || !sectorSelect.value) {
-        alert('Please select GE Nodes');
-        if (sectorSelect) sectorSelect.focus();
+      // Check if at least one sector checkbox is selected
+      if (checkedSectors.length === 0) {
+        alert('Please select at least one GE Node checkbox from the dropdown.');
+        if (sectorDropdownBtn) sectorDropdownBtn.focus();
         return false;
       }
       

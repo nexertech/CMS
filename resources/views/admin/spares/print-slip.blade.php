@@ -11,44 +11,49 @@
             padding: 20px;
             background: white;
             color: #333;
+            font-size: 14px;
+            line-height: 1.4;
         }
         .header {
             text-align: center;
             border-bottom: 2px solid #333;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
         }
         .header h1 {
             margin: 0;
             color: #333;
-            font-size: 24px;
+            font-size: 26px;
         }
         .header p {
             margin: 5px 0;
             color: #666;
+            font-size: 13px;
         }
         .spare-info {
             margin-bottom: 30px;
         }
         .info-row {
             display: flex;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             border-bottom: 1px solid #eee;
-            padding-bottom: 5px;
+            padding-bottom: 6px;
         }
         .info-label {
             font-weight: bold;
-            width: 180px;
-            color: #333;
+            width: 200px;
+            color: #222;
+            font-size: 14px;
         }
         .info-value {
             flex: 1;
-            color: #666;
+            color: #444;
+            font-size: 14px;
         }
         .footer {
             margin-top: 40px;
             text-align: center;
-            font-size: 12px;
+            font-size: 13px;
             color: #666;
             border-top: 1px solid #eee;
             padding-top: 20px;
