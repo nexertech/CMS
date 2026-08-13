@@ -126,14 +126,21 @@ class DesignationController extends Controller
         
         try {
             $designation = Designation::findOrFail($id);
-            $designation->update([
-                'status' => 0
-            ]);
+            $designation->delete();
             
             if (request()->ajax() || request()->wantsJson()) {
                 return response()->json(['success' => true]);
             }
-            return back()->with('success', 'Designation removed from list');
+            return back()->with('success', 'Designation deleted successfully.');
+        } catch (\Illuminate\Database\QueryException $e) {
+            $designation = Designation::find($id);
+            if ($designation) {
+                $designation->update(['status' => 0]);
+            }
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => true]);
+            }
+            return back()->with('success', 'Designation marked as inactive.');
         } catch (\Exception $e) {
             Log::error('Designation delete error: ' . $e->getMessage());
             if (request()->ajax() || request()->wantsJson()) {

@@ -18,6 +18,9 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->tinyInteger('status')->default(1);
             $table->timestamps();
+
+            // Performance indexes
+            $table->index('status');
         });
     }
 

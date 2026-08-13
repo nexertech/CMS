@@ -275,6 +275,34 @@ class Complaint extends Model
     }
 
     /**
+     * Get title display name (handles pre-defined titles and custom 'other' titles)
+     */
+    public function getTitleDisplayAttribute(): string
+    {
+        // 1. If custom typed title is stored in DB (and is not literally 'other'), use it!
+        if (!empty($this->title) && strtolower(trim($this->title)) !== 'other') {
+            return $this->title;
+        }
+
+        // 2. If complaintTitle relationship exists and is not 'other', use its title
+        if ($this->complaintTitle && !empty($this->complaintTitle->title) && strtolower(trim($this->complaintTitle->title)) !== 'other') {
+            return $this->complaintTitle->title;
+        }
+
+        // 3. Fallback to raw title column if present
+        if (!empty($this->title)) {
+            return $this->title;
+        }
+
+        // 4. Fallback to complaintTitle if present
+        if ($this->complaintTitle && !empty($this->complaintTitle->title)) {
+            return $this->complaintTitle->title;
+        }
+
+        return 'N/A';
+    }
+
+    /**
      * Get status display name
      */
     public function getStatusDisplayAttribute(): string

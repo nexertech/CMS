@@ -20,6 +20,11 @@ return new class extends Migration
             $table->timestamp('used_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
+
+            // Performance indexes
+            $table->index('complaint_id');
+            $table->index('spare_id');
+            $table->index('used_by');
         });
     }
 

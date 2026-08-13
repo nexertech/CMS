@@ -27,6 +27,16 @@ return new class extends Migration
             $table->string('type', 100)->nullable();
             $table->timestamps();
             $table->softDeletes();
+
+            // High-performance B-Tree indexes for 100k+ house queries
+            $table->index('city_id');
+            $table->index('sector_id');
+            $table->index('status');
+            $table->index('house_no');
+            $table->index('phone');
+            $table->index(['city_id', 'sector_id', 'status']);
+            $table->index(['sector_id', 'status']);
+            $table->index(['city_id', 'status']);
         });
     }
 

@@ -256,7 +256,7 @@
                                                     <option value="{{ $employee->id }}"
                                                         data-category="{{ $employee->category_id ?? '' }}"
                                                         data-city="{{ $employee->city_id }}"
-                                                        data-sector="{{ $employee->sector_id }}"
+                                                        data-sector="{{ $employee->all_sector_ids_csv }}"
                                                         {{ (string)$empVal === (string)$employee->id ? 'selected' : '' }}>
                                                         {{ $employee->name }}@if($employee->designation) ({{ $employee->designation->name }})@endif</option>
                                                 @endforeach
@@ -579,11 +579,12 @@
                 if (!opt.value) return;
                 const optCategory = opt.getAttribute('data-category') || '';
                 const optCity = opt.getAttribute('data-city') || '';
-                const optSector = opt.getAttribute('data-sector') || '';
+                const optSectorRaw = opt.getAttribute('data-sector') || opt.getAttribute('data-sectors') || '';
+                const optSectors = optSectorRaw ? optSectorRaw.split(',').map(s => s.trim()) : [];
 
                 const matchCategory = !category || !optCategory || String(optCategory) === String(category);
-                const matchCity = !cityId || String(optCity) === String(cityId);
-                const matchSector = !sectorId || String(optSector) === String(sectorId);
+                const matchSector = !sectorId || optSectors.length === 0 || optSectors.includes(String(sectorId));
+                const matchCity = !cityId || String(optCity) === String(cityId) || (sectorId && optSectors.includes(String(sectorId)));
 
                 const isSelected = currentSelectedId && String(opt.value) === String(currentSelectedId);
                 const show = isSelected || (matchCategory && matchCity && matchSector);
@@ -762,39 +763,63 @@
             const addressInput = document.getElementById('address');
             const complaintForm = document.querySelector('form[action*="complaints"]');
 
-            // Store original house options for filtering
-            let allHouseOptions = [];
-            if (houseSelect) {
-                Array.from(houseSelect.options).forEach(opt => {
-                    if (opt.value) {
-                        allHouseOptions.push({
-                            value: opt.value,
-                            text: opt.innerText,
-                            city: opt.getAttribute('data-city'),
-                            sector: opt.getAttribute('data-sector'),
-                            address: opt.getAttribute('data-address'),
-                            name: opt.getAttribute('data-name'),
-                            phone: opt.getAttribute('data-phone'),
-                            selected: opt.selected
-                        });
-                    }
-                });
-            }
 
-            // Initialize Select2 for house
+            // Initialize Select2 AJAX for #house_id (server-side search for 13,000+ houses)
             $(document).ready(function() {
                 $('#house_id').select2({
-                    placeholder: "Select House Number",
+                    placeholder: "Type House No. or Search...",
                     allowClear: true,
-                    width: '100%'
+                    width: '100%',
+                    ajax: {
+                        url: "{{ route('admin.houses.search') }}",
+                        dataType: 'json',
+                        delay: 250,
+                        data: function (params) {
+                            return {
+                                q: params.term,
+                                city_id: $('#city_id').val(),
+                                sector_id: $('#sector_id').val()
+                            };
+                        },
+                        processResults: function (data) {
+                            return { results: data.results };
+                        },
+                        cache: true
+                    },
+                    minimumInputLength: 0
                 });
 
+                // Auto-fill Name, Address, Phone, City, Sector when a house is selected
                 $('#house_id').on('select2:select', function (e) {
-                    houseSelect.dispatchEvent(new Event('change'));
+                    const data = e.params.data;
+                    if (data) {
+                        if (clientNameInput) clientNameInput.value = data.name || '';
+                        if (addressInput) addressInput.value = data.address || '';
+                        if (phoneInput) phoneInput.value = data.phone || '';
+
+                        // Auto-fill City & Sector from house data
+                        if (data.city_id && citySelect) {
+                            skipHouseClear = 2;
+                            if (String(citySelect.value) === String(data.city_id)) {
+                                // City already matches — just set sector directly (no AJAX blink)
+                                if (data.sector_id && sectorSelect) {
+                                    sectorSelect.value = data.sector_id;
+                                }
+                            } else {
+                                // City changed — load sectors via AJAX
+                                citySelect.value = data.city_id;
+                                loadSectors(data.city_id, data.sector_id);
+                            }
+                        }
+                    }
+                    filterAllEmployees();
                 });
 
-                $('#house_id').on('select2:clear', function (e) {
-                    houseSelect.dispatchEvent(new Event('change'));
+                // Clear Name/Address/Phone when house is cleared
+                $('#house_id').on('select2:clear', function () {
+                    if (clientNameInput) clientNameInput.value = '';
+                    if (addressInput) addressInput.value = '';
+                    if (phoneInput) phoneInput.value = '';
                 });
             });
 
@@ -850,44 +875,19 @@
                 });
             }
 
+            let skipHouseClear = 0; // Counter: skip N filterHouses calls triggered by house auto-fill of city/sector
+
             function filterHouses() {
+                // With AJAX Select2, city/sector filtering is handled server-side.
+                // Skip clearing if triggered by house auto-fill of city/sector
                 if (!houseSelect) return;
-
-                const cityId = citySelect ? citySelect.value : '';
-                const sectorId = sectorSelect ? sectorSelect.value : '';
-                const currentSelectedId = $(houseSelect).val();
-
-                houseSelect.innerHTML = '<option value="">Select House Number</option>';
-                let hasSelection = false;
-
-                allHouseOptions.forEach(optData => {
-                    let show = true;
-                    if (cityId && String(optData.city) !== String(cityId)) show = false;
-                    if (sectorId && String(optData.sector) !== String(sectorId)) show = false;
-
-                    if (show) {
-                        const option = document.createElement('option');
-                        option.value = optData.value;
-                        option.textContent = optData.text;
-                        option.setAttribute('data-city', optData.city);
-                        option.setAttribute('data-sector', optData.sector);
-                        option.setAttribute('data-address', optData.address);
-                        option.setAttribute('data-name', optData.name);
-                        option.setAttribute('data-phone', optData.phone);
-
-                        if (currentSelectedId && String(optData.value) === String(currentSelectedId)) {
-                            option.selected = true;
-                            hasSelection = true;
-                        } else if (!currentSelectedId && optData.selected && !hasSelection) {
-                            option.selected = true;
-                            hasSelection = true;
-                        }
-
-                        houseSelect.appendChild(option);
-                    }
-                });
-
-                $(houseSelect).trigger('change.select2');
+                if (skipHouseClear > 0) {
+                    skipHouseClear--;
+                    return;
+                }
+                if (typeof $ !== 'undefined' && $.fn.select2) {
+                    $(houseSelect).val(null).trigger('change');
+                }
             }
 
             // Filter employees in ALL complaint entries based on city/sector

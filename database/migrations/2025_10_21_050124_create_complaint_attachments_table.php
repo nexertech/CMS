@@ -17,6 +17,9 @@ return new class extends Migration
             $table->string('file_path', 255);
             $table->timestamp('uploaded_at')->useCurrent();
             $table->timestamps();
+
+            // Performance indexes
+            $table->index('complaint_id');
         });
     }
 

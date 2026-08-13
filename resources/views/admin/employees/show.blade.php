@@ -74,17 +74,15 @@
       </div>
       @endif
       
-      @if($employee->sector)
       <div class="info-item">
         <div class="d-flex align-items-center justify-content-between">
           <div class="d-flex align-items-center">
             <i data-feather="layers" class="me-2 text-muted" style="width: 14px; height: 14px;"></i>
             <span class="info-label">GE Nodes</span>
           </div>
-          <span class="info-value text-end">{{ $employee->sector->name ?? $employee->sector ?? 'N/A' }}</span>
+          <span class="info-value text-end">{{ $employee->assigned_sectors_text }}</span>
         </div>
       </div>
-      @endif
     </div>
   </div>
   

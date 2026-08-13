@@ -154,7 +154,7 @@ Route::middleware(['auth', 'verified', AdminAccessMiddleware::class])
     // 🏠 House Management
     // ===============================
     Route::middleware(['permission:employees.view'])->group(function () {
-        // Extra AJAX/helper routes (must come BEFORE resource routes to avoid conflicts)
+        Route::get('houses/search', [App\Http\Controllers\Admin\HouseController::class, 'search'])->name('houses.search');
         Route::get('houses/sectors', [App\Http\Controllers\Admin\HouseController::class, 'getSectorsByCity'])->name('houses.sectors');
         Route::post('houses/import', [App\Http\Controllers\Admin\HouseController::class, 'import'])->name('houses.import');
         Route::get('houses/sample-csv', [App\Http\Controllers\Admin\HouseController::class, 'downloadSample'])->name('houses.sample-csv');

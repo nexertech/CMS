@@ -83,10 +83,15 @@ trait LocationFilterTrait
         }
 
         if (!empty($sectorIds)) {
-            $query->whereIn('sector_id', $sectorIds);
+            $query->where(function ($q) use ($sectorIds) {
+                $q->whereIn('employees.sector_id', $sectorIds);
+                foreach ($sectorIds as $sid) {
+                    $q->orWhereJsonContains('employees.sector_ids', (int)$sid);
+                }
+            });
         }
         elseif (!empty($cityIds)) {
-            $query->whereIn('city_id', $cityIds);
+            $query->whereIn('employees.city_id', $cityIds);
         }
 
         return $query;

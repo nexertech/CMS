@@ -21,6 +21,9 @@ return new class extends Migration
             $table->softDeletes();
 
             $table->foreign('category_id')->references('id')->on('complaint_categories')->onDelete('cascade');
+
+            // Performance indexes
+            $table->index('category_id');
         });
     }
 

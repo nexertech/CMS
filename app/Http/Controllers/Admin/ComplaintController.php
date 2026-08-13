@@ -38,7 +38,7 @@ class ComplaintController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $query = Complaint::with(['assignedEmployee', 'city', 'sector', 'spareParts.spare', 'spareApprovals']);
+        $query = Complaint::with(['house', 'category', 'complaintTitle', 'assignedEmployee', 'city', 'sector', 'spareParts.spare', 'spareApprovals']);
 
         // Apply location-based filtering
         $this->filterComplaintsByLocation($query, $user);
@@ -454,7 +454,7 @@ class ComplaintController extends Controller
         $complaints = $query->paginate(20)->withQueryString();
 
         // Filter employees by location
-        $employeesQuery = Employee::where('status', 1);
+        $employeesQuery = Employee::where('status', 1)->with(['designation']);
         $this->filterEmployeesByLocation($employeesQuery, $user);
         $employees = $employeesQuery->get();
 
@@ -471,7 +471,7 @@ class ComplaintController extends Controller
     public function create()
     {
 
-        $employeesQuery = Employee::where('status', 1)->orderBy('name');
+        $employeesQuery = Employee::where('status', 1)->with(['designation'])->orderBy('name');
         $this->filterEmployeesByLocation($employeesQuery, Auth::user());
         $employees = $employeesQuery->get();
         $categories = Schema::hasTable('complaint_categories')
@@ -497,10 +497,8 @@ class ComplaintController extends Controller
             $defaultSectorId = !empty($authUser->sector_ids) ? $authUser->sector_ids[0] : null;
         }
 
-        // Get houses filtered by location
-        $housesQuery = House::where('status', 1)->orderBy('house_no');
-        $this->filterHousesByLocation($housesQuery, $authUser);
-        $houses = $housesQuery->get();
+        // Houses loaded dynamically via AJAX (Select2)
+        $houses = collect();
 
         return view('admin.complaints.create', compact('employees', 'categories', 'cities', 'sectors', 'defaultCityId', 'defaultSectorId', 'houses'));
     }
@@ -776,7 +774,7 @@ class ComplaintController extends Controller
         }
         $complaint->load(['assignedEmployee', 'city', 'sector']);
 
-        $employeesQuery = Employee::where('status', 1)->orderBy('name');
+        $employeesQuery = Employee::where('status', 1)->with(['designation'])->orderBy('name');
 
         $this->filterEmployeesByLocation($employeesQuery, Auth::user());
         $employees = $employeesQuery->get();
@@ -806,10 +804,8 @@ class ComplaintController extends Controller
         $defaultCityId = $complaint->city_id ?? $complaint->house?->city_id ?? (!empty(Auth::user()->city_ids) ? Auth::user()->city_ids[0] : null);
         $defaultSectorId = $complaint->sector_id ?? $complaint->house?->sector_id ?? (!empty(Auth::user()->sector_ids) ? Auth::user()->sector_ids[0] : null);
 
-        // Get houses filtered by location
-        $housesQuery = House::where('status', 1)->orderBy('house_no');
-        $this->filterHousesByLocation($housesQuery, Auth::user());
-        $houses = $housesQuery->get();
+        // Only load the assigned house for edit form initial option (rest loaded via AJAX Select2)
+        $houses = $complaint->house ? collect([$complaint->house]) : collect();
 
         return view('admin.complaints.edit', compact('complaint', 'employees', 'categories', 'cities', 'sectors', 'defaultCityId', 'defaultSectorId', 'houses'));
     }

@@ -25,6 +25,7 @@ return new class extends Migration {
             $table->timestamps();
 
             // Indexes for better performance
+            $table->index('complaint_id');
             $table->index(['status', 'created_at']);
             $table->index(['requested_by', 'status']);
             $table->index(['approved_by', 'status']);

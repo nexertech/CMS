@@ -134,14 +134,17 @@ class EmployeeController extends Controller
             'category_id' => 'required|exists:complaint_categories,id',
             'designation_id' => 'required|exists:designations,id',
             'phone' => 'nullable|regex:/^[0-9]{11}$/',
-            // 'emp_id' removed
             'date_of_hire' => 'nullable|date',
             'address' => 'nullable|string|max:500',
             'city_id' => 'required|exists:cities,id',
-            'sector_id' => 'required|exists:sectors,id',
+            'sector_ids' => 'required_without:sector_id|array|min:1',
+            'sector_ids.*' => 'exists:sectors,id',
+            'sector_id' => 'nullable|exists:sectors,id',
             'status' => 'nullable|in:0,1',
         ], [
             'phone.regex' => 'Phone number must be exactly 11 digits (e.g. 03001234567).',
+            'sector_ids.required_without' => 'Please select at least one GE Node.',
+            'sector_ids.min' => 'Please select at least one GE Node.',
         ]);
 
         if ($validator->fails()) {
@@ -162,19 +165,24 @@ class EmployeeController extends Controller
             DB::beginTransaction();
             Log::info('Starting employee creation transaction');
 
-            // Create employee record (no user creation)
+            $sectorIds = $request->has('sector_ids') ? array_values(array_map('intval', (array)$request->sector_ids)) : ($request->sector_id ? [(int)$request->sector_id] : []);
+            $primarySectorId = $sectorIds[0] ?? null;
+
+            // Create employee record
             $employee = Employee::create([
                 'name' => $request->name,
                 'category_id' => $request->category_id,
                 'designation_id' => $request->designation_id,
                 'phone' => $request->phone,
-                // 'emp_id' removed
                 'date_of_hire' => $request->date_of_hire,
                 'address' => $request->address,
                 'city_id' => $request->city_id,
-                'sector_id' => $request->sector_id,
+                'sector_id' => $primarySectorId,
+                'sector_ids' => $sectorIds,
                 'status' => $request->status ?? 1,
             ]);
+
+
             Log::info('Employee created successfully with ID: ' . $employee->id);
 
             DB::commit();
@@ -237,7 +245,8 @@ class EmployeeController extends Controller
     public function edit(Employee $employee)
     {
         $user = Auth::user();
-        
+        $assignedSectorIds = $employee->all_sector_ids;
+
         $categories = Schema::hasTable('complaint_categories')
             ? ComplaintCategory::where('status', 1)->orderBy('name')->pluck('name', 'id')
             : collect();
@@ -257,7 +266,7 @@ class EmployeeController extends Controller
             ? Designation::where('status', 1)->orderBy('name')->get()
             : collect();
         
-        return view('admin.employees.edit', compact('employee', 'categories', 'cities', 'designations'));
+        return view('admin.employees.edit', compact('employee', 'categories', 'cities', 'designations', 'assignedSectorIds'));
     }
 
 
@@ -310,18 +319,6 @@ class EmployeeController extends Controller
         }
 
         if (!$cityId || $cityId <= 0) {
-            Log::info('No valid city ID provided', [
-                'city_id' => $request->input('city_id'),
-                'city_name' => $request->input('city_name'),
-                'all_request' => $request->all()
-            ]);
-            return response()->json(['sectors' => []]);
-        }
-
-        // Check if city exists
-        $city = City::find($cityId);
-        if (!$city) {
-            Log::warning('City not found', ['city_id' => $cityId]);
             return response()->json(['sectors' => []]);
         }
         
@@ -340,16 +337,10 @@ class EmployeeController extends Controller
         $sectors = $query->orderBy('id', 'asc')
             ->get(['id', 'name']);
         
-        // Log all sectors in database for debugging (remove in production)
-        $allSectors = Sector::select('id', 'name', 'city_id', 'status')->get();
-        Log::info('Sectors fetched', [
-            'requested_city_id' => $cityId,
-            'city_name' => $city->name,
-            'filtered_sectors_count' => $sectors->count(),
-            'all_sectors_in_db' => $allSectors->toArray()
+        return response()->json([
+            'sectors' => $sectors,
+            'auto_select' => ($sectors->count() === 1)
         ]);
-        
-        return response()->json(['sectors' => $sectors]);
     }
 
     /**
@@ -362,14 +353,17 @@ class EmployeeController extends Controller
             'phone' => 'nullable|regex:/^[0-9]{11}$/',
             'category_id' => 'required|exists:complaint_categories,id',
             'designation_id' => 'required|exists:designations,id',
-            // 'emp_id' removed
             'date_of_hire' => 'nullable|date',
             'address' => 'nullable|string|max:500',
             'city_id' => 'required|exists:cities,id',
-            'sector_id' => 'required|exists:sectors,id',
+            'sector_ids' => 'required_without:sector_id|array|min:1',
+            'sector_ids.*' => 'exists:sectors,id',
+            'sector_id' => 'nullable|exists:sectors,id',
             'status' => 'required|in:0,1',
         ], [
             'phone.regex' => 'Phone number must be exactly 11 digits (e.g. 03001234567).',
+            'sector_ids.required_without' => 'Please select at least one GE Node.',
+            'sector_ids.min' => 'Please select at least one GE Node.',
         ]);
 
         if ($validator->fails()) {
@@ -387,19 +381,24 @@ class EmployeeController extends Controller
         try {
             DB::beginTransaction();
 
+            $sectorIds = $request->has('sector_ids') ? array_values(array_map('intval', (array)$request->sector_ids)) : ($request->sector_id ? [(int)$request->sector_id] : []);
+            $primarySectorId = $sectorIds[0] ?? $employee->sector_id;
+
             // Update employee
             $employee->update([
                 'name' => $request->name,
                 'category_id' => $request->category_id,
                 'designation_id' => $request->designation_id ?? $employee->designation_id,
                 'phone' => $request->phone,
-                // 'emp_id' removed
                 'date_of_hire' => $request->date_of_hire,
                 'address' => $request->address,
                 'city_id' => $request->city_id,
-                'sector_id' => $request->sector_id,
+                'sector_id' => $primarySectorId,
+                'sector_ids' => $sectorIds,
                 'status' => $request->status,
             ]);
+
+
 
             DB::commit();
 
@@ -626,10 +625,10 @@ class EmployeeController extends Controller
     public function import(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|mimes:csv,txt,xls,xlsx|max:10240',
+            'file' => 'required|file|extensions:csv,txt,xls,xlsx|max:10240',
         ], [
             'file.required' => 'Please select a CSV or Excel file to import.',
-            'file.mimes' => 'The file must be a CSV or Excel format (.csv, .xls, .xlsx).',
+            'file.extensions' => 'The file must be a CSV or Excel format (.csv, .xls, .xlsx).',
         ]);
 
         $file = $request->file('file');

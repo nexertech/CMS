@@ -34,6 +34,13 @@ return new class extends Migration
             $table->timestamp('last_stock_in_at')->nullable();
             $table->timestamp('last_updated')->useCurrent();
             $table->timestamps();
+
+            // Performance indexes
+            $table->index('city_id');
+            $table->index('sector_id');
+            $table->index('category_id');
+            $table->index('item_name');
+            $table->index(['city_id', 'sector_id']);
         });
 
         Schema::create('spare_stock_logs', function (Blueprint $table) {
@@ -46,6 +53,10 @@ return new class extends Migration
             $table->text('remarks')->nullable();
             $table->softDeletes();
             $table->timestamps();
+
+            // Performance indexes
+            $table->index('spare_id');
+            $table->index('change_type');
         });
     }
 

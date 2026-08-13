@@ -26,7 +26,7 @@ class SectorController extends Controller
                 ->with('error', 'Run migrations to create sectors table.');
         }
 
-        // Show all sectors; status column indicates active/inactive
+        // Show all sectors (both active and edit-inactivated)
         $sectors = Sector::with(['city.cme'])->orderBy('id', 'asc')->paginate(15);
         $cities = Schema::hasTable('cities')
             ? City::where('status', 1)->with('cme')->orderBy('id', 'asc')->get()
@@ -130,15 +130,21 @@ class SectorController extends Controller
 
         try {
             $sector = Sector::findOrFail($id);
-            // Soft delete without migration: mark as inactive
-            $sector->update([
-                'status' => 0
-            ]);
+            $sector->delete();
 
             if (request()->ajax() || request()->wantsJson()) {
                 return response()->json(['success' => true]);
             }
-            return back()->with('success', 'Sector removed from list');
+            return back()->with('success', 'GE Node deleted successfully.');
+        } catch (\Illuminate\Database\QueryException $e) {
+            $sector = Sector::find($id);
+            if ($sector) {
+                $sector->update(['status' => 0]);
+            }
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => true]);
+            }
+            return back()->with('success', 'GE Node marked as inactive.');
         } catch (\Exception $e) {
             Log::error('Sector delete error: ' . $e->getMessage());
             if (request()->ajax() || request()->wantsJson()) {
@@ -160,8 +166,6 @@ class SectorController extends Controller
             $cityIds = $cityIds ? explode(',', $cityIds) : [];
         }
 
-        Log::info('getSectorsByCity called', ['city_ids' => $cityIds, 'user_id' => auth()->id()]);
-
         if (empty($cityIds)) {
             return response()->json([]);
         }
@@ -173,26 +177,19 @@ class SectorController extends Controller
             
         // Apply data isolation if user is logged in
         if ($user) {
-            $sectorIds = $this->getUserSectorIds($user);
             $roleName = strtolower($user->role->role_name ?? '');
-            
-            Log::info('getUserSectorIds result', [
-                'user_role' => $roleName,
-                'user_city' => $user->city_ids,
-                'sector_ids_result' => $sectorIds
-            ]);
 
-            // If user is admin or director, they should see all sectors in these cities
-            if ($sectorIds !== null && !in_array($roleName, ['admin', 'director'])) {
-                // If user has specific sectors, only show those sectors from the requested cities
-                $query->whereIn('id', $sectorIds);
+            // Admin/Director see all sectors, others see only their assigned sectors
+            if (!in_array($roleName, ['admin', 'director'])) {
+                $sectorIds = $this->getUserSectorIds($user);
+                if ($sectorIds !== null) {
+                    $query->whereIn('id', $sectorIds);
+                }
             }
         }
 
         $sectors = $query->orderBy('id', 'asc')
             ->get(['id', 'name']);
-
-        Log::info('Sectors query result count', ['count' => $sectors->count()]);
 
         return response()->json($sectors);
     }

@@ -23,6 +23,7 @@ return new class extends Migration
             $table->text('address')->nullable();
             $table->unsignedBigInteger('city_id')->nullable();
             $table->unsignedBigInteger('sector_id')->nullable();
+            $table->json('sector_ids')->nullable();
             $table->tinyInteger('status')->default(1);
             $table->timestamps();
             $table->softDeletes();
@@ -31,6 +32,12 @@ return new class extends Migration
             $table->foreign('designation_id')->references('id')->on('designations')->onDelete('set null');
             $table->foreign('city_id')->references('id')->on('cities')->onDelete('set null');
             $table->foreign('sector_id')->references('id')->on('sectors')->onDelete('set null');
+
+            // Performance indexes
+            $table->index('status');
+            $table->index('phone');
+            $table->index(['city_id', 'status']);
+            $table->index(['sector_id', 'status']);
         });
     }
 

@@ -38,6 +38,11 @@ return new class extends Migration {
 
             $table->timestamps();
             $table->softDeletes();
+
+            // Performance indexes
+            $table->index('complaint_id');
+            $table->index('house_id');
+            $table->index('entered_by');
         });
     }
 

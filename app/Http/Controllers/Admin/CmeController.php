@@ -90,15 +90,23 @@ class CmeController extends Controller
 
         try {
             $cme = Cme::findOrFail($id);
-            $cme->update([
-                'status' => 0
-            ]);
+            $cme->delete();
 
             if (request()->ajax() || request()->wantsJson()) {
                 return response()->json(['success' => true]);
             }
 
-            return back()->with('success', 'CMES removed from list.');
+            return back()->with('success', 'CMES deleted successfully.');
+        } catch (\Illuminate\Database\QueryException $e) {
+            $cme = Cme::find($id);
+            if ($cme) {
+                $cme->update(['status' => 0]);
+            }
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => true]);
+            }
+
+            return back()->with('success', 'CMES marked as inactive.');
         } catch (\Exception $e) {
             Log::error('CMES delete error: ' . $e->getMessage());
 

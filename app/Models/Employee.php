@@ -20,6 +20,7 @@ class Employee extends Model
         'address',
         'city_id',
         'sector_id',
+        'sector_ids',
         'status',
     ];
 
@@ -42,6 +43,7 @@ class Employee extends Model
     protected $casts = [
         'date_of_hire' => 'date',
         'status' => 'integer',
+        'sector_ids' => 'array',
     ];
 
     // Derived name accessor retained for backwards compatibility
@@ -105,6 +107,52 @@ class Employee extends Model
     {
         return $this->belongsTo(Sector::class, 'sector_id', 'id');
     }
+
+    /**
+     * Get comma-separated names of assigned sectors (GE Nodes).
+     */
+    public function getAssignedSectorsTextAttribute(): string
+    {
+        $ids = $this->all_sector_ids;
+        if (!empty($ids)) {
+            $sectorNames = Sector::whereIn('id', $ids)->pluck('name')->toArray();
+            if (!empty($sectorNames)) {
+                return implode(', ', $sectorNames);
+            }
+        }
+        return $this->sector ? $this->sector->name : 'N/A';
+    }
+
+    /**
+     * Get array of all sector IDs assigned to employee (sector_ids JSON column with fallback to primary sector_id).
+     */
+    public function getAllSectorIdsAttribute(): array
+    {
+        $ids = [];
+        $jsonIds = $this->sector_ids;
+        if (is_string($jsonIds)) {
+            $decoded = json_decode($jsonIds, true);
+            $jsonIds = is_array($decoded) ? $decoded : [];
+        }
+        if (is_array($jsonIds) && !empty($jsonIds)) {
+            foreach ($jsonIds as $v) {
+                $ids[] = (int)$v;
+            }
+        }
+        if ($this->sector_id) {
+            $ids[] = (int) $this->sector_id;
+        }
+        return array_values(array_unique(array_filter($ids)));
+    }
+
+    /**
+     * Get comma-separated string of all assigned sector IDs.
+     */
+    public function getAllSectorIdsCsvAttribute(): string
+    {
+        return implode(',', $this->all_sector_ids);
+    }
+
 
     // Removed username/email/status/user-dependent accessors
 
