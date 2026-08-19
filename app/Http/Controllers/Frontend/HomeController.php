@@ -2004,6 +2004,7 @@ class HomeController extends Controller
             'city',
             'sector',
             'category',
+            'subCategory',
             'assignedEmployee.designation',
             // 'attachments', (Removed as it does not exist on Complaint model)
             'spareApprovals',

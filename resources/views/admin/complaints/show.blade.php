@@ -236,6 +236,18 @@
           <span class="info-value text-end" style="max-width: 60%;">{{ $displayText }}</span>
         </div>
       </div>
+
+      @if($complaint->subCategory)
+      <div class="info-item">
+        <div class="d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center">
+            <i data-feather="layers" class="me-2 text-muted" style="width: 14px; height: 14px;"></i>
+            <span class="info-label">Sub Category</span>
+          </div>
+          <span class="info-value text-end">{{ $complaint->subCategory->name }}</span>
+        </div>
+      </div>
+      @endif
       
       <div class="info-item">
         <div class="d-flex align-items-center justify-content-between">
@@ -287,7 +299,6 @@
       </div>
       @endif
       
-      @if($complaint->priority)
       <div class="info-item">
         <div class="d-flex align-items-center justify-content-between">
           <div class="d-flex align-items-center">
@@ -296,7 +307,8 @@
           </div>
           <div>
             @php
-              $isEmerg = strtolower($complaint->priority ?? 'normal') === 'emergency';
+              $pVal = strtolower($complaint->priority ?? 'normal');
+              $isEmerg = in_array($pVal, ['emergency', 'urgent', 'high'], true);
             @endphp
             <span class="badge" style="background-color: {{ $isEmerg ? '#991b1b' : '#1d4ed8' }} !important; color: #ffffff !important; border: 1px solid {{ $isEmerg ? '#7f1d1d' : '#1e40af' }} !important; font-size: 0.75rem; padding: 4px 10px; border-radius: 6px;">
               {{ $isEmerg ? 'Emergency' : 'Normal' }}
@@ -304,7 +316,6 @@
           </div>
         </div>
       </div>
-      @endif
       
       <div class="info-item">
         <div class="d-flex align-items-center justify-content-between">

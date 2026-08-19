@@ -101,6 +101,7 @@ class Role extends Model
         // Map sublinks to parent modules
         $sublinkToParent = [
             'category' => 'complaints',
+            'sub-category' => 'complaints',
             'complaint-titles' => 'complaints',
             'complaints' => 'complaints',
             'approvals' => 'complaints',

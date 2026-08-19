@@ -11,7 +11,7 @@
             </div>
             @if(Auth::user() && Auth::user()->hasPermission('complaints'))
             <a href="{{ route('admin.complaints.create') }}" class="btn d-flex align-items-center gap-2" 
-               style="background: #001f5b !important; color: #ffffff !important; font-weight: 700; font-size: 1.15rem; padding: 0.75rem 1.75rem; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; text-decoration: none; transition: all 0.3s ease; margin-top: 1px   !important;">
+               style="background: #001f5b !important; color: #ffffff !important; font-weight: 700; font-size: 1.15rem; padding: 0.75rem 1.75rem; border-radius: 4px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; text-decoration: none; transition: all 0.3s ease; margin-top: 1px !important;">
                 <i data-feather="plus-circle" style="width: 22px; height: 22px; color: #ffffff !important; stroke: #ffffff !important; stroke-width: 2.5px;"></i>
                 <span style="color: #ffffff !important;">Add Complaint</span>
             </a>
@@ -105,6 +105,21 @@
                     </div>
                     <div class="col-auto">
                         <label class="form-label small mb-1"
+                            style="font-size: 0.8rem; color: #000000 !important; font-weight: 500;">Sub Category</label>
+                        <select class="form-select" name="sub_category_id" onchange="submitComplaintsFilters()"
+                            style="font-size: 0.9rem; width: 150px;">
+                            <option value="" {{ request('sub_category_id') ? '' : 'selected' }}>All</option>
+                            @if(isset($subCategories) && $subCategories->count() > 0)
+                                @foreach($subCategories as $subCat)
+                                    <option value="{{ $subCat->id }}" {{ request('sub_category_id') == $subCat->id ? 'selected' : '' }}>
+                                        {{ $subCat->name }}
+                                    </option>
+                                @endforeach
+                            @endif
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <label class="form-label small mb-1"
                             style="font-size: 0.8rem; color: #000000 !important; font-weight: 500;">Employee</label>
                         <select class="form-select" name="assigned_employee_id" onchange="submitComplaintsFilters()"
                             style="font-size: 0.9rem; width: 170px;">
@@ -191,10 +206,12 @@
                             @endif
                             @if(!request('modal'))
                                 <th style="width: 150px;">Address</th>
+                                <th style="width: auto;">Category</th>
                             @else
                                 <th style="width: 150px;">Status</th>
+                                <th style="width: auto;">Category</th>
+                                <th style="width: auto;">Sub Category</th>
                             @endif
-                            <th style="width: auto;">Nature</th>
                             <th style="width: auto;">Type</th>
                             <th style="width: 100px;">Priority</th>
                             <th style="width: 80px;">Actions</th>
@@ -265,6 +282,11 @@
                                 <td style="width: auto;">
                                     {{ ucfirst($complaint->category->name ?? $complaint->category ?? 'Uncategorized') }}
                                 </td>
+                                @if(request('modal'))
+                                <td style="width: auto;">
+                                    {{ $complaint->subCategory->name ?? '-' }}
+                                </td>
+                                @endif
                                  <td style="width: auto;">
                                      {{ $complaint->getTitleDisplayAttribute() }}
                                  </td>
@@ -305,7 +327,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center py-4">
+                                <td colspan="10" class="text-center py-4">
                                     <i data-feather="alert-circle" class="feather-lg mb-2"></i>
                                     <div>No complaints found</div>
                                 </td>

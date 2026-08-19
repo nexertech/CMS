@@ -94,10 +94,50 @@ window.initializeComplaintForm = function(root = document) {
         }
     }
 
+    function loadSubCategories(category, selectedSubCategoryId = null) {
+        const subCategorySelect = root.querySelector('#sub_category_id');
+        if (!subCategorySelect) return;
+
+        if (!category) {
+            subCategorySelect.innerHTML = '<option value="">Select Category First</option>';
+            return;
+        }
+
+        subCategorySelect.innerHTML = '<option value="">Loading...</option>';
+
+        const url = `{{ route('admin.sub-categories.by-category') }}?category=${encodeURIComponent(category)}`;
+
+        fetch(url, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            subCategorySelect.innerHTML = '<option value="">Select Sub Category (Optional)</option>';
+            const list = (data && data.sub_categories) ? data.sub_categories : (Array.isArray(data) ? data : []);
+            const targetVal = selectedSubCategoryId || subCategorySelect.getAttribute('data-old-value');
+            if (list.length > 0) {
+                list.forEach(sub => {
+                    const option = document.createElement('option');
+                    option.value = sub.id;
+                    option.textContent = sub.name;
+                    if (targetVal && String(sub.id) === String(targetVal)) {
+                        option.selected = true;
+                    }
+                    subCategorySelect.appendChild(option);
+                });
+            }
+        })
+        .catch(err => {
+            console.error('Error loading sub categories:', err);
+            subCategorySelect.innerHTML = '<option value="">Select Sub Category (Optional)</option>';
+        });
+    }
+
     if (categorySelect) {
         categorySelect.addEventListener('change', function() {
             filterEmployees();
             const category = this.value;
+            loadSubCategories(category);
             if (!category) {
                 if (titleSelect) titleSelect.innerHTML = '<option value="">Select Category First</option>';
                 return;

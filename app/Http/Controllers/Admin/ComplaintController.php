@@ -225,6 +225,13 @@ class ComplaintController extends Controller
             });
         }
 
+        // Filter by sub_category_id (supports array from dashboard)
+        if ($request->has('sub_category_id') && $request->sub_category_id) {
+            $subCategoryId = $request->sub_category_id;
+            $subCategoryIds = is_array($subCategoryId) ? $subCategoryId : [$subCategoryId];
+            $query->whereIn('complaints.sub_category_id', $subCategoryIds);
+        }
+
         // Filter by priority
         if ($request->has('priority') && $request->priority) {
             $query->where('complaints.priority', $request->priority);
@@ -370,7 +377,7 @@ class ComplaintController extends Controller
 
         // Order by ID descending (3, 2, 1...) - newest/highest ID first
         // Clear any existing orders and set explicit descending order
-        $query->with(['assignedEmployee.designation', 'house', 'category', 'complaintTitle', 'city.cme', 'sector.cme', 'logs.actionBy'])
+        $query->with(['assignedEmployee.designation', 'house', 'category', 'subCategory', 'complaintTitle', 'city.cme', 'sector.cme', 'logs.actionBy'])
             ->reorder()
             ->orderBy('complaints.id', 'desc');
         if ($request->has('export_all')) {
@@ -436,6 +443,7 @@ class ComplaintController extends Controller
                     'phone' => $complaint->house->phone ?? 'N/A',
                     'address' => $complaint->house->address ?? 'N/A',
                     'category' => $complaint->getCategoryDisplayAttribute() ?? 'N/A',
+                    'sub_category' => $complaint->subCategory->name ?? '-',
                     'type' => $complaint->complaintTitle->title ?? $complaint->title ?? 'N/A',
                     'description' => $complaint->description ?: 'N/A',
                     'status' => $statusText,
@@ -462,7 +470,11 @@ class ComplaintController extends Controller
             ? ComplaintCategory::where('status', 1)->orderBy('name')->pluck('name', 'id')
             : collect();
 
-        return view('admin.complaints.index', compact('complaints', 'employees', 'categories'));
+        $subCategories = Schema::hasTable('sub_categories')
+            ? \App\Models\SubCategory::where('status', 1)->orderBy('name', 'asc')->get()
+            : collect();
+
+        return view('admin.complaints.index', compact('complaints', 'employees', 'categories', 'subCategories'));
     }
 
     /**
@@ -583,6 +595,7 @@ class ComplaintController extends Controller
                 'city_id' => $request->city_id ?: null,
                 'sector_id' => $request->sector_id ?: null,
                 'category_id' => $request->category,
+                'sub_category_id' => $request->sub_category_id ?: null,
                 'priority' => $request->priority,
                 'availability_time' => $request->availability_time,
                 'description' => $request->description,
@@ -716,6 +729,7 @@ class ComplaintController extends Controller
                     'city_id' => $request->city_id ?: null,
                     'sector_id' => $request->sector_id ?: null,
                     'category_id' => $entry['category'],
+                    'sub_category_id' => $entry['sub_category_id'] ?? null,
                     'priority' => $entry['priority'],
                     'availability_time' => $entry['availability_time'] ?? null,
                     'description' => $entry['description'] ?? null,
@@ -759,7 +773,7 @@ class ComplaintController extends Controller
      */
     public function show(Complaint $complaint)
     {
-        $complaint->load(['assignedEmployee', 'city', 'sector', 'spareParts.spare', 'spareApprovals', 'logs.actionBy', 'category', 'complaintTitle']);
+        $complaint->load(['assignedEmployee', 'city', 'sector', 'spareParts.spare', 'spareApprovals', 'logs.actionBy', 'category', 'subCategory', 'complaintTitle']);
         return view('admin.complaints.show', compact('complaint'));
     }
 
@@ -891,6 +905,7 @@ class ComplaintController extends Controller
             'city_id' => $request->city_id ?: null,
             'sector_id' => $request->sector_id ?: null,
             'category_id' => $request->category,
+            'sub_category_id' => $request->sub_category_id ?: null,
             'priority' => $request->priority,
             'availability_time' => $request->availability_time,
             'description' => $request->description,
@@ -1346,7 +1361,7 @@ class ComplaintController extends Controller
      */
     public function printSlip(Complaint $complaint)
     {
-        $complaint->load(['assignedEmployee.designation', 'attachments', 'house', 'category', 'city', 'sector', 'logs.actionBy']);
+        $complaint->load(['assignedEmployee.designation', 'attachments', 'house', 'category', 'subCategory', 'city', 'sector', 'logs.actionBy']);
 
         return view('admin.complaints.print-slip', compact('complaint'));
     }

@@ -399,6 +399,100 @@ class HouseController extends Controller
     }
 
     /**
+     * Export houses to CSV / Excel format
+     */
+    public function export(Request $request)
+    {
+        $user = Auth::user();
+        $query = House::query();
+
+        // Search functionality
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('username', 'like', "%{$search}%")
+                  ->orWhere('house_no', 'like', "%{$search}%")
+                  ->orWhere('name', 'like', "%{$search}%")
+                  ->orWhere('type', 'like', "%{$search}%")
+                  ->orWhere('address', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by city (GE Group)
+        if ($request->has('city_id') && !empty($request->city_id)) {
+            $query->where('city_id', $request->city_id);
+        }
+
+        // Filter by sector (GE Node)
+        if ($request->has('sector_id') && !empty($request->sector_id)) {
+            $query->where('sector_id', $request->sector_id);
+        }
+
+        // Filter by status
+        if ($request->has('status') && $request->status !== null && $request->status !== '') {
+            $query->where('status', $request->status);
+        }
+
+        $this->filterHousesByLocation($query, $user);
+
+        $houses = $query->with(['city', 'sector'])
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $fileName = 'houses_export_' . date('Y-m-d') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+        ];
+
+        $columns = [
+            'ID',
+            'House No',
+            'Resident Name',
+            'Username',
+            'Phone',
+            'GE Group (City)',
+            'GE Node (Sector)',
+            'Type',
+            'Address',
+            'Status',
+            'Created Date'
+        ];
+
+        $callback = function () use ($houses, $columns) {
+            $file = fopen('php://output', 'w');
+            fputs($file, "\xEF\xBB\xBF"); // UTF-8 BOM for Excel compatibility
+            fputcsv($file, $columns);
+
+            foreach ($houses as $house) {
+                $id = '="' . $house->id . '"';
+                $houseNo = !empty($house->house_no) ? '="' . $house->house_no . '"' : 'N/A';
+                $phone = !empty($house->phone) ? '="' . $house->phone . '"' : 'N/A';
+                $createdAt = $house->created_at ? '="' . $house->created_at->format('Y-m-d') . '"' : 'N/A';
+
+                fputcsv($file, [
+                    $id,
+                    $houseNo,
+                    $house->name ?? 'N/A',
+                    $house->username ?? 'N/A',
+                    $phone,
+                    $house->city ? $house->city->name : 'N/A',
+                    $house->sector ? $house->sector->name : 'N/A',
+                    $house->type ?? 'N/A',
+                    $house->address ?? 'N/A',
+                    $house->status === 1 ? 'Active' : 'Inactive',
+                    $createdAt
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
      * Download sample CSV for house import
      */
     public function downloadSample()

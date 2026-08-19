@@ -486,6 +486,12 @@
                         <td class="label">Nature/Type:</td>
                         <td class="value">{{ ucfirst($complaint->getCategoryDisplayAttribute()) . ' - ' . $complaint->getTitleDisplayAttribute() }}</td>
                     </tr>
+                    @if($complaint->subCategory)
+                        <tr>
+                            <td class="label">Sub Category:</td>
+                            <td class="value">{{ $complaint->subCategory->name }}</td>
+                        </tr>
+                    @endif
                     @php
                         $createdLog = $complaint->logs->where('action', 'created')->first();
                         $registeredBy = null;
@@ -529,6 +535,18 @@
                     <tr>
                         <td class="label">Complaint #</td>
                         <td class="value" style="font-size: 11px;">#{{ $complaint->id }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Priority:</td>
+                        <td class="value">
+                            @php
+                                $pVal = strtolower($complaint->priority ?? 'normal');
+                                $isEmerg = in_array($pVal, ['emergency', 'urgent', 'high'], true);
+                            @endphp
+                            <span class="badge {{ $isEmerg ? 'badge-urgent' : 'badge-medium' }}" style="font-size: 10px; padding: 2px 6px;">
+                                {{ $isEmerg ? 'Emergency' : 'Normal' }}
+                            </span>
+                        </td>
                     </tr>
                     <tr>
                         <td class="label">Availability:</td>

@@ -43,4 +43,12 @@ class ComplaintCategory extends Model
     {
         return $this->hasMany(ComplaintTitle::class, 'category_id', 'id');
     }
+
+    /**
+     * Get the sub categories for the category.
+     */
+    public function subCategories()
+    {
+        return $this->hasMany(SubCategory::class, 'category_id', 'id');
+    }
 }

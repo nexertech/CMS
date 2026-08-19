@@ -185,6 +185,7 @@
                         @foreach($oldComplaints as $index => $oldEntry)
                         @php
                             $catVal = is_array($oldEntry) && isset($oldEntry['category']) ? $oldEntry['category'] : old("complaints.{$index}.category");
+                            $subCatVal = is_array($oldEntry) && isset($oldEntry['sub_category_id']) ? $oldEntry['sub_category_id'] : old("complaints.{$index}.sub_category_id");
                             $titleVal = is_array($oldEntry) && isset($oldEntry['complaint_title_id']) ? $oldEntry['complaint_title_id'] : old("complaints.{$index}.complaint_title_id");
                             $titleOtherVal = is_array($oldEntry) && isset($oldEntry['title_other']) ? $oldEntry['title_other'] : old("complaints.{$index}.title_other");
                             $priorityVal = is_array($oldEntry) && isset($oldEntry['priority']) ? $oldEntry['priority'] : old("complaints.{$index}.priority", 'normal');
@@ -212,6 +213,14 @@
                                             @foreach ($categories as $id => $name)
                                                 <option value="{{ $id }}" {{ (string)$catVal === (string)$id ? 'selected' : '' }}>{{ ucfirst($name) }}</option>
                                             @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label text-white">Sub Category</label>
+                                        <select name="complaints[{{ $index }}][sub_category_id]" class="form-select complaint-sub-category" data-old-value="{{ $subCatVal }}">
+                                            <option value="">Select Category First</option>
                                         </select>
                                     </div>
                                 </div>
@@ -250,7 +259,7 @@
                                     <div class="mb-3">
                                         <label class="form-label text-white">Assign Employee</label>
                                         <select name="complaints[{{ $index }}][assigned_employee_id]" class="form-select complaint-employee">
-                                            <option value="">Select Employee (Optional)</option>
+                                            <option value="">{{ $catVal ? 'Select Employee (Optional)' : 'Select Category First' }}</option>
                                             @if (isset($employees) && $employees->count() > 0)
                                                 @foreach ($employees as $employee)
                                                     <option value="{{ $employee->id }}"
@@ -574,32 +583,112 @@
 
             const currentSelectedId = employeeSelect.value;
             let currentlySelectedIsHidden = false;
+            let visibleCount = 0;
 
-            Array.from(employeeSelect.options).forEach(opt => {
+            const defaultOpt = employeeSelect.options[0];
+
+            if (!category) {
+                // When Category is NOT selected: Hide all employees and prompt "Select Category First"
+                if (defaultOpt) {
+                    defaultOpt.textContent = 'Select Category First';
+                    defaultOpt.disabled = false;
+                }
+                Array.from(employeeSelect.options).forEach((opt, idx) => {
+                    if (idx === 0) return;
+                    opt.hidden = true;
+                    opt.style.display = 'none';
+                    opt.disabled = true;
+                });
+                employeeSelect.value = '';
+                return;
+            }
+
+            // When Category IS selected: Filter employees by category (and city/sector)
+            Array.from(employeeSelect.options).forEach((opt, idx) => {
+                if (idx === 0) return;
                 if (!opt.value) return;
+
                 const optCategory = opt.getAttribute('data-category') || '';
                 const optCity = opt.getAttribute('data-city') || '';
                 const optSectorRaw = opt.getAttribute('data-sector') || opt.getAttribute('data-sectors') || '';
                 const optSectors = optSectorRaw ? optSectorRaw.split(',').map(s => s.trim()) : [];
 
-                const matchCategory = !category || !optCategory || String(optCategory) === String(category);
+                const matchCategory = optCategory && String(optCategory) === String(category);
                 const matchSector = !sectorId || optSectors.length === 0 || optSectors.includes(String(sectorId));
                 const matchCity = !cityId || String(optCity) === String(cityId) || (sectorId && optSectors.includes(String(sectorId)));
 
-                const isSelected = currentSelectedId && String(opt.value) === String(currentSelectedId);
-                const show = isSelected || (matchCategory && matchCity && matchSector);
+                const show = matchCategory && matchCity && matchSector;
                 opt.hidden = !show;
                 opt.style.display = show ? '' : 'none';
                 opt.disabled = !show;
 
-                if (!show && opt.value === currentSelectedId) {
+                if (show) {
+                    visibleCount++;
+                }
+
+                if (!show && String(opt.value) === String(currentSelectedId)) {
                     currentlySelectedIsHidden = true;
                 }
             });
 
+            if (defaultOpt) {
+                if (visibleCount > 0) {
+                    defaultOpt.textContent = 'Select Employee (Optional)';
+                    defaultOpt.disabled = false;
+                } else {
+                    defaultOpt.textContent = 'No employees available for this category';
+                    defaultOpt.disabled = false;
+                }
+            }
+
             if (currentlySelectedIsHidden) {
                 employeeSelect.value = '';
             }
+        }
+
+        // ============================================
+        // Load sub categories for a specific entry
+        // ============================================
+        function loadSubCategoriesForEntry(entry, selectedSubCategoryId = null) {
+            const categorySelect = entry.querySelector('.complaint-category');
+            const subCategorySelect = entry.querySelector('.complaint-sub-category');
+
+            if (!categorySelect || !subCategorySelect) return;
+
+            const category = categorySelect.value;
+
+            if (!category) {
+                subCategorySelect.innerHTML = '<option value="">Select Category First</option>';
+                return;
+            }
+
+            subCategorySelect.innerHTML = '<option value="">Loading...</option>';
+
+            const url = `{{ route('admin.sub-categories.by-category') }}?category=${encodeURIComponent(category)}`;
+
+            fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                subCategorySelect.innerHTML = '<option value="">Select Sub Category (Optional)</option>';
+                const list = (data && data.sub_categories) ? data.sub_categories : (Array.isArray(data) ? data : []);
+                if (list.length > 0) {
+                    list.forEach(sub => {
+                        const option = document.createElement('option');
+                        option.value = sub.id;
+                        option.textContent = sub.name;
+                        if (selectedSubCategoryId && String(sub.id) === String(selectedSubCategoryId)) {
+                            option.selected = true;
+                        }
+                        subCategorySelect.appendChild(option);
+                    });
+                }
+            })
+            .catch(err => {
+                console.error('Error loading sub categories:', err);
+                subCategorySelect.innerHTML = '<option value="">Select Sub Category (Optional)</option>';
+            });
         }
 
         // ============================================
@@ -729,6 +818,7 @@
 
             if (categorySelect) {
                 categorySelect.addEventListener('change', function() {
+                    loadSubCategoriesForEntry(entry);
                     loadTitlesForEntry(entry);
                     filterEmployeesInEntry(entry);
                 });
@@ -1045,6 +1135,10 @@
                 const titleOther = entry.querySelector('.complaint-title-other');
 
                 if (categorySelect && categorySelect.value) {
+                    const subCategorySelect = entry.querySelector('.complaint-sub-category');
+                    const oldSubCatValue = subCategorySelect ? subCategorySelect.getAttribute('data-old-value') : null;
+                    loadSubCategoriesForEntry(entry, oldSubCatValue);
+
                     let titleToSelect = oldTitleValue;
                     if (!titleToSelect && titleOther && titleOther.value) {
                         titleToSelect = 'other';
