@@ -49,7 +49,7 @@ class SubCategoryController extends Controller
             $query->where('status', $request->status);
         }
 
-        $subCategories = $query->orderBy('id', 'asc')->paginate(15);
+        $subCategories = $query->orderBy('id', 'asc')->paginate(15)->withQueryString();
         $categories = ComplaintCategory::where('status', 1)->orderBy('name', 'asc')->get();
 
         if ($request->ajax() && $request->header('Accept') === 'application/json') {

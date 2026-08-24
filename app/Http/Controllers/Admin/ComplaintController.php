@@ -586,7 +586,7 @@ class ComplaintController extends Controller
             }
 
             $assignedEmpId = $request->assigned_employee_id ?: null;
-            $complaintStatus = $assignedEmpId ? Complaint::STATUS_ASSIGNED : Complaint::STATUS_UNASSIGNED;
+            $complaintStatus = $assignedEmpId ? Complaint::STATUS_IN_PROGRESS : Complaint::STATUS_UNASSIGNED;
 
             $complaint = Complaint::create([
                 'complaint_title_id' => $complaintTitleId,
@@ -720,7 +720,7 @@ class ComplaintController extends Controller
                 }
 
                 $assignedEmpId = $entry['assigned_employee_id'] ?? null ?: null;
-                $complaintStatus = $assignedEmpId ? Complaint::STATUS_ASSIGNED : Complaint::STATUS_UNASSIGNED;
+                $complaintStatus = $assignedEmpId ? Complaint::STATUS_IN_PROGRESS : Complaint::STATUS_UNASSIGNED;
 
                 $complaint = Complaint::create([
                     'complaint_title_id' => $complaintTitleId,
@@ -885,14 +885,14 @@ class ComplaintController extends Controller
 
         $newStatus = $complaint->status;
 
-        // If an employee is assigned, automatically update status to ASSIGNED if it was unassigned/new
+        // If an employee is assigned, automatically update status to IN_PROGRESS if it was unassigned/new
         if ($request->filled('assigned_employee_id')) {
             $unassignedStatuses = [Complaint::STATUS_UNASSIGNED, '2', 2, 'unassigned', 'new'];
-            if (in_array($newStatus, $unassignedStatuses) || $request->status === 'assigned' || $request->status == Complaint::STATUS_ASSIGNED) {
-                $newStatus = Complaint::STATUS_ASSIGNED;
+            if (in_array($newStatus, $unassignedStatuses) || $request->status === 'assigned' || $request->status == Complaint::STATUS_ASSIGNED || $request->status === 'in_progress' || $request->status == Complaint::STATUS_IN_PROGRESS) {
+                $newStatus = Complaint::STATUS_IN_PROGRESS;
             }
         } elseif ($request->has('assigned_employee_id') && empty($request->assigned_employee_id)) {
-            $assignedStatuses = [Complaint::STATUS_ASSIGNED, '3', 3, 'assigned'];
+            $assignedStatuses = [Complaint::STATUS_ASSIGNED, Complaint::STATUS_IN_PROGRESS, '3', 3, '0', 0, 'assigned', 'in_progress'];
             if (in_array($newStatus, $assignedStatuses) || $request->status === 'unassigned' || $request->status == Complaint::STATUS_UNASSIGNED) {
                 $newStatus = Complaint::STATUS_UNASSIGNED;
             }
@@ -1006,7 +1006,7 @@ class ComplaintController extends Controller
             // Send Notification to the House (User) for assignment
             if ($complaint->house) {
                 try {
-                    $status = $request->assigned_employee_id ? 'assigned' : 'unassigned';
+                    $status = $request->assigned_employee_id ? 'in_progress' : 'unassigned';
                     $complaint->house->notify(new \App\Notifications\ComplaintStatusUpdated($complaint, $status));
                 } catch (\Exception $e) {
                     Log::error('Notification Failed in update() assignment: ' . $e->getMessage());
@@ -1078,7 +1078,7 @@ class ComplaintController extends Controller
 
         $complaint->update([
             'assigned_employee_id' => $request->assigned_employee_id,
-            'status' => Complaint::STATUS_ASSIGNED,
+            'status' => Complaint::STATUS_IN_PROGRESS,
         ]);
 
         $currentEmployee = Employee::first();
@@ -1094,7 +1094,7 @@ class ComplaintController extends Controller
         // Send Notification to the House (User)
         if ($complaint->house) {
             try {
-                $complaint->house->notify(new \App\Notifications\ComplaintStatusUpdated($complaint, 'assigned'));
+                $complaint->house->notify(new \App\Notifications\ComplaintStatusUpdated($complaint, 'in_progress'));
             } catch (\Exception $e) {
                 Log::error('Notification Failed in assign(): ' . $e->getMessage());
             }
@@ -1397,7 +1397,7 @@ class ComplaintController extends Controller
 
                 Complaint::whereIn('id', $complaintIds)->update([
                     'assigned_employee_id' => $request->assigned_employee_id,
-                    'status' => Complaint::STATUS_ASSIGNED,
+                    'status' => Complaint::STATUS_IN_PROGRESS,
                 ]);
                 $message = 'Selected complaints assigned successfully.';
                 break;

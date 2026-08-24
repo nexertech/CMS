@@ -58,7 +58,7 @@ class HouseController extends Controller
             $user = Auth::user();
             $this->filterHousesByLocation($query, $user);
 
-            $houses = $query->with(['city', 'sector'])->orderBy('id', 'desc')->paginate(10);
+            $houses = $query->with(['city', 'sector'])->orderBy('id', 'desc')->paginate(10)->withQueryString();
             
             // Get cities and sectors for filter dropdowns based on user permissions
             $cityIds = $this->getUserCityIds($user);

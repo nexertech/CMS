@@ -610,87 +610,79 @@
                         </div>
                     </div>
 
-                    @if(in_array($complaint->status, ['resolved', 'closed']))
-                        <!-- Feedback Form -->
-                        <form action="{{ route('frontend.feedback.submit', $complaint->id) }}" method="POST" style="margin-top: 20px;">
-                            @csrf
+                    <!-- Feedback Form -->
+                    <form action="{{ route('frontend.feedback.submit', $complaint->id) }}" method="POST" style="margin-top: 20px;">
+                        @csrf
 
-                            <div class="form-group">
-                                <label for="submitted_by" class="form-label">Your Name</label>
-                                <input type="text" id="submitted_by" name="submitted_by" required
-                                    value="{{ old('submitted_by', $complaint->house->name ?? '') }}"
-                                    class="form-input"
-                                    placeholder="Enter your name">
-                                @error('submitted_by')
-                                    <p class="form-error">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label" style="text-align: center;">Overall Experience</label>
-                                <div class="rating-container">
-                                    <div class="star-rating" id="star-rating">
-                                        <input type="radio" id="star5" name="overall_rating" value="excellent" required />
-                                        <label for="star5" data-rating="excellent" data-text="Excellent">
-                                            <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                        </label>
-
-                                        <input type="radio" id="star4" name="overall_rating" value="good" />
-                                        <label for="star4" data-rating="good" data-text="Good">
-                                            <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                        </label>
-
-                                        <input type="radio" id="star3" name="overall_rating" value="satisfied" />
-                                        <label for="star3" data-rating="satisfied" data-text="Satisfied">
-                                            <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                        </label>
-
-                                        <input type="radio" id="star2" name="overall_rating" value="fair" />
-                                        <label for="star2" data-rating="fair" data-text="Fair">
-                                            <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                        </label>
-
-                                        <input type="radio" id="star1" name="overall_rating" value="poor" />
-                                        <label for="star1" data-rating="poor" data-text="Poor">
-                                            <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                        </label>
-                                    </div>
-                                    <div class="rating-text" id="rating-label">Tap to Rate</div>
-                                </div>
-                                @error('overall_rating')
-                                    <p class="form-error" style="text-align: center; margin-top: 6px;">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div class="form-group">
-                                <label for="remarks" class="form-label">Technician Remarks <span class="optional">(Optional)</span></label>
-                                <textarea id="remarks" name="remarks" rows="2" class="form-textarea"
-                                    placeholder="Enter technician remarks..."></textarea>
-                                @error('remarks')
-                                    <p class="form-error">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div class="form-group">
-                                <label for="comments" class="form-label">Comments <span class="optional">(Optional)</span></label>
-                                <textarea id="comments" name="comments" rows="3" class="form-textarea"
-                                    placeholder="Any additional feedback..."></textarea>
-                                @error('comments')
-                                    <p class="form-error">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <button type="submit" class="btn-submit">
-                                Submit Feedback
-                            </button>
-                        </form>
-                    @else
-                        <div class="submitted-state" style="padding: 24px 10px 10px; margin-top: 15px; border-top: 1.5px dashed #e2e8f0;">
-                            <div class="check-icon" style="font-size: 44px; margin-bottom: 10px;">⏳</div>
-                            <h2 style="font-size: 16px; font-weight: 700; color: #334155; margin-bottom: 6px;">Feedback Locked</h2>
-                            <p style="font-size: 13px; color: #64748b; line-height: 1.5; max-width: 320px; margin: 0 auto;">You can submit feedback once this complaint is marked as <strong>Addressed (Resolved)</strong> by the Complaint centre.</p>
+                        <div class="form-group">
+                            <label for="submitted_by" class="form-label">Your Name</label>
+                            <input type="text" id="submitted_by" name="submitted_by" required
+                                value="{{ old('submitted_by', $complaint->house->name ?? '') }}"
+                                class="form-input"
+                                placeholder="Enter your name">
+                            @error('submitted_by')
+                                <p class="form-error">{{ $message }}</p>
+                            @enderror
                         </div>
-                    @endif
+
+                        <div class="form-group">
+                            <label class="form-label" style="text-align: center;">Overall Experience</label>
+                            <div class="rating-container">
+                                <div class="star-rating" id="star-rating">
+                                    <input type="radio" id="star5" name="overall_rating" value="excellent" required />
+                                    <label for="star5" data-rating="excellent" data-text="Excellent">
+                                        <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                    </label>
+
+                                    <input type="radio" id="star4" name="overall_rating" value="good" />
+                                    <label for="star4" data-rating="good" data-text="Good">
+                                        <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                    </label>
+
+                                    <input type="radio" id="star3" name="overall_rating" value="satisfied" />
+                                    <label for="star3" data-rating="satisfied" data-text="Satisfied">
+                                        <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                    </label>
+
+                                    <input type="radio" id="star2" name="overall_rating" value="fair" />
+                                    <label for="star2" data-rating="fair" data-text="Fair">
+                                        <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                    </label>
+
+                                    <input type="radio" id="star1" name="overall_rating" value="poor" />
+                                    <label for="star1" data-rating="poor" data-text="Poor">
+                                        <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                    </label>
+                                </div>
+                                <div class="rating-text" id="rating-label">Tap to Rate</div>
+                            </div>
+                            @error('overall_rating')
+                                <p class="form-error" style="text-align: center; margin-top: 6px;">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="form-group">
+                            <label for="remarks" class="form-label">Technician Remarks <span class="optional">(Optional)</span></label>
+                            <textarea id="remarks" name="remarks" rows="2" class="form-textarea"
+                                placeholder="Enter technician remarks..."></textarea>
+                            @error('remarks')
+                                <p class="form-error">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="form-group">
+                            <label for="comments" class="form-label">Comments <span class="optional">(Optional)</span></label>
+                            <textarea id="comments" name="comments" rows="3" class="form-textarea"
+                                placeholder="Any additional feedback..."></textarea>
+                            @error('comments')
+                                <p class="form-error">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <button type="submit" class="btn-submit">
+                            Submit Feedback
+                        </button>
+                    </form>
                 @endif
             </div>
         </div>

@@ -1238,6 +1238,9 @@
                     <i data-feather="list" class="me-2"></i>Complaints
                 </h5>
                 <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-danger btn-sm d-inline-flex align-items-center text-white" onclick="exportModalToPdf()" style="background-color: #dc2626; border-color: #b91c1c; font-weight: 600; padding: 0 6px !important; font-size: 0.65rem !important; height: 24px !important; line-height: 1 !important; border-radius: 0px !important; border: 1px solid #b91c1c; color: #ffffff !important; margin: 0;">
+                        <i data-feather="file-text" class="me-1" style="width: 12px; height: 12px;"></i> Export to PDF
+                    </button>
                     <button type="button" class="btn btn-success btn-sm d-inline-flex align-items-center text-white" onclick="exportModalToExcel()" style="background-color: #16a34a; border-color: #15803d; font-weight: 600; padding: 0 6px !important; font-size: 0.65rem !important; height: 24px !important; line-height: 1 !important; border-radius: 0px !important; border: 1px solid #15803d; color: #ffffff !important; margin: 0;">
                         <i data-feather="download" class="me-1" style="width: 12px; height: 12px;"></i> Export to Excel
                     </button>
@@ -2439,6 +2442,255 @@
         .catch(err => {
             console.error(err);
             tbody.innerHTML = '<tr><td colspan="10" class="text-center py-4 text-danger">Error loading data.</td></tr>';
+        });
+    };
+
+    // Client-side PDF exporter for modal table with required fields:
+    // CMP-ID, register date, house no, category, sub category, type, priority, description
+    window.exportModalToPdf = function() {
+        const modalElement = document.getElementById('complaintsListModal');
+        if (!modalElement) return;
+
+        const btn = document.querySelector('#complaintsListModal button[onclick="exportModalToPdf()"]');
+        const originalHtml = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Exporting...';
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('export_all', '1');
+
+        const param = modalElement.dataset.activeParam || 'all';
+        if (param === 'all') {
+            urlParams.delete('status');
+        } else if (param === 'overdue') {
+            urlParams.set('filter', 'overdue');
+            urlParams.delete('status');
+        } else {
+            urlParams.set('status', param);
+        }
+
+        const url = "{{ route('admin.complaints.index') }}?" + urlParams.toString();
+
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+
+            if (!data || !data.complaints || data.complaints.length === 0) {
+                alert('No complaints found to export.');
+                return;
+            }
+
+            const modalTitle = document.getElementById('complaintsListModalLabel').textContent.trim() || 'Complaints';
+            const totalCount = data.complaints.length;
+            const printedDate = new Date().toLocaleString();
+
+            let rowsHtml = '';
+            data.complaints.forEach((row) => {
+                const cmpId = row.cmp_id || ('CMP-' + String(row.id || '').padStart(4, '0'));
+                const regDate = row.created_at || '-';
+                const houseNo = row.house_no || 'N/A';
+                const category = row.category || 'N/A';
+                const subCategory = row.sub_category || '-';
+                const type = row.type || 'N/A';
+                const pVal = (row.priority || 'Normal').trim();
+                const isEmerg = ['emergency', 'urgent', 'high'].includes(pVal.toLowerCase());
+                const priorityBadge = `<span class="badge ${isEmerg ? 'badge-emergency' : 'badge-normal'}">${isEmerg ? 'Emergency' : 'Normal'}</span>`;
+                const description = row.description || 'N/A';
+
+                rowsHtml += `
+                    <tr>
+                        <td style="text-align: center; font-weight: 700; white-space: nowrap;">${cmpId}</td>
+                        <td style="white-space: nowrap;">${regDate}</td>
+                        <td style="text-align: center; font-weight: 600; white-space: nowrap;">${houseNo}</td>
+                        <td style="white-space: nowrap;">${category}</td>
+                        <td style="white-space: nowrap;">${subCategory}</td>
+                        <td>${type}</td>
+                        <td style="text-align: center;">${priorityBadge}</td>
+                        <td style="font-size: 9.5px; line-height: 1.3;">${description}</td>
+                    </tr>
+                `;
+            });
+
+            const htmlContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <title>${modalTitle} - Complaints Report</title>
+                    <style>
+                        @page {
+                            size: A4 landscape;
+                            margin: 8mm;
+                        }
+                        * {
+                            box-sizing: border-box;
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                        }
+                        body {
+                            font-family: 'Segoe UI', Arial, sans-serif;
+                            font-size: 10px;
+                            color: #1e293b;
+                            margin: 0;
+                            padding: 10px;
+                            background: #ffffff;
+                        }
+                        .report-header {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: flex-end;
+                            border-bottom: 2px solid #0f172a;
+                            padding-bottom: 8px;
+                            margin-bottom: 12px;
+                        }
+                        .report-title h2 {
+                            margin: 0;
+                            font-size: 15px;
+                            font-weight: 800;
+                            color: #0f172a;
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                        }
+                        .report-title p {
+                            margin: 2px 0 0 0;
+                            font-size: 11px;
+                            color: #64748b;
+                            font-weight: 600;
+                        }
+                        .report-meta {
+                            text-align: right;
+                            font-size: 9.5px;
+                            color: #64748b;
+                        }
+                        .report-meta strong {
+                            color: #0f172a;
+                        }
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-bottom: 10px;
+                        }
+                        th {
+                            background-color: #0f172a !important;
+                            color: #ffffff !important;
+                            font-weight: 700;
+                            font-size: 9.5px;
+                            text-transform: uppercase;
+                            letter-spacing: 0.3px;
+                            padding: 6px 5px;
+                            border: 1px solid #0f172a;
+                            text-align: left;
+                        }
+                        td {
+                            border: 1px solid #cbd5e1;
+                            padding: 5px;
+                            vertical-align: middle;
+                            font-size: 9.5px;
+                        }
+                        tr:nth-child(even) {
+                            background-color: #f8fafc !important;
+                        }
+                        .badge {
+                            display: inline-block;
+                            padding: 2px 6px;
+                            border-radius: 3px;
+                            font-size: 8.5px;
+                            font-weight: 700;
+                            text-transform: uppercase;
+                        }
+                        .badge-emergency {
+                            background-color: #fee2e2 !important;
+                            color: #991b1b !important;
+                            border: 1px solid #f87171;
+                        }
+                        .badge-normal {
+                            background-color: #eff6ff !important;
+                            color: #1e40af !important;
+                            border: 1px solid #93c5fd;
+                        }
+                        .report-footer {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            border-top: 1px solid #cbd5e1;
+                            padding-top: 6px;
+                            margin-top: 10px;
+                            font-size: 9px;
+                            color: #64748b;
+                        }
+                        .no-print {
+                            display: none;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="report-header">
+                        <div class="report-title">
+                            <h2>CMS COMPLAINT MANAGEMENT SYSTEM</h2>
+                            <p>${modalTitle}</p>
+                        </div>
+                        <div class="report-meta">
+                            <div><strong>Printed:</strong> ${printedDate}</div>
+                            <div><strong>Total Records:</strong> ${totalCount}</div>
+                        </div>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 8%; text-align: center;">CMP-ID</th>
+                                <th style="width: 14%;">Register Date</th>
+                                <th style="width: 8%; text-align: center;">House No</th>
+                                <th style="width: 9%;">Category</th>
+                                <th style="width: 10%;">Sub Category</th>
+                                <th style="width: 14%;">Type</th>
+                                <th style="width: 9%; text-align: center;">Priority</th>
+                                <th style="width: 28%;">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+
+                    <div class="report-footer">
+                        <div>CMS Portal | Confidential</div>
+                        <div>Total Complaints: <strong>${totalCount}</strong></div>
+                    </div>
+                </body>
+                </html>
+            `;
+
+            const printWindow = window.open('', '_blank');
+            if (printWindow) {
+                printWindow.document.open();
+                printWindow.document.write(htmlContent);
+                printWindow.document.close();
+                printWindow.focus();
+                setTimeout(() => {
+                    printWindow.print();
+                }, 300);
+            } else {
+                alert('Pop-up blocked! Please allow pop-ups for this site to export PDF.');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+            alert('Error exporting PDF data. Please try again.');
         });
     };
 

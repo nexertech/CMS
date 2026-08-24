@@ -20,7 +20,7 @@ class DesignationController extends Controller
                 ->with('error', 'Run migrations to create designations table.');
         }
 
-        $designations = Designation::with('category')->orderBy('id', 'asc')->paginate(15);
+        $designations = Designation::with('category')->orderBy('id', 'asc')->paginate(15)->withQueryString();
         $categories = Schema::hasTable('complaint_categories')
             ? ComplaintCategory::where('status', 1)->orderBy('name')->pluck('name', 'id')
             : collect();

@@ -50,7 +50,7 @@ class FrontendUserController extends Controller
             $query->where('status', $request->status);
         }
 
-        $users = $query->orderBy('id', 'asc')->paginate(15);
+        $users = $query->orderBy('id', 'asc')->paginate(15)->withQueryString();
 
         return view('admin.frontend-users.index', compact('users'));
     }

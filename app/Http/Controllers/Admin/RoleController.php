@@ -32,7 +32,7 @@ class RoleController extends Controller
         }
 
 
-        $roles = $query->orderBy('id', 'asc')->paginate(15);
+        $roles = $query->orderBy('id', 'asc')->paginate(15)->withQueryString();
 
         return view('admin.roles.index', compact('roles'));
     }

@@ -27,7 +27,7 @@ class SectorController extends Controller
         }
 
         // Show all sectors (both active and edit-inactivated)
-        $sectors = Sector::with(['city.cme'])->orderBy('id', 'asc')->paginate(15);
+        $sectors = Sector::with(['city.cme'])->orderBy('id', 'asc')->paginate(15)->withQueryString();
         $cities = Schema::hasTable('cities')
             ? City::where('status', 1)->with('cme')->orderBy('id', 'asc')->get()
             : collect();

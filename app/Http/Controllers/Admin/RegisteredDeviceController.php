@@ -37,7 +37,7 @@ class RegisteredDeviceController extends Controller
             });
         }
 
-        $devices = $query->orderBy('created_at', 'desc')->paginate(15);
+        $devices = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
         return view('admin.registered_devices.index', compact('devices'));
     }
 

@@ -61,7 +61,7 @@ class EmployeeController extends Controller
             $query->where('status', $request->status);
         }
 
-        $employees = $query->with(['city', 'sector'])->orderBy('id', 'asc')->paginate(10);
+        $employees = $query->with(['city', 'sector'])->orderBy('id', 'asc')->paginate(10)->withQueryString();
         
         // Get categories for filter dropdown from ComplaintCategory table
         $categories = collect();

@@ -1949,12 +1949,6 @@ class HomeController extends Controller
                 ->with('error', 'Feedback already submitted for this complaint.');
         }
 
-        // Enforce that feedback can only be submitted for resolved/closed complaints
-        if (!in_array($complaint->status, ['resolved', 'closed'])) {
-            return redirect()->route('frontend.feedback', $id)
-                ->with('error', 'Feedback can only be submitted once the complaint is Addressed (Resolved).');
-        }
-
         $request->validate([
             'submitted_by' => 'required|string|max:255',
             'overall_rating' => 'required|in:excellent,good,satisfied,fair,poor',
@@ -1964,6 +1958,7 @@ class HomeController extends Controller
 
         \App\Models\ComplaintFeedback::create([
             'complaint_id' => $complaint->id,
+            'house_id' => $complaint->house_id,
             'submitted_by' => $request->submitted_by,
             'overall_rating' => $request->overall_rating,
             'rating_score' => $this->getRatingScore($request->overall_rating),
@@ -1973,23 +1968,6 @@ class HomeController extends Controller
             'entered_at' => now(),
             // entered_by is null for public feedback
         ]);
-
-        // Auto-resolve complaint if not already resolved/closed
-        if (!in_array($complaint->status, ['resolved', 'closed'])) {
-            $complaint->update([
-                'status' => 'resolved',
-                'closed_at' => now(),
-                'resolved_at' => now(),
-            ]);
-
-            // Log the status change
-            \App\Models\ComplaintLog::create([
-                'complaint_id' => $complaint->id,
-                'user_id' => null, // System action via public feedback
-                'action' => 'status_changed',
-                'remarks' => 'Status changed to Addressed (Resolved) automatically upon receiving client feedback.'
-            ]);
-        }
 
         return redirect()->route('frontend.feedback', $id)->with('success', 'Thank you for your feedback!');
     }

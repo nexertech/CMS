@@ -83,7 +83,7 @@ class SpareController extends Controller
             $query->where('unit_price', '<=', $request->price_to);
         }
 
-        $spares = $query->with(['stockLogs', 'city', 'sector', 'category'])->orderBy('id', 'asc')->paginate(15);
+        $spares = $query->with(['stockLogs', 'city', 'sector', 'category'])->orderBy('id', 'asc')->paginate(15)->withQueryString();
         
         // Get categories from complaint_categories table for the filter dropdown
         $categories = ComplaintCategory::where('status', 1)->orderBy('name')->pluck('name', 'id');
