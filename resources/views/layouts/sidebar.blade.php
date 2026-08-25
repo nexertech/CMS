@@ -161,7 +161,7 @@
       </div>
     </div>
     @endif
-    @if($user && ($user->hasPermission('employees')))
+    @if($user && ($user->hasPermission('houses')))
     <a href="{{ route('admin.houses.index') }}" class="nav-link d-block py-2 px-3 mb-1 {{ request()->routeIs('admin.houses.*') ? 'active' : '' }}">
       <i data-feather="home" class="me-2"></i> Houses
     </a>

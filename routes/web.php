@@ -153,7 +153,7 @@ Route::middleware(['auth', 'verified', AdminAccessMiddleware::class])
     // ===============================
     // 🏠 House Management
     // ===============================
-    Route::middleware(['permission:employees.view'])->group(function () {
+    Route::middleware(['permission:houses.view'])->group(function () {
         Route::get('houses/search', [App\Http\Controllers\Admin\HouseController::class, 'search'])->name('houses.search');
         Route::get('houses/sectors', [App\Http\Controllers\Admin\HouseController::class, 'getSectorsByCity'])->name('houses.sectors');
         Route::get('houses/export', [App\Http\Controllers\Admin\HouseController::class, 'export'])->name('houses.export');
@@ -241,7 +241,7 @@ Route::middleware(['auth', 'verified', AdminAccessMiddleware::class])
     // ===============================
     Route::resource('cmes', AdminCmeController::class)
         ->only(['index','store','update','destroy'])
-        ->middleware(['permission:city.view']);
+        ->middleware(['permission:cmes.view']);
 
 
     // ===============================
