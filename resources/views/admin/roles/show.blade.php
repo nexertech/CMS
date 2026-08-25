@@ -156,6 +156,8 @@
               $moduleLabels = [
                 'dashboard' => 'Dashboard',
                 'users' => 'Users',
+                'frontend-users' => 'Frontend Users',
+                'cmes' => 'CMES',
                 'roles' => 'Roles',
                 'employees' => 'Employees',
                 'designation' => 'Designations',
@@ -171,6 +173,7 @@
                 'spares' => 'Stock Products',
                 'reports' => 'Reports',
                 'sla' => 'SLA Rules',
+                'registered-devices' => 'Registered Devices',
               ];
               
               // Show all permissions that exist for this role
