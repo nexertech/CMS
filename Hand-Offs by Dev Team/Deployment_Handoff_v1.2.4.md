@@ -41,6 +41,10 @@ Release `v1.2.4` delivers **Granular Role Permission Isolation and Route Protect
    - Updated `Role::boot()` auto-assignment list for superadmin (`role_id = 1`) to include all granular sub-modules (`designation`, `category`, `sub-category`, `complaint-titles`).
    - Updated `resources/views/admin/roles/show.blade.php` `$moduleLabels` to explicitly display labels for `frontend-users`, `cmes`, and `registered-devices`.
 
+### ⚠️ Important Post-Deploy Behavior Note:
+> **Sub-Permissions Re-Ticking for Existing Custom Roles:**  
+> Since parent modules (e.g. `Employees`, `Complaints Mgmt`) no longer automatically auto-grant their sub-items (`Designations`, `Complaint Cat`, `Sub Categories`, `Complaint Types`, `Total Complaints`), any existing non-admin custom roles that require access to specific sub-modules should have those individual checkboxes re-ticked and saved in `/admin/roles/{id}/edit` post-deployment. (Superadmin `role_id = 1` remains unaffected and has access to everything).
+
 ---
 
 ## 3. Database Change — pick ONE, never both
@@ -51,33 +55,62 @@ Release `v1.2.4` delivers **Granular Role Permission Isolation and Route Protect
 
 ## 4. Build & Asset Confirmation
 
-- [x] `public/build/` compiled with `npm run build`
+- [x] `public/build/` compiled with `npm run build` (committed on tag)
+- [x] `vendor/` included with optimized autoloader (committed on tag)
 - [x] `composer.json` changed? **No**
 - [x] `package.json` / CSS / JS changed? **No**
 - [x] New `.env` variable introduced? **No**
 
 ---
 
-## 5. Deployment Step-by-Step Instructions (VPS `paknavy`)
+## 5. Deployment Step-by-Step Instructions (VPS `paknavy` — Staging Clone + Atomic Swap)
+
+> **App Path:** `/home/paknavy/public_html`  
+> **PHP Binary:** `/opt/cpanel/ea-php82/root/usr/bin/php`  
+> **Execution User:** `paknavy` (Never run as root/sudo)
 
 ```bash
-# 1. SSH to VPS
-ssh paknavy@<server-ip>
+# Step 1: Navigate to home & clear previous staging/rollback leftovers (if any)
+cd /home/paknavy
+rm -rf public_html_new
+rm -rf public_html_old
 
-# 2. Navigate to CMS project root
-cd /home/paknavy/CMS
+# Step 2: Create dated safety backup of current live folder
+cp -r public_html public_html_backup_$(date +%F)
 
-# 3. Fetch latest tags and checkout v1.2.4
-git fetch --tags
-git checkout v1.2.4
+# Step 3: Clone the exact tagged version into staging folder
+git clone --branch v1.2.4 https://github.com/nexertech/CMS.git public_html_new
+cd /home/paknavy/public_html_new
 
-# 4. Clear and optimize caches
-php artisan optimize:clear
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+# Step 4: Copy live-only files (.env and storage)
+cp /home/paknavy/public_html/.env .env
+rm -rf storage
+cp -r /home/paknavy/public_html/storage ./
 
-# 5. Record version
+# Step 5: Restore app-root security .htaccess (drops raw IP source listing)
+cp /home/paknavy/deploy-assets/app-root-htaccess.txt /home/paknavy/public_html_new/.htaccess
+
+# Step 6: Set correct permissions on writable directories
+chmod -R 775 storage bootstrap/cache
+chown -R paknavy:paknavy storage bootstrap/cache
+
+# Step 7: Atomic Folder Swap (Instant Safe Transition)
+cd /home/paknavy
+mv public_html public_html_old
+mv public_html_new public_html
+
+# Step 8: Clear & Rebuild Application Caches (Run AFTER swap inside live public_html)
+cd /home/paknavy/public_html
+/opt/cpanel/ea-php82/root/usr/bin/php artisan config:clear
+/opt/cpanel/ea-php82/root/usr/bin/php artisan route:clear
+/opt/cpanel/ea-php82/root/usr/bin/php artisan view:clear
+/opt/cpanel/ea-php82/root/usr/bin/php artisan cache:clear
+
+/opt/cpanel/ea-php82/root/usr/bin/php artisan config:cache
+/opt/cpanel/ea-php82/root/usr/bin/php artisan route:cache
+/opt/cpanel/ea-php82/root/usr/bin/php artisan view:cache
+
+# Step 9: Update Live Version Tracker
 echo "v1.2.4" > /home/paknavy/current-live-version.txt
 ```
 
@@ -95,3 +128,22 @@ echo "v1.2.4" > /home/paknavy/current-live-version.txt
   - [ ] Navigating to `/admin/houses` returns `403 Forbidden`.
 - [ ] Log in as a role with **CMES** enabled and **GE Groups (City)** disabled:
   - [ ] Navigating to `/admin/cmes` works properly without 403 error.
+- [ ] Security check: `/.git/config` returns 404 / Forbidden.
+
+---
+
+## 7. Rollback Instructions (Instant Folder Swap)
+
+Since this release contains **no database schema changes**, rollback is instantaneous:
+
+```bash
+cd /home/paknavy
+mv public_html public_html_failed
+mv public_html_old public_html
+cd /home/paknavy/public_html
+/opt/cpanel/ea-php82/root/usr/bin/php artisan optimize:clear
+/opt/cpanel/ea-php82/root/usr/bin/php artisan config:cache
+/opt/cpanel/ea-php82/root/usr/bin/php artisan route:cache
+/opt/cpanel/ea-php82/root/usr/bin/php artisan view:cache
+echo "v1.2.3" > /home/paknavy/current-live-version.txt
+```
