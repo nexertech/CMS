@@ -19,6 +19,7 @@ class Complaint extends Model
         'city_id',
         'sector_id',
         'category_id',
+        'sub_category_id',
         'priority',
         'description',
         'assigned_employee_id',
@@ -41,6 +42,14 @@ class Complaint extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(ComplaintCategory::class, 'category_id', 'id');
+    }
+
+    /**
+     * Get the complaint subcategory.
+     */
+    public function subCategory(): BelongsTo
+    {
+        return $this->belongsTo(SubCategory::class, 'sub_category_id', 'id');
     }
 
     /**

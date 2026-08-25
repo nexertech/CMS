@@ -164,6 +164,7 @@
                 'houses' => 'Houses',
                 'complaints' => 'Complaints Mgmt',
                 'category' => 'Complaint Cat',
+                'sub-category' => 'Sub Categories',
                 'complaint-titles' => 'Complaint Types',
                 'complaints' => 'Complaints Regn',
                 'approvals' => 'Total Complaints',

@@ -156,6 +156,7 @@ Route::middleware(['auth', 'verified', AdminAccessMiddleware::class])
     Route::middleware(['permission:employees.view'])->group(function () {
         Route::get('houses/search', [App\Http\Controllers\Admin\HouseController::class, 'search'])->name('houses.search');
         Route::get('houses/sectors', [App\Http\Controllers\Admin\HouseController::class, 'getSectorsByCity'])->name('houses.sectors');
+        Route::get('houses/export', [App\Http\Controllers\Admin\HouseController::class, 'export'])->name('houses.export');
         Route::post('houses/import', [App\Http\Controllers\Admin\HouseController::class, 'import'])->name('houses.import');
         Route::get('houses/sample-csv', [App\Http\Controllers\Admin\HouseController::class, 'downloadSample'])->name('houses.sample-csv');
         
@@ -199,16 +200,23 @@ Route::middleware(['auth', 'verified', AdminAccessMiddleware::class])
     });
 
     // ===============================
-    // 📂 Complaint Categories
+    // 📂 Complaint Categories & Sub Categories
     // ===============================
     Route::resource('category', AdminCategoryController::class)
         ->only(['index','store','update','destroy'])
+        ->middleware(['permission:category.view']);
+
+    Route::resource('sub-category', App\Http\Controllers\Admin\SubCategoryController::class)
+        ->middleware(['permission:sub-category.view']);
+
+    Route::get('sub-categories-by-category', [App\Http\Controllers\Admin\SubCategoryController::class, 'getByCategory'])
+        ->name('sub-categories.by-category')
         ->middleware(['permission:complaints.view']);
 
     // ===============================
     // 📝 Complaint Titles
     // ===============================
-    Route::middleware(['permission:complaints.view'])->group(function () {
+    Route::middleware(['permission:complaint-titles.view'])->group(function () {
         Route::resource('complaint-titles', AdminComplaintTitleController::class);
         Route::get('complaint-titles-by-category', [AdminComplaintTitleController::class, 'getTitlesByCategory'])->name('complaint-titles.by-category');
     });

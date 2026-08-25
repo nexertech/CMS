@@ -14,6 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->string('title')->nullable();
             $table->unsignedBigInteger('category_id')->nullable();
+            $table->unsignedBigInteger('sub_category_id')->nullable();
             $table->unsignedBigInteger('complaint_title_id')->nullable();
             $table->unsignedBigInteger('house_id')->nullable();
             $table->unsignedBigInteger('city_id')->nullable();
@@ -21,7 +22,7 @@ return new class extends Migration {
             $table->text('description')->nullable();
             $table->tinyInteger('status')->default(2);
             $table->unsignedBigInteger('assigned_employee_id')->nullable();
-            $table->enum('priority', ['low', 'medium', 'high', 'urgent'])->default('medium');
+            $table->enum('priority', ['normal', 'emergency'])->default('normal');
             $table->string('availability_time')->nullable();
             $table->timestamp('closed_at')->nullable();
 
@@ -39,6 +40,7 @@ return new class extends Migration {
             $table->index('house_id');
             $table->index('status');
             $table->index('category_id');
+            $table->index('sub_category_id');
             $table->index('complaint_title_id');
             $table->index('created_at');
             $table->index('assigned_employee_id');

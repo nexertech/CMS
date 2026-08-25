@@ -192,7 +192,7 @@ class ApprovalController extends Controller
             // Order by complaint ID (descending) - newest first
             $query->orderBy('complaints.id', 'desc');
 
-            $approvals = $query->paginate(20);
+            $approvals = $query->paginate(20)->withQueryString();
 
             // Load relationships (optimized: removed unused requestedBy/approvedBy, added feedback)
             $approvals->load([

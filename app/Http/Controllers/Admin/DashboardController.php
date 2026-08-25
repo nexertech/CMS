@@ -43,6 +43,7 @@ class DashboardController extends Controller
         $cityId = $request->input('city_id');
         $sectorId = $request->input('sector_id');
         $category = $request->input('category');
+        $subCategoryId = $request->input('sub_category_id');
         $approvalStatus = $request->input('approval_status');
         $complaintStatus = $request->input('complaint_status');
         $dateRange = $request->input('date_range');
@@ -129,6 +130,12 @@ class DashboardController extends Controller
                 ->orderBy('category')
                 ->pluck('category');
         }
+        
+        // Get sub categories for filter
+        $subCategories = collect();
+        if (Schema::hasTable('sub_categories')) {
+            $subCategories = \App\Models\SubCategory::where('status', 1)->orderBy('name', 'asc')->get();
+        }
 
         // Get approval statuses for filter (fetch from database)
         $approvalStatuses = collect();
@@ -163,12 +170,12 @@ class DashboardController extends Controller
         ];
 
         // Get dashboard statistics with filters
-        $stats = $this->getDashboardStats($user, $cityId, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId);
+        $stats = $this->getDashboardStats($user, $cityId, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId, $subCategoryId);
 
         // Get recent complaints with location filtering and filters
         $recentComplaintsQuery = Complaint::with(['assignedEmployee']);
         $this->filterComplaintsByLocation($recentComplaintsQuery, $user);
-        $this->applyFilters($recentComplaintsQuery, $cityId, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId);
+        $this->applyFilters($recentComplaintsQuery, $cityId, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId, $subCategoryId);
         $recentComplaints = $recentComplaintsQuery->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
@@ -186,15 +193,15 @@ class DashboardController extends Controller
 
         // Apply location filter through complaint relationship
         if (!$this->canViewAllData($user)) {
-            $pendingApprovalsQuery->whereHas('complaint', function ($q) use ($user, $cityId, $sectorId, $category, $complaintStatus, $dateRange, $cmesId) {
+            $pendingApprovalsQuery->whereHas('complaint', function ($q) use ($user, $cityId, $sectorId, $category, $complaintStatus, $dateRange, $cmesId, $subCategoryId) {
                 $this->filterComplaintsByLocation($q, $user);
-                $this->applyFilters($q, $cityId, $sectorId, $category, null, $complaintStatus, $dateRange, $cmesId);
+                $this->applyFilters($q, $cityId, $sectorId, $category, null, $complaintStatus, $dateRange, $cmesId, $subCategoryId);
             });
         } else {
             // Director: Apply filters through complaint relationship
-            if ($cityId || $sectorId || $category || $complaintStatus || $dateRange || $cmesId) {
-                $pendingApprovalsQuery->whereHas('complaint', function ($q) use ($cityId, $sectorId, $category, $complaintStatus, $dateRange, $cmesId) {
-                    $this->applyFilters($q, $cityId, $sectorId, $category, null, $complaintStatus, $dateRange, $cmesId);
+            if ($cityId || $sectorId || $category || $subCategoryId || $complaintStatus || $dateRange || $cmesId) {
+                $pendingApprovalsQuery->whereHas('complaint', function ($q) use ($cityId, $sectorId, $category, $complaintStatus, $dateRange, $cmesId, $subCategoryId) {
+                    $this->applyFilters($q, $cityId, $sectorId, $category, null, $complaintStatus, $dateRange, $cmesId, $subCategoryId);
                 });
             }
         }
@@ -215,7 +222,7 @@ class DashboardController extends Controller
         $overdueComplaintsQuery = Complaint::overdue()
             ->with(['assignedEmployee']);
         $this->filterComplaintsByLocation($overdueComplaintsQuery, $user);
-        $this->applyFilters($overdueComplaintsQuery, $cityId, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId);
+        $this->applyFilters($overdueComplaintsQuery, $cityId, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId, $subCategoryId);
         $overdueComplaints = $overdueComplaintsQuery->orderBy('created_at', 'asc')
             ->limit(10)
             ->get();
@@ -223,7 +230,7 @@ class DashboardController extends Controller
         // Get complaints by status with location filtering and filters
         $complaintsByStatusQuery = Complaint::query();
         $this->filterComplaintsByLocation($complaintsByStatusQuery, $user);
-        $this->applyFilters($complaintsByStatusQuery, $cityId, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId);
+        $this->applyFilters($complaintsByStatusQuery, $cityId, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId, $subCategoryId);
 
         // Clone query before selectRaw to use for performa type counts
         $performaCountQuery = clone $complaintsByStatusQuery;
@@ -263,7 +270,7 @@ class DashboardController extends Controller
         if ($allCategories->isNotEmpty()) {
             $catCountQuery = Complaint::query();
             $this->filterComplaintsByLocation($catCountQuery, $user);
-            $this->applyFilters($catCountQuery, $cityId, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId);
+            $this->applyFilters($catCountQuery, $cityId, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId, $subCategoryId);
             
             $catCounts = $catCountQuery->selectRaw('category_id, COUNT(*) as aggregate')
                 ->whereIn('category_id', $allCategories->pluck('id'))
@@ -299,7 +306,7 @@ class DashboardController extends Controller
         $slaPerformance = $this->getSlaPerformance();
 
         // Get monthly trends with filters
-        $monthlyTrends = $this->getMonthlyTrends($user, $cityId, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange);
+        $monthlyTrends = $this->getMonthlyTrends($user, $cityId, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId, $subCategoryId);
 
         // Get GE progress based on location filter only
         // GE Groups are stored in cities table
@@ -352,7 +359,7 @@ class DashboardController extends Controller
                     });
 
                 // Apply Filters (sector, category, complaint status, date range, CMES)
-                $this->applyFilters($allCityStats, null, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId);
+                $this->applyFilters($allCityStats, null, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId, $subCategoryId);
                 $cityCounts = $allCityStats->groupBy(\DB::raw('COALESCE(houses.city_id, complaints.city_id)'))->get()->keyBy('city_id');
 
                 // Get Feedback Stats
@@ -375,7 +382,7 @@ class DashboardController extends Controller
                     })
                     ->whereNull('complaint_feedbacks.deleted_at');
 
-                $this->applyFilters($feedbackStatsQuery, null, $sectorId, $category, $approvalStatus, null, $dateRange, $cmesId);
+                $this->applyFilters($feedbackStatsQuery, null, $sectorId, $category, $approvalStatus, null, $dateRange, $cmesId, $subCategoryId);
                 $feedbackCounts = $feedbackStatsQuery->groupBy(\DB::raw('COALESCE(houses.city_id, complaints.city_id)'))->get()->keyBy('city_id');
 
                 foreach ($geGroups as $geGroup) {
@@ -429,11 +436,13 @@ class DashboardController extends Controller
             'cities',
             'sectors',
             'categories',
+            'subCategories',
             'approvalStatuses',
             'complaintStatuses',
             'cityId',
             'sectorId',
             'category',
+            'subCategoryId',
             'approvalStatus',
             'complaintStatus',
             'dateRange',
@@ -450,7 +459,7 @@ class DashboardController extends Controller
     /**
      * Apply filters to complaint query
      */
-    private function applyFilters($query, $cityId = null, $sectorId = null, $category = null, $approvalStatus = null, $complaintStatus = null, $dateRange = null, $cmesId = null)
+    private function applyFilters($query, $cityId = null, $sectorId = null, $category = null, $approvalStatus = null, $complaintStatus = null, $dateRange = null, $cmesId = null, $subCategoryId = null)
     {
         // Filter by city - inclusive: check house's city_id OR if its sector belongs to this city
         if ($cityId) {
@@ -510,6 +519,12 @@ class DashboardController extends Controller
                     });
                 }
             });
+        }
+
+        // Filter by sub category (supports array or single value)
+        if ($subCategoryId) {
+            $subCatIds = is_array($subCategoryId) ? $subCategoryId : [$subCategoryId];
+            $query->whereIn('complaints.sub_category_id', $subCatIds);
         }
 
         // Filter by approval status (through spareApprovals relationship)
@@ -669,7 +684,7 @@ class DashboardController extends Controller
     /**
      * Get dashboard statistics
      */
-    private function getDashboardStats($user = null, $cityId = null, $sectorId = null, $category = null, $approvalStatus = null, $complaintStatus = null, $dateRange = null, $cmesId = null)
+    private function getDashboardStats($user = null, $cityId = null, $sectorId = null, $category = null, $approvalStatus = null, $complaintStatus = null, $dateRange = null, $cmesId = null, $subCategoryId = null)
     {
         $today = now()->startOfDay();
         $thisMonth = now()->startOfMonth();
@@ -680,7 +695,7 @@ class DashboardController extends Controller
         $this->filterComplaintsByLocation($complaintsQuery, $user);
 
         // Apply additional filters
-        $this->applyFilters($complaintsQuery, $cityId, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId);
+        $this->applyFilters($complaintsQuery, $cityId, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId, $subCategoryId);
 
         $employeesQuery = Employee::query();
         $this->filterEmployeesByLocation($employeesQuery, $user);
@@ -827,12 +842,12 @@ class DashboardController extends Controller
     /**
      * Get monthly trends
      */
-    private function getMonthlyTrends($user = null, $cityId = null, $sectorId = null, $category = null, $approvalStatus = null, $complaintStatus = null, $dateRange = null, $cmesId = null)
+    private function getMonthlyTrends($user = null, $cityId = null, $sectorId = null, $category = null, $approvalStatus = null, $complaintStatus = null, $dateRange = null, $cmesId = null, $subCategoryId = null)
     {
         // Initialize a base query with location and general filters
         $baseComplaintsQuery = Complaint::query();
         $this->filterComplaintsByLocation($baseComplaintsQuery, $user);
-        $this->applyFilters($baseComplaintsQuery, $cityId, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId);
+        $this->applyFilters($baseComplaintsQuery, $cityId, $sectorId, $category, $approvalStatus, $complaintStatus, $dateRange, $cmesId, $subCategoryId);
 
         $months = [];
         $complaints = [];

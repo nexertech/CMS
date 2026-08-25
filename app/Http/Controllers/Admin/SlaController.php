@@ -52,7 +52,7 @@ class SlaController extends Controller
             $query->where('status', $request->status);
         }
 
-        $slaRules = $query->orderBy('created_at', 'desc')->paginate(15);
+        $slaRules = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
         $users = User::where('status', 1)->get();
 
         return view('admin.sla.index', compact('slaRules', 'users'));

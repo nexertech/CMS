@@ -46,7 +46,7 @@ class FeedbackController extends Controller
             });
         }
 
-        $feedbacks = $query->orderBy('created_at', 'desc')->paginate(15);
+        $feedbacks = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
 
         return view('admin.feedbacks.index', compact('feedbacks'));
     }

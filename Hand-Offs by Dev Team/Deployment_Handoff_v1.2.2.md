@@ -46,21 +46,14 @@ Before touching the server, here are the 3 required answers:
 | Question | Answer |
 |---|---|
 | **1. Release Tag?** | **`v1.2.2`** *(Release tag on `deploy` branch)* |
-| **2. DB Migration / Schema Change?** | **Laravel Migration / Manual SQL** *(Adds `sector_ids` JSON column to `employees` table & performance indexes)* |
+| **2. DB Migration / Schema Change?** | **Manual SQL** *(Paste SQL in phpMyAdmin — no Laravel migration file)* |
 | **3. Primary Pages to Test First?** | 1. `/admin/complaints/create` (Searchable AJAX House Dropdown with 13,502+ houses)<br>2. `/admin/employees` (Employee listing, single-line formatting, multi-sector column)<br>3. `/admin/employees/create` (GE Nodes multi-select checkbox dropdown & 1-node auto-selection) |
 
 ---
 
-## 3. Database Migration Instructions
+## 3. Database Migration Instructions (Manual SQL)
 
-### Option A: Via Artisan (Command Line)
-Run the following command in production environment:
-```bash
-/opt/cpanel/ea-php82/root/usr/bin/php artisan migrate --force
-```
-
-### Option B: Via Manual SQL (phpMyAdmin)
-If executing artisan commands is not feasible, execute the following SQL statement verbatim in phpMyAdmin:
+Execute the following SQL queries verbatim in **phpMyAdmin → SQL tab**:
 
 ```sql
 -- 1. Employees table multi-sector JSON column

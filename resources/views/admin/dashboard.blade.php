@@ -15,14 +15,16 @@
       transition: filter 0.3s ease;
   }
 
-  /* Custom ApexCharts Tooltip - Pure White Text in All Themes */
-  .custom-apex-tooltip {
-      background: #0f172a !important;
-      color: #ffffff !important;
+  /* Default / Light Theme ApexCharts Tooltips */
+  .custom-apex-tooltip,
+  .theme-light .custom-apex-tooltip,
+  body.theme-light .custom-apex-tooltip {
+      background: #ffffff !important;
+      color: #0f172a !important;
       padding: 8px 14px !important;
-      border-radius: 8px !important;
-      border: 1px solid #334155 !important;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+      border-radius: 4px !important;
+      border: 1px solid #cbd5e1 !important;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
       font-size: 13px !important;
       line-height: 1.4 !important;
       display: flex !important;
@@ -30,30 +32,34 @@
   }
   .custom-apex-tooltip *,
   .custom-apex-tooltip span,
-  .custom-apex-tooltip strong {
-      color: #ffffff !important;
+  .custom-apex-tooltip strong,
+  .theme-light .custom-apex-tooltip *,
+  body.theme-light .custom-apex-tooltip * {
+      color: #0f172a !important;
   }
 
   .apexcharts-tooltip,
-  .apexcharts-tooltip.apexcharts-theme-dark,
-  .apexcharts-tooltip.apexcharts-theme-light,
   .theme-light .apexcharts-tooltip,
-  .theme-dark .apexcharts-tooltip {
-      background: #0f172a !important;
-      color: #ffffff !important;
-      border: 1px solid #334155 !important;
-      border-radius: 8px !important;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+  body.theme-light .apexcharts-tooltip {
+      background: #ffffff !important;
+      color: #0f172a !important;
+      border: 1px solid #cbd5e1 !important;
+      border-radius: 4px !important;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
   }
+
   .apexcharts-tooltip-title,
   .theme-light .apexcharts-tooltip-title,
-  .theme-dark .apexcharts-tooltip-title {
-      background: #1e293b !important;
-      color: #ffffff !important;
-      border-bottom: 1px solid #334155 !important;
+  body.theme-light .apexcharts-tooltip-title {
+      background: #f1f5f9 !important;
+      color: #0f172a !important;
+      border-bottom: 1px solid #e2e8f0 !important;
       font-weight: 700 !important;
   }
+
   .apexcharts-tooltip *,
+  .theme-light .apexcharts-tooltip *,
+  body.theme-light .apexcharts-tooltip *,
   .apexcharts-tooltip span,
   .apexcharts-tooltip div,
   .apexcharts-tooltip-text,
@@ -62,17 +68,123 @@
   .apexcharts-tooltip-text-label,
   .apexcharts-tooltip-text-value,
   .apexcharts-tooltip-series-group,
-  .apexcharts-tooltip-series-group *,
-  .theme-light .apexcharts-tooltip *,
-  .theme-light .apexcharts-tooltip span,
-  .theme-light .apexcharts-tooltip div,
-  .theme-light .apexcharts-tooltip-text-y-label,
-  .theme-light .apexcharts-tooltip-text-y-value,
+  .apexcharts-tooltip-series-group * {
+      color: #0f172a !important;
+      fill: #0f172a !important;
+  }
+
+  .apexcharts-xaxistooltip,
+  .theme-light .apexcharts-xaxistooltip,
+  body.theme-light .apexcharts-xaxistooltip {
+      background: #f8fafc !important;
+      color: #0f172a !important;
+      border: 1px solid #cbd5e1 !important;
+      border-radius: 4px !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  .apexcharts-xaxistooltip-text,
+  body.theme-light .apexcharts-xaxistooltip-text,
+  .apexcharts-xaxistooltip *,
+  body.theme-light .apexcharts-xaxistooltip * {
+      color: #0f172a !important;
+  }
+
+  /* Dark and Night Theme ApexCharts Tooltips Override */
+  .theme-dark .custom-apex-tooltip,
+  .theme-night .custom-apex-tooltip,
+  html.theme-dark .custom-apex-tooltip,
+  html.theme-night .custom-apex-tooltip,
+  body.theme-dark .custom-apex-tooltip,
+  body.theme-night .custom-apex-tooltip {
+      background: #0f172a !important;
+      color: #ffffff !important;
+      padding: 8px 14px !important;
+      border-radius: 4px !important;
+      border: 1px solid #334155 !important;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+      font-size: 13px !important;
+      line-height: 1.4 !important;
+      display: flex !important;
+      align-items: center !important;
+  }
+  .theme-dark .custom-apex-tooltip *,
+  .theme-night .custom-apex-tooltip *,
+  html.theme-dark .custom-apex-tooltip *,
+  html.theme-night .custom-apex-tooltip *,
+  body.theme-dark .custom-apex-tooltip *,
+  body.theme-night .custom-apex-tooltip * {
+      color: #ffffff !important;
+  }
+
+  .theme-dark .apexcharts-tooltip,
+  .theme-night .apexcharts-tooltip,
+  html.theme-dark .apexcharts-tooltip,
+  html.theme-night .apexcharts-tooltip,
+  body.theme-dark .apexcharts-tooltip,
+  body.theme-night .apexcharts-tooltip {
+      background: #0f172a !important;
+      color: #ffffff !important;
+      border: 1px solid #334155 !important;
+      border-radius: 4px !important;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  .theme-dark .apexcharts-tooltip-title,
+  .theme-night .apexcharts-tooltip-title,
+  html.theme-dark .apexcharts-tooltip-title,
+  html.theme-night .apexcharts-tooltip-title,
+  body.theme-dark .apexcharts-tooltip-title,
+  body.theme-night .apexcharts-tooltip-title {
+      background: #1e293b !important;
+      color: #ffffff !important;
+      border-bottom: 1px solid #334155 !important;
+      font-weight: 700 !important;
+  }
+
   .theme-dark .apexcharts-tooltip *,
+  .theme-night .apexcharts-tooltip *,
+  html.theme-dark .apexcharts-tooltip *,
+  html.theme-night .apexcharts-tooltip *,
+  body.theme-dark .apexcharts-tooltip *,
+  body.theme-night .apexcharts-tooltip *,
   .theme-dark .apexcharts-tooltip span,
-  .theme-dark .apexcharts-tooltip div {
+  .theme-dark .apexcharts-tooltip div,
+  .theme-dark .apexcharts-tooltip-text,
+  .theme-dark .apexcharts-tooltip-text-y-label,
+  .theme-dark .apexcharts-tooltip-text-y-value,
+  .theme-dark .apexcharts-tooltip-text-label,
+  .theme-dark .apexcharts-tooltip-text-value,
+  .theme-night .apexcharts-tooltip span,
+  .theme-night .apexcharts-tooltip div,
+  .theme-night .apexcharts-tooltip-text,
+  .theme-night .apexcharts-tooltip-text-y-label,
+  .theme-night .apexcharts-tooltip-text-y-value,
+  .theme-night .apexcharts-tooltip-text-label,
+  .theme-night .apexcharts-tooltip-text-value {
       color: #ffffff !important;
       fill: #ffffff !important;
+  }
+
+  .theme-dark .apexcharts-xaxistooltip,
+  .theme-night .apexcharts-xaxistooltip,
+  html.theme-dark .apexcharts-xaxistooltip,
+  html.theme-night .apexcharts-xaxistooltip,
+  body.theme-dark .apexcharts-xaxistooltip,
+  body.theme-night .apexcharts-xaxistooltip {
+      background: #1e293b !important;
+      color: #ffffff !important;
+      border: 1px solid #334155 !important;
+      border-radius: 4px !important;
+  }
+
+  .theme-dark .apexcharts-xaxistooltip-text,
+  .theme-night .apexcharts-xaxistooltip-text,
+  html.theme-dark .apexcharts-xaxistooltip-text,
+  html.theme-night .apexcharts-xaxistooltip-text,
+  body.theme-dark .apexcharts-xaxistooltip-text,
+  body.theme-night .apexcharts-xaxistooltip-text {
+      color: #ffffff !important;
   }
 
   /* Compact Modal Table Styles */
@@ -448,6 +560,67 @@
     -webkit-appearance: none !important;
     -moz-appearance: none !important;
   }
+
+  /* Status / Stat cards: Sharp rectangular corners as requested */
+  .stat-card,
+  .stat-icon,
+  .theme-light .stat-card,
+  .theme-dark .stat-card,
+  .theme-night .stat-card {
+    border-radius: 0 !important;
+  }
+
+  /* Filter box, tables, charts, GE cards & glass cards: slight sleek border radius */
+  .card-glass,
+  .chart-container,
+  .ge-progress-card,
+  .table-responsive,
+  .table-card,
+  .table,
+  .theme-light .card-glass,
+  .theme-light .chart-container,
+  .theme-light .table,
+  .theme-dark .card-glass,
+  .theme-dark .ge-progress-card,
+  .theme-night .card-glass,
+  .theme-night .ge-progress-card {
+    border-radius: 6px !important;
+  }
+
+  /* Filter box slight border radius & visible border */
+  .filter-box,
+  .theme-light .filter-box {
+    border-radius: 6px !important;
+    border: 1.5px solid #94a3b8 !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  .theme-dark .filter-box,
+  .theme-night .filter-box {
+    border-radius: 6px !important;
+    border: 1.5px solid #475569 !important;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35) !important;
+  }
+
+  .filter-box .form-select,
+  .filter-box .form-control,
+  .filter-box .btn,
+  .filter-box .dropdown-menu,
+  .filter-box .filter-dropdown-wrapper button,
+  .filter-box #dateRangeFilter,
+  .filter-box #customDateRangeContainer,
+  .filter-box #applyCustomDate,
+  .theme-light .filter-box .form-select,
+  .theme-light .filter-box .form-control,
+  .theme-light .filter-box .btn,
+  .theme-dark .filter-box .form-select,
+  .theme-dark .filter-box .form-control,
+  .theme-dark .filter-box .btn,
+  .theme-night .filter-box .form-select,
+  .theme-night .filter-box .form-control,
+  .theme-night .filter-box .btn {
+    border-radius: 4px !important;
+  }
 </style>
 @section('content')
 
@@ -456,7 +629,7 @@
   <div class="d-flex justify-content-between align-items-start mb-1">
     <h2 class="text-white mb-0" style="font-size: 2.25rem; font-weight: 700; line-height: 1.2; margin-top: 0 !important;">Dashboard Overview</h2>
     @if(Auth::user() && Auth::user()->hasPermission('complaints'))
-    <a href="{{ route('admin.complaints.create') }}" class="btn d-flex align-items-center gap-2" style="background: #001f5b !important; color: #ffffff !important; font-weight: 700; font-size: 1.15rem; padding: 0.75rem 1.75rem; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; text-decoration: none; transition: all 0.3s ease; margin-top: 0 !important;">
+    <a href="{{ route('admin.complaints.create') }}" class="btn d-flex align-items-center gap-2" style="background: #001f5b !important; color: #ffffff !important; font-weight: 700; font-size: 1.15rem; padding: 0.75rem 1.75rem; border-radius: 4px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; text-decoration: none; transition: all 0.3s ease; margin-top: 0 !important;">
       <i data-feather="plus-circle" style="width: 22px; height: 22px; color: #ffffff !important; stroke: #ffffff !important; stroke-width: 2.5px;"></i>
       <span style="color: #ffffff !important;">Add Complaint</span>
     </a>
@@ -482,18 +655,18 @@
 
 @if($showCityFilter || $showSectorFilter || $categories->count() > 0 || (isset($complaintStatuses) && count($complaintStatuses) > 0) || true)
 <div class="mb-5 d-flex justify-content-center">
-  <div class="filter-box" style="display: inline-block; width: fit-content;">
+  <div class="filter-box" style="display: inline-block; width: fit-content; max-width: 100%; border-radius: 6px !important; border: 1.5px solid #94a3b8 !important; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;">
     <form id="dashboardFiltersForm" method="GET" action="{{ route('admin.dashboard') }}">
-      <div class="row g-2 align-items-end flex-nowrap">
+      <div class="row g-2 align-items-end flex-wrap justify-content-center">
         @if($showCityFilter)
         @if(isset($cmesList) && $cmesList->count() > 0)
         <div class="col-auto">
           <label class="form-label mb-1" style="font-size: 0.8rem !important; color: #1e293b !important; font-weight: 700 !important;">CMES</label>
           <div class="dropdown filter-dropdown-wrapper" style="width: 150px;">
-            <button class="btn btn-light btn-sm form-select text-start" type="button" id="cmesDropdownBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="font-size: 0.85rem !important; height: 38px !important; line-height: 1.5 !important; padding: 0.375rem 2.25rem 0.375rem 0.75rem !important; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; background-color: #ffffff; border: 1px solid #ced4da; width: 100%;">
+            <button class="btn btn-light btn-sm form-select text-start" type="button" id="cmesDropdownBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="font-size: 0.85rem !important; height: 38px !important; line-height: 1.5 !important; padding: 0.375rem 2.25rem 0.375rem 0.75rem !important; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; background-color: #ffffff; border: 1px solid #ced4da; width: 100%; border-radius: 4px !important;">
               Select CMES
             </button>
-            <ul class="dropdown-menu p-2" aria-labelledby="cmesDropdownBtn" style="max-height: 250px; overflow-y: auto; font-size: 0.8rem; min-width: 200px; background-color: #ffffff !important; border: 1px solid #ced4da;">
+            <ul class="dropdown-menu p-2" aria-labelledby="cmesDropdownBtn" style="max-height: 250px; overflow-y: auto; font-size: 0.8rem; min-width: 200px; background-color: #ffffff !important; border: 1px solid #ced4da; border-radius: 4px !important;">
               @php
                 $selectedCmesIds = is_array(request('cmes_id')) ? request('cmes_id') : (request('cmes_id') ? [request('cmes_id')] : (isset($cmesId) ? (is_array($cmesId) ? $cmesId : [$cmesId]) : []));
               @endphp
@@ -512,10 +685,10 @@
         <div class="col-auto" id="cityFilterContainer">
           <label class="form-label mb-1" style="font-size: 0.8rem !important; color: #1e293b !important; font-weight: 700 !important;">GE</label>
           <div class="dropdown filter-dropdown-wrapper" style="width: 150px;">
-            <button class="btn btn-light btn-sm form-select text-start" type="button" id="cityDropdownBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="font-size: 0.85rem !important; height: 38px !important; line-height: 1.5 !important; padding: 0.375rem 2.25rem 0.375rem 0.75rem !important; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; background-color: #ffffff; border: 1px solid #ced4da; width: 100%;">
+            <button class="btn btn-light btn-sm form-select text-start" type="button" id="cityDropdownBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="font-size: 0.85rem !important; height: 38px !important; line-height: 1.5 !important; padding: 0.375rem 2.25rem 0.375rem 0.75rem !important; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; background-color: #ffffff; border: 1px solid #ced4da; width: 100%; border-radius: 4px !important;">
               Select GE
             </button>
-            <ul class="dropdown-menu p-2" id="cityDropdownList" aria-labelledby="cityDropdownBtn" style="max-height: 250px; overflow-y: auto; font-size: 0.8rem; min-width: 220px; background-color: #ffffff !important; border: 1px solid #ced4da;">
+            <ul class="dropdown-menu p-2" id="cityDropdownList" aria-labelledby="cityDropdownBtn" style="max-height: 250px; overflow-y: auto; font-size: 0.8rem; min-width: 220px; background-color: #ffffff !important; border: 1px solid #ced4da; border-radius: 4px !important;">
               @php
                 $selectedCityIds = is_array(request('city_id')) ? request('city_id') : (request('city_id') ? [request('city_id')] : (isset($cityId) ? (is_array($cityId) ? $cityId : [$cityId]) : []));
               @endphp
@@ -538,10 +711,10 @@
         <div class="col-auto">
           <label class="form-label mb-1" style="font-size: 0.8rem !important; color: #1e293b !important; font-weight: 700 !important;">GE Nodes</label>
           <div class="dropdown filter-dropdown-wrapper" style="width: 150px;">
-            <button class="btn btn-light btn-sm form-select text-start" type="button" id="sectorDropdownBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="font-size: 0.85rem !important; height: 38px !important; line-height: 1.5 !important; padding: 0.375rem 2.25rem 0.375rem 0.75rem !important; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; background-color: #ffffff; border: 1px solid #ced4da; width: 100%;">
+            <button class="btn btn-light btn-sm form-select text-start" type="button" id="sectorDropdownBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="font-size: 0.85rem !important; height: 38px !important; line-height: 1.5 !important; padding: 0.375rem 2.25rem 0.375rem 0.75rem !important; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; background-color: #ffffff; border: 1px solid #ced4da; width: 100%; border-radius: 4px !important;">
               Select GE Nodes
             </button>
-            <ul class="dropdown-menu p-2" id="sectorDropdownList" aria-labelledby="sectorDropdownBtn" style="max-height: 250px; overflow-y: auto; font-size: 0.8rem; min-width: 200px; background-color: #ffffff !important; border: 1px solid #ced4da;">
+            <ul class="dropdown-menu p-2" id="sectorDropdownList" aria-labelledby="sectorDropdownBtn" style="max-height: 250px; overflow-y: auto; font-size: 0.8rem; min-width: 200px; background-color: #ffffff !important; border: 1px solid #ced4da; border-radius: 4px !important;">
               @php
                 $selectedSectorIds = is_array(request('sector_id')) ? request('sector_id') : (request('sector_id') ? [request('sector_id')] : (isset($sectorId) ? (is_array($sectorId) ? $sectorId : [$sectorId]) : []));
               @endphp
@@ -563,10 +736,10 @@
         <div class="col-auto">
           <label class="form-label mb-1" style="font-size: 0.8rem !important; color: #1e293b !important; font-weight: 700 !important;">Category</label>
           <div class="dropdown filter-dropdown-wrapper" style="width: 150px;">
-            <button class="btn btn-light btn-sm form-select text-start" type="button" id="categoryDropdownBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="font-size: 0.85rem !important; height: 38px !important; line-height: 1.5 !important; padding: 0.375rem 2.25rem 0.375rem 0.75rem !important; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; background-color: #ffffff; border: 1px solid #ced4da; width: 100%;">
+            <button class="btn btn-light btn-sm form-select text-start" type="button" id="categoryDropdownBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="font-size: 0.85rem !important; height: 38px !important; line-height: 1.5 !important; padding: 0.375rem 2.25rem 0.375rem 0.75rem !important; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; background-color: #ffffff; border: 1px solid #ced4da; width: 100%; border-radius: 4px !important;">
               Select Category
             </button>
-            <ul class="dropdown-menu p-2" aria-labelledby="categoryDropdownBtn" style="max-height: 250px; overflow-y: auto; font-size: 0.8rem; min-width: 200px; background-color: #ffffff !important; border: 1px solid #ced4da;">
+            <ul class="dropdown-menu p-2" aria-labelledby="categoryDropdownBtn" style="max-height: 250px; overflow-y: auto; font-size: 0.8rem; min-width: 200px; background-color: #ffffff !important; border: 1px solid #ced4da; border-radius: 4px !important;">
               @php
                 $selectedCategories = is_array(request('category')) ? request('category') : (request('category') ? [request('category')] : (isset($category) ? (is_array($category) ? $category : [$category]) : []));
               @endphp
@@ -584,14 +757,38 @@
           </div>
         </div>
 
+        @if(isset($subCategories) && $subCategories->count() > 0)
+        <div class="col-auto">
+          <label class="form-label mb-1" style="font-size: 0.8rem !important; color: #1e293b !important; font-weight: 700 !important;">Sub Category</label>
+          <div class="dropdown filter-dropdown-wrapper" style="width: 150px;">
+            <button class="btn btn-light btn-sm form-select text-start" type="button" id="subCategoryDropdownBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="font-size: 0.85rem !important; height: 38px !important; line-height: 1.5 !important; padding: 0.375rem 2.25rem 0.375rem 0.75rem !important; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; background-color: #ffffff; border: 1px solid #ced4da; width: 100%; border-radius: 4px !important;">
+              Select Sub Category
+            </button>
+            <ul class="dropdown-menu p-2" aria-labelledby="subCategoryDropdownBtn" style="max-height: 250px; overflow-y: auto; font-size: 0.8rem; min-width: 200px; background-color: #ffffff !important; border: 1px solid #ced4da; border-radius: 4px !important;">
+              @php
+                $selectedSubCategories = is_array(request('sub_category_id')) ? request('sub_category_id') : (request('sub_category_id') ? [request('sub_category_id')] : (isset($subCategoryId) ? (is_array($subCategoryId) ? $subCategoryId : [$subCategoryId]) : []));
+              @endphp
+              @foreach($subCategories as $subCat)
+                <li class="p-1">
+                  <div class="form-check">
+                    <input class="form-check-input sub-category-checkbox" type="checkbox" value="{{ $subCat->id }}" id="sub_cat_cb_{{ $subCat->id }}" name="sub_category_id[]" {{ in_array($subCat->id, $selectedSubCategories) ? 'checked' : '' }} onchange="updateDropdownButtonText('subCategoryDropdownBtn', 'sub_category_id[]', 'Select Sub Category');">
+                    <label class="form-check-label w-100 cursor-pointer text-dark" for="sub_cat_cb_{{ $subCat->id }}">{{ $subCat->name }}</label>
+                  </div>
+                </li>
+              @endforeach
+            </ul>
+          </div>
+        </div>
+        @endif
+
         @if(isset($complaintStatuses) && count($complaintStatuses) > 0)
         <div class="col-auto">
           <label class="form-label mb-1" style="font-size: 0.8rem !important; color: #1e293b !important; font-weight: 700 !important;">Status</label>
           <div class="dropdown filter-dropdown-wrapper" style="width: 150px;">
-            <button class="btn btn-light btn-sm form-select text-start" type="button" id="complaintStatusDropdownBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="font-size: 0.85rem !important; height: 38px !important; line-height: 1.5 !important; padding: 0.375rem 2.25rem 0.375rem 0.75rem !important; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; background-color: #ffffff; border: 1px solid #ced4da; width: 100%;">
+            <button class="btn btn-light btn-sm form-select text-start" type="button" id="complaintStatusDropdownBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="font-size: 0.85rem !important; height: 38px !important; line-height: 1.5 !important; padding: 0.375rem 2.25rem 0.375rem 0.75rem !important; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; background-color: #ffffff; border: 1px solid #ced4da; width: 100%; border-radius: 4px !important;">
               Select Status
             </button>
-            <ul class="dropdown-menu p-2" aria-labelledby="complaintStatusDropdownBtn" style="max-height: 250px; overflow-y: auto; font-size: 0.8rem; min-width: 200px; background-color: #ffffff !important; border: 1px solid #ced4da;">
+            <ul class="dropdown-menu p-2" aria-labelledby="complaintStatusDropdownBtn" style="max-height: 250px; overflow-y: auto; font-size: 0.8rem; min-width: 200px; background-color: #ffffff !important; border: 1px solid #ced4da; border-radius: 4px !important;">
               @php
                 $selectedStatuses = is_array(request('complaint_status')) ? request('complaint_status') : (request('complaint_status') ? [request('complaint_status')] : (isset($complaintStatus) ? (is_array($complaintStatus) ? $complaintStatus : [$complaintStatus]) : []));
               @endphp
@@ -610,7 +807,7 @@
 
         <div class="col-auto position-relative">
           <label class="form-label mb-1" style="font-size: 0.8rem !important; color: #1e293b !important; font-weight: 700 !important;">Date Range</label>
-          <select class="form-select" id="dateRangeFilter" name="date_range" style="font-size: 0.85rem !important; height: 38px !important; width: 150px !important; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-color: #ffffff !important; border: 1px solid #ced4da !important; color: #334155 !important;">
+          <select class="form-select" id="dateRangeFilter" name="date_range" style="font-size: 0.85rem !important; height: 38px !important; width: 150px !important; background-image: url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 16px 12px !important; padding-right: 2.5rem !important; appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-color: #ffffff !important; border: 1px solid #ced4da !important; color: #334155 !important; border-radius: 4px !important;">
             <option value="">Select Date Range</option>
             <option value="yesterday" {{ (request('date_range') == 'yesterday' || $dateRange == 'yesterday') ? 'selected' : '' }}>Yesterday</option>
             <option value="today" {{ (request('date_range') == 'today' || $dateRange == 'today') ? 'selected' : '' }}>Today</option>
@@ -623,7 +820,7 @@
           </select>
 
           <!-- Custom Date Range Inputs (Floating absolute card) -->
-          <div id="customDateRangeContainer" class="card p-3 shadow-lg" style="display: none; position: absolute; top: 100%; right: 0; z-index: 1050; min-width: 320px; background-color: #ffffff; border: 1px solid #ced4da; margin-top: 5px; border-radius: 6px;">
+          <div id="customDateRangeContainer" class="card p-3 shadow-lg" style="display: none; position: absolute; top: 100%; right: 0; z-index: 1050; min-width: 320px; background-color: #ffffff; border: 1px solid #ced4da; margin-top: 5px; border-radius: 4px !important;">
             <div class="d-flex flex-column gap-2 text-dark">
               <div class="d-flex justify-content-between align-items-center mb-1">
                 <span class="fw-bold text-dark" style="font-size: 0.85rem;">Custom Range</span>
@@ -632,14 +829,14 @@
               <div class="d-flex gap-2">
                 <div class="flex-grow-1">
                   <label class="form-label mb-1 small text-muted">Start Date</label>
-                  <input type="date" class="form-control form-control-sm" id="startDate" name="start_date" style="font-size: 0.85rem; height: 35px; border: 1px solid #ced4da;" value="{{ request('start_date') }}">
+                  <input type="date" class="form-control form-control-sm" id="startDate" name="start_date" style="font-size: 0.85rem; height: 35px; border: 1px solid #ced4da; border-radius: 4px !important;" value="{{ request('start_date') }}">
                 </div>
                 <div class="flex-grow-1">
                   <label class="form-label mb-1 small text-muted">End Date</label>
-                  <input type="date" class="form-control form-control-sm" id="endDate" name="end_date" style="font-size: 0.85rem; height: 35px; border: 1px solid #ced4da;" value="{{ request('end_date') }}">
+                  <input type="date" class="form-control form-control-sm" id="endDate" name="end_date" style="font-size: 0.85rem; height: 35px; border: 1px solid #ced4da; border-radius: 4px !important;" value="{{ request('end_date') }}">
                 </div>
               </div>
-              <button type="button" class="btn btn-primary btn-sm w-100 text-white mt-1" id="applyCustomDate" style="background-color: #001f5b; border-color: #001f5b; font-weight: 600; height: 35px; border-radius: 4px;">Apply Range</button>
+              <button type="button" class="btn btn-primary btn-sm w-100 text-white mt-1" id="applyCustomDate" style="background-color: #001f5b; border-color: #001f5b; font-weight: 600; height: 35px; border-radius: 4px !important;">Apply Range</button>
             </div>
           </div>
         </div>
@@ -647,13 +844,13 @@
         <div class="col-auto d-flex gap-1">
           <div>
             <label class="form-label small text-muted mb-1" style="font-size: 0.7rem; display: block;">&nbsp;</label>
-            <button type="button" class="btn btn-primary btn-sm text-white d-flex align-items-center justify-content-center" onclick="applyDashboardFilters()" style="font-size: 0.85rem; height: 38px; padding: 0 1.25rem; background-color: #001f5b; border-color: #001f5b; font-weight: bold; border-radius: 6px;">
+            <button type="button" class="btn btn-primary btn-sm text-white d-flex align-items-center justify-content-center" onclick="applyDashboardFilters()" style="font-size: 0.85rem; height: 38px; padding: 0 1.25rem; background-color: #001f5b; border-color: #001f5b; font-weight: bold; border-radius: 4px !important;">
               <i data-feather="filter" class="me-1" style="width: 14px; height: 14px;"></i>Apply
             </button>
           </div>
           <div>
             <label class="form-label small text-muted mb-1" style="font-size: 0.7rem; display: block;">&nbsp;</label>
-            <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center" onclick="resetDashboardFilters()" style="font-size: 0.85rem; height: 38px; padding: 0 1.25rem; border-radius: 6px;">
+            <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center" onclick="resetDashboardFilters()" style="font-size: 0.85rem; height: 38px; padding: 0 1.25rem; border-radius: 4px !important;">
               <i data-feather="refresh-cw" class="me-1" style="width: 14px; height: 14px;"></i>Reset
             </button>
           </div>
@@ -896,7 +1093,7 @@
                   <span style="color: #ffffff !important; margin-left: 0.25rem;">{{ $geData['city'] }}</span>
                 </p>
               </div>
-              <div style="width: 45px; height: 45px; background: rgba(255, 255, 255, 0.25); border-radius: 12px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);">
+              <div style="width: 45px; height: 45px; background: rgba(255, 255, 255, 0.25); border-radius: 4px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);">
                 <i data-feather="user-check" style="width: 22px; height: 22px; color: #ffffff;"></i>
               </div>
             </div>
@@ -905,9 +1102,9 @@
                 <span class="text-white" style="font-size: 0.9rem; font-weight: 600; opacity: 0.95; color: #ffffff !important;">Performance</span>
                 <span class="text-white" style="font-weight: 800; font-size: 1.3rem; color: #ffffff !important;">{{ $geData['progress_percentage'] }}%</span>
               </div>
-              <div class="progress" style="height: 14px; background-color: rgba(0, 0, 0, 0.25); border-radius: 8px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.15);">
+              <div class="progress" style="height: 14px; background-color: rgba(0, 0, 0, 0.25); border-radius: 4px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.15);">
                 <div class="progress-bar" role="progressbar"
-                     style="width: {{ $geData['progress_percentage'] }}%; background: linear-gradient(90deg, #ffffff 0%, rgba(255, 255, 255, 0.8) 100%); border-radius: 8px; box-shadow: 0 2px 12px rgba(255, 255, 255, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.8); transition: width 0.6s ease; border: 1px solid rgba(255, 255, 255, 0.4);"
+                     style="width: {{ $geData['progress_percentage'] }}%; background: linear-gradient(90deg, #ffffff 0%, rgba(255, 255, 255, 0.8) 100%); border-radius: 4px; box-shadow: 0 2px 12px rgba(255, 255, 255, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.8); transition: width 0.6s ease; border: 1px solid rgba(255, 255, 255, 0.4);"
                      aria-valuenow="{{ $geData['progress_percentage'] }}"
                      aria-valuemin="0"
                      aria-valuemax="100">
@@ -974,7 +1171,7 @@
                   <span style="color: #ffffff !important; margin-left: 0.25rem;">{{ $geData['city'] }}</span>
                 </p>
               </div>
-              <div style="width: 45px; height: 45px; background: rgba(255, 255, 255, 0.25); border-radius: 12px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);">
+              <div style="width: 45px; height: 45px; background: rgba(255, 255, 255, 0.25); border-radius: 4px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);">
                 <i data-feather="user-check" style="width: 22px; height: 22px; color: #ffffff;"></i>
               </div>
             </div>
@@ -983,9 +1180,9 @@
                 <span class="text-white" style="font-size: 0.85rem; font-weight: 600; opacity: 0.95; color: #ffffff !important;">Progress</span>
                 <span class="text-white" style="font-weight: 800; font-size: 1.4rem; color: #ffffff !important;">{{ $geData['progress_percentage'] }}%</span>
               </div>
-              <div class="progress" style="height: 14px; background-color: rgba(0, 0, 0, 0.25); border-radius: 8px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.15);">
+              <div class="progress" style="height: 14px; background-color: rgba(0, 0, 0, 0.25); border-radius: 4px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.15);">
                 <div class="progress-bar" role="progressbar"
-                     style="width: {{ $geData['progress_percentage'] }}%; background: linear-gradient(90deg, #ffffff 0%, rgba(255, 255, 255, 0.8) 100%); border-radius: 8px; box-shadow: 0 2px 12px rgba(255, 255, 255, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.8); transition: width 0.6s ease; border: 1px solid rgba(255, 255, 255, 0.4);"
+                     style="width: {{ $geData['progress_percentage'] }}%; background: linear-gradient(90deg, #ffffff 0%, rgba(255, 255, 255, 0.8) 100%); border-radius: 4px; box-shadow: 0 2px 12px rgba(255, 255, 255, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.8); transition: width 0.6s ease; border: 1px solid rgba(255, 255, 255, 0.4);"
                      aria-valuenow="{{ $geData['progress_percentage'] }}"
                      aria-valuemin="0"
                      aria-valuemax="100">
@@ -1041,6 +1238,9 @@
                     <i data-feather="list" class="me-2"></i>Complaints
                 </h5>
                 <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-danger btn-sm d-inline-flex align-items-center text-white" onclick="exportModalToPdf()" style="background-color: #dc2626; border-color: #b91c1c; font-weight: 600; padding: 0 6px !important; font-size: 0.65rem !important; height: 24px !important; line-height: 1 !important; border-radius: 0px !important; border: 1px solid #b91c1c; color: #ffffff !important; margin: 0;">
+                        <i data-feather="file-text" class="me-1" style="width: 12px; height: 12px;"></i> Export to PDF
+                    </button>
                     <button type="button" class="btn btn-success btn-sm d-inline-flex align-items-center text-white" onclick="exportModalToExcel()" style="background-color: #16a34a; border-color: #15803d; font-weight: 600; padding: 0 6px !important; font-size: 0.65rem !important; height: 24px !important; line-height: 1 !important; border-radius: 0px !important; border: 1px solid #15803d; color: #ffffff !important; margin: 0;">
                         <i data-feather="download" class="me-1" style="width: 12px; height: 12px;"></i> Export to Excel
                     </button>
@@ -1053,14 +1253,15 @@
                         <thead>
                             <tr>
                                 <th style="width: 5%;">CMP-ID</th>
-                                <th style="width: 15%;">Reg. Date</th>
-                                <th style="width: 15%; text-align: left;">Addr. Time</th>
+                                <th style="width: 14%;">Reg. Date</th>
+                                <th style="width: 14%; text-align: left;">Addr. Time</th>
                                 <th style="width: 8%;">House</th>
-                                <th style="width: 15%;">Status</th>
-                                <th style="width: 14%;">Nature</th>
-                                <th style="width: 15%;">Type</th>
-                                <th style="width: 8%;">Priority</th>
-                                <th style="width: 5%;">Act</th>
+                                <th style="width: 13%;">Status</th>
+                                <th style="width: 12%;">Category</th>
+                                <th style="width: 12%;">Sub Category</th>
+                                <th style="width: 12%;">Type</th>
+                                <th style="width: 6%;">Priority</th>
+                                <th style="width: 4%;">Act</th>
                             </tr>
                         </thead>
                         <tbody id="modalComplaintsTableBody">
@@ -1473,9 +1674,18 @@
         custom: function({series, seriesIndex, dataPointIndex, w}) {
           var label = w.globals.labels[seriesIndex];
           var val = series[seriesIndex];
-          return '<div class="custom-apex-tooltip">' +
-                    '<span style="color: #ffffff !important; font-weight: 600;">' + label + ': </span>' +
-                    '<strong style="color: #ffffff !important; font-weight: 700; margin-left: 6px;">' + val + '</strong>' +
+          var isDark = document.documentElement.classList.contains('theme-dark') || 
+                       document.documentElement.classList.contains('theme-night') || 
+                       document.body.classList.contains('theme-dark') || 
+                       document.body.classList.contains('theme-night') || 
+                       localStorage.getItem('theme') === 'dark' || 
+                       localStorage.getItem('theme') === 'night';
+          var textColor = isDark ? '#ffffff' : '#0f172a';
+          var bgColor = isDark ? '#0f172a' : '#ffffff';
+          var borderColor = isDark ? '#334155' : '#cbd5e1';
+          return '<div class="custom-apex-tooltip" style="background: ' + bgColor + ' !important; border: 1px solid ' + borderColor + ' !important; color: ' + textColor + ' !important;">' +
+                    '<span style="color: ' + textColor + ' !important; font-weight: 600;">' + label + ': </span>' +
+                    '<strong style="color: ' + textColor + ' !important; font-weight: 700; margin-left: 6px;">' + val + '</strong>' +
                  '</div>';
         }
       }
@@ -1540,7 +1750,7 @@
         }
       },
       tooltip: {
-        theme: document.body.classList.contains('theme-light') ? 'light' : 'dark',
+        theme: (document.documentElement.classList.contains('theme-dark') || document.documentElement.classList.contains('theme-night') || document.body.classList.contains('theme-dark') || document.body.classList.contains('theme-night') || localStorage.getItem('theme') === 'dark' || localStorage.getItem('theme') === 'night') ? 'dark' : 'light',
         style: {
           fontSize: '12px',
           fontFamily: 'inherit'
@@ -1773,7 +1983,7 @@
         }
       },
       tooltip: {
-        theme: isLightTheme ? 'light' : 'dark',
+        theme: (document.documentElement.classList.contains('theme-dark') || document.documentElement.classList.contains('theme-night') || document.body.classList.contains('theme-dark') || document.body.classList.contains('theme-night') || localStorage.getItem('theme') === 'dark' || localStorage.getItem('theme') === 'night') ? 'dark' : 'light',
         style: {
           fontSize: '13px',
           fontFamily: 'inherit'
@@ -1905,6 +2115,7 @@
       updateDropdownButtonText('cityDropdownBtn', 'city_id[]', 'Select GE');
       updateDropdownButtonText('sectorDropdownBtn', 'sector_id[]', 'Select GE Nodes');
       updateDropdownButtonText('categoryDropdownBtn', 'category[]', 'Select Category');
+      updateDropdownButtonText('subCategoryDropdownBtn', 'sub_category_id[]', 'Select Sub Category');
       updateDropdownButtonText('complaintStatusDropdownBtn', 'complaint_status[]', 'Select Status');
       handleCmesCheckboxChange();
       handleCityCheckboxChange();
@@ -1936,6 +2147,12 @@
       const checkedCategories = document.querySelectorAll('.category-checkbox:checked');
       checkedCategories.forEach(cb => {
         params.append('category[]', cb.value);
+      });
+
+      // Append multiple values for sub_category_id
+      const checkedSubCategories = document.querySelectorAll('.sub-category-checkbox:checked');
+      checkedSubCategories.forEach(cb => {
+        params.append('sub_category_id[]', cb.value);
       });
 
       // Append multiple values for complaint_status
@@ -2158,7 +2375,7 @@
         let url = "{{ route('admin.complaints.index') }}?" + urlParams.toString();
 
         titleEl.innerHTML = `<i data-feather="list" class="me-2"></i>${title}`;
-        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
         paginationContainer.innerHTML = '';
         
         // Add blur effect
@@ -2193,7 +2410,7 @@
                 // Initialize icons
                 feather.replace();
             } else {
-                tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4">No complaints found.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" class="text-center py-4">No complaints found.</td></tr>';
             }
 
             if (newPagination) {
@@ -2206,7 +2423,7 @@
                         e.preventDefault();
                         const href = this.getAttribute('href');
                         if (href) {
-                            tbody.innerHTML = '<tr><td colspan="9" class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
+                            tbody.innerHTML = '<tr><td colspan="10" class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
                             fetch(href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                                 .then(res => res.text())
                                 .then(pageHtml => {
@@ -2224,7 +2441,256 @@
         })
         .catch(err => {
             console.error(err);
-            tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-danger">Error loading data.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center py-4 text-danger">Error loading data.</td></tr>';
+        });
+    };
+
+    // Client-side PDF exporter for modal table with required fields:
+    // CMP-ID, register date, house no, category, sub category, type, priority, description
+    window.exportModalToPdf = function() {
+        const modalElement = document.getElementById('complaintsListModal');
+        if (!modalElement) return;
+
+        const btn = document.querySelector('#complaintsListModal button[onclick="exportModalToPdf()"]');
+        const originalHtml = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Exporting...';
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('export_all', '1');
+
+        const param = modalElement.dataset.activeParam || 'all';
+        if (param === 'all') {
+            urlParams.delete('status');
+        } else if (param === 'overdue') {
+            urlParams.set('filter', 'overdue');
+            urlParams.delete('status');
+        } else {
+            urlParams.set('status', param);
+        }
+
+        const url = "{{ route('admin.complaints.index') }}?" + urlParams.toString();
+
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+
+            if (!data || !data.complaints || data.complaints.length === 0) {
+                alert('No complaints found to export.');
+                return;
+            }
+
+            const modalTitle = document.getElementById('complaintsListModalLabel').textContent.trim() || 'Complaints';
+            const totalCount = data.complaints.length;
+            const printedDate = new Date().toLocaleString();
+
+            let rowsHtml = '';
+            data.complaints.forEach((row) => {
+                const cmpId = row.cmp_id || ('CMP-' + String(row.id || '').padStart(4, '0'));
+                const regDate = row.created_at || '-';
+                const houseNo = row.house_no || 'N/A';
+                const category = row.category || 'N/A';
+                const subCategory = row.sub_category || '-';
+                const type = row.type || 'N/A';
+                const pVal = (row.priority || 'Normal').trim();
+                const isEmerg = ['emergency', 'urgent', 'high'].includes(pVal.toLowerCase());
+                const priorityBadge = `<span class="badge ${isEmerg ? 'badge-emergency' : 'badge-normal'}">${isEmerg ? 'Emergency' : 'Normal'}</span>`;
+                const description = row.description || 'N/A';
+
+                rowsHtml += `
+                    <tr>
+                        <td style="text-align: center; font-weight: 700; white-space: nowrap;">${cmpId}</td>
+                        <td style="white-space: nowrap;">${regDate}</td>
+                        <td style="text-align: center; font-weight: 600; white-space: nowrap;">${houseNo}</td>
+                        <td style="white-space: nowrap;">${category}</td>
+                        <td style="white-space: nowrap;">${subCategory}</td>
+                        <td>${type}</td>
+                        <td style="text-align: center;">${priorityBadge}</td>
+                        <td style="font-size: 9.5px; line-height: 1.3;">${description}</td>
+                    </tr>
+                `;
+            });
+
+            const htmlContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <title>${modalTitle} - Complaints Report</title>
+                    <style>
+                        @page {
+                            size: A4 landscape;
+                            margin: 8mm;
+                        }
+                        * {
+                            box-sizing: border-box;
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                        }
+                        body {
+                            font-family: 'Segoe UI', Arial, sans-serif;
+                            font-size: 10px;
+                            color: #1e293b;
+                            margin: 0;
+                            padding: 10px;
+                            background: #ffffff;
+                        }
+                        .report-header {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: flex-end;
+                            border-bottom: 2px solid #0f172a;
+                            padding-bottom: 8px;
+                            margin-bottom: 12px;
+                        }
+                        .report-title h2 {
+                            margin: 0;
+                            font-size: 15px;
+                            font-weight: 800;
+                            color: #0f172a;
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                        }
+                        .report-title p {
+                            margin: 2px 0 0 0;
+                            font-size: 11px;
+                            color: #64748b;
+                            font-weight: 600;
+                        }
+                        .report-meta {
+                            text-align: right;
+                            font-size: 9.5px;
+                            color: #64748b;
+                        }
+                        .report-meta strong {
+                            color: #0f172a;
+                        }
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-bottom: 10px;
+                        }
+                        th {
+                            background-color: #0f172a !important;
+                            color: #ffffff !important;
+                            font-weight: 700;
+                            font-size: 9.5px;
+                            text-transform: uppercase;
+                            letter-spacing: 0.3px;
+                            padding: 6px 5px;
+                            border: 1px solid #0f172a;
+                            text-align: left;
+                        }
+                        td {
+                            border: 1px solid #cbd5e1;
+                            padding: 5px;
+                            vertical-align: middle;
+                            font-size: 9.5px;
+                        }
+                        tr:nth-child(even) {
+                            background-color: #f8fafc !important;
+                        }
+                        .badge {
+                            display: inline-block;
+                            padding: 2px 6px;
+                            border-radius: 3px;
+                            font-size: 8.5px;
+                            font-weight: 700;
+                            text-transform: uppercase;
+                        }
+                        .badge-emergency {
+                            background-color: #fee2e2 !important;
+                            color: #991b1b !important;
+                            border: 1px solid #f87171;
+                        }
+                        .badge-normal {
+                            background-color: #eff6ff !important;
+                            color: #1e40af !important;
+                            border: 1px solid #93c5fd;
+                        }
+                        .report-footer {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            border-top: 1px solid #cbd5e1;
+                            padding-top: 6px;
+                            margin-top: 10px;
+                            font-size: 9px;
+                            color: #64748b;
+                        }
+                        .no-print {
+                            display: none;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="report-header">
+                        <div class="report-title">
+                            <h2>CMS COMPLAINT MANAGEMENT SYSTEM</h2>
+                            <p>${modalTitle}</p>
+                        </div>
+                        <div class="report-meta">
+                            <div><strong>Printed:</strong> ${printedDate}</div>
+                            <div><strong>Total Records:</strong> ${totalCount}</div>
+                        </div>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 8%; text-align: center;">CMP-ID</th>
+                                <th style="width: 14%;">Register Date</th>
+                                <th style="width: 8%; text-align: center;">House No</th>
+                                <th style="width: 9%;">Category</th>
+                                <th style="width: 10%;">Sub Category</th>
+                                <th style="width: 14%;">Type</th>
+                                <th style="width: 9%; text-align: center;">Priority</th>
+                                <th style="width: 28%;">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+
+                    <div class="report-footer">
+                        <div>CMS Portal | Confidential</div>
+                        <div>Total Complaints: <strong>${totalCount}</strong></div>
+                    </div>
+                </body>
+                </html>
+            `;
+
+            const printWindow = window.open('', '_blank');
+            if (printWindow) {
+                printWindow.document.open();
+                printWindow.document.write(htmlContent);
+                printWindow.document.close();
+                printWindow.focus();
+                setTimeout(() => {
+                    printWindow.print();
+                }, 300);
+            } else {
+                alert('Pop-up blocked! Please allow pop-ups for this site to export PDF.');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+            alert('Error exporting PDF data. Please try again.');
         });
     };
 
@@ -2289,7 +2755,8 @@
                 'Complainant Name',
                 'Phone',
                 'Address',
-                'Nature',
+                'Category',
+                'Sub Category',
                 'Type',
                 'Priority',
                 'Registered By',
@@ -2326,6 +2793,7 @@
                     fmtText(row.phone || 'N/A'),
                     fmt(row.address || 'N/A'),
                     fmt(row.category || 'N/A'),
+                    fmt(row.sub_category || '-'),
                     fmt(row.type || 'N/A'),
                     fmt(row.priority || 'Normal'),
                     fmt(row.registered_by || '-'),

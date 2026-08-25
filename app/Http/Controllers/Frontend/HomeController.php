@@ -315,6 +315,7 @@ class HomeController extends Controller
         $cityId = $request->get('city_id');
         $sectorId = $request->get('sector_id');
         $category = $request->get('category');
+        $subCategoryId = $request->get('sub_category_id');
         $status = $request->get('status');
         $dateRange = $request->get('date_range', 'all_time');
 
@@ -323,6 +324,7 @@ class HomeController extends Controller
         $cityIds = is_array($cityId) ? array_filter($cityId) : ($cityId ? [$cityId] : []);
         $sectorIds = is_array($sectorId) ? array_filter($sectorId) : ($sectorId ? [$sectorId] : []);
         $categoryFilters = is_array($category) ? array_filter($category) : ($category && $category !== 'all' ? [$category] : []);
+        $subCategoryIds = is_array($subCategoryId) ? array_filter($subCategoryId) : ($subCategoryId ? [$subCategoryId] : []);
 
         // Build base query with filters
         $complaintsQuery = Complaint::query();
@@ -419,6 +421,11 @@ class HomeController extends Controller
                     });
                 }
             });
+        }
+
+        // Apply Sub Category filter
+        if (!empty($subCategoryIds)) {
+            $complaintsQuery->whereIn('complaints.sub_category_id', $subCategoryIds);
         }
 
         // Apply CMES filter (Inclusive: CME Cities OR CME Sectors) - Apply BEFORE cloning for graph base
@@ -575,6 +582,7 @@ class HomeController extends Controller
 
 
         $categories = ComplaintCategory::where('status', 1)->get();
+        $subCategories = \App\Models\SubCategory::with('category')->where('status', 1)->orderBy('name')->get();
 
         // Get all statuses from database (same as admin side)
         $statuses = [
@@ -868,7 +876,7 @@ class HomeController extends Controller
         $monthlyComplaints = [];
         $monthLabels = [];
 
-        $applyGlobalFilters = function ($q, $dateRangeOverride = null, $tablePrefix = 'complaints') use ($request, $categoryFilters, $dateRange, $cmesIds, $cityIds, $sectorIds, $locationScope, $user, $self) {
+        $applyGlobalFilters = function ($q, $dateRangeOverride = null, $tablePrefix = 'complaints') use ($request, $categoryFilters, $subCategoryIds, $dateRange, $cmesIds, $cityIds, $sectorIds, $locationScope, $user, $self) {
             // Qualify columns with table prefix to avoid ambiguity in joined queries
             $cityCol = $tablePrefix ? $tablePrefix . '.city_id' : 'city_id';
             $sectorCol = $tablePrefix ? $tablePrefix . '.sector_id' : 'sector_id';
@@ -995,6 +1003,12 @@ class HomeController extends Controller
                         });
                     }
                 });
+            }
+
+            // Global Metadata Filters (array-based sub_category)
+            if (!empty($subCategoryIds)) {
+                $subCatCol = $tablePrefix ? $tablePrefix . '.sub_category_id' : 'sub_category_id';
+                $q->whereIn($subCatCol, $subCategoryIds);
             }
 
             $effectiveDateRange = $dateRangeOverride ?? $dateRange;
@@ -1814,6 +1828,8 @@ class HomeController extends Controller
             'cityId',
             'sectorId',
             'category',
+            'subCategoryId',
+            'subCategories',
             'status',
             'dateRange',
             'cmesList',
@@ -1949,12 +1965,6 @@ class HomeController extends Controller
                 ->with('error', 'Feedback already submitted for this complaint.');
         }
 
-        // Enforce that feedback can only be submitted for resolved/closed complaints
-        if (!in_array($complaint->status, ['resolved', 'closed'])) {
-            return redirect()->route('frontend.feedback', $id)
-                ->with('error', 'Feedback can only be submitted once the complaint is Addressed (Resolved).');
-        }
-
         $request->validate([
             'submitted_by' => 'required|string|max:255',
             'overall_rating' => 'required|in:excellent,good,satisfied,fair,poor',
@@ -1964,6 +1974,7 @@ class HomeController extends Controller
 
         \App\Models\ComplaintFeedback::create([
             'complaint_id' => $complaint->id,
+            'house_id' => $complaint->house_id,
             'submitted_by' => $request->submitted_by,
             'overall_rating' => $request->overall_rating,
             'rating_score' => $this->getRatingScore($request->overall_rating),
@@ -1973,23 +1984,6 @@ class HomeController extends Controller
             'entered_at' => now(),
             // entered_by is null for public feedback
         ]);
-
-        // Auto-resolve complaint if not already resolved/closed
-        if (!in_array($complaint->status, ['resolved', 'closed'])) {
-            $complaint->update([
-                'status' => 'resolved',
-                'closed_at' => now(),
-                'resolved_at' => now(),
-            ]);
-
-            // Log the status change
-            \App\Models\ComplaintLog::create([
-                'complaint_id' => $complaint->id,
-                'user_id' => null, // System action via public feedback
-                'action' => 'status_changed',
-                'remarks' => 'Status changed to Addressed (Resolved) automatically upon receiving client feedback.'
-            ]);
-        }
 
         return redirect()->route('frontend.feedback', $id)->with('success', 'Thank you for your feedback!');
     }
@@ -2004,6 +1998,7 @@ class HomeController extends Controller
             'city',
             'sector',
             'category',
+            'subCategory',
             'assignedEmployee.designation',
             // 'attachments', (Removed as it does not exist on Complaint model)
             'spareApprovals',

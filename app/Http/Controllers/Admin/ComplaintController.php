@@ -225,6 +225,13 @@ class ComplaintController extends Controller
             });
         }
 
+        // Filter by sub_category_id (supports array from dashboard)
+        if ($request->has('sub_category_id') && $request->sub_category_id) {
+            $subCategoryId = $request->sub_category_id;
+            $subCategoryIds = is_array($subCategoryId) ? $subCategoryId : [$subCategoryId];
+            $query->whereIn('complaints.sub_category_id', $subCategoryIds);
+        }
+
         // Filter by priority
         if ($request->has('priority') && $request->priority) {
             $query->where('complaints.priority', $request->priority);
@@ -370,7 +377,7 @@ class ComplaintController extends Controller
 
         // Order by ID descending (3, 2, 1...) - newest/highest ID first
         // Clear any existing orders and set explicit descending order
-        $query->with(['assignedEmployee.designation', 'house', 'category', 'complaintTitle', 'city.cme', 'sector.cme', 'logs.actionBy'])
+        $query->with(['assignedEmployee.designation', 'house', 'category', 'subCategory', 'complaintTitle', 'city.cme', 'sector.cme', 'logs.actionBy'])
             ->reorder()
             ->orderBy('complaints.id', 'desc');
         if ($request->has('export_all')) {
@@ -436,6 +443,7 @@ class ComplaintController extends Controller
                     'phone' => $complaint->house->phone ?? 'N/A',
                     'address' => $complaint->house->address ?? 'N/A',
                     'category' => $complaint->getCategoryDisplayAttribute() ?? 'N/A',
+                    'sub_category' => $complaint->subCategory->name ?? '-',
                     'type' => $complaint->complaintTitle->title ?? $complaint->title ?? 'N/A',
                     'description' => $complaint->description ?: 'N/A',
                     'status' => $statusText,
@@ -462,7 +470,11 @@ class ComplaintController extends Controller
             ? ComplaintCategory::where('status', 1)->orderBy('name')->pluck('name', 'id')
             : collect();
 
-        return view('admin.complaints.index', compact('complaints', 'employees', 'categories'));
+        $subCategories = Schema::hasTable('sub_categories')
+            ? \App\Models\SubCategory::where('status', 1)->orderBy('name', 'asc')->get()
+            : collect();
+
+        return view('admin.complaints.index', compact('complaints', 'employees', 'categories', 'subCategories'));
     }
 
     /**
@@ -574,7 +586,7 @@ class ComplaintController extends Controller
             }
 
             $assignedEmpId = $request->assigned_employee_id ?: null;
-            $complaintStatus = $assignedEmpId ? Complaint::STATUS_ASSIGNED : Complaint::STATUS_UNASSIGNED;
+            $complaintStatus = $assignedEmpId ? Complaint::STATUS_IN_PROGRESS : Complaint::STATUS_UNASSIGNED;
 
             $complaint = Complaint::create([
                 'complaint_title_id' => $complaintTitleId,
@@ -583,6 +595,7 @@ class ComplaintController extends Controller
                 'city_id' => $request->city_id ?: null,
                 'sector_id' => $request->sector_id ?: null,
                 'category_id' => $request->category,
+                'sub_category_id' => $request->sub_category_id ?: null,
                 'priority' => $request->priority,
                 'availability_time' => $request->availability_time,
                 'description' => $request->description,
@@ -707,7 +720,7 @@ class ComplaintController extends Controller
                 }
 
                 $assignedEmpId = $entry['assigned_employee_id'] ?? null ?: null;
-                $complaintStatus = $assignedEmpId ? Complaint::STATUS_ASSIGNED : Complaint::STATUS_UNASSIGNED;
+                $complaintStatus = $assignedEmpId ? Complaint::STATUS_IN_PROGRESS : Complaint::STATUS_UNASSIGNED;
 
                 $complaint = Complaint::create([
                     'complaint_title_id' => $complaintTitleId,
@@ -716,6 +729,7 @@ class ComplaintController extends Controller
                     'city_id' => $request->city_id ?: null,
                     'sector_id' => $request->sector_id ?: null,
                     'category_id' => $entry['category'],
+                    'sub_category_id' => $entry['sub_category_id'] ?? null,
                     'priority' => $entry['priority'],
                     'availability_time' => $entry['availability_time'] ?? null,
                     'description' => $entry['description'] ?? null,
@@ -759,7 +773,7 @@ class ComplaintController extends Controller
      */
     public function show(Complaint $complaint)
     {
-        $complaint->load(['assignedEmployee', 'city', 'sector', 'spareParts.spare', 'spareApprovals', 'logs.actionBy', 'category', 'complaintTitle']);
+        $complaint->load(['assignedEmployee', 'city', 'sector', 'spareParts.spare', 'spareApprovals', 'logs.actionBy', 'category', 'subCategory', 'complaintTitle']);
         return view('admin.complaints.show', compact('complaint'));
     }
 
@@ -871,14 +885,14 @@ class ComplaintController extends Controller
 
         $newStatus = $complaint->status;
 
-        // If an employee is assigned, automatically update status to ASSIGNED if it was unassigned/new
+        // If an employee is assigned, automatically update status to IN_PROGRESS if it was unassigned/new
         if ($request->filled('assigned_employee_id')) {
             $unassignedStatuses = [Complaint::STATUS_UNASSIGNED, '2', 2, 'unassigned', 'new'];
-            if (in_array($newStatus, $unassignedStatuses) || $request->status === 'assigned' || $request->status == Complaint::STATUS_ASSIGNED) {
-                $newStatus = Complaint::STATUS_ASSIGNED;
+            if (in_array($newStatus, $unassignedStatuses) || $request->status === 'assigned' || $request->status == Complaint::STATUS_ASSIGNED || $request->status === 'in_progress' || $request->status == Complaint::STATUS_IN_PROGRESS) {
+                $newStatus = Complaint::STATUS_IN_PROGRESS;
             }
         } elseif ($request->has('assigned_employee_id') && empty($request->assigned_employee_id)) {
-            $assignedStatuses = [Complaint::STATUS_ASSIGNED, '3', 3, 'assigned'];
+            $assignedStatuses = [Complaint::STATUS_ASSIGNED, Complaint::STATUS_IN_PROGRESS, '3', 3, '0', 0, 'assigned', 'in_progress'];
             if (in_array($newStatus, $assignedStatuses) || $request->status === 'unassigned' || $request->status == Complaint::STATUS_UNASSIGNED) {
                 $newStatus = Complaint::STATUS_UNASSIGNED;
             }
@@ -891,6 +905,7 @@ class ComplaintController extends Controller
             'city_id' => $request->city_id ?: null,
             'sector_id' => $request->sector_id ?: null,
             'category_id' => $request->category,
+            'sub_category_id' => $request->sub_category_id ?: null,
             'priority' => $request->priority,
             'availability_time' => $request->availability_time,
             'description' => $request->description,
@@ -991,7 +1006,7 @@ class ComplaintController extends Controller
             // Send Notification to the House (User) for assignment
             if ($complaint->house) {
                 try {
-                    $status = $request->assigned_employee_id ? 'assigned' : 'unassigned';
+                    $status = $request->assigned_employee_id ? 'in_progress' : 'unassigned';
                     $complaint->house->notify(new \App\Notifications\ComplaintStatusUpdated($complaint, $status));
                 } catch (\Exception $e) {
                     Log::error('Notification Failed in update() assignment: ' . $e->getMessage());
@@ -1063,7 +1078,7 @@ class ComplaintController extends Controller
 
         $complaint->update([
             'assigned_employee_id' => $request->assigned_employee_id,
-            'status' => Complaint::STATUS_ASSIGNED,
+            'status' => Complaint::STATUS_IN_PROGRESS,
         ]);
 
         $currentEmployee = Employee::first();
@@ -1079,7 +1094,7 @@ class ComplaintController extends Controller
         // Send Notification to the House (User)
         if ($complaint->house) {
             try {
-                $complaint->house->notify(new \App\Notifications\ComplaintStatusUpdated($complaint, 'assigned'));
+                $complaint->house->notify(new \App\Notifications\ComplaintStatusUpdated($complaint, 'in_progress'));
             } catch (\Exception $e) {
                 Log::error('Notification Failed in assign(): ' . $e->getMessage());
             }
@@ -1346,7 +1361,7 @@ class ComplaintController extends Controller
      */
     public function printSlip(Complaint $complaint)
     {
-        $complaint->load(['assignedEmployee.designation', 'attachments', 'house', 'category', 'city', 'sector', 'logs.actionBy']);
+        $complaint->load(['assignedEmployee.designation', 'attachments', 'house', 'category', 'subCategory', 'city', 'sector', 'logs.actionBy']);
 
         return view('admin.complaints.print-slip', compact('complaint'));
     }
@@ -1382,7 +1397,7 @@ class ComplaintController extends Controller
 
                 Complaint::whereIn('id', $complaintIds)->update([
                     'assigned_employee_id' => $request->assigned_employee_id,
-                    'status' => Complaint::STATUS_ASSIGNED,
+                    'status' => Complaint::STATUS_IN_PROGRESS,
                 ]);
                 $message = 'Selected complaints assigned successfully.';
                 break;

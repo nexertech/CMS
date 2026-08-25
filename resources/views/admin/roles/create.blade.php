@@ -60,6 +60,7 @@
                   'houses' => ['label' => 'Houses', 'icon' => 'home', 'sublinks' => []],
                   'complaints' => ['label' => 'Complaints Mgmt', 'icon' => 'file-text', 'sublinks' => [
                     'category' => 'Complaint Cat',
+                    'sub-category' => 'Sub Categories',
                     'complaint-titles' => 'Complaint Types',
                     'complaints' => 'Complaints Regn',
                     'approvals' => 'Total Complaints'

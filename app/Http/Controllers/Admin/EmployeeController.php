@@ -61,7 +61,7 @@ class EmployeeController extends Controller
             $query->where('status', $request->status);
         }
 
-        $employees = $query->with(['city', 'sector'])->orderBy('id', 'asc')->paginate(10);
+        $employees = $query->with(['city', 'sector'])->orderBy('id', 'asc')->paginate(10)->withQueryString();
         
         // Get categories for filter dropdown from ComplaintCategory table
         $categories = collect();
@@ -568,15 +568,90 @@ class EmployeeController extends Controller
     }
 
     /**
-     * Export employees
+     * Export employees to CSV / Excel format
      */
-    public function export()
+    public function export(Request $request)
     {
-        // Implementation for exporting employees
-        return response()->json([
-            'success' => true,
-            'message' => 'Export functionality will be implemented.'
-        ]);
+        $user = Auth::user();
+        $query = Employee::query();
+
+        // Apply location-based filtering
+        $this->filterEmployeesByLocation($query, $user);
+
+        // Search functionality
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhereHas('designation', function($q2) use ($search) {
+                      $q2->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by category
+        if ($request->has('category') && $request->category) {
+            $query->where('category_id', $request->category);
+        }
+
+        // Filter by status
+        if ($request->has('status') && $request->status !== null && $request->status !== '') {
+            $query->where('status', $request->status);
+        }
+
+        $employees = $query->with(['category', 'designation', 'city', 'sector'])
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $fileName = 'employees_export_' . date('Y-m-d') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+        ];
+
+        $columns = [
+            'ID',
+            'Employee Name',
+            'Category',
+            'Designation',
+            'GE Group (City)',
+            'GE Nodes (Sectors)',
+            'Phone',
+            'Status',
+            'Hire Date',
+            'Address'
+        ];
+
+        $callback = function () use ($employees, $columns) {
+            $file = fopen('php://output', 'w');
+            fputs($file, "\xEF\xBB\xBF"); // UTF-8 BOM for Excel compatibility
+            fputcsv($file, $columns);
+
+            foreach ($employees as $employee) {
+                $id = '="' . $employee->id . '"';
+                $phone = !empty($employee->phone) ? '="' . $employee->phone . '"' : 'N/A';
+                $hireDate = $employee->date_of_hire ? '="' . $employee->date_of_hire->format('Y-m-d') . '"' : 'N/A';
+
+                fputcsv($file, [
+                    $id,
+                    $employee->name ?? 'N/A',
+                    $employee->category ? $employee->category->name : 'N/A',
+                    $employee->designation ? $employee->designation->name : 'N/A',
+                    $employee->city ? $employee->city->name : 'N/A',
+                    $employee->assigned_sectors_text,
+                    $phone,
+                    $employee->status === 1 ? 'Active' : 'Inactive',
+                    $hireDate,
+                    $employee->address ?? 'N/A'
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     /**

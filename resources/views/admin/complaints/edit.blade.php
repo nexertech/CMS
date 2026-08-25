@@ -132,6 +132,17 @@
                 </div>
                 <div class="col-md-4">
                     <div class="mb-3">
+                        <label for="sub_category_id" class="form-label text-white">Sub Category</label>
+                        <select id="sub_category_id" name="sub_category_id" class="form-select @error('sub_category_id') is-invalid @enderror" data-old-value="{{ old('sub_category_id', $complaint->sub_category_id) }}">
+                            <option value="">Select Category First</option>
+                        </select>
+                        @error('sub_category_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
                         <label for="complaint_title_id" class="form-label text-white">Complaint Type <span class="text-danger">*</span></label>
                         <div id="titleDropdownContainer">
                             <select class="form-select @error('complaint_title_id') is-invalid @enderror" 

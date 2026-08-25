@@ -53,7 +53,7 @@ class UserController extends Controller
             $query->where('status', $request->status);
         }
 
-        $users = $query->orderBy('id', 'asc')->paginate(15);
+        $users = $query->orderBy('id', 'asc')->paginate(15)->withQueryString();
         $roles = Role::all();
         
         $totalCities = City::where('status', 1)->count();
@@ -506,7 +506,7 @@ class UserController extends Controller
         $activities = $user->complaintLogs()
             ->with('complaint')
             ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            ->paginate(20)->withQueryString();
 
         return view('admin.users.activity', compact('user', 'activities'));
     }

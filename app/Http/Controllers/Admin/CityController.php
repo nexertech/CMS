@@ -22,7 +22,7 @@ class CityController extends Controller
         }
 
         // Show all cities (both active and edit-inactivated)
-        $cities = City::with('cme')->orderBy('id', 'asc')->paginate(15);
+        $cities = City::with('cme')->orderBy('id', 'asc')->paginate(15)->withQueryString();
         $cmes = Schema::hasTable('cmes')
             ? Cme::where('status', 1)->orderBy('name')->get()
             : collect();

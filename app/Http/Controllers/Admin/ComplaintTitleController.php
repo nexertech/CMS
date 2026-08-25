@@ -39,7 +39,8 @@ class ComplaintTitleController extends Controller
         // Clear any existing orders and set explicit ascending order alphabetically A to Z by title
         $complaintTitles = $query->reorder()
             ->orderBy('title', 'asc')
-            ->paginate(25);
+            ->paginate(25)
+            ->withQueryString();
 
         // Get categories for filter dropdown
         $categories = ComplaintCategory::where('status', 1)->orderBy('name')->get();

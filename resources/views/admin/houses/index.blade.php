@@ -21,6 +21,9 @@
       <p class="text-light mb-0">Manage house records and information</p>
     </div>
     <div class="d-flex gap-2 align-items-center">
+      <a href="{{ route('admin.houses.export') }}" id="exportHousesBtn" class="btn btn-sm btn-outline-info px-3" style="font-weight: 500; font-size: 0.875rem;">
+        <i data-feather="download" class="me-1" style="width: 14px; height: 14px;"></i>Export Excel
+      </a>
       <button type="button" class="btn btn-sm btn-outline-success px-3" data-bs-toggle="modal" data-bs-target="#importHousesModal" style="font-weight: 500; font-size: 0.875rem;">
         <i data-feather="upload" class="me-1" style="width: 14px; height: 14px;"></i>Import Excel / CSV
       </button>
@@ -334,6 +337,11 @@
       }
       if (footer) {
         footer.innerHTML = `<strong style="color: #ffffff; font-size: 14px;">Total Records: ${data.total}</strong>`;
+      }
+      
+      const exportBtn = document.getElementById('exportHousesBtn');
+      if (exportBtn) {
+        exportBtn.href = `{{ route('admin.houses.export') }}?${params.toString()}`;
       }
       
       const newUrl = `{{ route('admin.houses.index') }}?${params.toString()}`;

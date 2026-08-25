@@ -486,11 +486,38 @@
                         @foreach($categories as $cat)
                             <li class="p-1">
                                 <div class="form-check">
-                                    <input class="form-check-input category-checkbox" type="checkbox" value="{{ $cat->name }}" id="fe_cat_cb_{{ Str::slug($cat->name) }}" name="category[]" {{ in_array($cat->name, $selectedCategories) ? 'checked' : '' }} onchange="updateFeDropdownButtonText('categoryDropdownBtn', 'category[]', 'Select Category');">
+                                    <input class="form-check-input category-checkbox" type="checkbox" value="{{ $cat->name }}" data-category-id="{{ $cat->id }}" id="fe_cat_cb_{{ Str::slug($cat->name) }}" name="category[]" {{ in_array($cat->name, $selectedCategories) ? 'checked' : '' }} onchange="handleFeCategoryCheckboxChange(); updateFeDropdownButtonText('categoryDropdownBtn', 'category[]', 'Select Category');">
                                     <label class="form-check-label w-100 cursor-pointer text-dark" for="fe_cat_cb_{{ Str::slug($cat->name) }}">{{ $cat->name }}</label>
                                 </div>
                             </li>
                         @endforeach
+                    </ul>
+                </div>
+            </div>
+            <div style="flex: 0 1 160px; min-width: 130px;" class="filter-item">
+                <label class="block text-white mb-1"
+                    style="font-size: 0.95rem; font-weight: 700;">Sub Category</label>
+                @php
+                    $selectedSubCatIds = is_array(request('sub_category_id')) ? request('sub_category_id') : (request('sub_category_id') ? [request('sub_category_id')] : (isset($subCategoryId) && $subCategoryId ? (is_array($subCategoryId) ? $subCategoryId : [$subCategoryId]) : []));
+                @endphp
+                <div class="dropdown filter-dropdown-wrapper" style="width: 100%;">
+                    <button class="btn btn-sm text-start filter-select" type="button" id="subCategoryDropdownBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="font-size: 0.85rem; height: 38px; line-height: 1.5; padding: 0.375rem 2.25rem 0.375rem 0.75rem; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; background-color: #ffffff; border: 1px solid #ced4da; width: 100%; border-radius: 4px; font-weight: bold; background-image: url('data:image/svg+xml,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3e%3cpath fill=%27none%27 stroke=%27%23343a40%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%272%27 d=%27M2 5l6 6 6-6%27/%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 16px 12px;">
+                        Select Sub Category
+                    </button>
+                    <ul class="dropdown-menu p-2" id="subCategoryDropdownList" aria-labelledby="subCategoryDropdownBtn" style="max-height: 250px; overflow-y: auto; font-size: 0.8rem; min-width: 200px; background-color: #ffffff; border: 1px solid #ced4da;">
+                        @if(isset($subCategories) && $subCategories->count() > 0)
+                            @foreach($subCategories as $subCat)
+                                <li class="p-1 subcategory-item" data-category-id="{{ $subCat->category_id }}" data-category-name="{{ $subCat->category->name ?? '' }}">
+                                    <div class="form-check">
+                                        <input class="form-check-input subcategory-checkbox" type="checkbox" value="{{ $subCat->id }}" id="fe_subcat_cb_{{ $subCat->id }}" name="sub_category_id[]" data-category-id="{{ $subCat->category_id }}" {{ in_array($subCat->id, $selectedSubCatIds) ? 'checked' : '' }} onchange="updateFeDropdownButtonText('subCategoryDropdownBtn', 'sub_category_id[]', 'Select Sub Category');">
+                                        <label class="form-check-label w-100 cursor-pointer text-dark" for="fe_subcat_cb_{{ $subCat->id }}">{{ $subCat->name }}</label>
+                                    </div>
+                                </li>
+                            @endforeach
+                        @endif
+                        <li class="p-2 text-center text-muted no-subcat-msg" style="display: none; font-size: 0.8rem; font-style: italic;">
+                            No Sub Category Available
+                        </li>
                     </ul>
                 </div>
             </div>
@@ -2428,14 +2455,56 @@
             updateFeDropdownButtonText('sectorDropdownBtn', 'sector_id[]', 'Select GE Nodes');
         }
 
+        function handleFeCategoryCheckboxChange() {
+            const checkedCategoryIds = Array.from(document.querySelectorAll('.category-checkbox:checked'))
+                .map(cb => String(cb.getAttribute('data-category-id') || '').trim());
+            const checkedCategoryNames = Array.from(document.querySelectorAll('.category-checkbox:checked'))
+                .map(cb => String(cb.value || '').trim());
+
+            const hasCategorySelection = checkedCategoryIds.length > 0;
+            const subCatItems = document.querySelectorAll('#subCategoryDropdownList .subcategory-item');
+            let visibleCount = 0;
+            
+            subCatItems.forEach(item => {
+                const catId = String(item.getAttribute('data-category-id') || '').trim();
+                const catName = String(item.getAttribute('data-category-name') || '').trim();
+
+                const isVisible = !hasCategorySelection 
+                    || (catId && checkedCategoryIds.includes(catId)) 
+                    || (catName && checkedCategoryNames.includes(catName));
+                
+                if (isVisible) {
+                    item.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                    const cb = item.querySelector('.subcategory-checkbox');
+                    if (cb && cb.checked) {
+                        cb.checked = false;
+                    }
+                }
+            });
+
+            const noMsg = document.querySelector('#subCategoryDropdownList .no-subcat-msg');
+            if (noMsg) {
+                noMsg.style.display = (visibleCount === 0) ? 'block' : 'none';
+            }
+
+            updateFeDropdownButtonText('subCategoryDropdownBtn', 'sub_category_id[]', 'Select Sub Category');
+        }
+
+        window.handleFeCategoryCheckboxChange = handleFeCategoryCheckboxChange;
+
         // Initialize dropdown button texts and cascading on page load
         document.addEventListener('DOMContentLoaded', function() {
             updateFeDropdownButtonText('cmesDropdownBtn', 'cmes_id[]', 'Select CMES');
             updateFeDropdownButtonText('cityDropdownBtn', 'city_id[]', 'Select GE');
             updateFeDropdownButtonText('sectorDropdownBtn', 'sector_id[]', 'Select GE Nodes');
             updateFeDropdownButtonText('categoryDropdownBtn', 'category[]', 'Select Category');
+            updateFeDropdownButtonText('subCategoryDropdownBtn', 'sub_category_id[]', 'Select Sub Category');
             handleFeCmesCheckboxChange();
             handleFeCityCheckboxChange();
+            handleFeCategoryCheckboxChange();
 
             // Auto-apply filters when a dropdown is closed
             document.querySelectorAll('.filter-dropdown-wrapper').forEach(dropdownEl => {
@@ -2513,6 +2582,11 @@
             // Append multiple values for category
             document.querySelectorAll('.category-checkbox:checked').forEach(cb => {
                 params.append('category[]', cb.value);
+            });
+
+            // Append multiple values for sub_category_id
+            document.querySelectorAll('.subcategory-checkbox:checked').forEach(cb => {
+                params.append('sub_category_id[]', cb.value);
             });
 
             const dateRange = document.getElementById('filterDateRange') ? document.getElementById('filterDateRange').value : null;

@@ -19,7 +19,7 @@ class CmeController extends Controller
                 ->with('error', 'Run migrations to create CMES table.');
         }
 
-        $cmes = Cme::orderBy('id', 'asc')->paginate(15);
+        $cmes = Cme::orderBy('id', 'asc')->paginate(15)->withQueryString();
         return view('admin.cmes.index', compact('cmes'));
     }
 

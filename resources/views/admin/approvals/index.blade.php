@@ -602,9 +602,9 @@
                       <i data-feather="eye" style="width: 12px; height: 12px;"></i>
                     </button>
 
-                    @if($complaintStatus === 'resolved' || $complaintStatus === 'closed')
+                    @if($complaintStatus === 'resolved' || $complaintStatus === 'closed' || (string)$complaint->status === 'resolved' || (string)$complaint->status === 'closed' || (string)$complaint->status === '1' || $complaint->status == 1)
                       <button type="button" class="btn btn-outline-secondary btn-sm"
-                        title="Complaint is Addresssed/Closed and cannot be edited"
+                        title="Complaint is Addressed/Closed and cannot be edited"
                         style="padding: 1px 3px; cursor: not-allowed; opacity: 1 !important;" disabled>
                         <i data-feather="edit" style="width: 12px; height: 12px;"></i>
                       </button>
@@ -629,51 +629,49 @@
                         <i data-feather="plus-circle" style="width: 12px; height: 12px;"></i>
                       </button>
                     @endif
-                    @if($complaintStatus == 'resolved' || $complaintStatus == 'closed')
-                      @php
+                    @php
+                      $hasFeedback = false;
+                      $feedbackId = null;
+                      // Use eager-loaded feedback relationship (no extra queries)
+                      try {
+                        $feedback = $complaint->getRelation('feedback') ?? $complaint->feedback;
+                        if ($feedback && $feedback->id) {
+                          $hasFeedback = true;
+                          $feedbackId = $feedback->id;
+                        }
+                      } catch (\Exception $e) {
                         $hasFeedback = false;
                         $feedbackId = null;
-                        // Use eager-loaded feedback relationship (no extra queries)
-                        try {
-                          $feedback = $complaint->getRelation('feedback');
-                          if ($feedback && $feedback->id) {
-                            $hasFeedback = true;
-                            $feedbackId = $feedback->id;
-                          }
-                        } catch (\Exception $e) {
-                          $hasFeedback = false;
-                          $feedbackId = null;
-                        }
+                      }
 
-                        // Check if current user is GE (Garrison Engineer)
-                        $isGE = false;
-                        if (Auth::check() && Auth::user()->role) {
-                          $roleName = strtolower(Auth::user()->role->role_name ?? '');
-                          $isGE = in_array($roleName, ['garrison_engineer', 'garrison engineer']) ||
-                            strpos(strtolower($roleName), 'garrison') !== false ||
-                            strpos(strtolower($roleName), 'ge') !== false;
-                        }
-                      @endphp
-                      @if($hasFeedback && $feedbackId)
-                        @if($isGE)
-                          <a href="javascript:void(0)" onclick="viewFeedbackEdit({{ $feedbackId }})" class="btn btn-success btn-sm"
-                            title="Edit Feedback"
-                            style="padding: 1px 3px; background-color: #16a34a !important; border-color: #16a34a !important; color: #ffffff !important;">
-                            <i data-feather="check-circle" style="width: 12px; height: 12px; color: #ffffff;"></i>
-                          </a>
-                        @else
-                          <span class="btn btn-success btn-sm" title="Feedback (View Only)"
-                            style="padding: 1px 3px; background-color: #16a34a !important; border-color: #16a34a !important; color: #ffffff !important; cursor: default; opacity: 0.7;">
-                            <i data-feather="check-circle" style="width: 12px; height: 12px; color: #ffffff;"></i>
-                          </span>
-                        @endif
-                      @else
-                        <a href="javascript:void(0)" onclick="viewFeedbackCreate({{ $complaint->id }})"
-                          class="btn btn-warning btn-sm" title="Add Feedback"
-                          style="padding: 1px 3px; background-color: #f59e0b !important; border-color: #f59e0b !important; color: #ffffff !important;">
-                          <i data-feather="message-square" style="width: 12px; height: 12px; color: #ffffff;"></i>
+                      // Check if current user is GE (Garrison Engineer)
+                      $isGE = false;
+                      if (Auth::check() && Auth::user()->role) {
+                        $roleName = strtolower(Auth::user()->role->role_name ?? '');
+                        $isGE = in_array($roleName, ['garrison_engineer', 'garrison engineer']) ||
+                          strpos(strtolower($roleName), 'garrison') !== false ||
+                          strpos(strtolower($roleName), 'ge') !== false;
+                      }
+                    @endphp
+                    @if($hasFeedback && $feedbackId)
+                      @if($isGE)
+                        <a href="javascript:void(0)" onclick="viewFeedbackEdit({{ $feedbackId }})" class="btn btn-success btn-sm"
+                          title="Edit Feedback"
+                          style="padding: 1px 3px; background-color: #16a34a !important; border-color: #16a34a !important; color: #ffffff !important;">
+                          <i data-feather="check-circle" style="width: 12px; height: 12px; color: #ffffff;"></i>
                         </a>
+                      @else
+                        <span class="btn btn-success btn-sm" title="Feedback (View Only)"
+                          style="padding: 1px 3px; background-color: #16a34a !important; border-color: #16a34a !important; color: #ffffff !important; cursor: default; opacity: 0.7;">
+                          <i data-feather="check-circle" style="width: 12px; height: 12px; color: #ffffff;"></i>
+                        </span>
                       @endif
+                    @elseif($complaintStatus == 'resolved' || $complaintStatus == 'closed')
+                      <a href="javascript:void(0)" onclick="viewFeedbackCreate({{ $complaint->id }})"
+                        class="btn btn-warning btn-sm" title="Add Feedback"
+                        style="padding: 1px 3px; background-color: #f59e0b !important; border-color: #f59e0b !important; color: #ffffff !important;">
+                        <i data-feather="message-square" style="width: 12px; height: 12px; color: #ffffff;"></i>
+                      </a>
                     @endif
                   </div>
                 </td>
@@ -4978,13 +4976,23 @@
                 select.replaceWith(badge);
               }
 
-              // Show feedback button automatically when status becomes resolved
+              // Show feedback button and disable edit button automatically when status becomes resolved
               const actionsCell = row?.querySelector('td:last-child');
               if (actionsCell) {
                 // Determine container - could be just the td, or a d-flex container inside
                 const btnContainer = actionsCell.querySelector('.d-flex') || actionsCell;
 
                 if (btnContainer) {
+                  // Disable edit button in this row
+                  const editBtn = btnContainer.querySelector('button[title*="Edit"], button[onclick*="editComplaintModal"]');
+                  if (editBtn) {
+                    editBtn.disabled = true;
+                    editBtn.removeAttribute('onclick');
+                    editBtn.className = 'btn btn-outline-secondary btn-sm';
+                    editBtn.title = 'Complaint is Addressed/Closed and cannot be edited';
+                    editBtn.style.cssText = 'padding: 1px 3px; cursor: not-allowed; opacity: 1 !important;';
+                  }
+
                   // Check if feedback button already exists (check for onclick with viewFeedbackCreate or viewFeedbackEdit)
                   const existingFeedbackBtn = btnContainer.querySelector('a[onclick*="viewFeedback"]');
                   if (!existingFeedbackBtn && complaintId) {
@@ -4999,10 +5007,10 @@
                     feedbackBtn.innerHTML = '<i data-feather="message-square" style="width: 12px; height: 12px; color: #ffffff;"></i>';
 
                     btnContainer.appendChild(feedbackBtn);
-                    // Reinitialize feather icons
-                    if (typeof feather !== 'undefined') {
-                      feather.replace();
-                    }
+                  }
+                  // Reinitialize feather icons
+                  if (typeof feather !== 'undefined') {
+                    feather.replace();
                   }
                 }
               }

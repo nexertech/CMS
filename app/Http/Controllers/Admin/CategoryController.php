@@ -20,7 +20,7 @@ class CategoryController extends Controller
         }
 
         // Show all categories - ordered by ID (ascending - 1, 2, 3...)
-        $categories = ComplaintCategory::orderBy('id', 'asc')->paginate(15);
+        $categories = ComplaintCategory::orderBy('id', 'asc')->paginate(15)->withQueryString();
         return view('admin.category.index', compact('categories'));
     }
 
