@@ -315,6 +315,7 @@ class HomeController extends Controller
         $cityId = $request->get('city_id');
         $sectorId = $request->get('sector_id');
         $category = $request->get('category');
+        $subCategoryId = $request->get('sub_category_id');
         $status = $request->get('status');
         $dateRange = $request->get('date_range', 'all_time');
 
@@ -323,6 +324,7 @@ class HomeController extends Controller
         $cityIds = is_array($cityId) ? array_filter($cityId) : ($cityId ? [$cityId] : []);
         $sectorIds = is_array($sectorId) ? array_filter($sectorId) : ($sectorId ? [$sectorId] : []);
         $categoryFilters = is_array($category) ? array_filter($category) : ($category && $category !== 'all' ? [$category] : []);
+        $subCategoryIds = is_array($subCategoryId) ? array_filter($subCategoryId) : ($subCategoryId ? [$subCategoryId] : []);
 
         // Build base query with filters
         $complaintsQuery = Complaint::query();
@@ -419,6 +421,11 @@ class HomeController extends Controller
                     });
                 }
             });
+        }
+
+        // Apply Sub Category filter
+        if (!empty($subCategoryIds)) {
+            $complaintsQuery->whereIn('complaints.sub_category_id', $subCategoryIds);
         }
 
         // Apply CMES filter (Inclusive: CME Cities OR CME Sectors) - Apply BEFORE cloning for graph base
@@ -575,6 +582,7 @@ class HomeController extends Controller
 
 
         $categories = ComplaintCategory::where('status', 1)->get();
+        $subCategories = \App\Models\SubCategory::with('category')->where('status', 1)->orderBy('name')->get();
 
         // Get all statuses from database (same as admin side)
         $statuses = [
@@ -868,7 +876,7 @@ class HomeController extends Controller
         $monthlyComplaints = [];
         $monthLabels = [];
 
-        $applyGlobalFilters = function ($q, $dateRangeOverride = null, $tablePrefix = 'complaints') use ($request, $categoryFilters, $dateRange, $cmesIds, $cityIds, $sectorIds, $locationScope, $user, $self) {
+        $applyGlobalFilters = function ($q, $dateRangeOverride = null, $tablePrefix = 'complaints') use ($request, $categoryFilters, $subCategoryIds, $dateRange, $cmesIds, $cityIds, $sectorIds, $locationScope, $user, $self) {
             // Qualify columns with table prefix to avoid ambiguity in joined queries
             $cityCol = $tablePrefix ? $tablePrefix . '.city_id' : 'city_id';
             $sectorCol = $tablePrefix ? $tablePrefix . '.sector_id' : 'sector_id';
@@ -995,6 +1003,12 @@ class HomeController extends Controller
                         });
                     }
                 });
+            }
+
+            // Global Metadata Filters (array-based sub_category)
+            if (!empty($subCategoryIds)) {
+                $subCatCol = $tablePrefix ? $tablePrefix . '.sub_category_id' : 'sub_category_id';
+                $q->whereIn($subCatCol, $subCategoryIds);
             }
 
             $effectiveDateRange = $dateRangeOverride ?? $dateRange;
@@ -1814,6 +1828,8 @@ class HomeController extends Controller
             'cityId',
             'sectorId',
             'category',
+            'subCategoryId',
+            'subCategories',
             'status',
             'dateRange',
             'cmesList',

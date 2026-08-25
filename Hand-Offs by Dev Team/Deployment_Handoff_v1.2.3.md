@@ -7,13 +7,13 @@
 **Previous Live Tag:** `v1.2.2`  
 **Developer:** Dev Team  
 **Deployment Engineer:** Siddique / Deployment Team  
-**Date:** 2026-08-17  
+**Date:** 2026-08-24  
 
 ---
 
 ## 1. Developer Handover Summary (Key Features in `v1.2.3`)
 
-Release `v1.2.3` delivers the **Complete Sub-Category System**, **Dashboard & Complaint List Sub-Category Filters**, **Popup Modal Filter Scoping Fix**, **Complaint Slip Priority & Sub-Category Integration**, **Database Priority ENUM Schema Fix**, and **UI/Modal Visual Consistency**.
+Release `v1.2.3` delivers the **Complete Sub-Category System & Role Permissions**, **Universal Pagination Filter Preservation**, **Automatic In-Progress Assignment Workflow**, **Universal QR Feedback Submission**, **Dashboard Stat Modal PDF Export**, **Total Complaints Action Button Refinements**, and **Print Slip Dimensions Reversion**.
 
 ### Detailed Features & Architectural Changes:
 1. **Sub-Category Management System (`/admin/sub-category`)**:
@@ -22,43 +22,68 @@ Release `v1.2.3` delivers the **Complete Sub-Category System**, **Dashboard & Co
    - **Admin Management View**: Full CRUD UI with add form, single-line data table, AJAX deletion, and edit modal with background blur effect.
    - **Dynamic AJAX Dropdown**: Added `GET /admin/sub-categories/by-category?category={id}` endpoint to dynamically load sub-categories upon category selection in complaint forms.
 
-2. **3x3 Complaint Form Grid (Create & Edit)**:
+2. **Sub-Category Role Permissions Integration (`/admin/roles`)**:
+   - Added `'sub-category' => 'Sub Categories'` to `Complaints Mgmt` sublinks inside Role create (`create.blade.php`), edit (`edit.blade.php`), and show (`show.blade.php`).
+   - Updated `app/Models/Role.php` `$sublinkToParent` map to include `'sub-category' => 'complaints'`.
+   - Updated `resources/views/layouts/sidebar.blade.php` to independently protect Sub Categories with `@if($user && ($user->hasPermission('sub-category')))`.
+   - Protected routes in `routes/web.php` with `permission:sub-category.view`.
+
+3. **3x3 Complaint Form Grid (Create & Edit)**:
    - Redesigned `/admin/complaints/create` and `/admin/complaints/{id}/edit` into a clean **3x3 grid layout** (`col-md-4`):
      - **Row 1**: Category, Sub Category, Complaint Type
      - **Row 2**: Priority, Availability Time, Assign Employee
      - **Row 3**: Description (full width)
 
-3. **Category-Dependent Employee Filtering in Complaint Forms**:
+4. **Category-Dependent Employee Filtering in Complaint Forms**:
    - In complaint registration (`/admin/complaints/create`) and edit (`/admin/complaints/{id}/edit`), the **Assign Employee** dropdown is dynamically filtered based on the selected **Category** (and location scope).
    - Before a Category is selected, the Employee dropdown remains locked showing `"Select Category First"`, preventing cross-category technician misassignment. Previously, all employees were listed immediately.
 
-4. **Dashboard Sub-Category Filter & Stat Modal Integration (`/admin/dashboard`)**:
+5. **Automatic Status Transition on Assignment to In Progress (`0`)**:
+   - In `ComplaintController.php` (single create `store()`, batch create `storeMultiple()`, single assignment `assign()`, update `update()`, and bulk actions `bulkAction()`), assigning an unassigned complaint to a technician transitions status directly to **In Progress** (`Complaint::STATUS_IN_PROGRESS` = 0) instead of `Assigned` (3).
+   - Client notifications also reflect status `'in_progress'`.
+
+6. **Universal Pagination Filter Preservation (`->withQueryString()`)**:
+   - Resolved an issue across all system pages (Houses, Employees, Total Complaints / Approvals, Spares, Users, Sub Categories, Roles, SLAs, Titles, Devices, Feedbacks, Sectors, Cities, CMEs, Categories, Brands, Designations) where navigating pagination (page 2, 3, Next) lost applied filters (e.g. GE Group, Sector, Search, Status, Category, Priority, Date).
+   - Added `->withQueryString()` to pagination calls in all admin controllers.
+
+7. **Universal QR Code Public Feedback Workflow**:
+   - Allowed clients to submit feedback via QR code URL (`/complaint/feedback/{id}`) on **any complaint status** (previously restricted to only `resolved`/`closed`).
+   - Removed the automatic forced status transition upon feedback submission (`complaint status remains unchanged and is managed manually by the complaint office`).
+   - In `resources/views/frontend/feedback.blade.php`, removed locked feedback card so the rating form is always open and interactive.
+
+8. **Dashboard Sub-Category Filter & Stat Modal Integration (`/admin/dashboard`)**:
    - Added interactive multi-select Sub Category checkbox dropdown to the Dashboard filter toolbar.
    - Updated `DashboardController` to apply `sub_category_id` filtering to all KPI cards, breakdown metrics, trend lines, and recent complaints.
    - **Fixed Stat Card Click Modal (`showComplaintsModal`)**: Updated `ComplaintController@index` to process `sub_category_id` array parameter so clicking any stat card (Total, In Progress, Addressed, etc.) displays strictly the complaints matching active sub-category filters.
 
-5. **Complaints Management Sub-Category Filter (`/admin/complaints`)**:
-   - Added `Sub Category` filter dropdown to Complaints Management page with instantaneous AJAX reload and filter reset support.
+9. **Dashboard Complaints Modal: "Export to PDF" with Custom 8-Column Layout**:
+   - Added **Export to PDF** button in Dashboard complaints popup modal (`complaintsListModal`).
+   - Implemented `exportModalToPdf()` generating a clean, professional landscape A4 document featuring exactly 8 fields: `CMP-ID`, `Register Date`, `House No`, `Category`, `Sub Category`, `Type`, `Priority`, `Description`.
 
-6. **Complaint Slip & Details Views (Priority & Sub-Category)**:
-   - **Print Slip (`/admin/complaints/{id}/print-slip`)**:
-     - Added `Sub Category` row under Client Information table.
-     - Added `Priority` badge (`Emergency` / `Normal`) under Request Details table.
-   - **Show View (`/admin/complaints/{id}`) & Modal Popups**:
-     - Sub-category and formatted Priority badges rendered consistently across Admin details view, index popup modals, and Frontend user portal.
+10. **Total Complaints (`/admin/approvals`) Action Button Updates**:
+    - **Feedback Check-Circle Button**: Displays on the Total Complaints table whenever feedback is submitted for a complaint regardless of its status.
+    - **Addressed Complaint Edit Button Disable**: When a complaint status is `Addressed` (`resolved`/`closed`), its Edit button in the table is disabled (`cursor: not-allowed`).
 
-7. **Priority Column Database Schema Fix**:
-   - Resolved an issue where selecting `Emergency` during complaint registration resulted in `Normal` due to legacy MySQL enum `('low','medium','high','urgent')`.
-   - Updated schema to `ENUM('normal', 'emergency') NOT NULL DEFAULT 'normal'`.
+11. **Complaints Management Sub-Category Filter (`/admin/complaints`)**:
+    - Added `Sub Category` filter dropdown to Complaints Management page with instantaneous AJAX reload and filter reset support.
 
-8. **Modal UI & Theme Enhancements**:
-   - Added background blur (`modal-open-blur`) for Category and Sub Category modals.
-   - Fixed close button visibility on dark theme modal headers using `btn-close-white`.
+12. **Complaint Slip & Details Views (Priority & Sub-Category)**:
+    - **Print Slip (`/admin/complaints/{id}/print-slip`)**:
+      - Added `Sub Category` row under Client Information table.
+      - Added `Priority` badge (`Emergency` / `Normal`) under Request Details table.
+      - Reverted layout to the compact 580px width requested by the client.
+    - **Show View (`/admin/complaints/{id}`) & Modal Popups**:
+      - Sub-category and formatted Priority badges rendered consistently across Admin details view, index popup modals, and Frontend user portal.
 
-9. **Excel/CSV Export Sub-Category Column**:
-   - In Dashboard complaints export (`exportModalToExcel`), added the **Sub Category** column immediately after **Category** with full UTF-8 formatting.
+13. **Priority Column Database Schema Fix**:
+    - Resolved an issue where selecting `Emergency` during complaint registration resulted in `Normal` due to legacy MySQL enum `('low','medium','high','urgent')`.
+    - Updated schema to `ENUM('normal', 'emergency') NOT NULL DEFAULT 'normal'`.
 
-10. **Employees & Houses Excel Export**:
+14. **Modal UI & Theme Enhancements**:
+    - Added background blur (`modal-open-blur`) for Category and Sub Category modals.
+    - Fixed close button visibility on dark theme modal headers using `btn-close-white`.
+
+15. **Employees & Houses Excel Export**:
     - **Employees Management (`/admin/employees`)**: Added direct one-click Excel/CSV export button to download complete employee roster records.
     - **Houses Management (`/admin/houses`)**: Added direct one-click Excel/CSV export button to download complete houses registry records.
 
@@ -72,7 +97,7 @@ Before deploying to the server, verify the 3 mandatory answers:
 |---|---|
 | **1. Release Tag?** | **`v1.2.3`** *(Immutable tag on `deploy` branch)* |
 | **2. Database Change Classification?** | **Manual SQL** *(Paste verbatim SQL script below)* + **Laravel Migration** *(Optional `php artisan migrate --force`)* |
-| **3. Primary Pages to Test First?** | 1. `/admin/sub-category` (Sub Category CRUD & modal)<br>2. `/admin/complaints/create` (3x3 grid, dynamic Sub Category, Emergency priority)<br>3. `/admin/dashboard` (Sub Category filter & stat card click popup)<br>4. `/admin/complaints` (Sub Category filter dropdown)<br>5. `/admin/complaints/{id}/print-slip` (Sub Category and Priority on print slip) |
+| **3. Primary Pages to Test First?** | 1. `/admin/sub-category` (Sub Category CRUD & modal)<br>2. `/admin/roles` (Sub Categories permission checkbox)<br>3. `/admin/houses` & `/admin/employees` (Pagination filter retention)<br>4. `/admin/complaints/create` (3x3 grid, dynamic Sub Category, In Progress assignment)<br>5. `/admin/dashboard` (Sub Category filter & Export to PDF in stat modal)<br>6. `/admin/approvals` (Feedback checkmarks & disabled edit on addressed) |
 
 ---
 
@@ -115,44 +140,51 @@ UPDATE `complaints` SET `priority` = 'normal' WHERE `priority` = '' OR `priority
 
 ---
 
-### Laravel Migration Alternative
-If running migrations from terminal:
-```bash
-php artisan migrate --force
-```
-*(Note: `php artisan migrate --force` will execute migration `2026_08_17_120000_create_sub_categories_table.php` to create the `sub_categories` table).*
-
----
-
 ## 4. Complete List of Files Changed & Created
 
 | File Path | Type | Description |
 |---|---|---|
-| `app/Http/Controllers/Admin/SubCategoryController.php` | **[NEW]** | Sub Category CRUD & dynamic AJAX `byCategory` endpoint |
+| `app/Http/Controllers/Admin/SubCategoryController.php` | **[NEW]** | Sub Category CRUD, pagination with query string, dynamic AJAX `byCategory` |
 | `app/Models/SubCategory.php` | **[NEW]** | Eloquent model for sub categories |
 | `database/migrations/2026_08_17_120000_create_sub_categories_table.php` | **[NEW]** | Migration creating `sub_categories` table |
 | `resources/views/admin/sub_category/index.blade.php` | **[NEW]** | Sub category management index & edit modal view |
 | `app/Models/ComplaintCategory.php` | **[MODIFY]** | Added `subCategories()` relationship |
 | `app/Models/Complaint.php` | **[MODIFY]** | Added `sub_category_id` to `$fillable` & `subCategory()` relation |
-| `app/Http/Controllers/Admin/ComplaintController.php` | **[MODIFY]** | Added `sub_category_id` support in `store`, `storeMultiple`, `index`, `show`, `printSlip`, and Excel export |
+| `app/Models/Role.php` | **[MODIFY]** | Added `'sub-category' => 'complaints'` mapping |
+| `app/Http/Controllers/Admin/ComplaintController.php` | **[MODIFY]** | Added `sub_category_id` support, assignment to `STATUS_IN_PROGRESS` (0), and modal data scoping |
 | `app/Http/Controllers/Admin/DashboardController.php` | **[MODIFY]** | Added `sub_category_id` filtering to all dashboard metrics, charts, and queries |
-| `app/Http/Controllers/Admin/EmployeeController.php` | **[MODIFY]** | Added Excel/CSV export and import handling for employees |
-| `app/Http/Controllers/Admin/HouseController.php` | **[MODIFY]** | Added Excel/CSV export and import handling for houses |
-| `app/Http/Controllers/Frontend/HomeController.php` | **[MODIFY]** | Eager-loaded `subCategory` in frontend complaint show method |
+| `app/Http/Controllers/Admin/ApprovalController.php` | **[MODIFY]** | Added `->withQueryString()` to pagination |
+| `app/Http/Controllers/Admin/EmployeeController.php` | **[MODIFY]** | Added Excel export and `->withQueryString()` pagination |
+| `app/Http/Controllers/Admin/HouseController.php` | **[MODIFY]** | Added Excel export and `->withQueryString()` pagination |
+| `app/Http/Controllers/Admin/SpareController.php` | **[MODIFY]** | Added `->withQueryString()` to pagination |
+| `app/Http/Controllers/Admin/UserController.php` | **[MODIFY]** | Added `->withQueryString()` to pagination |
+| `app/Http/Controllers/Admin/FrontendUserController.php` | **[MODIFY]** | Added `->withQueryString()` to pagination |
+| `app/Http/Controllers/Admin/ComplaintTitleController.php` | **[MODIFY]** | Added `->withQueryString()` to pagination |
+| `app/Http/Controllers/Admin/FeedbackController.php` | **[MODIFY]** | Added `->withQueryString()` to pagination |
+| `app/Http/Controllers/Admin/RegisteredDeviceController.php` | **[MODIFY]** | Added `->withQueryString()` to pagination |
+| `app/Http/Controllers/Admin/RoleController.php` | **[MODIFY]** | Added `->withQueryString()` to pagination |
+| `app/Http/Controllers/Admin/SlaController.php` | **[MODIFY]** | Added `->withQueryString()` to pagination |
+| `app/Http/Controllers/Admin/SectorController.php` | **[MODIFY]** | Added `->withQueryString()` to pagination |
+| `app/Http/Controllers/Admin/CityController.php` | **[MODIFY]** | Added `->withQueryString()` to pagination |
+| `app/Http/Controllers/Admin/CmeController.php` | **[MODIFY]** | Added `->withQueryString()` to pagination |
+| `app/Http/Controllers/Admin/CategoryController.php` | **[MODIFY]** | Added `->withQueryString()` to pagination |
+| `app/Http/Controllers/Admin/BrandController.php` | **[MODIFY]** | Added `->withQueryString()` to pagination |
+| `app/Http/Controllers/Admin/DesignationController.php` | **[MODIFY]** | Added `->withQueryString()` to pagination |
+| `app/Http/Controllers/Frontend/HomeController.php` | **[MODIFY]** | Allowed QR feedback on any status, removed forced auto-resolve |
+| `resources/views/frontend/feedback.blade.php` | **[MODIFY]** | Removed locked card, enabled feedback form for all statuses |
+| `resources/views/admin/approvals/index.blade.php` | **[MODIFY]** | Feedback button on all statuses, disabled edit button for Addressed complaints |
+| `resources/views/admin/dashboard.blade.php` | **[MODIFY]** | Added "Export to PDF" button with custom 8-column layout |
+| `resources/views/admin/roles/create.blade.php` | **[MODIFY]** | Added Sub Categories permission checkbox |
+| `resources/views/admin/roles/edit.blade.php` | **[MODIFY]** | Added Sub Categories permission checkbox |
+| `resources/views/admin/roles/show.blade.php` | **[MODIFY]** | Added Sub Categories in permissions view |
 | `resources/views/admin/complaints/create.blade.php` | **[MODIFY]** | 3x3 layout, dynamic Sub Category dropdown, priority options, category-filtered employees |
 | `resources/views/admin/complaints/edit.blade.php` | **[MODIFY]** | 3x3 layout, Sub Category dropdown, category-filtered employees |
 | `resources/views/admin/complaints/partials/form_scripts.blade.php` | **[MODIFY]** | AJAX sub-category loader on Category change |
 | `resources/views/admin/complaints/index.blade.php` | **[MODIFY]** | Sub Category filter dropdown |
-| `resources/views/admin/employees/index.blade.php` | **[MODIFY]** | Export Excel and Import Excel modal UI |
-| `resources/views/admin/houses/index.blade.php` | **[MODIFY]** | Export Excel and Import Excel modal UI |
-| `resources/views/admin/dashboard.blade.php` | **[MODIFY]** | Sub Category filter dropdown, stat box click modal filter fix, and Excel export Sub Category column |
-| `resources/views/admin/complaints/print-slip.blade.php` | **[MODIFY]** | Added Sub Category & Priority badge to printable slip |
+| `resources/views/admin/complaints/print-slip.blade.php` | **[MODIFY]** | Added Sub Category & Priority badge, reverted to 580px compact width |
 | `resources/views/admin/complaints/show.blade.php` | **[MODIFY]** | Added Sub Category & Priority badge in complaint details |
-| `resources/views/frontend/complaints/partials/detail_card.blade.php` | **[MODIFY]** | Added Sub Category & Priority badge in frontend details |
-| `resources/views/admin/category/index.blade.php` | **[MODIFY]** | Added modal blur and white close button |
-| `resources/views/layouts/sidebar.blade.php` | **[MODIFY]** | Added Sub Categories link under navigation |
-| `routes/web.php` | **[MODIFY]** | Added Sub Category routes and AJAX endpoint |
-| `database/migrations/2025_10_21_050121_create_complaints_table.php` | **[MODIFY]** | Updated base schema definition with `sub_category_id` & `priority` enum |
+| `resources/views/layouts/sidebar.blade.php` | **[MODIFY]** | Added Sub Categories navigation link protected by permission |
+| `routes/web.php` | **[MODIFY]** | Added Sub Category routes and permission middleware |
 
 ---
 
@@ -200,28 +232,25 @@ echo "v1.2.3" > /home/paknavy/current-live-version.txt
 
 Verify the following after deploying to production:
 
-- [ ] **1. Sub-Category Management (`/admin/sub-category`)**:
-  - [ ] Page loads; existing sub-categories table displays cleanly.
-  - [ ] Add a new test Sub-Category; confirm it saves successfully.
-  - [ ] Click "Edit"; confirm edit modal opens with background blur and white close button.
-- [ ] **2. Complaint Creation (`/admin/complaints/create`)**:
-  - [ ] Page loads with clean 3x3 layout.
-  - [ ] Verify **Assign Employee** dropdown is disabled/locked with `"Select Category First"` until a category is chosen.
-  - [ ] Select a Category; verify Sub-Category dropdown populates with relevant sub-categories and Employee dropdown enables with only technicians for that category.
-  - [ ] Select **Emergency** Priority; submit complaint.
-  - [ ] Verify complaint is saved with Emergency status (Red badge on index table).
-- [ ] **3. Dashboard Filters & Popup (`/admin/dashboard`)**:
-  - [ ] "Sub Category" multi-select checkbox dropdown appears in filter bar.
-  - [ ] Check a Sub-Category and click "Apply"; total count updates to match filtered count.
-  - [ ] Click on "Total Complaints" stat box; confirm popup modal displays **only** the complaints belonging to the selected sub-category.
-- [ ] **4. Complaints Management (`/admin/complaints`)**:
-  - [ ] "Sub Category" dropdown filter works with AJAX instant update.
-  - [ ] "Reset" button clears the filter.
-- [ ] **5. Complaint Print Slip (`/admin/complaints/{id}/print-slip`)**:
-  - [ ] `Sub Category` displays under Client Information.
-  - [ ] `Priority` badge (`Emergency` / `Normal`) displays under Request Details.
-- [ ] **6. Security Check**:
-  - [ ] `/.env`, `/.git`, and `/composer.json` return 403/404.
+- [ ] **1. Sub-Category Management & Roles (`/admin/sub-category` & `/admin/roles`)**:
+  - [ ] Add Sub Category; edit modal opens with background blur.
+  - [ ] Check Role permissions; confirm Sub Category permission checkbox is present and functional.
+- [ ] **2. Pagination Filter Retention**:
+  - [ ] On `/admin/houses` or `/admin/employees`, apply a filter (e.g. GE/Sector/Category) and click Page 2 / Next.
+  - [ ] Confirm filters remain active and applied.
+- [ ] **3. Complaint Assignment to In Progress**:
+  - [ ] Assign an unassigned complaint to a technician; confirm status moves to **In Progress**.
+- [ ] **4. QR Code Feedback**:
+  - [ ] Scan QR code / open feedback page for an in-progress complaint.
+  - [ ] Confirm feedback form is accessible and submits without altering complaint status.
+- [ ] **5. Total Complaints Action Buttons (`/admin/approvals`)**:
+  - [ ] Verify complaints with feedback show the green check-circle button.
+  - [ ] Verify Addressed complaints have a disabled Edit button.
+- [ ] **6. Dashboard Export to PDF (`/admin/dashboard`)**:
+  - [ ] Click any complaint stat card popup; click **Export to PDF**.
+  - [ ] Confirm 8-column landscape PDF opens cleanly.
+- [ ] **7. Complaint Print Slip (`/admin/complaints/{id}/print-slip`)**:
+  - [ ] Confirm print slip renders in the compact 580px width layout with Sub Category & Priority.
 
 ---
 
