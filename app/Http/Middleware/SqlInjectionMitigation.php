@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class SqlInjectionMitigation
@@ -18,7 +19,7 @@ class SqlInjectionMitigation
         // Recursively check all input for SQL injection patterns
         if ($this->containsSqlInjection($request->all())) {
             // Log the attempt for security auditing
-            \Log::warning('Potential SQL Injection attempt blocked', [
+            Log::warning('Potential SQL Injection attempt blocked', [
                 'ip' => $request->ip(),
                 'url' => $request->fullUrl(),
                 'input' => $request->except(['password', 'password_confirmation']),
@@ -57,8 +58,17 @@ class SqlInjectionMitigation
 
         // Define dangerous SQL patterns
         $patterns = [
-            '/\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|TRUNCATE|ALTER|CREATE|EXEC|EXECUTE)\b\s+/i',
-            '/--/',
+            '/\bUNION\s+(ALL\s+)?SELECT\b/i',
+            '/\bSELECT\b.+?\bFROM\b/is',
+            '/\bINSERT\s+INTO\b/i',
+            '/\bUPDATE\s+[`\w\.\"]+\s+SET\b/i',
+            '/\bDELETE\s+FROM\b/i',
+            '/\bDROP\s+(TABLE|DATABASE|PROCEDURE|INDEX|VIEW|TRIGGER)\b/i',
+            '/\bTRUNCATE\s+(TABLE\s+)?\w+\b/i',
+            '/\bALTER\s+(TABLE|DATABASE)\b/i',
+            '/\bCREATE\s+(TABLE|DATABASE|PROCEDURE|INDEX|VIEW|TRIGGER)\b/i',
+            '/\b(EXEC|EXECUTE)\s+(xp_|sp_|\()/i',
+            '/--[\s\r\n]+/',
             '/\/\*/',
             '/\bOR\b\s+[\'"]?\d+[\'"]?\s*=\s*[\'"]?\d+[\'"]?/i',
             '/\bAND\b\s+[\'"]?\d+[\'"]?\s*=\s*[\'"]?\d+[\'"]?/i',

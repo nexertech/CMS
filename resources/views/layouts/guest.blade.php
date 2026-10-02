@@ -226,9 +226,6 @@
                     @if(request()->routeIs('login'))
                         <h1>Welcome Back</h1>
                         <p>Sign in to your account</p>
-                    @elseif(request()->routeIs('register'))
-                        <h1>Create Account</h1>
-                        <p>Sign up to get started</p>
                     @else
                         <h1>Welcome</h1>
                         <p>Access your account</p>

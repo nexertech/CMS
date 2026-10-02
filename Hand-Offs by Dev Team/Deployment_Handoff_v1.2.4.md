@@ -5,7 +5,7 @@
 **Release Tag:** `v1.2.4`  
 **Target Branch:** `deploy`  
 **Previous Live Tag:** `v1.2.3`  
-**Developer:** Amjid  
+**Developer:** Amjad Subhani  
 **Deployment Engineer:** Siddique / Deployment Team  
 **Date:** 2026-08-25  
 

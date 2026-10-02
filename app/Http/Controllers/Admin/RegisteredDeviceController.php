@@ -21,11 +21,15 @@ class RegisteredDeviceController extends Controller
         $query = RegisteredDevice::with(['city', 'sector']);
 
         $user = Auth::user();
-        if (!empty($user->city_ids)) {
-            $query->whereIn('city_id', $user->city_ids);
-        }
-        if (!empty($user->sector_ids)) {
-            $query->whereIn('sector_id', $user->sector_ids);
+        if (!$this->hasGlobalAccess($user)) {
+            if (!empty($user->sector_ids)) {
+                $query->whereIn('sector_id', $user->sector_ids);
+            } elseif (!empty($user->city_ids)) {
+                $query->whereIn('city_id', $user->city_ids);
+            } else {
+                // No GE Group/Node assigned — show no devices
+                $query->whereRaw('1 = 0');
+            }
         }
 
         if ($request->has('search') && $request->search) {

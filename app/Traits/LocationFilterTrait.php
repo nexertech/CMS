@@ -114,16 +114,8 @@ trait LocationFilterTrait
             return true;
         }
 
-        // 2. Check for "All" access via empty location restrictions for internal users
+        // 2. Check if they have ALL cities/sectors assigned (Dynamic All Access)
         $ids = $this->getNormalizedLocationIds($user);
-        if (empty($ids['city_ids']) && empty($ids['sector_ids'])) {
-            // Internal users (Admin panel) with no restrictions have global access
-            if ($user instanceof \App\Models\User) {
-                return true;
-            }
-        }
-
-        // 3. Check if they have ALL cities/sectors assigned (Dynamic All Access)
         static $totalCitiesCount = null;
         if ($totalCitiesCount === null) {
             $totalCitiesCount = \App\Models\City::where('status', 1)->count();

@@ -57,14 +57,6 @@
             @endif
         </div>
 
-        <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e9ecef;">
-            <p style="font-size: 0.875rem; color: #6c757d; margin-bottom: 0.5rem;">
-                Don't have an account?
-            </p>
-            <a href="{{ route('register') }}" class="text-link" style="font-weight: 600;">
-                Sign up here
-            </a>
-        </div>
     </form>
 
     <script>
