@@ -157,17 +157,18 @@ class ComplaintTitleController extends Controller
             return response()->json([]);
         }
         
-        $query = DB::table('complaint_titles');
+        $query = DB::table('complaint_titles')
+            ->join('complaint_categories', 'complaint_titles.category_id', '=', 'complaint_categories.id')
+            ->whereNull('complaint_titles.deleted_at')
+            ->where('complaint_categories.status', 1);
 
         if (is_numeric($category)) {
              // If ID provided
-             $query->where('category_id', $category);
-             $query->join('complaint_categories', 'complaint_titles.category_id', '=', 'complaint_categories.id');
+             $query->where('complaint_titles.category_id', $category);
         } else {
             // If Name provided (legacy or other usage)
             $categoryName = $category;
-            $query->join('complaint_categories', 'complaint_titles.category_id', '=', 'complaint_categories.id')
-                  ->where('complaint_categories.name', $categoryName);
+            $query->where('complaint_categories.name', $categoryName);
         }
 
         $titles = $query->orderBy('complaint_titles.title')

@@ -17,24 +17,39 @@
 |---|---|
 | **1. Release Tag?** | **`v1.2.5`** *(Immutable tag to be pushed to the `deploy` branch)* |
 | **2. Database Change Classification?** | **None** *(No schema or table migrations required for this release)* |
-| **3. Primary Page(s) to Test First?** | 1. `/login` & `/register` (Verify register link is removed and direct `/register` returns 404)<br>2. `/admin/complaints` (Click "Print Slip" on any complaint and verify the new thermal receipt print layout) |
+| **3. Primary Page(s) to Test First?** | 1. `/login` & `/register` (Verify register link is removed and direct `/register` returns 404)<br>2. `/admin/complaints` (Click "Print Slip" on any complaint for thermal receipt; check complaint show page to ensure issued spares remain visible)<br>3. `/admin/complaints/create` (Verify only active, non-soft-deleted Complaint Types populate in dropdown)<br>4. Topbar Navbar (Click the new Emerald Green **DB Backup** button as Admin to verify instant `.sql` download with PKT timestamp)<br>5. `/admin/dashboard` (Hover on filter **Reset** button to verify the refresh icon stays visible) |
 
 ---
 
 ## 2. What Changed (Summary for Deployment Engineer)
 
-Release `v1.2.5` focuses on **Thermal Printer Receipt Slip Optimization** and **User Registration Deactivation (Login-Only Mode)**.
+Release `v1.2.5` incorporates **Database One-Click Backup Tool**, **Thermal Printer Slip Optimization**, **User Registration Deactivation (Login-Only Mode)**, **Topbar Profile & Dropdown Redesign**, **Dashboard Filter Reset Icon Fix**, and **Data Retention / Soft-Delete Hardening**.
 
 ### Key Changes:
-1. **Thermal Printer Slip Redesign (`resources/views/admin/complaints/print-slip.blade.php`)**:
+
+1. **One-Click Database Backup for Admin (`app/Http/Controllers/Admin/BackupController.php`, `routes/web.php`, `resources/views/layouts/navigation.blade.php`)**:
+   - Added instant streaming database dump feature accessible strictly to Admin (`role_id === 1`).
+   - Generates and downloads standard MySQL SQL backup file with PKT timestamp: `cms_db_backup_YYYY-MM-DD_hh-mm-AM/PM.sql`.
+   - Sleek sky blue pill button placed in topbar for instant manual backups before system actions.
+
+2. **Topbar User Profile Pill & Executive Dropdown Redesign (`resources/views/layouts/navigation.blade.php`)**:
+   - Modernized user dropdown trigger into a sleek capsule pill button with user initial avatar, online dot indicator, and role badge.
+   - Redesigned dropdown menu into an executive card layout featuring user hero card, dual-line navigation options with icons, smooth micro-interactions, and red sign-out button across Light, Dark, and Night themes.
+
+3. **Soft-Deleted Spares & Complaint Types Data Retention**:
+   - Added `->withTrashed()` relationship bindings on `Spare` in `SpareStockLog`, `ComplaintSpare`, `SpareApprovalItem`, and `StockAddData`. Ensures historical complaint spare issuances and approvals never disappear from past logs if an inventory item is archived.
+   - Hardened `ComplaintTitleController@getTitlesByCategory` to only return active, non-deleted complaint types (`whereNull('deleted_at')` and `status = 1`).
+
+4. **Thermal Printer Slip Redesign (`resources/views/admin/complaints/print-slip.blade.php`)**:
    - Re-engineered the complaint print slip specifically tailored for standard 80mm and 58mm thermal / POS receipt printers.
    - Compact, high-contrast, structured layout displaying Complaint ID, House / Location, Complaint Nature & Title, Resident details, Timestamps, and Complaint Center information.
-   - Clean receipt formatting with automatic browser print dialog integration.
 
-2. **Removal of Public / Admin User Registration (`routes/auth.php`, `resources/views/auth/login.blade.php`, `resources/views/layouts/guest.blade.php`)**:
+5. **Removal of Public / Admin User Registration (`routes/auth.php`, `resources/views/auth/login.blade.php`, `resources/views/layouts/guest.blade.php`)**:
    - Disabled open registration routes (`/register`) to prevent unauthorized self-service account creation.
-   - Removed all "Register", "Sign up", and new account navigation buttons/links from login views and guest layout headers.
-   - System is now strictly login-only; internal user accounts are created exclusively through `/admin/users/create` by authorized administrators.
+   - System is strictly login-only; internal user accounts are created exclusively through `/admin/users/create` by authorized administrators.
+
+6. **Complaint Types AJAX Dropdown Decoupling (`routes/web.php`)**:
+   - Fixed permission requirement so operators can select complaint types during complaint registration without needing full CRUD access to the Complaint Types management screen.
 
 ---
 
@@ -114,6 +129,17 @@ echo "v1.2.5" > /home/paknavy/current-live-version.txt
 - [ ] Open `/admin/complaints` and click "Print Slip" on any complaint:
   - [ ] Thermal slip formatting renders properly without overlapping text.
   - [ ] Print dialog triggers correctly with appropriate receipt dimensions.
+- [ ] Open `/admin/complaints/create`:
+  - [ ] Select a Category; verify the Complaint Types / Titles dropdown populates properly (even when tested with a role that has "Complaint Types" permission turned off in the sidebar).
+  - [ ] Ensure soft-deleted complaint types do not appear in the dropdown.
+- [ ] Database Backup & Topbar:
+  - [ ] Log in as Admin (`role_id === 1`); verify the Emerald Green **DB Backup** pill appears in the topbar.
+  - [ ] Click **DB Backup**; verify a `.sql` dump file downloads immediately with the format `cms_db_backup_YYYY-MM-DD_hh-mm-AM/PM.sql`.
+  - [ ] Verify non-admin roles do not see or have access to the backup route.
+- [ ] Topbar Profile & Dropdown:
+  - [ ] Click the user profile pill in the topbar; verify the executive card dropdown renders properly with avatar, user details, role badge, and navigation options.
+- [ ] Dashboard Filters:
+  - [ ] Go to `/admin/dashboard`; hover on the filter **Reset** button and verify the refresh icon (`refresh-cw`) stays clearly visible and rotates smoothly.
 - [ ] Security check: `/.git/config` returns 404 / Forbidden.
 
 ---

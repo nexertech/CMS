@@ -438,20 +438,21 @@ class ApprovalController extends Controller
             $referenceId = $approval->complaint_id ?? $approval->id;
             $stockLogs = \App\Models\SpareStockLog::where('reference_id', $referenceId)
                 ->where('change_type', 'out')
-                ->with('spare:id,item_name')
+                ->with(['spare' => function($q) {
+                    $q->withTrashed();
+                }])
                 ->orderBy('created_at', 'desc')
                 ->get(['id', 'spare_id', 'quantity', 'created_at', 'remarks']);
 
             foreach ($stockLogs as $log) {
-                if ($log->spare) {
-                    $issuedStock[] = [
-                        'spare_id' => $log->spare_id,
-                        'spare_name' => $log->spare->item_name ?? 'N/A',
-                        'quantity_issued' => (int)$log->quantity,
-                        'issued_at' => $log->created_at ? $log->created_at->format('M d, Y H:i') : null,
-                        'remarks' => $log->remarks ?? null
-                    ];
-                }
+                $spareName = $log->spare ? $log->spare->item_name : ('Spare #' . $log->spare_id);
+                $issuedStock[] = [
+                    'spare_id' => $log->spare_id,
+                    'spare_name' => $spareName,
+                    'quantity_issued' => (int)$log->quantity,
+                    'issued_at' => $log->created_at ? $log->created_at->format('M d, Y H:i') : null,
+                    'remarks' => $log->remarks ?? null
+                ];
             }
         }
         catch (\Exception $e) {

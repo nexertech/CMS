@@ -87,6 +87,12 @@ Route::middleware(['auth', 'verified', AdminAccessMiddleware::class])
     Route::get('/dashboard/real-time-updates', [AdminDashboardController::class, 'getRealTimeUpdates'])->name('dashboard.real-time-updates');
     
     // ===============================
+    // 💾 Database Backup (Role ID 1 Only)
+    // ===============================
+    Route::get('/database/backup', [App\Http\Controllers\Admin\BackupController::class, 'download'])
+        ->name('database.backup');
+
+    // ===============================
     // 👤 User Management
     // ===============================
     Route::middleware(['permission:users.view'])->group(function () {

@@ -331,9 +331,19 @@
 
 .theme-light .content .btn-outline-secondary:hover,
 .theme-light .filter-box .btn-outline-secondary:hover {
-  background: #f8fafc !important;
-  border-color: #cbd5e1 !important;
-  color: #475569 !important;
+  background: #e2e8f0 !important;
+  border-color: #94a3b8 !important;
+  color: #1e293b !important;
+}
+
+.theme-light .content .btn-outline-secondary:hover *,
+.theme-light .filter-box .btn-outline-secondary:hover *,
+.theme-light .content .btn-outline-secondary:hover svg,
+.theme-light .filter-box .btn-outline-secondary:hover svg,
+.theme-light .content .btn-outline-secondary:hover i,
+.theme-light .filter-box .btn-outline-secondary:hover i {
+  color: #1e293b !important;
+  stroke: #1e293b !important;
 }
 
 /* Modern Table Styling */

@@ -621,6 +621,66 @@
   .theme-night .filter-box .btn {
     border-radius: 4px !important;
   }
+
+  /* Reset Button & Icon Hover Fix across themes */
+  .filter-box .btn-outline-secondary,
+  #resetDashboardFiltersBtn {
+    transition: all 0.2s ease !important;
+  }
+
+  .theme-light .filter-box .btn-outline-secondary:hover,
+  .theme-light .filter-box .btn-outline-secondary:focus,
+  .theme-light #resetDashboardFiltersBtn:hover,
+  .theme-light #resetDashboardFiltersBtn:focus {
+    background-color: #e2e8f0 !important;
+    border-color: #94a3b8 !important;
+    color: #1e293b !important;
+  }
+
+  .theme-light .filter-box .btn-outline-secondary:hover *,
+  .theme-light .filter-box .btn-outline-secondary:hover svg,
+  .theme-light .filter-box .btn-outline-secondary:hover i,
+  .theme-light #resetDashboardFiltersBtn:hover *,
+  .theme-light #resetDashboardFiltersBtn:hover svg,
+  .theme-light #resetDashboardFiltersBtn:hover i {
+    color: #1e293b !important;
+    stroke: #1e293b !important;
+  }
+
+  .theme-dark .filter-box .btn-outline-secondary,
+  .theme-night .filter-box .btn-outline-secondary {
+    color: #cbd5e1 !important;
+    border-color: #64748b !important;
+  }
+
+  .theme-dark .filter-box .btn-outline-secondary:hover,
+  .theme-dark .filter-box .btn-outline-secondary:focus,
+  .theme-dark #resetDashboardFiltersBtn:hover,
+  .theme-dark #resetDashboardFiltersBtn:focus,
+  .theme-night .filter-box .btn-outline-secondary:hover,
+  .theme-night .filter-box .btn-outline-secondary:focus,
+  .theme-night #resetDashboardFiltersBtn:hover,
+  .theme-night #resetDashboardFiltersBtn:focus {
+    background-color: #475569 !important;
+    border-color: #64748b !important;
+    color: #ffffff !important;
+  }
+
+  .theme-dark .filter-box .btn-outline-secondary:hover *,
+  .theme-dark .filter-box .btn-outline-secondary:hover svg,
+  .theme-dark .filter-box .btn-outline-secondary:hover i,
+  .theme-dark #resetDashboardFiltersBtn:hover *,
+  .theme-dark #resetDashboardFiltersBtn:hover svg,
+  .theme-dark #resetDashboardFiltersBtn:hover i,
+  .theme-night .filter-box .btn-outline-secondary:hover *,
+  .theme-night .filter-box .btn-outline-secondary:hover svg,
+  .theme-night .filter-box .btn-outline-secondary:hover i,
+  .theme-night #resetDashboardFiltersBtn:hover *,
+  .theme-night #resetDashboardFiltersBtn:hover svg,
+  .theme-night #resetDashboardFiltersBtn:hover i {
+    color: #ffffff !important;
+    stroke: #ffffff !important;
+  }
 </style>
 @section('content')
 
@@ -850,7 +910,7 @@
           </div>
           <div>
             <label class="form-label small text-muted mb-1" style="font-size: 0.7rem; display: block;">&nbsp;</label>
-            <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center" onclick="resetDashboardFilters()" style="font-size: 0.85rem; height: 38px; padding: 0 1.25rem; border-radius: 4px !important;">
+            <button type="button" id="resetDashboardFiltersBtn" class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center" onclick="resetDashboardFilters()" style="font-size: 0.85rem; height: 38px; padding: 0 1.25rem; border-radius: 4px !important;">
               <i data-feather="refresh-cw" class="me-1" style="width: 14px; height: 14px;"></i>Reset
             </button>
           </div>

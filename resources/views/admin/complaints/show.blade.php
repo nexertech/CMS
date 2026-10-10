@@ -380,7 +380,7 @@
   // Get issued stock from stock logs
   $issuedStock = \App\Models\SpareStockLog::where('reference_id', $complaint->id)
     ->where('change_type', 'out')
-    ->with('spare:id,item_name')
+    ->with(['spare' => function($q) { $q->withTrashed(); }])
     ->orderBy('created_at', 'desc')
     ->get();
 @endphp
@@ -425,7 +425,7 @@
               <tbody>
                 @foreach($issuedStock as $stock)
                 <tr>
-                  <td style="padding: 4px 8px;">{{ $stock->spare->item_name ?? 'N/A' }}</td>
+                  <td style="padding: 4px 8px;">{{ $stock->spare->item_name ?? ('Spare #' . $stock->spare_id) }}</td>
                   <td style="padding: 4px 8px;">{{ $stock->quantity }}</td>
                   <td style="padding: 4px 8px;">{{ $stock->created_at ? $stock->created_at->timezone('Asia/Karachi')->format('M d, Y H:i') : 'N/A' }}</td>
                 </tr>
