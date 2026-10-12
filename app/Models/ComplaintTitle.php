@@ -26,7 +26,8 @@ class ComplaintTitle extends Model
      */
     public static function getCategories()
     {
-        return ComplaintCategory::whereHas('titles')
+        return ComplaintCategory::where('status', 1)
+            ->whereHas('titles')
             ->orderBy('name')
             ->pluck('name');
     }
@@ -36,7 +37,9 @@ class ComplaintTitle extends Model
      */
     public static function getTitlesByCategory($category)
     {
-        $query = self::query();
+        $query = self::query()->whereHas('category', function ($q) {
+            $q->where('status', 1);
+        });
         
         if (is_numeric($category)) {
             $query->where('category_id', $category);

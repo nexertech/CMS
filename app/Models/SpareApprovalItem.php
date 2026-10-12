@@ -37,7 +37,7 @@ class SpareApprovalItem extends Model
      */
     public function spare(): BelongsTo
     {
-        return $this->belongsTo(Spare::class, 'spare_id', 'id');
+        return $this->belongsTo(Spare::class, 'spare_id', 'id')->withTrashed();
     }
 
     /**

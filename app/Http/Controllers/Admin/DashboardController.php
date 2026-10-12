@@ -65,8 +65,8 @@ class DashboardController extends Controller
         // Get cities for filter (not restricted by active cmes_id filter in database query, so JS can filter dynamically)
         $cities = collect();
         if (Schema::hasTable('cities')) {
-            if ($hasGlobalAccess || empty($user->city_ids)) {
-                // User is admin/director OR has no city_ids assigned -> can see all active cities
+            if ($hasGlobalAccess) {
+                // User is admin/director -> can see all active cities
                 $citiesQuery = City::where('status', 1)->orderBy('name', 'asc');
                 $cities = $citiesQuery->get();
                 // OPTIMIZED: Batch load GE users for all cities in one query
@@ -83,7 +83,7 @@ class DashboardController extends Controller
                         $city->setRelation('users', $geUsersForCity);
                     }
                 }
-            } else {
+            } elseif (!empty($user->city_ids)) {
                 // User has city_ids assigned, sees only their cities
                 $citiesQuery = City::whereIn('id', $user->city_ids)->where('status', 1)->orderBy('name', 'asc');
                 $cities = $citiesQuery->get();
@@ -113,6 +113,9 @@ class DashboardController extends Controller
                     $sectorsQuery->whereIn('id', $user->sector_ids);
                 } elseif (!empty($user->city_ids)) {
                     $sectorsQuery->whereIn('city_id', $user->city_ids);
+                } else {
+                    // No GE Group/Node assigned — show no sectors
+                    $sectorsQuery->whereRaw('1 = 0');
                 }
             }
             $sectors = $sectorsQuery->get();
@@ -338,6 +341,9 @@ class DashboardController extends Controller
                     $geGroupsQuery->where('id', $effectiveCityId);
                 } elseif (!empty($effectiveCityIds)) {
                     $geGroupsQuery->whereIn('id', $effectiveCityIds);
+                } elseif (!$hasGlobalAccess) {
+                    // No GE Group assigned and not admin/director — show no GE progress
+                    $geGroupsQuery->whereRaw('1 = 0');
                 }
                 
                 $geGroups = $geGroupsQuery->orderBy('name')->get();

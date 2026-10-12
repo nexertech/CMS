@@ -542,7 +542,7 @@ class ComplaintController extends Controller
 
         $validator = Validator::make($data, [
             'category' => 'required|exists:complaint_categories,id',
-            'complaint_title_id' => 'required_without_all:title_other,title|nullable|exists:complaint_titles,id',
+            'complaint_title_id' => 'required_without_all:title_other,title|nullable|exists:complaint_titles,id,deleted_at,NULL',
             'title_other' => 'required_without:complaint_title_id|nullable|string|max:255',
             'title' => 'nullable|string|max:255',
             'priority' => 'required|in:normal,emergency',
@@ -661,7 +661,7 @@ class ComplaintController extends Controller
 
             $rules = [
                 'category' => 'required|exists:complaint_categories,id',
-                'complaint_title_id' => 'required_without_all:title_other,title|nullable|exists:complaint_titles,id',
+                'complaint_title_id' => 'required_without_all:title_other,title|nullable|exists:complaint_titles,id,deleted_at,NULL',
                 'title_other' => 'required_without:complaint_title_id|nullable|string|max:255',
                 'title' => 'nullable|string|max:255',
                 'priority' => 'required|in:normal,emergency',

@@ -3,7 +3,6 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
-use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\AdminController as AdminController;
@@ -87,6 +86,12 @@ Route::middleware(['auth', 'verified', AdminAccessMiddleware::class])
     Route::get('/dashboard/chart-data', [AdminDashboardController::class, 'getChartData'])->name('dashboard.chart-data');
     Route::get('/dashboard/real-time-updates', [AdminDashboardController::class, 'getRealTimeUpdates'])->name('dashboard.real-time-updates');
     
+    // ===============================
+    // 💾 Database Backup (Role ID 1 Only)
+    // ===============================
+    Route::get('/database/backup', [App\Http\Controllers\Admin\BackupController::class, 'download'])
+        ->name('database.backup');
+
     // ===============================
     // 👤 User Management
     // ===============================
@@ -210,15 +215,16 @@ Route::middleware(['auth', 'verified', AdminAccessMiddleware::class])
         ->middleware(['permission:sub-category.view']);
 
     Route::get('sub-categories-by-category', [App\Http\Controllers\Admin\SubCategoryController::class, 'getByCategory'])
-        ->name('sub-categories.by-category')
-        ->middleware(['permission:complaints.view']);
+        ->name('sub-categories.by-category');
 
     // ===============================
     // 📝 Complaint Titles
     // ===============================
+    Route::get('complaint-titles-by-category', [AdminComplaintTitleController::class, 'getTitlesByCategory'])
+        ->name('complaint-titles.by-category');
+
     Route::middleware(['permission:complaint-titles.view'])->group(function () {
         Route::resource('complaint-titles', AdminComplaintTitleController::class);
-        Route::get('complaint-titles-by-category', [AdminComplaintTitleController::class, 'getTitlesByCategory'])->name('complaint-titles.by-category');
     });
 
     // ===============================

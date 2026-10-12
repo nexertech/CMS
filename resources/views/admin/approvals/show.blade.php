@@ -478,15 +478,14 @@
     // This is stock logs collection, convert to expected format
     $convertedItems = collect();
     foreach ($requestedItems as $log) {
-      if ($log->spare) {
-        $convertedItems->push((object)[
-          'id' => $log->id,
-          'spare' => $log->spare,
-          'quantity_requested' => $log->quantity,
-          'quantity_approved' => $log->quantity,
-          'spare_id' => $log->spare_id,
-        ]);
-      }
+      $spareObj = $log->spare ?? (object)['item_name' => ('Spare #' . $log->spare_id), 'name' => ('Spare #' . $log->spare_id), 'stock_quantity' => 0];
+      $convertedItems->push((object)[
+        'id' => $log->id,
+        'spare' => $spareObj,
+        'quantity_requested' => $log->quantity,
+        'quantity_approved' => $log->quantity,
+        'spare_id' => $log->spare_id,
+      ]);
     }
     $requestedItems = $convertedItems;
   }
