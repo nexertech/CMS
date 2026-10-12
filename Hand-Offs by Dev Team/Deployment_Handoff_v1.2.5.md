@@ -17,7 +17,7 @@
 |---|---|
 | **1. Release Tag?** | **`v1.2.5`** *(Immutable tag to be pushed to the `deploy` branch)* |
 | **2. Database Change Classification?** | **None** *(No schema or table migrations required for this release)* |
-| **3. Primary Page(s) to Test First?** | 1. `/login` & `/register` (Verify register link is removed and direct `/register` returns 404)<br>2. `/admin/complaints` (Click "Print Slip" on any complaint for thermal receipt; check complaint show page to ensure issued spares remain visible)<br>3. `/admin/complaints/create` (Verify only active, non-soft-deleted Complaint Types populate in dropdown)<br>4. Topbar Navbar (Click the new Emerald Green **DB Backup** button as Admin to verify instant `.sql` download with PKT timestamp)<br>5. `/admin/dashboard` (Hover on filter **Reset** button to verify the refresh icon stays visible) |
+| **3. Primary Page(s) to Test First?** | 1. `/login` & `/register` (Verify register link is removed and direct `/register` returns 404)<br>2. `/admin/complaints` (Click "Print Slip" on any complaint for thermal receipt; check complaint show page to ensure issued spares remain visible)<br>3. `/admin/complaints/create` (Verify only active, non-soft-deleted Complaint Types populate in dropdown)<br>4. Topbar Navbar (Click the new Emerald Green **DB Backup** button as Admin to verify instant `.sql` download with PKT timestamp)<br>5. `/admin/dashboard` (Hover on filter **Reset** button to verify the refresh icon stays visible)<br>6. `/dashboard` (Verify CMES chart displays resolution percentages `(X%)` on green bars and filter dropdown options work seamlessly) |
 
 ---
 
@@ -50,6 +50,11 @@ Release `v1.2.5` incorporates **Database One-Click Backup Tool**, **Thermal Prin
 
 6. **Complaint Types AJAX Dropdown Decoupling (`routes/web.php`)**:
    - Fixed permission requirement so operators can select complaint types during complaint registration without needing full CRUD access to the Complaint Types management screen.
+
+7. **Frontend Dashboard CMES Graph & Table Resolution Tracking (`app/Http/Controllers/Frontend/HomeController.php`, `resources/views/frontend/dashboard.blade.php`, `resources/views/frontend/dashboard/partials/cme_table.blade.php`)**:
+   - Added percentage resolution labels directly on the green bar above the count `(X%)`.
+   - Updated CMES graph filter dropdown with quick period filters: `All Time` (default), `Last 15 Days`, `This Month`, `Last 3 Months`, `Last 6 Months`, `This Year`.
+   - Synchronized CMES table with percentage resolution indicators.
 
 ---
 

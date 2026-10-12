@@ -831,10 +831,12 @@
                             <div id="cmeGraphFilterContainer">
                                 <select id="cmeGraphFilter"
                                     class="p-1.5 border rounded text-sm font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    <option value="all_time" {{ $cmeDateRange === 'all_time' ? 'selected' : '' }}>All Time</option>
-                                    @foreach($years as $year)
-                                        <option value="{{ $year }}" {{ $cmeDateRange == $year ? 'selected' : '' }}>{{ $year }}</option>
-                                    @endforeach
+                                    <option value="all_time" {{ ($cmeDateRange === 'all_time' || empty($cmeDateRange)) ? 'selected' : '' }}>All Time</option>
+                                    <option value="last_15_days" {{ $cmeDateRange === 'last_15_days' ? 'selected' : '' }}>Last 15 Days</option>
+                                    <option value="this_month" {{ $cmeDateRange === 'this_month' ? 'selected' : '' }}>This Month</option>
+                                    <option value="last_3_months" {{ $cmeDateRange === 'last_3_months' ? 'selected' : '' }}>Last 3 Months</option>
+                                    <option value="last_6_months" {{ $cmeDateRange === 'last_6_months' ? 'selected' : '' }}>Last 6 Months</option>
+                                    <option value="this_year" {{ ($cmeDateRange === 'this_year' || $cmeDateRange === 'current_year') ? 'selected' : '' }}>This Year</option>
                                 </select>
                             </div>
 
@@ -920,6 +922,9 @@
                                         <td
                                             class="px-2 py-1 whitespace-nowrap text-sm text-center text-green-600 font-medium border-r border-gray-200">
                                             {{ $r }}
+                                            @if($t > 0)
+                                                <span class="text-xs text-gray-500 font-normal">({{ round(($r / $t) * 100, 1) }}%)</span>
+                                            @endif
                                         </td>
                                     @endforeach
                                 </tr>
@@ -938,6 +943,9 @@
                                     <td
                                         class="px-2 py-3 whitespace-nowrap text-sm text-center text-green-600 border-r border-gray-200">
                                         {{ $columnTotals[$entity->name]['resolved'] }}
+                                        @if($columnTotals[$entity->name]['total'] > 0)
+                                            <span class="text-xs text-gray-500 font-normal">({{ round(($columnTotals[$entity->name]['resolved'] / $columnTotals[$entity->name]['total']) * 100, 1) }}%)</span>
+                                        @endif
                                     </td>
                                 @endforeach
                             </tr>
@@ -1867,21 +1875,68 @@
                             size: 12
                         },
                         mode: 'index',
-                        intersect: false
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                const val = context.parsed.y !== null ? context.parsed.y : context.raw;
+                                label += val;
+                                if (context.datasetIndex === 1) {
+                                    const total = context.chart.data.datasets[0]?.data?.[context.dataIndex] || 0;
+                                    if (total > 0 && val > 0) {
+                                        const pct = ((val / total) * 100).toFixed(1).replace(/\.0$/, '');
+                                        label += ' (' + pct + '%)';
+                                    }
+                                }
+                                return label;
+                            }
+                        }
                     },
                     datalabels: {
-                        anchor: 'end',
-                        align: 'top',
-                        offset: 5,
-                        color: function(context) {
-                            return context.dataset.backgroundColor;
-                        },
-                        font: {
-                            weight: 'bold',
-                            size: 11
-                        },
-                        formatter: function(value) {
-                            return value > 0 ? value : '';
+                        labels: {
+                            value: {
+                                anchor: 'end',
+                                align: 'top',
+                                offset: 2,
+                                textAlign: 'center',
+                                color: function(context) {
+                                    return context.dataset.backgroundColor;
+                                },
+                                font: {
+                                    weight: 'bold',
+                                    size: 11
+                                },
+                                formatter: function(value) {
+                                    return value > 0 ? value : '';
+                                }
+                            },
+                            percentage: {
+                                anchor: 'end',
+                                align: 'top',
+                                offset: 19,
+                                textAlign: 'center',
+                                display: function(context) {
+                                    return context.datasetIndex === 1 && context.dataset.data[context.dataIndex] > 0;
+                                },
+                                color: function(context) {
+                                    return context.dataset.backgroundColor;
+                                },
+                                font: {
+                                    weight: 'bold',
+                                    size: 11
+                                },
+                                formatter: function(value, context) {
+                                    const total = context.chart.data.datasets[0]?.data?.[context.dataIndex] || 0;
+                                    if (total > 0 && value > 0) {
+                                        const pct = ((value / total) * 100).toFixed(1).replace(/\.0$/, '');
+                                        return '(' + pct + '%)';
+                                    }
+                                    return '';
+                                }
+                            }
                         }
                     }
                 },
@@ -1903,6 +1958,7 @@
                     },
                     y: {
                         beginAtZero: true,
+                        grace: '18%',
                         grid: {
                             color: 'rgba(0, 0, 0, 0.05)'
                         },
