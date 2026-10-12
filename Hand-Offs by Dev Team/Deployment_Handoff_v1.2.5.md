@@ -7,7 +7,7 @@
 **Previous Live Tag:** `v1.2.4`  
 **Developer:** Amjad Subhani  
 **Deployment Engineer:** Siddique / Deployment Team  
-**Date:** 2026-09-28  
+**Date:** 2026-10-12  
 
 ---
 
