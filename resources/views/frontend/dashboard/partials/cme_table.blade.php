@@ -40,7 +40,12 @@
                         $columnTotals[$entity->name]['resolved'] += $r;
                     @endphp
                     <td class="px-2 py-1 whitespace-nowrap text-sm text-center text-gray-900 border-r border-gray-200">{{ $t }}</td>
-                    <td class="px-2 py-1 whitespace-nowrap text-sm text-center text-green-600 font-medium border-r border-gray-200">{{ $r }}</td>
+                    <td class="px-2 py-1 whitespace-nowrap text-sm text-center text-green-600 font-medium border-r border-gray-200">
+                        {{ $r }}
+                        @if($t > 0)
+                            <span class="text-xs text-gray-500 font-normal">({{ round(($r / $t) * 100, 1) }}%)</span>
+                        @endif
+                    </td>
                 @endforeach
             </tr>
         @endforeach
@@ -50,7 +55,12 @@
             <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 sticky left-0 bg-gray-100 z-10">Total</td>
             @foreach($tableEntities as $entity)
                 <td class="px-2 py-3 whitespace-nowrap text-sm text-center text-gray-900 border-r border-gray-200">{{ $columnTotals[$entity->name]['total'] }}</td>
-                <td class="px-2 py-3 whitespace-nowrap text-sm text-center text-green-600 border-r border-gray-200">{{ $columnTotals[$entity->name]['resolved'] }}</td>
+                <td class="px-2 py-3 whitespace-nowrap text-sm text-center text-green-600 border-r border-gray-200">
+                    {{ $columnTotals[$entity->name]['resolved'] }}
+                    @if($columnTotals[$entity->name]['total'] > 0)
+                        <span class="text-xs text-gray-500 font-normal">({{ round(($columnTotals[$entity->name]['resolved'] / $columnTotals[$entity->name]['total']) * 100, 1) }}%)</span>
+                    @endif
+                </td>
             @endforeach
         </tr>
     </tfoot>

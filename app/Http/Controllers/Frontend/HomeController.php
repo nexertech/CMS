@@ -1297,7 +1297,7 @@ class HomeController extends Controller
         $cmeGraphData = [];
         $cmeResolvedData = []; // New array for addressed complaints
 
-        $cmeDateRange = $request->get('cme_date_range', 'all_time'); // specific filter or default to all_time
+        $cmeDateRange = $request->get('cme_date_range', 'all_time'); // default to all_time
 
         $years = collect(range(date('Y'), 2023))->unique()->values()->all();
 
@@ -1611,8 +1611,31 @@ class HomeController extends Controller
                     $reportMonths[$yr] = ['label' => (string) $yr, 'year' => $yr, 'month' => null];
                     $monthlyTableData[(string) $yr] = [];
                 }
+            } elseif ($cmeDateRange === 'last_15_days') {
+                $label = 'Last 15 Days';
+                $reportMonths[] = ['label' => $label, 'year' => now()->year, 'month' => now()->month];
+                $monthlyTableData[$label] = [];
+            } elseif ($cmeDateRange === 'this_month') {
+                $dt = now();
+                $label = $dt->format('F Y');
+                $reportMonths[] = ['label' => $label, 'year' => $dt->year, 'month' => $dt->month];
+                $monthlyTableData[$label] = [];
+            } elseif ($cmeDateRange === 'last_3_months') {
+                for ($i = 2; $i >= 0; $i--) {
+                    $dt = now()->subMonths($i);
+                    $label = $dt->format('F Y');
+                    $reportMonths[] = ['label' => $label, 'year' => $dt->year, 'month' => $dt->month];
+                    $monthlyTableData[$label] = [];
+                }
+            } elseif ($cmeDateRange === 'last_6_months') {
+                for ($i = 5; $i >= 0; $i--) {
+                    $dt = now()->subMonths($i);
+                    $label = $dt->format('F Y');
+                    $reportMonths[] = ['label' => $label, 'year' => $dt->year, 'month' => $dt->month];
+                    $monthlyTableData[$label] = [];
+                }
             } else {
-                $yearVal = (int) $cmeDateRange;
+                $yearVal = is_numeric($cmeDateRange) ? (int) $cmeDateRange : now()->year;
                 for ($m = 1; $m <= 12; $m++) {
                     $label = date('F', mktime(0, 0, 0, $m, 1));
                     $reportMonths[] = ['label' => $label, 'year' => $yearVal, 'month' => $m];
@@ -1710,7 +1733,7 @@ class HomeController extends Controller
             // PRE-INDEX ALL STATS FOR FASTER LOOKUP
             $indexedStats = [];
             foreach ($allStats as $stat) {
-                $timeKey = $isAllTime ? (string) $stat->year : $stat->year . '_' . $stat->month;
+                $timeKey = $isAllTime ? (string) $stat->year : (($cmeDateRange === 'last_15_days') ? 'last_15_days' : $stat->year . '_' . $stat->month);
                 $entityKey = '';
                 if ($entityType === 'cme') {
                     if ($stat->city_id && isset($cityCmeMap[$stat->city_id])) {
@@ -1737,7 +1760,7 @@ class HomeController extends Controller
 
             // Map results using indexed data
             foreach ($reportMonths as $rm) {
-                $timeKey = $isAllTime ? (string) $rm['year'] : $rm['year'] . '_' . $rm['month'];
+                $timeKey = $isAllTime ? (string) $rm['year'] : (($cmeDateRange === 'last_15_days') ? 'last_15_days' : $rm['year'] . '_' . $rm['month']);
                 foreach ($tableEntities as $entity) {
                     $entityKey = $entityType . '_' . $entity->id;
                     $combinedStat = $indexedStats[$timeKey][$entityKey] ?? ['total' => 0, 'resolved' => 0];
@@ -2434,8 +2457,20 @@ class HomeController extends Controller
 
     protected function applyCmeDateFilter($query, $dateRange)
     {
-        if ($dateRange && $dateRange !== 'all_time') {
-            $query->whereYear('complaints.created_at', $dateRange);
+        if ($dateRange === 'last_15_days') {
+            $query->where('complaints.created_at', '>=', now()->subDays(15)->startOfDay());
+        } elseif ($dateRange === 'this_month') {
+            $query->where('complaints.created_at', '>=', now()->startOfMonth());
+        } elseif ($dateRange === 'last_3_months') {
+            $query->where('complaints.created_at', '>=', now()->subMonths(2)->startOfMonth());
+        } elseif ($dateRange === 'last_6_months') {
+            $query->where('complaints.created_at', '>=', now()->subMonths(5)->startOfMonth());
+        } elseif ($dateRange === 'this_year' || $dateRange === 'current_year') {
+            $query->whereYear('complaints.created_at', now()->year);
+        } elseif ($dateRange === 'all_time' || empty($dateRange)) {
+            // No date filter for all_time
+        } elseif (is_numeric($dateRange)) {
+            $query->whereYear('complaints.created_at', (int) $dateRange);
         }
     }
 }
